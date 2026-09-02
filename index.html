@@ -2812,6 +2812,9 @@ const MONTHS = last13Months();
 const MONTH_LABELS = MONTHS.map(d=>MESES_PT[d.getMonth()]+'/'+d.getFullYear());
 
 function admissoesPorMes(){
+  if(Array.isArray(window.G360_RH_LIVE_ADMISSOES_MONTHLY) && window.G360_RH_LIVE_ADMISSOES_MONTHLY.length===MONTHS.length){
+    return window.G360_RH_LIVE_ADMISSOES_MONTHLY.slice();
+  }
   return MONTHS.map(d=>{
     const next = new Date(d.getFullYear(), d.getMonth()+1, 1);
     return COLABS.filter(c=>c.admissao && pDate(c.admissao)>=d && pDate(c.admissao)<next).length;
@@ -3138,8 +3141,8 @@ function renderExecutivo(){
     {label:'Turnover (12M)', value:fmtPct(turnoverGeral)}
   ]);
 
-  const admData=MONTHS.map(d=>{const next=new Date(d.getFullYear(),d.getMonth()+1,1);return COLABS.filter(c=>c.admissao&&pDate(c.admissao)>=d&&pDate(c.admissao)<next).length;});
-  const demData=MONTHS.map(d=>{const next=new Date(d.getFullYear(),d.getMonth()+1,1);return COLABS.filter(c=>c.demissao&&pDate(c.demissao)>=d&&pDate(c.demissao)<next).length;});
+  const admData=admissoesPorMes();
+  const demData=desligPorMes();
   comboChart('chExecRhAdmDem', MONTH_LABELS, admData, demData, 'Admissões', 'Demissões');
   const funcCountsExec=sortDesc(groupCount(ATIVOS,c=>stripTier(c.funcao))).slice(0,15);
   barChart('chExecRhFuncao',funcCountsExec.map(x=>x[0]),[{label:'Colaboradores',data:funcCountsExec.map(x=>x[1]),backgroundColor:PALETTE[2],borderRadius:3}],true,true);
@@ -9936,6 +9939,18 @@ window.GESTAO360_CONFIG = {
         return dt>=d && dt<next;
       }).length;
     });
+    window.G360_RH_LIVE_ADMISSOES_MONTHLY = MONTHS.map(d=>{
+      const next=new Date(d.getFullYear(),d.getMonth()+1,1);
+      return fRows.filter(r=>{
+        const raw=r.admissao ?? r.data_admissao ?? null;
+        if(!raw) return false;
+        const txt=String(raw).slice(0,10);
+        const parts=txt.split('-').map(Number);
+        if(parts.length!==3 || !parts[0] || !parts[1] || !parts[2]) return false;
+        const dt=new Date(parts[0],parts[1]-1,parts[2]);
+        return dt>=d && dt<next;
+      }).length;
+    });
     window.G360_RH_LIVE_ROWS = fRows.map(r=>({id:r.id,matricula:r.matricula,nome:r.nome,status:r.status,demissao:(r.demissao ?? r.data_demissao ?? r['demissão'] ?? null)}));
     const col=fRows.map(snakeToColab), con=(c.data||[]).map(mapContrato), alo=(a.data||[]).map(mapAloj);
     // A fonte viva do RH passa a ser o retorno atual do Supabase nesta própria execução.
@@ -10003,7 +10018,9 @@ window.GESTAO360_CONFIG = {
     // Mesmo sem mudança de assinatura, recalcula os indicadores a partir do retorno vivo do banco.
     try{ if(typeof renderColabKpis==='function') renderColabKpis(); }catch(_){ }
     try{ if(typeof renderColabCharts==='function') await renderColabCharts(); }catch(_){ }
+    try{ if(typeof renderAdmissoes==='function') renderAdmissoes(); }catch(_){ }
     try{ if(typeof renderDesligamentos==='function') renderDesligamentos(); }catch(_){ }
+    try{ if(typeof renderColaboradores==='function') renderColaboradores(); }catch(_){ }
     try{ if(typeof renderExecutivo==='function') renderExecutivo(); }catch(e){ console.error('Erro ao atualizar Painel Gerencial após Supabase:',e); }
     return true;
   }
@@ -11490,68 +11507,93 @@ async function edit(id){
         updated_at:new Date().toISOString()
       };
 
-      // Regra de saldo contratual V114:
-      // - NUNCA reconstruir/zerar medido_acumulado_inicial ao lançar uma nova medição.
-      // - Medição operacional nova: impacta_saldo=true e soma diretamente na view.
-      // - Correção de linha histórica importada: ajusta SOMENTE a diferença (delta)
-      //   sobre o acumulado já existente. Se o acumulado estiver zerado, faz bootstrap
-      //   pela soma das linhas históricas uma única vez, sem apagar valores válidos.
+      // Regra de saldo contratual V115 — PRESERVAÇÃO ABSOLUTA DO MEDIDO:
+      // Antes de salvar, captura o TOTAL MEDIDO oficial da view.
+      // Depois calcula apenas a diferença causada por ESTA edição.
+      // Por fim, recalibra medido_acumulado_inicial para que:
+      // TOTAL MEDIDO FINAL = TOTAL ANTERIOR + (novo valor efetivo - valor efetivo anterior).
+      //
+      // Isso impede que uma nova medição ou edição zere/reconstrua o histórico do contrato,
+      // mesmo que a linha tenha vindo de importação antiga com impacta_saldo=false/source_row.
       const atualQ=await sb().from('fechamentos_praca')
         .select('id,source_row,contrato_id,contrato_codigo,valor_medido,status,impacta_saldo')
         .eq('id',id).maybeSingle();
       if(atualQ.error)throw atualQ.error;
       const atual=atualQ.data||{};
+      const oid=await getObraId();
+
+      // Resolve o contrato da medição.
+      let cq=atual.contrato_id
+        ? await sb().from('contratos').select('id,codigo').eq('id',atual.contrato_id).maybeSingle()
+        : await sb().from('contratos').select('id,codigo').eq('obra_id',oid).eq('codigo',atual.contrato_codigo).maybeSingle();
+      if(cq.error)throw cq.error;
+      if(!cq.data?.id)throw new Error('Contrato da medição não encontrado para atualizar o saldo.');
+
+      const contratoId=cq.data.id;
+      const contratoCodigo=cq.data.codigo||atual.contrato_codigo||'';
+
+      // Total oficial imediatamente ANTES desta edição.
+      const saldoAntesQ=await sb().from('vw_contratos_saldo')
+        .select('id,total_medido')
+        .eq('id',contratoId).maybeSingle();
+      if(saldoAntesQ.error)throw saldoAntesQ.error;
+      const totalAntes=Number(saldoAntesQ.data?.total_medido||0);
+
+      const antigoEfetivo=String(atual.status||'').toUpperCase()==='LANCADO'
+        ? Number(atual.valor_medido||0) : 0;
+      const novoEfetivo=novoStatus==='LANCADO' ? novoValor : 0;
+      const totalDesejado=Math.max(0,totalAntes+(novoEfetivo-antigoEfetivo));
+
+      // Mantém histórico importado fora da soma operacional; novas linhas entram diretamente.
       const historica=(atual.impacta_saldo===false && atual.source_row!=null);
       patch.impacta_saldo=historica?false:true;
-
-      const antigoEfetivo=historica && String(atual.status||'').toUpperCase()==='LANCADO'
-        ? Number(atual.valor_medido||0) : 0;
-      const novoEfetivo=historica && novoStatus==='LANCADO' ? novoValor : 0;
-      const deltaHistorico=novoEfetivo-antigoEfetivo;
 
       const q=await sb().from('fechamentos_praca').update(patch).eq('id',id).select('*').maybeSingle();
       if(q.error)throw q.error;
 
-      if(historica && Math.abs(deltaHistorico)>0.000001){
-        const oid=await getObraId();
-        let cq=atual.contrato_id
-          ? await sb().from('contratos').select('id,codigo,medido_acumulado_inicial').eq('id',atual.contrato_id).maybeSingle()
-          : await sb().from('contratos').select('id,codigo,medido_acumulado_inicial').eq('obra_id',oid).eq('codigo',atual.contrato_codigo).maybeSingle();
-        if(cq.error)throw cq.error;
-        if(!cq.data?.id)throw new Error('Contrato da medição não encontrado para atualizar o saldo.');
+      // Soma tudo que a view passará a considerar diretamente como medição operacional.
+      const [opQ,legacyOpQ]=await Promise.all([
+        sb().from('fechamentos_praca')
+          .select('valor_medido,status,impacta_saldo')
+          .eq('obra_id',oid)
+          .eq('contrato_id',contratoId),
+        sb().from('fechamentos_praca')
+          .select('valor_medido,status,impacta_saldo')
+          .eq('obra_id',oid)
+          .is('contrato_id',null)
+          .eq('contrato_codigo',contratoCodigo)
+      ]);
+      if(opQ.error)throw opQ.error;
+      if(legacyOpQ.error)throw legacyOpQ.error;
 
-        let baseAtual=Number(cq.data.medido_acumulado_inicial||0);
+      const operacionais=[...(opQ.data||[]),...(legacyOpQ.data||[])];
+      const totalOperacional=operacionais.reduce((s,m)=>{
+        const lancada=String(m.status||'').toUpperCase()==='LANCADO';
+        const impacta=m.impacta_saldo!==false;
+        return s+(lancada&&impacta?Number(m.valor_medido||0):0);
+      },0);
 
-        if(baseAtual===0){
-          // Base antiga ausente: inicializa pela soma do histórico importado.
-          const [hq,legacyQ]=await Promise.all([
-            sb().from('fechamentos_praca')
-              .select('valor_medido,status,impacta_saldo,source_row')
-              .eq('obra_id',oid).eq('contrato_id',cq.data.id),
-            sb().from('fechamentos_praca')
-              .select('valor_medido,status,impacta_saldo,source_row')
-              .eq('obra_id',oid).is('contrato_id',null)
-              .eq('contrato_codigo',cq.data.codigo||atual.contrato_codigo)
-          ]);
-          if(hq.error)throw hq.error;
-          if(legacyQ.error)throw legacyQ.error;
-          const hist=[...(hq.data||[]),...(legacyQ.data||[])];
-          baseAtual=hist.reduce((s,m)=>{
-            const ehHistorica=(m.impacta_saldo===false && m.source_row!=null);
-            const lancada=String(m.status||'').toUpperCase()==='LANCADO';
-            return s+(ehHistorica&&lancada?Number(m.valor_medido||0):0);
-          },0);
-          // Como a linha editada já foi salva, a soma acima já contém o novo valor.
-        }else{
-          // Base válida: preserva todo o histórico anterior e aplica só a diferença.
-          baseAtual=Math.max(0,baseAtual+deltaHistorico);
-        }
-
-        const cu=await sb().from('contratos')
-          .update({medido_acumulado_inicial:baseAtual,updated_at:new Date().toISOString()})
-          .eq('id',cq.data.id);
-        if(cu.error)throw cu.error;
+      // O acumulado histórico vira somente a parcela necessária para preservar
+      // exatamente o total medido correto após esta edição.
+      const novaBase=totalDesejado-totalOperacional;
+      if(novaBase < -0.005){
+        throw new Error(
+          'Inconsistência no saldo do contrato: as medições operacionais ('+
+          totalOperacional.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+
+          ') superam o total medido calculado ('+
+          totalDesejado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+
+          '). A operação foi salva, mas o acumulado histórico não foi alterado.'
+        );
       }
+
+      const cu=await sb().from('contratos')
+        .update({
+          medido_acumulado_inicial:Math.max(0,novaBase),
+          updated_at:new Date().toISOString()
+        })
+        .eq('id',contratoId);
+      if(cu.error)throw cu.error;
+
       if(q.data){
         const alvo=state.rows.find(x=>String(x.id)===String(id));
         if(alvo){
@@ -12186,6 +12228,275 @@ window.g360FechamentoV57={
   else audit();
 
   window.g360ExportV113={exportFechamentoPDF,exportFechamentoXLS,audit};
+})();
+</script>
+
+
+<script id="g360-colaborador-alojamento-v116">
+(function(){
+  'use strict';
+
+  function norm(v){ return String(v??'').trim().toUpperCase(); }
+  function isSim(v){ return ['S','SIM','1','TRUE','YES'].includes(norm(v)); }
+
+  function findForm(){
+    // Formulário principal do CRUD de colaboradores.
+    return document.querySelector(
+      'form[data-kind="colaboradores"], #crudForm, form#g360CrudForm, form'
+    );
+  }
+
+  function locate(form){
+    if(!form) return {};
+    const usa =
+      form.querySelector('[name="usa_aloj"]') ||
+      form.querySelector('[name="usa_alojamento"]') ||
+      form.querySelector('[name="utiliza_alojamento"]');
+    const aloj =
+      form.querySelector('[name="alojamento_id"]') ||
+      form.querySelector('[name="alojamento"]');
+    return {usa,aloj};
+  }
+
+  function sync(form){
+    const {usa,aloj}=locate(form);
+    if(!usa || !aloj) return;
+
+    const sim=isSim(usa.value);
+
+    // O alojamento só é obrigatório quando o colaborador utiliza alojamento.
+    aloj.required=sim;
+    aloj.setAttribute('aria-required', sim ? 'true' : 'false');
+
+    // Quando NÃO utiliza, limpa qualquer valor residual que poderia
+    // continuar acionando validações antigas.
+    if(!sim){
+      aloj.value='';
+      aloj.removeAttribute('required');
+      aloj.setAttribute('aria-required','false');
+    }
+
+    // Tenta ocultar/mostrar o bloco visual sem quebrar layouts existentes.
+    const wrap =
+      aloj.closest('.field') ||
+      aloj.closest('.form-group') ||
+      aloj.closest('.crud-field') ||
+      aloj.parentElement;
+    if(wrap){
+      wrap.style.display = sim ? '' : 'none';
+    }
+  }
+
+  // Mudança imediata SIM/NÃO.
+  document.addEventListener('change',function(e){
+    if(!e.target?.matches?.(
+      '[name="usa_aloj"],[name="usa_alojamento"],[name="utiliza_alojamento"]'
+    )) return;
+    sync(e.target.form || e.target.closest('form'));
+  },true);
+
+  // Antes de qualquer submit, aplica a regra correta.
+  document.addEventListener('submit',function(e){
+    const form=e.target;
+    const {usa,aloj}=locate(form);
+    if(!usa || !aloj) return;
+
+    sync(form);
+
+    if(isSim(usa.value) && !String(aloj.value||'').trim()){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      alert('Selecione o alojamento do colaborador.');
+      try{ aloj.focus(); }catch(_){}
+      return false;
+    }
+
+    // Se NÃO utiliza alojamento, garante que não haja bloqueio HTML5
+    // nem valor residual enviado.
+    if(!isSim(usa.value)){
+      aloj.required=false;
+      aloj.removeAttribute('required');
+      aloj.value='';
+    }
+  },true);
+
+  // Sincroniza ao abrir/editar o modal.
+  const mo=new MutationObserver(()=>{
+    document.querySelectorAll('form').forEach(form=>{
+      const {usa,aloj}=locate(form);
+      if(usa && aloj) sync(form);
+    });
+  });
+  mo.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style']});
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    document.querySelectorAll('form').forEach(sync);
+  });
+
+  window.g360ColabAlojV116={sync};
+})();
+</script>
+
+
+<script id="g360-colaborador-submit-lock-v117">
+(function(){
+  'use strict';
+
+  let saving=false;
+  let lastSignature='';
+  let lastAt=0;
+
+  const norm=v=>String(v??'').trim().toUpperCase().replace(/\s+/g,' ');
+  const digits=v=>String(v??'').replace(/\D/g,'');
+
+  function isColabForm(form){
+    if(!form) return false;
+    return !!(
+      form.querySelector('[name="nome"]') &&
+      (form.querySelector('[name="matricula"]') || form.querySelector('[name="cpf"]')) &&
+      (form.querySelector('[name="admissao"]') || form.querySelector('[name="data_admissao"]'))
+    );
+  }
+
+  function signature(form){
+    const fd=new FormData(form);
+    return [
+      norm(fd.get('matricula')),
+      digits(fd.get('cpf')),
+      norm(fd.get('nome')),
+      norm(fd.get('admissao')||fd.get('data_admissao'))
+    ].join('|');
+  }
+
+  function buttons(form){
+    return [...form.querySelectorAll('button[type="submit"],input[type="submit"]')];
+  }
+
+  function lock(form){
+    saving=true;
+    form.dataset.g360Saving='1';
+    buttons(form).forEach(b=>{
+      b.dataset.g360OldText=('value' in b && b.tagName==='INPUT')?b.value:b.innerHTML;
+      b.disabled=true;
+      b.setAttribute('aria-disabled','true');
+      if(b.tagName==='INPUT') b.value='GRAVANDO...';
+      else b.innerHTML='⏳ GRAVANDO...';
+    });
+  }
+
+  function unlock(form){
+    saving=false;
+    if(form) delete form.dataset.g360Saving;
+    if(!form) return;
+    buttons(form).forEach(b=>{
+      b.disabled=false;
+      b.removeAttribute('aria-disabled');
+      if(b.dataset.g360OldText!=null){
+        if(b.tagName==='INPUT') b.value=b.dataset.g360OldText;
+        else b.innerHTML=b.dataset.g360OldText;
+        delete b.dataset.g360OldText;
+      }
+    });
+  }
+
+  // TRAVA 1: bloqueia segundo clique/submit enquanto o primeiro está processando.
+  document.addEventListener('submit',function(e){
+    const form=e.target;
+    if(!isColabForm(form)) return;
+
+    const sig=signature(form);
+    const now=Date.now();
+
+    if(saving || form.dataset.g360Saving==='1'){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return false;
+    }
+
+    // TRAVA 2: debounce contra duplo clique extremamente rápido.
+    if(sig && sig===lastSignature && (now-lastAt)<5000){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return false;
+    }
+
+    lastSignature=sig;
+    lastAt=now;
+    lock(form);
+
+    // Se alguma validação síncrona impedir o envio antes da chamada ao banco,
+    // libera o botão novamente.
+    setTimeout(()=>{
+      if(form.isConnected && form.dataset.g360Saving==='1') unlock(form);
+    },15000);
+  },true);
+
+  // TRAVA 3: bloqueia cliques repetidos no botão já desabilitado/processando.
+  document.addEventListener('click',function(e){
+    const b=e.target.closest?.('button[type="submit"],input[type="submit"]');
+    const form=b?.form;
+    if(!b || !isColabForm(form)) return;
+    if(saving || form.dataset.g360Saving==='1'){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  },true);
+
+  // Ao fechar/reabrir modal ou resetar formulário, libera estado.
+  document.addEventListener('reset',function(e){
+    if(isColabForm(e.target)) unlock(e.target);
+  },true);
+
+  const mo=new MutationObserver(()=>{
+    if(saving){
+      const active=[...document.querySelectorAll('form')].find(isColabForm);
+      if(!active || !active.isConnected) saving=false;
+    }
+  });
+  mo.observe(document.body,{subtree:true,childList:true});
+
+  window.g360ColabSubmitLockV117={unlock};
+})();
+</script>
+
+
+<script id="g360-rh-live-refresh-v118">
+(function(){
+  'use strict';
+  let running=false;
+  let last=0;
+
+  async function refresh(force=false){
+    if(running) return;
+    const now=Date.now();
+    if(!force && now-last<3000) return;
+    last=now;
+    if(typeof window.g360PullAll!=='function' || window.g360PreviewMode!==false) return;
+
+    running=true;
+    try{
+      await window.g360PullAll();
+    }catch(e){
+      console.error('[G360 RH V118] falha ao sincronizar indicadores:',e);
+    }finally{
+      running=false;
+    }
+  }
+
+  window.addEventListener('focus',()=>refresh(false));
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible') refresh(false);
+  });
+
+  document.addEventListener('click',function(e){
+    const link=e.target.closest?.('.side-link[data-view]');
+    const view=link?.dataset?.view;
+    if(['executivo','colaboradores','admissoes','desligamentos'].includes(view)){
+      setTimeout(()=>refresh(false),80);
+    }
+  },true);
+
+  window.g360RefreshRhLiveV118=()=>refresh(true);
 })();
 </script>
 
