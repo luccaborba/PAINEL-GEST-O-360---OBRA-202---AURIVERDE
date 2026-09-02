@@ -964,6 +964,33 @@ window.addEventListener('DOMContentLoaded',()=>{
 .deslig-box{margin-top:8px;border:1px solid #4a3a30;border-radius:10px;background:#1b1c20;padding:14px}.deslig-head{display:flex;justify-content:space-between;gap:15px;align-items:flex-start;border-bottom:1px solid #34363b;padding-bottom:10px;margin-bottom:12px}.deslig-head b{color:#f5c518;font-size:15px}.deslig-head small{display:block;color:#aaa;margin-top:4px;text-transform:none}.deslig-head span{color:#7ee2a8;font-weight:800;font-size:12px;white-space:nowrap}.deslig-grid-top{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px}.deslig-grid-top label{display:flex;flex-direction:column;gap:5px;font-size:11px;color:#bbb}.deslig-grid-top input,.deslig-grid-top select{background:#141519;border:1px solid #3a3c42;color:#eee;border-radius:6px;padding:9px}.deslig-list{display:flex;flex-direction:column;gap:7px}.deslig-item{display:grid;grid-template-columns:auto minmax(220px,1fr) 145px minmax(180px,.7fr);gap:10px;align-items:center;border:1px solid #33363b;border-radius:7px;padding:9px;background:#202126}.deslig-item>span small{display:block;color:#999;margin-top:3px;text-transform:none}.deslig-item input[type=date],.deslig-item input[type=text]{background:#16171b;border:1px solid #3a3c42;color:#eee;border-radius:5px;padding:7px;min-width:0}.deslig-empty{padding:12px;border:1px dashed #45484e;border-radius:7px;color:#aaa}.deslig-alert{margin-top:10px;color:#ff9c86;font-size:11px}.g360-grid select{width:100%;background:#15161a;color:#eee;border:1px solid #3b3d42;border-radius:6px;padding:9px}
 @media(max-width:760px){.deslig-head{flex-direction:column}.deslig-grid-top{grid-template-columns:1fr}.deslig-item{grid-template-columns:auto 1fr}.deslig-item .deslig-date,.deslig-item .deslig-obs{grid-column:2;width:100%}.crud-row-actions{min-width:310px}}
 </style>
+
+<style id="g360-stability-v121">
+/* V121 — evita piscar Dashboard -> última tela durante bootstrap */
+html:not(.g360-ui-ready) .content-col,
+html:not(.g360-ui-ready) main,
+html:not(.g360-ui-ready) #appMain {
+  visibility: hidden !important;
+}
+html.g360-ui-ready .content-col,
+html.g360-ui-ready main,
+html.g360-ui-ready #appMain {
+  visibility: visible !important;
+}
+/* Suaviza apenas a primeira apresentação, sem animar toda navegação */
+html.g360-ui-ready .content-col {
+  animation: g360FirstPaint .10s ease-out 1;
+}
+@keyframes g360FirstPaint {
+  from { opacity: .94; }
+  to { opacity: 1; }
+}
+</style>
+<script>
+  // Se algum erro externo impedir o bootstrap, não deixa a tela eternamente oculta.
+  setTimeout(()=>document.documentElement.classList.add('g360-ui-ready'),1800);
+</script>
+
 </head>
 <body>
 <!-- V38: only Collaborators Experience cell + RH/DP Advertencia visibility -->
@@ -2557,7 +2584,10 @@ window.addEventListener('DOMContentLoaded',()=>{
               <h2>Usuários do sistema</h2>
               <div class="g360-perm-help">Escolha um usuário para editar as permissões ou use “Simular acesso” para testar o painel como ele.</div>
             </div>
-            <button type="button" class="crud-primary" id="g360NewUserBtn">＋ Novo usuário</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+  <button type="button" class="crud-mini danger" id="g360ForceAllLoginBtn" title="Encerra as sessões atuais e exige novo login">⛔ Forçar novo login de todos</button>
+  <button type="button" class="crud-primary" id="g360NewUserBtn">＋ Novo usuário</button>
+</div>
           </div>
           <div class="table-scroll">
             <table class="g360-perm-users-table">
@@ -10742,7 +10772,7 @@ window.GESTAO360_CONFIG = {
     }catch(e){console.warn('Bootstrap admin:',e)}
   }
   async function loadAll(){if(!PROD)return;const {data:{session}}=await sb.auth.getSession();if(!session)return;await ensureFirstMaster(session);currentId=session.user.id;const [pr,up,ob]=await Promise.all([sb.from('profiles').select('id,nome,email,perfil,obra_id,ativo,master,created_at').order('nome'),sb.from('usuario_permissoes').select('*'),sb.from('obras').select('id,codigo,nome,ativa').order('codigo')]);if(pr.error)throw pr.error;if(up.error)throw up.error;if(ob.error)throw ob.error;obras=ob.data||[];users=(pr.data||[]).map(x=>({...x,obra:x.obra_id,obraNome:(obras.find(o=>o.id===x.obra_id)?.codigo||'')+' - '+(obras.find(o=>o.id===x.obra_id)?.nome||'')}));perms={};(up.data||[]).forEach(x=>{perms[x.usuario_id]=perms[x.usuario_id]||{};perms[x.usuario_id][x.modulo]={visualizar:x.pode_visualizar,criar:x.pode_criar,editar:x.pode_editar,aprovar:x.pode_aprovar,ativar:x.pode_ativar_inativar,excluir:x.pode_excluir,exportar:x.pode_exportar}});editingId=editingId&&user(editingId)?editingId:currentId;applyAccess(false)}
-  function renderUsers(){const body=document.getElementById('g360UsersBody');if(!body)return;if(!users.length){body.innerHTML='<tr><td colspan="6"><div class="empty-state">Nenhum usuário cadastrado.</div></td></tr>';return}body.innerHTML=users.map(u=>`<tr><td><b>${u.nome||u.email||'Usuário'}</b><br><span style="font-size:11px;color:var(--ink-dim)">${u.email||''}</span></td><td>${u.perfil||'USUARIO'}${u.master?' <span class="g360-perm-badge master">MESTRE</span>':''}</td><td>${u.obraNome||'Sem obra definida'}</td><td><span class="g360-perm-badge ${u.ativo?'ok':'off'}">${u.ativo?'ATIVO':'INATIVO'}</span></td><td>${u.ativo?(u.master?'Total':'Personalizado'):'Bloqueado'}</td><td class="crud-row-actions"><button type="button" class="crud-mini" data-perm-edit="${u.id}">✏️ Permissões</button><button type="button" class="crud-mini" data-user-edit="${u.id}">👤 Editar</button><button type="button" class="crud-mini" data-user-clone="${u.id}">📋 Duplicar acesso</button>${u.master?'':`<button type="button" class="crud-mini toggle" data-user-toggle="${u.id}">${u.ativo?'⏸ Inativar':'▶ Ativar'}</button>`}${u.id===currentId?'':`<button type="button" class="crud-mini danger" data-user-delete="${u.id}">🗑 Excluir</button>`}</td></tr>`).join('');body.querySelectorAll('[data-perm-edit]').forEach(b=>b.onclick=()=>{editingId=b.dataset.permEdit;renderMatrix();document.getElementById('g360PermMatrixTitle')?.scrollIntoView({behavior:'smooth',block:'center'})});body.querySelectorAll('[data-user-edit]').forEach(b=>b.onclick=()=>openUser(b.dataset.userEdit));body.querySelectorAll('[data-user-clone]').forEach(b=>b.onclick=()=>openClone(b.dataset.userClone));body.querySelectorAll('[data-user-toggle]').forEach(b=>b.onclick=()=>toggleUser(b.dataset.userToggle));body.querySelectorAll('[data-user-delete]').forEach(b=>b.onclick=()=>deleteUser(b.dataset.userDelete))}
+  function renderUsers(){const body=document.getElementById('g360UsersBody');if(!body)return;if(!users.length){body.innerHTML='<tr><td colspan="6"><div class="empty-state">Nenhum usuário cadastrado.</div></td></tr>';return}body.innerHTML=users.map(u=>`<tr><td><b>${u.nome||u.email||'Usuário'}</b><br><span style="font-size:11px;color:var(--ink-dim)">${u.email||''}</span></td><td>${u.perfil||'USUARIO'}${u.master?' <span class="g360-perm-badge master">MESTRE</span>':''}</td><td>${u.obraNome||'Sem obra definida'}</td><td><span class="g360-perm-badge ${u.ativo?'ok':'off'}">${u.ativo?'ATIVO':'INATIVO'}</span></td><td>${u.ativo?(u.master?'Total':'Personalizado'):'Bloqueado'}</td><td class="crud-row-actions"><button type="button" class="crud-mini" data-perm-edit="${u.id}">✏️ Permissões</button><button type="button" class="crud-mini" data-user-edit="${u.id}">👤 Editar</button><button type="button" class="crud-mini" data-user-clone="${u.id}">📋 Duplicar acesso</button><button type="button" class="crud-mini danger" data-user-force-login="${u.id}">⛔ Forçar login</button>${u.master?'':`<button type="button" class="crud-mini toggle" data-user-toggle="${u.id}">${u.ativo?'⏸ Inativar':'▶ Ativar'}</button>`}${u.id===currentId?'':`<button type="button" class="crud-mini danger" data-user-delete="${u.id}">🗑 Excluir</button>`}</td></tr>`).join('');body.querySelectorAll('[data-perm-edit]').forEach(b=>b.onclick=()=>{editingId=b.dataset.permEdit;renderMatrix();document.getElementById('g360PermMatrixTitle')?.scrollIntoView({behavior:'smooth',block:'center'})});body.querySelectorAll('[data-user-edit]').forEach(b=>b.onclick=()=>openUser(b.dataset.userEdit));body.querySelectorAll('[data-user-clone]').forEach(b=>b.onclick=()=>openClone(b.dataset.userClone));body.querySelectorAll('[data-user-force-login]').forEach(b=>b.onclick=()=>window.g360SessionControlV122?.forceUser?.(b.dataset.userForceLogin));body.querySelectorAll('[data-user-toggle]').forEach(b=>b.onclick=()=>toggleUser(b.dataset.userToggle));body.querySelectorAll('[data-user-delete]').forEach(b=>b.onclick=()=>deleteUser(b.dataset.userDelete))}
   function renderMatrix(){const body=document.getElementById('g360PermMatrixBody'),ttl=document.getElementById('g360PermMatrixTitle');if(!body)return;const u=user(editingId);if(!u){body.innerHTML='';if(ttl)ttl.textContent='Permissões';return}if(ttl)ttl.textContent='Permissões — '+(u.nome||u.email);const os=document.getElementById('g360PermObra');if(os){os.innerHTML='<option value="">Selecione a obra</option>'+obras.map(o=>`<option value="${o.id}">${o.codigo} - ${o.nome}</option>`).join('');os.value=u.obra_id||'';os.disabled=!!u.master;}body.innerHTML=MODULES.map(([k,label])=>{const p=perm(editingId,k);return `<tr><td class="g360-perm-module">${label}</td>${ACTIONS.map(a=>`<td><input type="checkbox" class="g360-perm-check" data-module="${k}" data-action="${a}" ${p[a]?'checked':''} ${u.master?'disabled':''}></td>`).join('')}</tr>`}).join('')}
   async function saveMatrix(){
     const u=user(editingId); if(!u)return; if(u.master)return toastPerm('Administrador Mestre mantém acesso total.');
@@ -11956,12 +11986,14 @@ window.g360FechamentoV57={
 #g360Fj57Modal.open{display:flex!important}
 </style>
 
-<script id="g360-nav-persist-v111">
+<script id="g360-nav-persist-v121">
 (function(){
   'use strict';
 
   const KEY_VIEW='g360_last_active_view_v111';
   const KEY_CTR='g360_last_contract_subview_v111';
+  let restored=false;
+  let restoring=false;
 
   function currentView(){
     const v=document.querySelector('.view.active[id^="view-"]');
@@ -11970,94 +12002,82 @@ window.g360FechamentoV57={
 
   function saveCurrent(){
     const v=currentView();
-    if(v && v!=='executivo') sessionStorage.setItem(KEY_VIEW,v);
-
+    if(v) sessionStorage.setItem(KEY_VIEW,v);
     if(v==='contratos'){
-      const sub=window.g360LastContractSubview ||
-        document.querySelector('.side-link[data-view="contratos"].active')?.dataset?.contractSubview;
+      const sub=window.g360LastContractSubview || sessionStorage.getItem(KEY_CTR);
       if(sub) sessionStorage.setItem(KEY_CTR,sub);
     }
   }
 
-  function restore(){
-    const view=sessionStorage.getItem(KEY_VIEW);
-    if(!view || view==='executivo') return;
-
+  function activateStable(view){
+    if(!view) return;
     const target=document.getElementById('view-'+view);
     if(!target) return;
 
-    if(view==='contratos'){
-      const sub=sessionStorage.getItem(KEY_CTR);
-      if(sub) window.g360LastContractSubview=sub;
-    }
-
-    if(window.g360NavV64?.activate){
-      window.g360NavV64.activate(view);
-    }else{
-      document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
-      document.querySelectorAll('.side-link[data-view]').forEach(x=>x.classList.remove('active'));
-      target.classList.add('active');
-      const link=document.querySelector('.side-link[data-view="'+CSS.escape(view)+'"]');
-      link?.classList.add('active');
-    }
-
-    // Renderiza novamente o projeto restaurado quando necessário.
+    restoring=true;
     try{
-      if(typeof RENDERERS!=='undefined' && RENDERERS[view]) RENDERERS[view]();
-    }catch(e){ console.warn('V111 restore renderer:',e); }
+      if(window.g360NavV64?.activate){
+        window.g360NavV64.activate(view);
+      }else{
+        document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+        document.querySelectorAll('.side-link[data-view]').forEach(x=>x.classList.remove('active'));
+        target.classList.add('active');
+        document.querySelector(`.side-link[data-view="${CSS.escape(view)}"]`)?.classList.add('active');
+      }
 
-    if(view==='contratos' && typeof window.g360ContratoShowView==='function'){
-      const sub=sessionStorage.getItem(KEY_CTR)||window.g360LastContractSubview||'dashboard';
-      window.g360LastContractSubview=sub;
-      window.g360ContratoShowView(sub);
+      if(view==='contratos' && typeof window.g360ContratoShowView==='function'){
+        const sub=sessionStorage.getItem(KEY_CTR)||window.g360LastContractSubview||'dashboard';
+        window.g360LastContractSubview=sub;
+        window.g360ContratoShowView(sub);
+      }
+    }finally{
+      restoring=false;
     }
   }
 
-  // Toda navegação escolhida pelo usuário passa a ser persistida.
+  function restoreOnce(){
+    if(restored || restoring) return;
+    const wanted=sessionStorage.getItem(KEY_VIEW);
+    if(wanted) activateStable(wanted);
+    restored=true;
+
+    // Só libera a interface depois da tela final estar definida.
+    requestAnimationFrame(()=>{
+      document.documentElement.classList.add('g360-ui-ready');
+    });
+  }
+
+  // Persistência de navegação.
   document.addEventListener('click',function(e){
     const link=e.target.closest?.('.side-link[data-view]');
-    if(link){
-      const view=link.dataset.view;
-      if(view){
-        sessionStorage.setItem(KEY_VIEW,view);
-        if(view==='contratos' && link.dataset.contractSubview){
-          sessionStorage.setItem(KEY_CTR,link.dataset.contractSubview);
-        }
-      }
+    if(link?.dataset?.view){
+      sessionStorage.setItem(KEY_VIEW,link.dataset.view);
+      const sub=link.dataset.contractSubview;
+      if(sub) sessionStorage.setItem(KEY_CTR,sub);
       return;
     }
-
-    // Antes de qualquer botão de ação/submit potencialmente provocar reload,
-    // registra a tela em que o usuário está.
-    const action=e.target.closest?.('button,a,[data-action],[onclick]');
-    if(action) saveCurrent();
+    if(e.target.closest?.('button,a,[data-action],[onclick]')) saveCurrent();
   },true);
 
   document.addEventListener('submit',saveCurrent,true);
   window.addEventListener('beforeunload',saveCurrent);
 
-  // Restaura após bootstrap/auth/Supabase, inclusive contra rotinas tardias
-  // que tentem voltar ao Dashboard Gerencial.
-  const delays=[0,120,350,700,1200,2000,3500];
-  function scheduleRestore(){delays.forEach(ms=>setTimeout(restore,ms));}
+  // Uma única restauração após o bootstrap inicial.
+  function boot(){
+    // pequena janela para autenticação/layout terminarem sem ficar "pulando" telas
+    setTimeout(restoreOnce,180);
+    // fallback de segurança
+    setTimeout(()=>{ if(!restored) restoreOnce(); },900);
+  }
+
   if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',scheduleRestore,{once:true});
-  }else scheduleRestore();
+    document.addEventListener('DOMContentLoaded',boot,{once:true});
+  }else{
+    boot();
+  }
 
-  // Observa trocas indevidas para executivo logo após uma ação/reload.
-  const mo=new MutationObserver(()=>{
-    const wanted=sessionStorage.getItem(KEY_VIEW);
-    if(!wanted || wanted==='executivo') return;
-    const target=document.getElementById('view-'+wanted);
-    const exec=document.getElementById('view-executivo');
-    if(target && exec?.classList.contains('active') && !target.classList.contains('active')){
-      restore();
-    }
-  });
-  const root=document.querySelector('.content-col')||document.body;
-  mo.observe(root,{subtree:true,attributes:true,attributeFilter:['class']});
-
-  window.g360NavPersistV111={saveCurrent,restore};
+  // Ao focar novamente, não troca de tela; apenas mantém o que já está ativo.
+  window.g360NavPersistV121={saveCurrent,restore:restoreOnce,activateStable};
 })();
 </script>
 
@@ -12537,7 +12557,7 @@ window.g360FechamentoV57={
     const link=e.target.closest?.('.side-link[data-view]');
     const view=link?.dataset?.view;
     if(['executivo','colaboradores','admissoes','desligamentos'].includes(view)){
-      setTimeout(()=>refresh(false),80);
+      setTimeout(()=>refresh(false),450);
     }
   },true);
 
@@ -12614,6 +12634,173 @@ window.g360FechamentoV57={
       aloj.required=true;
     }
   },true);
+})();
+</script>
+
+
+<script id="g360-session-control-v122">
+(function(){
+  'use strict';
+
+  const IDLE_MS = 3 * 60 * 1000;       // 3 minutos
+  const FORCE_POLL_MS = 10 * 1000;     // verifica derrubada a cada 10 s
+  let idleTimer = null;
+  let idleBound = false;
+  let signingOut = false;
+  let forcePolling = false;
+
+  function sb(){
+    return window.g360SupabaseClient || null;
+  }
+
+  async function hasSession(){
+    try{
+      const client=sb();
+      if(!client?.auth) return false;
+      const {data}=await client.auth.getSession();
+      return !!data?.session;
+    }catch(_){
+      return false;
+    }
+  }
+
+  async function logoutSilent(){
+    if(signingOut) return;
+    signingOut=true;
+    try{
+      const client=sb();
+      if(client?.auth){
+        try{ await client.auth.signOut({scope:'local'}); }
+        catch(_){ try{ await client.auth.signOut(); }catch(__){} }
+      }
+    }finally{
+      try{
+        sessionStorage.removeItem('g360_last_active_view_v111');
+        sessionStorage.removeItem('g360_last_contract_subview_v111');
+      }catch(_){}
+      location.reload();
+    }
+  }
+
+  function armIdle(){
+    clearTimeout(idleTimer);
+    hasSession().then(ok=>{
+      if(!ok) return;
+      idleTimer=setTimeout(logoutSilent,IDLE_MS);
+    });
+  }
+
+  function bindIdle(){
+    if(idleBound) return;
+    idleBound=true;
+    ['pointerdown','keydown','wheel','touchstart','scroll'].forEach(evt=>{
+      document.addEventListener(evt,armIdle,{passive:true,capture:true});
+    });
+    // mousemove é limitado para não gerar milhares de resets
+    let lastMove=0;
+    document.addEventListener('mousemove',()=>{
+      const now=Date.now();
+      if(now-lastMove>5000){ lastMove=now; armIdle(); }
+    },{passive:true,capture:true});
+    armIdle();
+  }
+
+  async function checkForcedLogin(){
+    if(forcePolling || signingOut) return;
+    forcePolling=true;
+    try{
+      const client=sb();
+      if(!client?.auth) return;
+
+      const {data:sess}=await client.auth.getSession();
+      const session=sess?.session;
+      if(!session?.user?.id) return;
+
+      const uid=session.user.id;
+      const lastSignInMs=Date.parse(session.user.last_sign_in_at||session.user.created_at||0) || 0;
+
+      const {data:prof,error}=await client
+        .from('profiles')
+        .select('force_reauth_at')
+        .eq('id',uid)
+        .maybeSingle();
+
+      if(error){
+        // Se o schema ainda não foi aplicado, não derruba nem trava o painel.
+        if(String(error.message||'').toLowerCase().includes('force_reauth_at')) return;
+        console.warn('[G360 V122] verificação de sessão:',error.message||error);
+        return;
+      }
+
+      const forceMs=Date.parse(prof?.force_reauth_at||0) || 0;
+      if(forceMs>lastSignInMs){
+        await logoutSilent();
+      }
+    }catch(e){
+      console.warn('[G360 V122] sessão:',e);
+    }finally{
+      forcePolling=false;
+    }
+  }
+
+  async function forceUser(userId){
+    const client=sb();
+    if(!client || !userId) return;
+    const {error}=await client.rpc('g360_forcar_relogin',{p_usuario_id:userId});
+    if(error){
+      console.error('[G360 V122] falha ao forçar login:',error);
+      return;
+    }
+    // Se o administrador derrubou a própria sessão, sai imediatamente.
+    try{
+      const {data}=await client.auth.getUser();
+      if(String(data?.user?.id||'')===String(userId)) await logoutSilent();
+    }catch(_){}
+  }
+
+  async function forceAll(){
+    const client=sb();
+    if(!client) return;
+    const {error}=await client.rpc('g360_forcar_relogin',{p_usuario_id:null});
+    if(error){
+      console.error('[G360 V122] falha ao forçar login de todos:',error);
+      return;
+    }
+    // A ação global inclui quem executou.
+    await logoutSilent();
+  }
+
+  function wireAdminButton(){
+    const b=document.getElementById('g360ForceAllLoginBtn');
+    if(b && !b.dataset.g360Bound){
+      b.dataset.g360Bound='1';
+      b.addEventListener('click',forceAll);
+    }
+  }
+
+  function boot(){
+    bindIdle();
+    wireAdminButton();
+    checkForcedLogin();
+    setInterval(checkForcedLogin,FORCE_POLL_MS);
+
+    const mo=new MutationObserver(wireAdminButton);
+    mo.observe(document.body,{subtree:true,childList:true});
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',boot,{once:true});
+  }else{
+    boot();
+  }
+
+  window.g360SessionControlV122={
+    logout:logoutSilent,
+    forceUser,
+    forceAll,
+    check:checkForcedLogin,
+    resetIdle:armIdle
+  };
 })();
 </script>
 
