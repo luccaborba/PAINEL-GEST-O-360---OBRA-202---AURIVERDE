@@ -10031,7 +10031,7 @@ window.GESTAO360_CONFIG = {
   }
   const defs={
     cargosSalarios:{title:'Cargos e Salários',table:'cargos_salarios',order:'funcao',fields:[['funcao','Função / Cargo','span2'],['nivel','Nível'],['salario','Salário','number'],['ativo','Ativo','','ativo-cargo']],cols:['funcao','nivel','salario','ativo']},
-    funcionarios:{title:'Funcionários',table:'funcionarios',order:'nome',fields:[['matricula','Matrícula'],['cpf','CPF'],['nome','Nome','span2'],['tipo_contrato','Tipo contrato'],['admissao','Admissão','date'],['venc_aso','Venc. ASO (pode informar depois)','date'],['depto','Setor','','setor-cadastro'],['setor_equipe','Setor / Equipe','','setor-equipe-master-base'],['funcao','Função / Cargo','span2','funcao-cadastro'],['nivel','Nível','','nivel-cadastro'],['status','Status','','status-func'],['obra','Obra','span2','obra-cadastro'],['jornada_tipo','Jornada / Escala','','jornada-select'],['horario_entrada','Entrada','','time'],['horario_saida','Saída','','time'],['intervalo_inicio','Início do intervalo','','time'],['intervalo_fim','Fim do intervalo','','time'],['jornada_observacao','Detalhes da jornada','span2'],['cnh','CNH'],['cat_cnh','Cat. CNH'],['venc_cnh','Venc. CNH','date'],['salario','Salário','','salario-cadastro'],['gratificacao','Gratificação','number'],['cidade','Cidade de origem / baixada'],['distancia_baixada_km','Distância da obra (km)','number'],['ult_baixada','Últ. baixada','date'],['prox_baixada','Próx. baixada','date'],['periodicidade_baixada','Periodicidade'],['custo_baixada','Custo baixada (opcional)','number'],['vt','VT','number'],['beneficios','Benefícios','number'],['usa_aloj','Usa alojamento?','','usa-aloj'],['alojamento','Alojamento','span2','aloj-select']],cols:['matricula','nome','funcao','setor_equipe','status']},
+    funcionarios:{title:'Funcionários',table:'funcionarios',order:'nome',fields:[['matricula','Matrícula'],['cpf','CPF'],['nome','Nome','span2'],['tipo_contrato','Tipo contrato'],['admissao','Admissão','date'],['venc_aso','Venc. ASO (pode informar depois)','date'],['depto','Setor','','setor-cadastro'],['setor_equipe','Setor / Equipe','','setor-equipe-master-base'],['funcao','Função / Cargo','span2','funcao-cadastro'],['nivel','Nível','','nivel-cadastro'],['status','Status','','status-func'],['obra','Obra','span2','obra-cadastro'],['jornada_tipo','Jornada / Escala','','jornada-select'],['horario_entrada','Entrada','','time'],['horario_saida','Saída','','time'],['intervalo_inicio','Início do intervalo','','time'],['intervalo_fim','Fim do intervalo','','time'],['jornada_observacao','Detalhes da jornada','span2'],['cnh','CNH'],['cat_cnh','Cat. CNH'],['venc_cnh','Venc. CNH','date'],['salario','Salário','','salario-cadastro'],['gratificacao','Gratificação','number'],['cidade','Cidade de origem / baixada'],['distancia_baixada_km','Distância da obra (km)','number'],['ult_baixada','Últ. baixada','date'],['prox_baixada','Próx. baixada','date'],['periodicidade_baixada','Ciclo de baixada','','periodicidade-baixada'],['custo_baixada','Custo baixada (opcional)','number'],['vt','VT (opcional)','number'],['beneficios','Benefícios','number'],['usa_aloj','Usa alojamento?','','usa-aloj'],['alojamento','Alojamento','span2','aloj-select']],cols:['matricula','nome','funcao','setor_equipe','status']},
     contratos:{title:'Contratos',table:'contratos',order:'codigo',fields:[['codigo','Contrato'],['fornecedor','Fornecedor','span2'],['tipo','Tipo','span2'],['objeto','Objeto','span4','textarea'],['valor_contratado','Valor contratado','number'],['valor_mensal','Valor mensal','number'],['data_inicio','Início','date'],['data_fim','Fim','date'],['situacao','Situação'],['fechamento','Fechamento'],['justificativa','Justificativa','span2']],cols:['codigo','fornecedor','tipo','situacao','valor_contratado']},
     alojamentos:{title:'Alojamentos',table:'alojamentos',order:'descricao',fields:[['contrato_codigo','Contrato de locação'],['descricao','Descrição','span2'],['fornecedor','Fornecedor / Locador','span2'],['endereco','Endereço completo','span4','textarea'],['contrato_agua','Contrato de Água','span2','contrato-servico:A'],['contrato_energia','Contrato de Energia','span2','contrato-servico:E'],['contrato_internet','Contrato de Internet','span2','contrato-servico:I'],['valor_mensal','Valor mensal','number'],['capacidade','Capacidade','number'],['ocupados','Ocupados','number'],['custo_rateado','Rateio por ocupante','number-readonly'],['status','Status']],cols:['contrato_codigo','descricao','endereco','contrato_agua','contrato_energia','contrato_internet','capacidade','status']},
     patrimonio:{title:'Inventário de Patrimônio',table:'patrimonio_itens',order:'descricao',fields:[['codigo_patrimonio','Nº Patrimônio'],['tag','Tag'],['descricao','Descrição','span2'],['categoria','Categoria'],['marca','Marca'],['modelo','Modelo'],['numero_serie','Nº de série'],['alojamento_codigo','Alojamento','span2','aloj-select'],['comodo','Cômodo'],['quantidade','Quantidade','number'],['valor_unitario','Valor unitário','number'],['data_aquisicao','Data aquisição','date'],['estado_conservacao','Estado conservação'],['status','Status'],['responsavel','Responsável','span2'],['origem','Origem / fornecedor','span2'],['observacao','Observação','span4','textarea']],cols:['codigo_patrimonio','descricao','categoria','alojamento_codigo','comodo','estado_conservacao','status']},
@@ -10086,8 +10086,19 @@ window.GESTAO360_CONFIG = {
     if(t==='nivel-cadastro')return `<label class="${c}">${label} *<select name="${name}" required data-current="${esc(v??'')}"><option value="">Selecione o nível</option></select></label>`;
     if(t==='salario-cadastro')return `<label class="${c}">${label} *<input name="${name}" type="number" step="0.01" min="0" value="${esc(v??'')}" required></label>`;
     if(t==='ativo-cargo'){const cur=String(v??'true').toLowerCase();return `<label class="${c}">${label}<select name="${name}"><option value="true" ${cur!=='false'?'selected':''}>ATIVO</option><option value="false" ${cur==='false'?'selected':''}>INATIVO</option></select></label>`;}
+    if(t==='periodicidade-baixada'){
+      const cur=String(v??'').trim().toUpperCase();
+      const rows=(ctx.periodicidadesBaixada||[]).filter(x=>x.ativo!==false);
+      const opts=rows.map(x=>{
+        const codigo=String(x.codigo||x.periodicidade||'').trim();
+        const meses=Number(x.meses||0);
+        const txt=meses?`${codigo} — ${meses} ${meses===1?'mês':'meses'}`:codigo;
+        return `<option value="${esc(codigo)}" ${codigo.toUpperCase()===cur?'selected':''}>${esc(txt)}</option>`;
+      }).join('');
+      return `<label class="${c}">${label}<select name="${name}"><option value="">Selecione o ciclo</option>${opts}</select><small style="display:block;color:#777;margin-top:4px;text-transform:none">Cadastro mestre do Supabase (ex.: 2x2, 3x3, 6x6).</small></label>`;
+    }
     if(t==='usa-aloj'){const cur=String(v??'').toUpperCase();return `<label class="${c}">${label} *<select name="${name}" required><option value="">Selecione</option><option value="S" ${cur==='S'?'selected':''}>SIM</option><option value="N" ${cur==='N'?'selected':''}>NÃO</option></select></label>`;}
-    if(t==='textarea')return `<label class="${c}">${label}<textarea name="${name}">${esc(v)}</textarea></label>`;if(t==='aloj-select'){const opts=(ctx.alojamentos||[]).map(a=>{const val=a.contrato_codigo||a.contrato||a.descricao||'';const txt=[a.descricao,a.fornecedor,a.contrato_codigo||a.contrato].filter(Boolean).join(' · ');return `<option value="${esc(val)}" ${String(val)===String(v??'')?'selected':''}>${esc(txt)}</option>`}).join('');const vazio=name==='alojamento_codigo'?'Sem alojamento / não vinculado':'Não utiliza alojamento';return `<label class="${c}">${label}<select name="${name}"><option value="">${vazio}</option>${opts}</select><small style="display:block;color:#777;margin-top:4px;text-transform:none">Lista baseada nos alojamentos cadastrados.</small></label>`}if(String(t).startsWith('contrato-servico:')){const suf=String(t).split(':')[1];const rx=new RegExp('^CTS/C\\d+-2026'+suf+'$','i');const opts=(ctx.contratos||[]).filter(x=>rx.test(String(x.codigo||x.contrato||''))).sort((a,b)=>String(a.codigo||a.contrato||'').localeCompare(String(b.codigo||b.contrato||''),'pt-BR',{numeric:true})).map(x=>{const val=x.codigo||x.contrato||'';const txt=[val,x.fornecedor].filter(Boolean).join(' · ');return `<option value="${esc(val)}" ${String(val)===String(v??'')?'selected':''}>${esc(txt)}</option>`}).join('');return `<label class="${c}">${label}<select name="${name}"><option value="">Não informado</option>${opts}</select><small style="display:block;color:#777;margin-top:4px;text-transform:none">Somente contratos CTS/C…-2026${suf}.</small></label>`}if(t==='status-func'){const vals=['ATIVO','INATIVO','DESLIGADO','FÉRIAS','AFASTADO','SUSPENSO','ABANDONO'];const opts=vals.map(x=>`<option value="${esc(x)}" ${String(x)===String(v||'ATIVO').toUpperCase()?'selected':''}>${esc(x)}</option>`).join('');return `<label class="${c}">${label}<select name="${name}">${opts}</select></label>`;}if(t==='number-readonly')return `<label class="${c}">${label}<input name="${name}" type="number" step="any" value="${esc(v??'')}" readonly><small style="display:block;color:#777;margin-top:4px;text-transform:none">Calculado: valor do aluguel ÷ ocupação.</small></label>`;return `<label class="${c}">${label}<input name="${name}" type="${['date','number'].includes(t)?t:'text'}" ${t==='number'?'step="any"':''} value="${esc(v??'')}"></label>`}
+    if(t==='textarea')return `<label class="${c}">${label}<textarea name="${name}">${esc(v)}</textarea></label>`;if(t==='aloj-select'){const current=String(v??'');const opts=(ctx.alojamentos||[]).map(a=>{const val=a.contrato_codigo||a.contrato||a.descricao||'';const cap=Number(a.capacidade||0),ocu=Number(a.ocupados||0),full=cap>0&&ocu>=cap&&String(val)!==current;const txt=[a.descricao,a.fornecedor,a.contrato_codigo||a.contrato].filter(Boolean).join(' · ')+(cap>0?` · ${ocu}/${cap} vagas${full?' · LOTADO':''}`:'');return `<option value="${esc(val)}" ${String(val)===current?'selected':''} ${full?'disabled':''}>${esc(txt)}</option>`}).join('');const vazio=name==='alojamento_codigo'?'Sem alojamento / não vinculado':'Não utiliza alojamento';return `<label class="${c}">${label}<select name="${name}"><option value="">${vazio}</option>${opts}</select><small style="display:block;color:#777;margin-top:4px;text-transform:none">Alojamentos lotados ficam indisponíveis. A capacidade é validada novamente no Supabase ao salvar.</small></label>`}if(String(t).startsWith('contrato-servico:')){const suf=String(t).split(':')[1];const rx=new RegExp('^CTS/C\\d+-2026'+suf+'$','i');const opts=(ctx.contratos||[]).filter(x=>rx.test(String(x.codigo||x.contrato||''))).sort((a,b)=>String(a.codigo||a.contrato||'').localeCompare(String(b.codigo||b.contrato||''),'pt-BR',{numeric:true})).map(x=>{const val=x.codigo||x.contrato||'';const txt=[val,x.fornecedor].filter(Boolean).join(' · ');return `<option value="${esc(val)}" ${String(val)===String(v??'')?'selected':''}>${esc(txt)}</option>`}).join('');return `<label class="${c}">${label}<select name="${name}"><option value="">Não informado</option>${opts}</select><small style="display:block;color:#777;margin-top:4px;text-transform:none">Somente contratos CTS/C…-2026${suf}.</small></label>`}if(t==='status-func'){const vals=['ATIVO','INATIVO','DESLIGADO','FÉRIAS','AFASTADO','SUSPENSO','ABANDONO'];const opts=vals.map(x=>`<option value="${esc(x)}" ${String(x)===String(v||'ATIVO').toUpperCase()?'selected':''}>${esc(x)}</option>`).join('');return `<label class="${c}">${label}<select name="${name}">${opts}</select></label>`;}if(t==='number-readonly')return `<label class="${c}">${label}<input name="${name}" type="number" step="any" value="${esc(v??'')}" readonly><small style="display:block;color:#777;margin-top:4px;text-transform:none">Calculado: valor do aluguel ÷ ocupação.</small></label>`;return `<label class="${c}">${label}<input name="${name}" type="${['date','number'].includes(t)?t:'text'}" ${t==='number'?'step="any"':''} value="${esc(v??'')}"></label>`}
   async function recalcAlojamentoRateios(){
     try{
       const [fr,ar]=await Promise.all([sb.from('funcionarios').select('status,usa_aloj,alojamento'),sb.from('alojamentos').select('id,contrato_codigo,valor_mensal')]);
@@ -10135,7 +10146,7 @@ window.GESTAO360_CONFIG = {
         }
       }catch(ex){console.error('Checklist de desligamento:',ex);}
     }
-    let alojamentosCadastro=[], contratosCadastro=[], cargosCadastro=[], setoresCadastro=[], equipesMasterCadastro=[], setoresEquipeCadastro=[], obrasPermitidasCadastro=[];
+    let alojamentosCadastro=[], contratosCadastro=[], cargosCadastro=[], setoresCadastro=[], equipesMasterCadastro=[], setoresEquipeCadastro=[], obrasPermitidasCadastro=[], periodicidadesBaixadaCadastro=[];
     if(kind==='funcionarios'||kind==='patrimonio'){const ar=await sb.from('alojamentos').select('*').order('descricao');alojamentosCadastro=ar.data||[];}
     if(kind==='funcionarios'){
       const auth=await sb.auth.getUser();
@@ -10168,10 +10179,11 @@ window.GESTAO360_CONFIG = {
         return;
       }
       const ids=obrasPermitidasCadastro.map(o=>o.id);
-      const [cg,rs,re]=await Promise.all([
+      const [cg,rs,re,rp]=await Promise.all([
         sb.from('cargos_salarios').select('*'),
         sb.from('rh_setores').select('*').in('obra_id',ids).order('nome'),
-        sb.from('rh_equipes_master').select('*').in('obra_id',ids).order('nome')
+        sb.from('rh_equipes_master').select('*').in('obra_id',ids).order('nome'),
+        sb.from('rh_periodicidades_baixada').select('id,codigo,meses,ativo').order('meses')
       ]);
       if(cg.error)console.warn('Cadastro de funções/salários:',cg.error.message);else cargosCadastro=cg.data||[];
       if(rs.error||re.error){
@@ -10180,6 +10192,7 @@ window.GESTAO360_CONFIG = {
         return;
       }
       setoresCadastro=rs.data||[];equipesMasterCadastro=re.data||[];setoresEquipeCadastro=[];
+      if(rp.error){console.warn('Cadastro de periodicidades de baixada:',rp.error.message);periodicidadesBaixadaCadastro=[];}else periodicidadesBaixadaCadastro=rp.data||[];
     }
     if(kind==='alojamentos'){const cr=await sb.from('contratos').select('codigo,fornecedor').order('codigo');contratosCadastro=cr.data||[];}
     const listHtml=edit?'':`<table class="g360-list"><thead><tr>${d.cols.map(c=>`<th>${c}</th>`).join('')}<th>Ações</th></tr></thead><tbody>${(data||[]).map(r=>`<tr>${d.cols.map(c=>`<td>${esc(r[c])}</td>`).join('')}<td class="g360-actions"><button class="g360-btn sec" data-edit="${r.id}">Editar</button><button class="g360-btn danger" data-del="${r.id}">Excluir</button></td></tr>`).join('')}</tbody></table>`;
@@ -10193,7 +10206,7 @@ window.GESTAO360_CONFIG = {
       <div class="deslig-list">${desligItens.length?desligItens.map((x,i)=>`<label class="deslig-item"><input type="checkbox" class="deslig-check" data-idx="${i}"><span><b>${esc(x.fonte)} — ${esc(x.descricao)}</b><small>${esc(x.codigo||'Sem código')} · Qtd. ${esc(x.quantidade)}</small></span><input type="date" class="deslig-date" data-idx="${i}" aria-label="Data de devolução"><input type="text" class="deslig-obs" data-idx="${i}" placeholder="Observação (opcional)" value="${esc(x.obs||'')}"></label>`).join(''):'<div class="deslig-empty">Nenhum EPI ou equipamento pendente encontrado nos termos deste colaborador.</div>'}</div>
       ${desligItens.length?'<div class="deslig-alert">Para concluir o desligamento, todos os itens pendentes precisam ser conferidos e marcados como devolvidos.</div>':''}
     </section>`:'';
-    g360Content.innerHTML=`<form id="g360Form" class="g360-grid">${kind==='funcionarios'?'<div class="span4" style="padding:9px 11px;border-left:3px solid #f5c518;background:#202226;color:#bbb;font-size:11px"><b style="color:#eee">Campos obrigatórios:</b> dados cadastrais, Setor, Setor/Equipe, função e jornada. <b>Vencimento do ASO pode ser informado depois.</b> CNH é opcional quando o colaborador não possui. Demissão é preenchida somente no desligamento. Função e nível vêm do cadastro de Cargos e Salários. O salário-base é sugerido pelo Supabase, mas pode ser ajustado no colaborador. Gratificação inicia em R$ 0,00. Benefícios inicia em R$ 230,00 e pode ser alterado.</div>':''}${d.fields.map(f=>fieldHTML(f,current?.[f[0]],{alojamentos:alojamentosCadastro,contratos:contratosCadastro,cargos:cargosCadastro,setores:setoresCadastro,equipesMaster:equipesMasterCadastro,obrasPermitidas:obrasPermitidasCadastro,current:current||{}})).join('')}${desligHtml}<div class="span4"><button class="g360-btn" type="submit">${edit?'Salvar alterações':'Incluir registro'}</button> ${edit?'<button type="button" class="g360-btn sec" id="g360CancelEdit">Cancelar edição</button>':''}</div></form>${listHtml}`;
+    g360Content.innerHTML=`<form id="g360Form" class="g360-grid">${kind==='funcionarios'?'<div class="span4" style="padding:9px 11px;border-left:3px solid #f5c518;background:#202226;color:#bbb;font-size:11px"><b style="color:#eee">Campos obrigatórios:</b> dados cadastrais, Setor, Setor/Equipe, função e jornada. <b>Vencimento do ASO e datas de baixada podem ser informados depois.</b> O ciclo de baixada é opcional no cadastro inicial e vem do cadastro mestre do Supabase. CNH é opcional quando o colaborador não possui. Demissão é preenchida somente no desligamento. Função e nível vêm do cadastro de Cargos e Salários. O salário-base é sugerido pelo Supabase, mas pode ser ajustado no colaborador. Gratificação inicia em R$ 0,00. Benefícios inicia em R$ 230,00 e pode ser alterado.</div>':''}${d.fields.map(f=>fieldHTML(f,current?.[f[0]],{alojamentos:alojamentosCadastro,contratos:contratosCadastro,cargos:cargosCadastro,setores:setoresCadastro,equipesMaster:equipesMasterCadastro,obrasPermitidas:obrasPermitidasCadastro,periodicidadesBaixada:periodicidadesBaixadaCadastro,current:current||{}})).join('')}${desligHtml}<div class="span4"><button class="g360-btn" type="submit">${edit?'Salvar alterações':'Incluir registro'}</button> ${edit?'<button type="button" class="g360-btn sec" id="g360CancelEdit">Cancelar edição</button>':''}</div></form>${listHtml}`;
     if(kind==='funcionarios'&&opts?.fromAdmission){
       const n=document.createElement('div');
       n.className='crud-pro-note';
@@ -10204,7 +10217,7 @@ window.GESTAO360_CONFIG = {
     if(kind==='funcionarios'){
       const st=g360Form.elements.status, box=document.getElementById('g360DesligamentoBox'), dem=document.getElementById('g360Demissao');
       // V23 — Cadastro de colaboradores: campos obrigatórios + regras condicionais.
-      const optionalAlways=new Set(['venc_aso','cnh','cat_cnh','venc_cnh','custo_baixada','horario_entrada','horario_saida','intervalo_inicio','intervalo_fim','jornada_observacao']);
+      const optionalAlways=new Set(['venc_aso','cnh','cat_cnh','venc_cnh','ult_baixada','prox_baixada','periodicidade_baixada','custo_baixada','vt','horario_entrada','horario_saida','intervalo_inicio','intervalo_fim','jornada_observacao']);
       d.fields.forEach(f=>{const el=g360Form.elements[f[0]];if(el&&!optionalAlways.has(f[0]))el.required=true;});
       const obraEl=g360Form.elements.obra,setorEl=g360Form.elements.depto,setorEquipeEl=g360Form.elements.setor_equipe;
       const allSetorOpts=setorEl?[...setorEl.options].map(o=>({value:o.value,text:o.textContent,id:o.dataset.id||'',obraId:o.dataset.obraId||''})):[];
@@ -10247,7 +10260,7 @@ window.GESTAO360_CONFIG = {
         if(only)obraEl.value=only.value;
       }
       rebuildSetor();
-      const grat=g360Form.elements.gratificacao;if(grat&&(grat.value===''||grat.value==null))grat.value='0';const ben=g360Form.elements.beneficios;if(ben&&(ben.value===''||ben.value==null))ben.value='230';
+      const grat=g360Form.elements.gratificacao;if(grat&&(grat.value===''||grat.value==null))grat.value='0';const ben=g360Form.elements.beneficios;if(ben&&(ben.value===''||ben.value==null))ben.value='230';const vtEl=g360Form.elements.vt;if(vtEl){vtEl.required=false;vtEl.removeAttribute('required');}
       const funcSel=g360Form.elements.funcao,nivelEl=g360Form.elements.nivel,salEl=g360Form.elements.salario;
       const cargoRows=cargosCadastro||[];
       const cargoVal=(r,keys)=>{for(const k of keys){if(r&&r[k]!=null&&String(r[k]).trim()!=='')return r[k]}return null};
@@ -10293,11 +10306,30 @@ window.GESTAO360_CONFIG = {
     g360Form.onsubmit=async e=>{e.preventDefault();if(!g360Form.checkValidity()){g360Form.reportValidity();return;}const fd=new FormData(e.target),obj={};d.fields.forEach(f=>{let v=fd.get(f[0]);if(v==='')v=null;if((f[2]==='number'||f[3]==='number'||f[2]==='number-readonly'||f[3]==='number-readonly'||f[3]==='salario-cadastro')&&v!==null)v=Number(v);obj[f[0]]=v});
       if(kind==='funcionarios'){
         const labels=Object.fromEntries(d.fields.map(f=>[f[0],f[1]]));
-        const opcionais=new Set(['venc_aso','cnh','cat_cnh','venc_cnh','custo_baixada','horario_entrada','horario_saida','intervalo_inicio','intervalo_fim','jornada_observacao']);
+        const opcionais=new Set(['venc_aso','cnh','cat_cnh','venc_cnh','ult_baixada','prox_baixada','periodicidade_baixada','custo_baixada','vt','horario_entrada','horario_saida','intervalo_inicio','intervalo_fim','jornada_observacao']);
         for(const f of d.fields){const k=f[0];if(opcionais.has(k))continue;const v=obj[k];if(v===null||v===undefined||String(v).trim()===''){alert('Preencha o campo obrigatório: '+labels[k]+'.');g360Form.elements[k]?.focus();return;}}
         if(obj.cnh){if(!obj.cat_cnh){alert('Como a CNH foi informada, preencha a categoria da CNH.');g360Form.elements.cat_cnh?.focus();return;}if(!obj.venc_cnh){alert('Como a CNH foi informada, preencha o vencimento da CNH.');g360Form.elements.venc_cnh?.focus();return;}}
         else {obj.cat_cnh=null;obj.venc_cnh=null;}
         if(String(obj.usa_aloj||'').toUpperCase()==='S'&&!obj.alojamento){alert('Selecione o alojamento do colaborador.');g360Form.elements.alojamento?.focus();return;}
+        if(String(obj.usa_aloj||'').toUpperCase()==='S'&&obj.alojamento){
+          const [alojCap,ocupRes]=await Promise.all([
+            sb.from('alojamentos').select('id,contrato_codigo,descricao,capacidade').eq('contrato_codigo',obj.alojamento).maybeSingle(),
+            sb.from('funcionarios').select('id,status,usa_aloj,alojamento').eq('alojamento',obj.alojamento)
+          ]);
+          if(alojCap.error){alert('Não foi possível validar a capacidade do alojamento: '+alojCap.error.message);return;}
+          if(ocupRes.error){alert('Não foi possível validar a ocupação do alojamento: '+ocupRes.error.message);return;}
+          const capacidade=Number(alojCap.data?.capacidade||0);
+          if(capacidade<=0){alert('Este alojamento não possui capacidade válida cadastrada. Atualize a capacidade antes de incluir o colaborador.');g360Form.elements.alojamento?.focus();return;}
+          const bloqueados=new Set(['DESLIGADO','INATIVO','ABANDONO']);
+          const ocupantes=(ocupRes.data||[]).filter(r=>String(r.usa_aloj||'').toUpperCase()==='S'&&!bloqueados.has(String(r.status||'').toUpperCase())&&(!edit||String(r.id)!==String(edit.id)));
+          const novoOcupa=!bloqueados.has(String(obj.status||'').toUpperCase());
+          const projetado=ocupantes.length+(novoOcupa?1:0);
+          if(projetado>capacidade){
+            const nomeAloj=alojCap.data?.descricao||obj.alojamento;
+            alert(`Alojamento lotado: ${nomeAloj}. Capacidade: ${capacidade} vaga(s). Ocupação atual: ${ocupantes.length}. Não é permitido ultrapassar a capacidade cadastrada.`);
+            g360Form.elements.alojamento?.focus();return;
+          }
+        }
         if(String(obj.usa_aloj||'').toUpperCase()!=='S')obj.alojamento=null;
         if(obj.gratificacao==null||obj.gratificacao==='')obj.gratificacao=0;if(obj.beneficios==null||obj.beneficios==='')obj.beneficios=230;
         const obraSel=g360Form.elements.obra,setorSel=g360Form.elements.depto,setorEquipeSel=g360Form.elements.setor_equipe;
@@ -10403,7 +10435,7 @@ window.GESTAO360_CONFIG = {
         });
       }
     }catch(e){console.error('Falha ao iniciar Painel Gerencial:',e);}
-    addToolbar('view-base','funcionarios','Gerenciar funcionários'); addToolbar('view-contratos','contratos','Gerenciar contratos'); addToolbar('view-alojamento','alojamentos','Gerenciar alojamentos');
+    addToolbar('view-contratos','contratos','Gerenciar contratos'); addToolbar('view-alojamento','alojamentos','Gerenciar alojamentos');
     bindPatrimonio(); try{await loadPatrimonio()}catch(e){console.error(e);toast('Falha ao carregar patrimônio: '+e.message)}
   })();
 })();
@@ -10496,7 +10528,7 @@ window.GESTAO360_CONFIG = {
   window.g360CrudToggle=(kind,key)=>{key=decodeURIComponent(key);const c=cfg[kind],rows=load(kind),i=rows.findIndex(r=>String(r[c.key])===String(key));if(i<0)return;if(kind==='funcionarios')rows[i].status=String(rows[i].status||'').toUpperCase()==='ATIVO'?'INATIVO':'ATIVO';if(kind==='contratos')rows[i].situacao=String(rows[i].situacao||'').toUpperCase()==='INATIVO'?'ATIVO':'INATIVO';if(kind==='alojamentos')rows[i].ativo=rows[i].ativo===false?true:false;save(kind,rows);location.reload()};
   window.g360CrudDelete=(kind,key)=>{key=decodeURIComponent(key);const c=cfg[kind];if(!confirm(`Excluir definitivamente este ${c.label.toLowerCase()} da prévia?`))return;const rows=load(kind).filter(r=>String(r[c.key])!==String(key));save(kind,rows);location.reload()};
   function bar(viewId,kind,label){const v=document.getElementById(viewId);if(!v||v.querySelector('.crud-mainbar'))return;v.insertAdjacentHTML('afterbegin',`<div class="crud-mainbar"><button type="button" class="crud-primary">＋ Novo ${label}</button></div>`);v.querySelector('.crud-primary').onclick=()=>open(kind,null)}
-  bar('view-base','funcionarios','colaborador');bar('view-alojamento','alojamentos','alojamento');
+  bar('view-alojamento','alojamentos','alojamento');
 })();
 </script>
 <script>
@@ -11070,12 +11102,6 @@ window.GESTAO360_CONFIG = {
   else restore();
 })();
 </script>
-<div id="g360V53Modal" aria-hidden="true">
-  <div id="g360V53Box">
-    <div id="g360V53Head"><h2 id="g360V53Title">Fechamento de Praça</h2><button type="button" class="crud-mini" id="g360V53Close">✕ Fechar</button></div>
-    <div id="g360V53Body"></div>
-  </div>
-</div>
 
 <style id="g360-fechamento-v57-style">
 #g360Fj57Modal{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:2147483600;display:none;align-items:flex-start;justify-content:center;padding:24px 14px;overflow:auto}
