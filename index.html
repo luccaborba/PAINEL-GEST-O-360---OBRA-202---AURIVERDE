@@ -9907,7 +9907,7 @@ window.GESTAO360_CONFIG = {
     return;
   }
   const snakeToColab=r=>({
-    id:r.id,mat:r.matricula,nome:r.nome,cpf:r.cpf||null,tipoContrato:r.tipo_contrato,admissao:r.admissao,demissao:(r.demissao||r.data_demissao||r['demissão']||null),vencAso:r.venc_aso,depto:r.depto,equipe:r.equipe,funcao:r.funcao,nivel:r.nivel,status:r.status,obra:r.obra,setorEquipe:r.setor_equipe,setorId:r.setor_id,equipeMasterId:r.equipe_master_id,setorEquipeId:r.setor_equipe_id,jornadaTipo:r.jornada_tipo,horarioEntrada:r.horario_entrada,horarioSaida:r.horario_saida,intervaloInicio:r.intervalo_inicio,intervaloFim:r.intervalo_fim,jornadaObservacao:r.jornada_observacao,cnh:r.cnh,catCnh:r.cat_cnh,vencCnh:r.venc_cnh,salario:Number(r.salario||0)||null,gratificacao:Number(r.gratificacao||0)||null,cidade:r.cidade,distanciaBaixadaKm:r.distancia_baixada_km==null?null:Number(r.distancia_baixada_km),ultBaixada:r.ult_baixada,proxBaixada:r.prox_baixada,periodicidadeBaixada:r.periodicidade_baixada,custoBaixada:Number(r.custo_baixada||0)||null,motivoDeslig:r.motivo_deslig,tipoDeslig:r.tipo_deslig,acidente:r.acidente,dataAcidente:r.data_acidente,catEmitida:r.cat_emitida,diasAfastado:Number(r.dias_afastado||0),tipoAfastamento:r.tipo_afastamento,vt:Number(r.vt||0)||null,beneficios:Number(r.beneficios||0)||null,usaAloj:r.usa_aloj,alojamento:r.alojamento,custoAloj:Number(r.custo_aloj||0)||null,obra_id:r.obra_id
+    id:r.id,mat:r.matricula,nome:r.nome,cpf:r.cpf||null,tipoContrato:r.tipo_contrato,admissao:r.admissao,demissao:(r.demissao||r.data_demissao||r['demissão']||null),vencAso:r.venc_aso,depto:r.depto,equipe:r.equipe,funcao:r.funcao,nivel:r.nivel,status:r.status,obra:r.obra,setorEquipe:r.setor_equipe,setorId:r.setor_id,equipeMasterId:r.equipe_master_id,setorEquipeId:r.setor_equipe_id,jornadaTipo:r.jornada_tipo,horarioEntrada:r.horario_entrada,horarioSaida:r.horario_saida,intervaloInicio:r.intervalo_inicio,intervaloFim:r.intervalo_fim,jornadaObservacao:r.jornada_observacao,cnh:r.cnh,catCnh:r.cat_cnh,vencCnh:r.venc_cnh,salario:Number(r.salario||0)||null,gratificacao:Number(r.gratificacao||0)||null,cidade:r.cidade,distanciaBaixadaKm:r.distancia_baixada_km==null?null:Number(r.distancia_baixada_km),ultBaixada:r.ult_baixada,proxBaixada:r.prox_baixada,direitoBaixada:r.direito_baixada===true,periodicidadeBaixada:r.periodicidade_baixada,custoBaixada:Number(r.custo_baixada||0)||null,motivoDeslig:r.motivo_deslig,tipoDeslig:r.tipo_deslig,acidente:r.acidente,dataAcidente:r.data_acidente,catEmitida:r.cat_emitida,diasAfastado:Number(r.dias_afastado||0),tipoAfastamento:r.tipo_afastamento,vt:Number(r.vt||0)||null,beneficios:Number(r.beneficios||0)||null,usaAloj:r.usa_aloj,alojamento:r.alojamento,custoAloj:Number(r.custo_aloj||0)||null,obra_id:r.obra_id
   });
   const mapContrato=r=>({contrato:r.codigo,fornecedor:r.fornecedor,tipo:r.tipo,objeto:r.objeto,contratado:Number(r.valor_atualizado??r.valor_contratado??0),medido:Number(r.total_medido??0),saldo:Number(r.saldo_disponivel??0),vrMensal:r.valor_mensal==null?null:Number(r.valor_mensal),dataInicio:r.data_inicio,dataFim:r.vigencia_atualizada??r.data_fim,situacao:r.situacao,fechamento:r.fechamento,justificativa:r.justificativa,obra_id:r.obra_id});
   const mapAloj=r=>({id:r.id,contrato:r.contrato_codigo,fornecedor:r.fornecedor,descricao:r.descricao,endereco:r.endereco||'',contratoAgua:r.contrato_agua||'',contratoEnergia:r.contrato_energia||'',contratoInternet:r.contrato_internet||'',valor:Number(r.valor_mensal||0),capacidade:Number(r.capacidade||0),ocupados:Number(r.ocupados||0),custoRateado:Number(r.custo_rateado||0),status:r.status,ativo:String(r.status||'ATIVO').toUpperCase()!=='INATIVO',obra_id:r.obra_id});
@@ -10051,7 +10051,7 @@ window.GESTAO360_CONFIG = {
   }
   const defs={
     cargosSalarios:{title:'Cargos e Salários',table:'cargos_salarios',order:'funcao',fields:[['funcao','Função / Cargo','span2'],['nivel','Nível'],['salario','Salário','number'],['ativo','Ativo','','ativo-cargo']],cols:['funcao','nivel','salario','ativo']},
-    funcionarios:{title:'Funcionários',table:'funcionarios',order:'nome',fields:[['matricula','Matrícula'],['cpf','CPF'],['nome','Nome','span2'],['tipo_contrato','Tipo contrato'],['admissao','Admissão','date'],['venc_aso','Venc. ASO (pode informar depois)','date'],['depto','Setor','','setor-cadastro'],['setor_equipe','Setor / Equipe','','setor-equipe-master-base'],['funcao','Função / Cargo','span2','funcao-cadastro'],['nivel','Nível','','nivel-cadastro'],['status','Status','','status-func'],['obra','Obra','span2','obra-cadastro'],['jornada_tipo','Jornada / Escala','','jornada-select'],['horario_entrada','Entrada','','time'],['horario_saida','Saída','','time'],['intervalo_inicio','Início do intervalo','','time'],['intervalo_fim','Fim do intervalo','','time'],['jornada_observacao','Detalhes da jornada','span2'],['cnh','CNH'],['cat_cnh','Cat. CNH'],['venc_cnh','Venc. CNH','date'],['salario','Salário','','salario-cadastro'],['gratificacao','Gratificação','number'],['cidade','Cidade / Estado','span2','cidade-ibge'],['distancia_baixada_km','Distância da obra (km)','number'],['ult_baixada','Últ. baixada','date'],['prox_baixada','Próx. baixada','date'],['periodicidade_baixada','Periodicidade de baixada','','periodicidade-baixada'],['custo_baixada','Custo baixada (opcional)','number'],['vt','VT (opcional)','number'],['beneficios','Benefícios','number'],['usa_aloj','Usa alojamento?','','usa-aloj'],['alojamento','Alojamento','span2','aloj-select']],cols:['matricula','nome','funcao','setor_equipe','status']},
+    funcionarios:{title:'Funcionários',table:'funcionarios',order:'nome',fields:[['matricula','Matrícula'],['cpf','CPF'],['nome','Nome','span2'],['tipo_contrato','Tipo contrato','','tipo-contrato-func'],['admissao','Admissão','date'],['venc_aso','Venc. ASO (pode informar depois)','date'],['depto','Setor','','setor-cadastro'],['setor_equipe','Setor / Equipe','','setor-equipe-master-base'],['funcao','Função / Cargo','span2','funcao-cadastro'],['nivel','Nível','','nivel-cadastro'],['status','Status','','status-func'],['obra','Obra','span2','obra-cadastro'],['jornada_tipo','Jornada / Escala','','jornada-select'],['horario_entrada','Entrada','','time'],['horario_saida','Saída','','time'],['intervalo_inicio','Início do intervalo','','time'],['intervalo_fim','Fim do intervalo','','time'],['jornada_observacao','Detalhes da jornada','span2'],['cnh','CNH'],['cat_cnh','Cat. CNH'],['venc_cnh','Venc. CNH','date'],['salario','Salário','','salario-cadastro'],['gratificacao','Gratificação','number'],['cidade','Cidade / Estado','span2','cidade-ibge'],['distancia_baixada_km','Distância da obra (km)','number'],['direito_baixada','Tem direito de baixada?','','direito-baixada'],['ult_baixada','Últ. baixada','date'],['prox_baixada','Próx. baixada','date'],['periodicidade_baixada','Periodicidade de baixada','','periodicidade-baixada'],['custo_baixada','Custo baixada (opcional)','number'],['vt','VT (opcional)','number'],['beneficios','Benefícios','number'],['usa_aloj','Usa alojamento?','','usa-aloj'],['alojamento','Alojamento','span2','aloj-select']],cols:['matricula','nome','funcao','setor_equipe','status']},
     contratos:{title:'Contratos',table:'contratos',order:'codigo',fields:[['codigo','Contrato'],['fornecedor','Fornecedor','span2'],['tipo','Tipo','span2'],['objeto','Objeto','span4','textarea'],['valor_contratado','Valor contratado','number'],['valor_medido_total','Valor medido','number'],['valor_mensal','Valor mensal','number'],['data_inicio','Início','date'],['data_fim','Fim','date'],['situacao','Situação'],['fechamento','Fechamento'],['justificativa','Justificativa','span2']],cols:['codigo','fornecedor','tipo','situacao','valor_contratado']},
     alojamentos:{title:'Alojamentos',table:'alojamentos',order:'descricao',fields:[['contrato_codigo','Contrato de locação'],['descricao','Descrição','span2'],['fornecedor','Fornecedor / Locador','span2'],['endereco','Endereço completo','span4','textarea'],['contrato_agua','Contrato de Água','span2','contrato-servico:A'],['contrato_energia','Contrato de Energia','span2','contrato-servico:E'],['contrato_internet','Contrato de Internet','span2','contrato-servico:I'],['valor_mensal','Valor mensal','number'],['capacidade','Capacidade','number'],['ocupados','Ocupados','number'],['custo_rateado','Rateio por ocupante','number-readonly'],['status','Status']],cols:['contrato_codigo','descricao','endereco','contrato_agua','contrato_energia','contrato_internet','capacidade','status']},
     patrimonio:{title:'Inventário de Patrimônio',table:'patrimonio_itens',order:'descricao',fields:[['codigo_patrimonio','Nº Patrimônio'],['tag','Tag'],['descricao','Descrição','span2'],['categoria','Categoria'],['marca','Marca'],['modelo','Modelo'],['numero_serie','Nº de série'],['alojamento_codigo','Alojamento','span2','aloj-select'],['comodo','Cômodo'],['quantidade','Quantidade','number'],['valor_unitario','Valor unitário','number'],['data_aquisicao','Data aquisição','date'],['estado_conservacao','Estado conservação'],['status','Status'],['responsavel','Responsável','span2'],['origem','Origem / fornecedor','span2'],['observacao','Observação','span4','textarea']],cols:['codigo_patrimonio','descricao','categoria','alojamento_codigo','comodo','estado_conservacao','status']},
@@ -10114,6 +10114,22 @@ window.GESTAO360_CONFIG = {
         <label>Cidade *<select id="g360CidadeMunicipio" required disabled><option value="">Selecione primeiro o estado</option></select></label>
         <small style="grid-column:1/-1;display:block;color:#777;margin-top:0;text-transform:none">Estados e municípios carregados do cadastro nacional do IBGE. O colaborador é salvo como CIDADE - UF.</small>
       </div>`;
+    }
+    if(t==='tipo-contrato-func'){
+      const cur=String(v??'CLT').trim().toUpperCase();
+      const vals=['CLT','PJ','TERC'];
+      const labels={CLT:'CLT',PJ:'PJ',TERC:'TERC'};
+      const opts=vals.map(x=>`<option value="${x}" ${cur===x?'selected':''}>${labels[x]}</option>`).join('');
+      return `<label class="${c}">${label} *<select name="${name}" required><option value="">Selecione</option>${opts}</select></label>`;
+    }
+    if(t==='direito-baixada'){
+      const raw=(v===true||String(v).toLowerCase()==='true'||String(v).toUpperCase()==='S'||String(v).toUpperCase()==='SIM')?'true':
+                (v===false||String(v).toLowerCase()==='false'||String(v).toUpperCase()==='N'||String(v).toUpperCase()==='NÃO'||String(v).toUpperCase()==='NAO')?'false':'';
+      return `<label class="${c}">${label} *<select name="${name}" required>
+        <option value="" ${raw===''?'selected':''}>Selecione</option>
+        <option value="true" ${raw==='true'?'selected':''}>SIM</option>
+        <option value="false" ${raw==='false'?'selected':''}>NÃO</option>
+      </select></label>`;
     }
     if(t==='periodicidade-baixada'){
       const cur=String(v??'').trim().toUpperCase();
@@ -10427,6 +10443,25 @@ window.GESTAO360_CONFIG = {
         const labels=Object.fromEntries(d.fields.map(f=>[f[0],f[1]]));
         const opcionais=new Set(['venc_aso','cnh','cat_cnh','venc_cnh','ult_baixada','prox_baixada','periodicidade_baixada','custo_baixada','vt','horario_entrada','horario_saida','intervalo_inicio','intervalo_fim','jornada_observacao']);
         for(const f of d.fields){const k=f[0];if(opcionais.has(k))continue;const v=obj[k];if(v===null||v===undefined||String(v).trim()===''){alert('Preencha o campo obrigatório: '+labels[k]+'.');g360Form.elements[k]?.focus();return;}}
+        if(obj.tipo_contrato){
+          obj.tipo_contrato=String(obj.tipo_contrato).trim().toUpperCase();
+          if(!['CLT','PJ','TERC'].includes(obj.tipo_contrato)){
+            alert('Selecione um tipo de contrato válido: CLT, PJ ou TERC.');
+            g360Form.elements.tipo_contrato?.focus();return;
+          }
+        }
+        const direitoRaw=String(obj.direito_baixada??'').trim().toLowerCase();
+        if(!['true','false'].includes(direitoRaw)){
+          alert('Informe se o colaborador tem direito de baixada.');
+          g360Form.elements.direito_baixada?.focus();return;
+        }
+        obj.direito_baixada=(direitoRaw==='true');
+        if(!obj.direito_baixada){
+          obj.ult_baixada=null;
+          obj.prox_baixada=null;
+          obj.periodicidade_baixada=null;
+          obj.custo_baixada=null;
+        }
         if(obj.cnh){if(!obj.cat_cnh){alert('Como a CNH foi informada, preencha a categoria da CNH.');g360Form.elements.cat_cnh?.focus();return;}if(!obj.venc_cnh){alert('Como a CNH foi informada, preencha o vencimento da CNH.');g360Form.elements.venc_cnh?.focus();return;}}
         else {obj.cat_cnh=null;obj.venc_cnh=null;}
         if(String(obj.usa_aloj||'').toUpperCase()==='S'&&!obj.alojamento){alert('Selecione o alojamento do colaborador.');g360Form.elements.alojamento?.focus();return;}
@@ -12268,22 +12303,29 @@ window.g360FechamentoV57={
     aloj.required=sim;
     aloj.setAttribute('aria-required', sim ? 'true' : 'false');
 
-    // Quando NÃO utiliza, limpa qualquer valor residual que poderia
-    // continuar acionando validações antigas.
+    // O campo Alojamento permanece SEMPRE visível.
+    // Se NÃO utiliza, fica desabilitado e não obrigatório.
+    // Se SIM, habilita e passa a ser obrigatório.
     if(!sim){
       aloj.value='';
+      aloj.required=false;
       aloj.removeAttribute('required');
       aloj.setAttribute('aria-required','false');
+      aloj.disabled=true;
+    }else{
+      aloj.disabled=false;
+      aloj.required=true;
+      aloj.setAttribute('aria-required','true');
     }
 
-    // Tenta ocultar/mostrar o bloco visual sem quebrar layouts existentes.
     const wrap =
       aloj.closest('.field') ||
       aloj.closest('.form-group') ||
       aloj.closest('.crud-field') ||
       aloj.parentElement;
     if(wrap){
-      wrap.style.display = sim ? '' : 'none';
+      wrap.style.display='';
+      wrap.style.opacity=sim?'1':'0.65';
     }
   }
 
@@ -12317,6 +12359,9 @@ window.g360FechamentoV57={
       aloj.required=false;
       aloj.removeAttribute('required');
       aloj.value='';
+      aloj.disabled=true;
+    }else{
+      aloj.disabled=false;
     }
   },true);
 
@@ -12497,6 +12542,51 @@ window.g360FechamentoV57={
   },true);
 
   window.g360RefreshRhLiveV118=()=>refresh(true);
+})();
+</script>
+
+
+<script id="g360-direito-baixada-v119">
+(function(){
+  'use strict';
+
+  function isSim(v){
+    return v===true || ['TRUE','S','SIM','1'].includes(String(v??'').trim().toUpperCase());
+  }
+
+  function sync(form){
+    if(!form) return;
+    const direito=form.querySelector('[name="direito_baixada"]');
+    if(!direito) return;
+    const sim=isSim(direito.value);
+
+    const names=['ult_baixada','prox_baixada','periodicidade_baixada','custo_baixada'];
+    names.forEach(name=>{
+      const el=form.querySelector(`[name="${name}"]`);
+      if(!el) return;
+      el.disabled=!sim;
+      if(!sim) el.value='';
+      const wrap=el.closest('label')||el.parentElement;
+      if(wrap) wrap.style.opacity=sim?'1':'0.55';
+    });
+  }
+
+  document.addEventListener('change',e=>{
+    if(e.target?.matches?.('[name="direito_baixada"]')) sync(e.target.form||e.target.closest('form'));
+  },true);
+
+  const mo=new MutationObserver(()=>{
+    document.querySelectorAll('form').forEach(sync);
+  });
+  mo.observe(document.body,{subtree:true,childList:true});
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',()=>document.querySelectorAll('form').forEach(sync),{once:true});
+  }else{
+    document.querySelectorAll('form').forEach(sync);
+  }
+
+  window.g360DireitoBaixadaV119={sync};
 })();
 </script>
 
