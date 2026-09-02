@@ -10474,7 +10474,7 @@ window.GESTAO360_CONFIG = {
     v.insertAdjacentHTML('afterbegin','<div class="crud-mainbar"><button type="button" class="crud-primary" data-prod-new="'+kind+'">＋ Novo '+label+'</button></div>');
     v.querySelector('[data-prod-new="'+kind+'"]').onclick=()=>{ if(kind==='contratos'){const link=document.querySelector('.side-link[data-contract-subview="solicitacoes"]');if(link)link.click();setTimeout(()=>{try{window.SolContratos?.go('lista')}catch(_){}},50);return;} window.g360OpenCrudProduction?.(kind,null); };
   }
-  const boot=()=>{addBar('view-base','funcionarios','colaborador');addBar('view-alojamento','alojamentos','alojamento');};
+  const boot=()=>{addBar('view-alojamento','alojamentos','alojamento');};
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,700));
   else setTimeout(boot,700);
 })();
@@ -11119,7 +11119,7 @@ window.GESTAO360_CONFIG = {
 .g57table table{width:100%;border-collapse:collapse}.g57table th{position:sticky;top:0;background:#25272c;color:#f5c518;text-align:left;padding:8px}.g57table td{padding:8px;border-top:1px solid #34363c;font-size:12px}
 @media(max-width:720px){.g57grid,.g57tools{grid-template-columns:1fr}}
 </style>
-<div id="g360Fj57Modal">
+<div id="g360Fj57Modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:2147483600;align-items:flex-start;justify-content:center;padding:24px 14px;overflow:auto">
   <div id="g360Fj57Box">
     <div id="g360Fj57Head"><h2 id="g360Fj57Title">Fechamento de Praça</h2><button type="button" class="crud-mini" id="g360Fj57Close">✕ Fechar</button></div>
     <div id="g360Fj57Body"></div>
@@ -11161,7 +11161,7 @@ async function getObraId(){
   const cod=localStorage.getItem('g360_obra_ativa')||window.GESTAO360_CONFIG?.OBRA_CODIGO||'202';
   const q=await client.from('obras').select('id').eq('codigo',String(cod)).limit(1).maybeSingle();
   if(q.error)throw q.error;
-  if(!q.data?.id)throw new Error('Obra 202 não encontrada.');
+  if(!q.data?.id)throw new Error('Obra ativa '+String(cod)+' não encontrada ou sem acesso.');
   state.obraId=q.data.id;return state.obraId;
 }
 async function fetchRows(period){
@@ -11294,8 +11294,8 @@ async function refreshSelect(prefer,keepMissing=false){
   if(current)sel.value=current;
   return periods;
 }
-function modalOpen(t,c){$('g360Fj57Title').textContent=t;$('g360Fj57Body').innerHTML=c;$('g360Fj57Modal').classList.add('open')}
-function modalClose(){$('g360Fj57Modal').classList.remove('open');$('g360Fj57Body').innerHTML=''}
+function modalOpen(t,c){const m=$('g360Fj57Modal');$('g360Fj57Title').textContent=t;$('g360Fj57Body').innerHTML=c;m.classList.add('open');m.style.display='flex'}
+function modalClose(){const m=$('g360Fj57Modal');m.classList.remove('open');m.style.display='none';$('g360Fj57Body').innerHTML=''}
 
 async function edit(id){
   let r=state.rows.find(x=>String(x.id)===String(id));
@@ -11454,15 +11454,29 @@ async function openCompetence(mode){
 
 async function boot(){
   if(state.bound)return;
-  if(!sb()){setTimeout(boot,500);return}
-  state.bound=true;
+  const client=sb();
+  if(!client){setTimeout(boot,500);return}
   try{
+    const auth=await client.auth.getSession();
+    const session=auth?.data?.session;
+    if(!session){
+      // Tela de login/deslogado: não consulta obras nem Fechamento de Praça.
+      return;
+    }
+    state.bound=true;
     const periods=await fetchPeriods();
     const preferred=periods.includes('AGOSTO/2026')?'AGOSTO/2026':periods.at(-1)||'AGOSTO/2026';
     state.period=preferred;
     await refreshSelect(preferred);
     await load(preferred);
-  }catch(err){console.error('V57 boot:',err);alert('Erro ao carregar Fechamento de Praça: '+(err?.message||err))}
+  }catch(err){
+    state.bound=false;
+    console.error('V57 boot:',err);
+    // Só informa erro quando já existe sessão autenticada.
+    let hasSession=false;
+    try{hasSession=!!(await client.auth.getSession())?.data?.session}catch(_){}
+    if(hasSession) alert('Erro ao carregar Fechamento de Praça: '+(err?.message||err));
+  }
 }
 
 /* Um único controlador para o módulo inteiro. Captura antes dos listeners legados. */
@@ -11607,6 +11621,10 @@ window.g360FechamentoV57={load,refreshSelect,edit,removeMeasurement,deleteSelect
 })();
 </script>
 
+<style id="g360-fj57-final-visibility">
+#g360Fj57Modal:not(.open){display:none!important}
+#g360Fj57Modal.open{display:flex!important}
+</style>
 </body>
 </html>
 
