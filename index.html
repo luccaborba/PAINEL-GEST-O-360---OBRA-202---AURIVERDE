@@ -10031,7 +10031,7 @@ window.GESTAO360_CONFIG = {
   }
   const defs={
     cargosSalarios:{title:'Cargos e Salários',table:'cargos_salarios',order:'funcao',fields:[['funcao','Função / Cargo','span2'],['nivel','Nível'],['salario','Salário','number'],['ativo','Ativo','','ativo-cargo']],cols:['funcao','nivel','salario','ativo']},
-    funcionarios:{title:'Funcionários',table:'funcionarios',order:'nome',fields:[['matricula','Matrícula'],['cpf','CPF'],['nome','Nome','span2'],['tipo_contrato','Tipo contrato'],['admissao','Admissão','date'],['venc_aso','Venc. ASO (pode informar depois)','date'],['depto','Setor','','setor-cadastro'],['setor_equipe','Setor / Equipe','','setor-equipe-master-base'],['funcao','Função / Cargo','span2','funcao-cadastro'],['nivel','Nível','','nivel-cadastro'],['status','Status','','status-func'],['obra','Obra','span2','obra-cadastro'],['jornada_tipo','Jornada / Escala','','jornada-select'],['horario_entrada','Entrada','','time'],['horario_saida','Saída','','time'],['intervalo_inicio','Início do intervalo','','time'],['intervalo_fim','Fim do intervalo','','time'],['jornada_observacao','Detalhes da jornada','span2'],['cnh','CNH'],['cat_cnh','Cat. CNH'],['venc_cnh','Venc. CNH','date'],['salario','Salário','','salario-cadastro'],['gratificacao','Gratificação','number'],['cidade','Cidade de origem / baixada'],['distancia_baixada_km','Distância da obra (km)','number'],['ult_baixada','Últ. baixada','date'],['prox_baixada','Próx. baixada','date'],['periodicidade_baixada','Ciclo de baixada','','periodicidade-baixada'],['custo_baixada','Custo baixada (opcional)','number'],['vt','VT (opcional)','number'],['beneficios','Benefícios','number'],['usa_aloj','Usa alojamento?','','usa-aloj'],['alojamento','Alojamento','span2','aloj-select']],cols:['matricula','nome','funcao','setor_equipe','status']},
+    funcionarios:{title:'Funcionários',table:'funcionarios',order:'nome',fields:[['matricula','Matrícula'],['cpf','CPF'],['nome','Nome','span2'],['tipo_contrato','Tipo contrato'],['admissao','Admissão','date'],['venc_aso','Venc. ASO (pode informar depois)','date'],['depto','Setor','','setor-cadastro'],['setor_equipe','Setor / Equipe','','setor-equipe-master-base'],['funcao','Função / Cargo','span2','funcao-cadastro'],['nivel','Nível','','nivel-cadastro'],['status','Status','','status-func'],['obra','Obra','span2','obra-cadastro'],['jornada_tipo','Jornada / Escala','','jornada-select'],['horario_entrada','Entrada','','time'],['horario_saida','Saída','','time'],['intervalo_inicio','Início do intervalo','','time'],['intervalo_fim','Fim do intervalo','','time'],['jornada_observacao','Detalhes da jornada','span2'],['cnh','CNH'],['cat_cnh','Cat. CNH'],['venc_cnh','Venc. CNH','date'],['salario','Salário','','salario-cadastro'],['gratificacao','Gratificação','number'],['cidade','Cidade / Estado','span2','cidade-ibge'],['distancia_baixada_km','Distância da obra (km)','number'],['ult_baixada','Últ. baixada','date'],['prox_baixada','Próx. baixada','date'],['periodicidade_baixada','Periodicidade de baixada','','periodicidade-baixada'],['custo_baixada','Custo baixada (opcional)','number'],['vt','VT (opcional)','number'],['beneficios','Benefícios','number'],['usa_aloj','Usa alojamento?','','usa-aloj'],['alojamento','Alojamento','span2','aloj-select']],cols:['matricula','nome','funcao','setor_equipe','status']},
     contratos:{title:'Contratos',table:'contratos',order:'codigo',fields:[['codigo','Contrato'],['fornecedor','Fornecedor','span2'],['tipo','Tipo','span2'],['objeto','Objeto','span4','textarea'],['valor_contratado','Valor contratado','number'],['valor_mensal','Valor mensal','number'],['data_inicio','Início','date'],['data_fim','Fim','date'],['situacao','Situação'],['fechamento','Fechamento'],['justificativa','Justificativa','span2']],cols:['codigo','fornecedor','tipo','situacao','valor_contratado']},
     alojamentos:{title:'Alojamentos',table:'alojamentos',order:'descricao',fields:[['contrato_codigo','Contrato de locação'],['descricao','Descrição','span2'],['fornecedor','Fornecedor / Locador','span2'],['endereco','Endereço completo','span4','textarea'],['contrato_agua','Contrato de Água','span2','contrato-servico:A'],['contrato_energia','Contrato de Energia','span2','contrato-servico:E'],['contrato_internet','Contrato de Internet','span2','contrato-servico:I'],['valor_mensal','Valor mensal','number'],['capacidade','Capacidade','number'],['ocupados','Ocupados','number'],['custo_rateado','Rateio por ocupante','number-readonly'],['status','Status']],cols:['contrato_codigo','descricao','endereco','contrato_agua','contrato_energia','contrato_internet','capacidade','status']},
     patrimonio:{title:'Inventário de Patrimônio',table:'patrimonio_itens',order:'descricao',fields:[['codigo_patrimonio','Nº Patrimônio'],['tag','Tag'],['descricao','Descrição','span2'],['categoria','Categoria'],['marca','Marca'],['modelo','Modelo'],['numero_serie','Nº de série'],['alojamento_codigo','Alojamento','span2','aloj-select'],['comodo','Cômodo'],['quantidade','Quantidade','number'],['valor_unitario','Valor unitário','number'],['data_aquisicao','Data aquisição','date'],['estado_conservacao','Estado conservação'],['status','Status'],['responsavel','Responsável','span2'],['origem','Origem / fornecedor','span2'],['observacao','Observação','span4','textarea']],cols:['codigo_patrimonio','descricao','categoria','alojamento_codigo','comodo','estado_conservacao','status']},
@@ -10086,16 +10086,24 @@ window.GESTAO360_CONFIG = {
     if(t==='nivel-cadastro')return `<label class="${c}">${label} *<select name="${name}" required data-current="${esc(v??'')}"><option value="">Selecione o nível</option></select></label>`;
     if(t==='salario-cadastro')return `<label class="${c}">${label} *<input name="${name}" type="number" step="0.01" min="0" value="${esc(v??'')}" required></label>`;
     if(t==='ativo-cargo'){const cur=String(v??'true').toLowerCase();return `<label class="${c}">${label}<select name="${name}"><option value="true" ${cur!=='false'?'selected':''}>ATIVO</option><option value="false" ${cur==='false'?'selected':''}>INATIVO</option></select></label>`;}
+    if(t==='cidade-ibge'){
+      const cur=String(v??'').trim();
+      return `<div class="${c}" style="display:grid;grid-template-columns:140px minmax(220px,1fr);gap:8px;align-items:end">
+        <input type="hidden" name="${name}" value="${esc(cur)}" id="g360CidadeValor">
+        <label>Estado (UF) *<select id="g360CidadeUf" required data-current="${esc(cur)}"><option value="">Carregando estados...</option></select></label>
+        <label>Cidade *<select id="g360CidadeMunicipio" required disabled><option value="">Selecione primeiro o estado</option></select></label>
+        <small style="grid-column:1/-1;display:block;color:#777;margin-top:0;text-transform:none">Estados e municípios carregados do cadastro nacional do IBGE. O colaborador é salvo como CIDADE - UF.</small>
+      </div>`;
+    }
     if(t==='periodicidade-baixada'){
       const cur=String(v??'').trim().toUpperCase();
       const rows=(ctx.periodicidadesBaixada||[]).filter(x=>x.ativo!==false);
       const opts=rows.map(x=>{
-        const codigo=String(x.codigo||x.periodicidade||'').trim();
-        const meses=Number(x.meses||0);
-        const txt=meses?`${codigo} — ${meses} ${meses===1?'mês':'meses'}`:codigo;
-        return `<option value="${esc(codigo)}" ${codigo.toUpperCase()===cur?'selected':''}>${esc(txt)}</option>`;
+        const codigo=String(x.codigo||x.periodicidade||'').trim().toUpperCase();
+        return `<option value="${esc(codigo)}" ${codigo===cur?'selected':''}>${esc(codigo)}</option>`;
       }).join('');
-      return `<label class="${c}">${label}<select name="${name}"><option value="">Selecione o ciclo</option>${opts}</select><small style="display:block;color:#777;margin-top:4px;text-transform:none">Cadastro mestre do Supabase (ex.: 2x2, 3x3, 6x6).</small></label>`;
+      const emptyMsg=rows.length?'Selecione a periodicidade':'Base de periodicidades não cadastrada';
+      return `<label class="${c}">${label}<select name="${name}" ${rows.length?'':'disabled'}><option value="">${emptyMsg}</option>${opts}</select><small style="display:block;color:#777;margin-top:4px;text-transform:none">Base mestre do Supabase: 2x2, 3x3 e 6x6.</small></label>`;
     }
     if(t==='usa-aloj'){const cur=String(v??'').toUpperCase();return `<label class="${c}">${label} *<select name="${name}" required><option value="">Selecione</option><option value="S" ${cur==='S'?'selected':''}>SIM</option><option value="N" ${cur==='N'?'selected':''}>NÃO</option></select></label>`;}
     if(t==='textarea')return `<label class="${c}">${label}<textarea name="${name}">${esc(v)}</textarea></label>`;if(t==='aloj-select'){const current=String(v??'');const opts=(ctx.alojamentos||[]).map(a=>{const val=a.contrato_codigo||a.contrato||a.descricao||'';const cap=Number(a.capacidade||0),ocu=Number(a.ocupados||0),full=cap>0&&ocu>=cap&&String(val)!==current;const txt=[a.descricao,a.fornecedor,a.contrato_codigo||a.contrato].filter(Boolean).join(' · ')+(cap>0?` · ${ocu}/${cap} vagas${full?' · LOTADO':''}`:'');return `<option value="${esc(val)}" ${String(val)===current?'selected':''} ${full?'disabled':''}>${esc(txt)}</option>`}).join('');const vazio=name==='alojamento_codigo'?'Sem alojamento / não vinculado':'Não utiliza alojamento';return `<label class="${c}">${label}<select name="${name}"><option value="">${vazio}</option>${opts}</select><small style="display:block;color:#777;margin-top:4px;text-transform:none">Alojamentos lotados ficam indisponíveis. A capacidade é validada novamente no Supabase ao salvar.</small></label>`}if(String(t).startsWith('contrato-servico:')){const suf=String(t).split(':')[1];const rx=new RegExp('^CTS/C\\d+-2026'+suf+'$','i');const opts=(ctx.contratos||[]).filter(x=>rx.test(String(x.codigo||x.contrato||''))).sort((a,b)=>String(a.codigo||a.contrato||'').localeCompare(String(b.codigo||b.contrato||''),'pt-BR',{numeric:true})).map(x=>{const val=x.codigo||x.contrato||'';const txt=[val,x.fornecedor].filter(Boolean).join(' · ');return `<option value="${esc(val)}" ${String(val)===String(v??'')?'selected':''}>${esc(txt)}</option>`}).join('');return `<label class="${c}">${label}<select name="${name}"><option value="">Não informado</option>${opts}</select><small style="display:block;color:#777;margin-top:4px;text-transform:none">Somente contratos CTS/C…-2026${suf}.</small></label>`}if(t==='status-func'){const vals=['ATIVO','INATIVO','DESLIGADO','FÉRIAS','AFASTADO','SUSPENSO','ABANDONO'];const opts=vals.map(x=>`<option value="${esc(x)}" ${String(x)===String(v||'ATIVO').toUpperCase()?'selected':''}>${esc(x)}</option>`).join('');return `<label class="${c}">${label}<select name="${name}">${opts}</select></label>`;}if(t==='number-readonly')return `<label class="${c}">${label}<input name="${name}" type="number" step="any" value="${esc(v??'')}" readonly><small style="display:block;color:#777;margin-top:4px;text-transform:none">Calculado: valor do aluguel ÷ ocupação.</small></label>`;return `<label class="${c}">${label}<input name="${name}" type="${['date','number'].includes(t)?t:'text'}" ${t==='number'?'step="any"':''} value="${esc(v??'')}"></label>`}
@@ -10206,7 +10214,7 @@ window.GESTAO360_CONFIG = {
       <div class="deslig-list">${desligItens.length?desligItens.map((x,i)=>`<label class="deslig-item"><input type="checkbox" class="deslig-check" data-idx="${i}"><span><b>${esc(x.fonte)} — ${esc(x.descricao)}</b><small>${esc(x.codigo||'Sem código')} · Qtd. ${esc(x.quantidade)}</small></span><input type="date" class="deslig-date" data-idx="${i}" aria-label="Data de devolução"><input type="text" class="deslig-obs" data-idx="${i}" placeholder="Observação (opcional)" value="${esc(x.obs||'')}"></label>`).join(''):'<div class="deslig-empty">Nenhum EPI ou equipamento pendente encontrado nos termos deste colaborador.</div>'}</div>
       ${desligItens.length?'<div class="deslig-alert">Para concluir o desligamento, todos os itens pendentes precisam ser conferidos e marcados como devolvidos.</div>':''}
     </section>`:'';
-    g360Content.innerHTML=`<form id="g360Form" class="g360-grid">${kind==='funcionarios'?'<div class="span4" style="padding:9px 11px;border-left:3px solid #f5c518;background:#202226;color:#bbb;font-size:11px"><b style="color:#eee">Campos obrigatórios:</b> dados cadastrais, Setor, Setor/Equipe, função e jornada. <b>Vencimento do ASO e datas de baixada podem ser informados depois.</b> O ciclo de baixada é opcional no cadastro inicial e vem do cadastro mestre do Supabase. CNH é opcional quando o colaborador não possui. Demissão é preenchida somente no desligamento. Função e nível vêm do cadastro de Cargos e Salários. O salário-base é sugerido pelo Supabase, mas pode ser ajustado no colaborador. Gratificação inicia em R$ 0,00. Benefícios inicia em R$ 230,00 e pode ser alterado.</div>':''}${d.fields.map(f=>fieldHTML(f,current?.[f[0]],{alojamentos:alojamentosCadastro,contratos:contratosCadastro,cargos:cargosCadastro,setores:setoresCadastro,equipesMaster:equipesMasterCadastro,obrasPermitidas:obrasPermitidasCadastro,periodicidadesBaixada:periodicidadesBaixadaCadastro,current:current||{}})).join('')}${desligHtml}<div class="span4"><button class="g360-btn" type="submit">${edit?'Salvar alterações':'Incluir registro'}</button> ${edit?'<button type="button" class="g360-btn sec" id="g360CancelEdit">Cancelar edição</button>':''}</div></form>${listHtml}`;
+    g360Content.innerHTML=`<form id="g360Form" class="g360-grid">${kind==='funcionarios'?'<div class="span4" style="padding:9px 11px;border-left:3px solid #f5c518;background:#202226;color:#bbb;font-size:11px"><b style="color:#eee">Campos obrigatórios:</b> dados cadastrais, Setor, Setor/Equipe, função e jornada. <b>Vencimento do ASO e datas de baixada podem ser informados depois.</b> A periodicidade de baixada é opcional no cadastro inicial e vem da base mestre do Supabase. Cidade e Estado são selecionados pelo cadastro nacional do IBGE. CNH é opcional quando o colaborador não possui. Demissão é preenchida somente no desligamento. Função e nível vêm do cadastro de Cargos e Salários. O salário-base é sugerido pelo Supabase, mas pode ser ajustado no colaborador. Gratificação inicia em R$ 0,00. Benefícios inicia em R$ 230,00 e pode ser alterado.</div>':''}${d.fields.map(f=>fieldHTML(f,current?.[f[0]],{alojamentos:alojamentosCadastro,contratos:contratosCadastro,cargos:cargosCadastro,setores:setoresCadastro,equipesMaster:equipesMasterCadastro,obrasPermitidas:obrasPermitidasCadastro,periodicidadesBaixada:periodicidadesBaixadaCadastro,current:current||{}})).join('')}${desligHtml}<div class="span4"><button class="g360-btn" type="submit">${edit?'Salvar alterações':'Incluir registro'}</button> ${edit?'<button type="button" class="g360-btn sec" id="g360CancelEdit">Cancelar edição</button>':''}</div></form>${listHtml}`;
     if(kind==='funcionarios'&&opts?.fromAdmission){
       const n=document.createElement('div');
       n.className='crud-pro-note';
@@ -10261,6 +10269,66 @@ window.GESTAO360_CONFIG = {
       }
       rebuildSetor();
       const grat=g360Form.elements.gratificacao;if(grat&&(grat.value===''||grat.value==null))grat.value='0';const ben=g360Form.elements.beneficios;if(ben&&(ben.value===''||ben.value==null))ben.value='230';const vtEl=g360Form.elements.vt;if(vtEl){vtEl.required=false;vtEl.removeAttribute('required');}
+
+      // V99 — Estado e município pelo cadastro nacional do IBGE.
+      const ufSel=document.getElementById('g360CidadeUf');
+      const munSel=document.getElementById('g360CidadeMunicipio');
+      const cidadeHidden=g360Form.elements.cidade;
+      if(ufSel&&munSel&&cidadeHidden){
+        const current=String(cidadeHidden.value||'').trim();
+        const m=current.match(/^(.*?)\s*[-/]\s*([A-Z]{2})$/i);
+        const currentCity=m?m[1].trim():'';
+        const currentUf=m?m[2].toUpperCase():'';
+        const ibgeBase='https://servicodados.ibge.gov.br/api/v1/localidades';
+        const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();
+
+        async function loadMunicipios(uf,preselect=''){
+          munSel.disabled=true;
+          munSel.innerHTML='<option value="">Carregando cidades...</option>';
+          if(!uf){munSel.innerHTML='<option value="">Selecione primeiro o estado</option>';return}
+          try{
+            const r=await fetch(`${ibgeBase}/estados/${encodeURIComponent(uf)}/municipios?orderBy=nome`,{cache:'force-cache'});
+            if(!r.ok)throw new Error('Falha ao consultar municípios');
+            const rows=await r.json();
+            munSel.innerHTML='<option value="">Selecione a cidade</option>'+rows.map(x=>`<option value="${esc(x.nome)}">${esc(x.nome)}</option>`).join('');
+            munSel.disabled=false;
+            if(preselect){
+              const opt=[...munSel.options].find(o=>norm(o.value)===norm(preselect));
+              if(opt){munSel.value=opt.value;cidadeHidden.value=`${opt.value.toUpperCase()} - ${uf.toUpperCase()}`;}
+            }
+          }catch(err){
+            console.error('IBGE municípios:',err);
+            munSel.innerHTML='<option value="">Não foi possível carregar as cidades</option>';
+            munSel.disabled=true;
+          }
+        }
+
+        async function loadEstados(){
+          try{
+            const r=await fetch(`${ibgeBase}/estados?orderBy=nome`,{cache:'force-cache'});
+            if(!r.ok)throw new Error('Falha ao consultar estados');
+            const rows=await r.json();
+            ufSel.innerHTML='<option value="">Selecione o estado</option>'+rows.map(x=>`<option value="${esc(x.sigla)}">${esc(x.sigla)} - ${esc(x.nome)}</option>`).join('');
+            if(currentUf && [...ufSel.options].some(o=>o.value===currentUf)){
+              ufSel.value=currentUf;
+              await loadMunicipios(currentUf,currentCity);
+            }
+          }catch(err){
+            console.error('IBGE estados:',err);
+            ufSel.innerHTML='<option value="">Não foi possível carregar os estados</option>';
+          }
+        }
+
+        ufSel.addEventListener('change',async()=>{
+          cidadeHidden.value='';
+          await loadMunicipios(ufSel.value,'');
+        });
+        munSel.addEventListener('change',()=>{
+          cidadeHidden.value=(ufSel.value&&munSel.value)?`${munSel.value.toUpperCase()} - ${ufSel.value.toUpperCase()}`:'';
+        });
+        loadEstados();
+      }
+
       const funcSel=g360Form.elements.funcao,nivelEl=g360Form.elements.nivel,salEl=g360Form.elements.salario;
       const cargoRows=cargosCadastro||[];
       const cargoVal=(r,keys)=>{for(const k of keys){if(r&&r[k]!=null&&String(r[k]).trim()!=='')return r[k]}return null};
