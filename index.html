@@ -10268,7 +10268,7 @@ window.GESTAO360_CONFIG = {
     if(kind==='funcionarios'){
       const st=g360Form.elements.status, box=document.getElementById('g360DesligamentoBox'), dem=document.getElementById('g360Demissao');
       // V23 — Cadastro de colaboradores: campos obrigatórios + regras condicionais.
-      const optionalAlways=new Set(['venc_aso','cnh','cat_cnh','venc_cnh','ult_baixada','prox_baixada','periodicidade_baixada','custo_baixada','vt','horario_entrada','horario_saida','intervalo_inicio','intervalo_fim','jornada_observacao']);
+      const optionalAlways=new Set(['venc_aso','cnh','cat_cnh','venc_cnh','ult_baixada','prox_baixada','periodicidade_baixada','custo_baixada','vt','horario_entrada','horario_saida','intervalo_inicio','intervalo_fim','jornada_observacao','alojamento']);
       d.fields.forEach(f=>{const el=g360Form.elements[f[0]];if(el&&!optionalAlways.has(f[0]))el.required=true;});
       const obraEl=g360Form.elements.obra,setorEl=g360Form.elements.depto,setorEquipeEl=g360Form.elements.setor_equipe;
       const allSetorOpts=setorEl?[...setorEl.options].map(o=>({value:o.value,text:o.textContent,id:o.dataset.id||'',obraId:o.dataset.obraId||''})):[];
@@ -10441,7 +10441,7 @@ window.GESTAO360_CONFIG = {
       }
       if(kind==='funcionarios'){
         const labels=Object.fromEntries(d.fields.map(f=>[f[0],f[1]]));
-        const opcionais=new Set(['venc_aso','cnh','cat_cnh','venc_cnh','ult_baixada','prox_baixada','periodicidade_baixada','custo_baixada','vt','horario_entrada','horario_saida','intervalo_inicio','intervalo_fim','jornada_observacao']);
+        const opcionais=new Set(['venc_aso','cnh','cat_cnh','venc_cnh','ult_baixada','prox_baixada','periodicidade_baixada','custo_baixada','vt','horario_entrada','horario_saida','intervalo_inicio','intervalo_fim','jornada_observacao','alojamento']);
         for(const f of d.fields){const k=f[0];if(opcionais.has(k))continue;const v=obj[k];if(v===null||v===undefined||String(v).trim()===''){alert('Preencha o campo obrigatório: '+labels[k]+'.');g360Form.elements[k]?.focus();return;}}
         if(obj.tipo_contrato){
           obj.tipo_contrato=String(obj.tipo_contrato).trim().toUpperCase();
@@ -10464,8 +10464,8 @@ window.GESTAO360_CONFIG = {
         }
         if(obj.cnh){if(!obj.cat_cnh){alert('Como a CNH foi informada, preencha a categoria da CNH.');g360Form.elements.cat_cnh?.focus();return;}if(!obj.venc_cnh){alert('Como a CNH foi informada, preencha o vencimento da CNH.');g360Form.elements.venc_cnh?.focus();return;}}
         else {obj.cat_cnh=null;obj.venc_cnh=null;}
-        if(String(obj.usa_aloj||'').toUpperCase()==='S'&&!obj.alojamento){alert('Selecione o alojamento do colaborador.');g360Form.elements.alojamento?.focus();return;}
-        if(String(obj.usa_aloj||'').toUpperCase()==='S'&&obj.alojamento){
+        if(['S','SIM','1','TRUE'].includes(String(obj.usa_aloj||'').trim().toUpperCase())&&!obj.alojamento){alert('Selecione o alojamento do colaborador.');g360Form.elements.alojamento?.focus();return;}
+        if(['S','SIM','1','TRUE'].includes(String(obj.usa_aloj||'').trim().toUpperCase())&&obj.alojamento){
           const [alojCap,ocupRes]=await Promise.all([
             sb.from('alojamentos').select('id,contrato_codigo,descricao,capacidade').eq('contrato_codigo',obj.alojamento).maybeSingle(),
             sb.from('funcionarios').select('id,status,usa_aloj,alojamento').eq('alojamento',obj.alojamento)
@@ -10484,7 +10484,7 @@ window.GESTAO360_CONFIG = {
             g360Form.elements.alojamento?.focus();return;
           }
         }
-        if(String(obj.usa_aloj||'').toUpperCase()!=='S')obj.alojamento=null;
+        if(!['S','SIM','1','TRUE'].includes(String(obj.usa_aloj||'').trim().toUpperCase()))obj.alojamento=null;
         if(obj.gratificacao==null||obj.gratificacao==='')obj.gratificacao=0;if(obj.beneficios==null||obj.beneficios==='')obj.beneficios=230;
         const obraSel=g360Form.elements.obra,setorSel=g360Form.elements.depto,setorEquipeSel=g360Form.elements.setor_equipe;
         obj.obra_id=obraSel?.options?.[obraSel.selectedIndex]?.dataset?.id||null;
@@ -12587,6 +12587,33 @@ window.g360FechamentoV57={
   }
 
   window.g360DireitoBaixadaV119={sync};
+})();
+</script>
+
+
+<script id="g360-alojamento-validacao-v120">
+(function(){
+  'use strict';
+
+  const isSim=v=>['S','SIM','1','TRUE','YES'].includes(String(v??'').trim().toUpperCase());
+
+  document.addEventListener('submit',function(e){
+    const form=e.target;
+    const usa=form?.querySelector?.('[name="usa_aloj"]');
+    const aloj=form?.querySelector?.('[name="alojamento"]');
+    if(!usa || !aloj) return;
+
+    if(!isSim(usa.value)){
+      aloj.required=false;
+      aloj.removeAttribute('required');
+      aloj.value='';
+      // habilita antes da serialização do FormData; campo disabled não entra no payload.
+      aloj.disabled=false;
+    }else{
+      aloj.disabled=false;
+      aloj.required=true;
+    }
+  },true);
 })();
 </script>
 
