@@ -11269,28 +11269,73 @@ async function getObraId(){
 async function fetchRows(period){
   const client=sb(),oid=await getObraId(),comp=periodToDate(period);
   if(!comp)throw new Error('Competência inválida.');
-  const [q,qc]=await Promise.all([
+  const [q,qc,qa]=await Promise.all([
     client.from('fechamentos_praca').select('*').eq('obra_id',oid).eq('competencia',comp).order('fornecedor',{ascending:true}).order('created_at',{ascending:true}),
-    client.from('contratos').select('*').eq('obra_id',oid)
+    client.from('contratos').select('*').eq('obra_id',oid),
+    client.from('alojamentos').select('id,contrato_codigo,descricao,endereco,contrato_agua,contrato_energia,contrato_internet,status').eq('obra_id',oid)
   ]);
   if(q.error)throw q.error;
   if(qc.error)throw qc.error;
+  if(qa.error)throw qa.error;
+
   const typeMap=new Map();
   (qc.data||[]).forEach(c=>{
     const code=String(c.codigo||c.contrato||c.contrato_codigo||'').trim().toUpperCase();
     if(code)typeMap.set(code,String(c.tipo_contrato||c.tipo||c.categoria||c.modalidade||'NÃO INFORMADO').trim());
   });
-  return (q.data||[]).map(r=>({
-    id:r.id,source_row:r.source_row,codigo_fornecedor:r.codigo_fornecedor,
-    contrato_id:r.contrato_id||null,impacta_saldo:r.impacta_saldo!==false,
-    contrato:r.contrato_codigo||'',fornecedor:r.fornecedor||'',
-    tipoContrato:typeMap.get(String(r.contrato_codigo||'').trim().toUpperCase())||'NÃO INFORMADO',
-    medido:Number(r.valor_medido||0),status:String(r.status||'PENDENTE').toUpperCase(),
-    justificativa:r.justificativa||'',numero_medicao:r.numero_medicao||'',numero_titulo:r.numero_titulo||'',
-    valor_bruto:Number(r.valor_bruto??r.valor_medido??0),descontos:Number(r.descontos||0),
-    data_sienge:r.data_lancamento_sienge||null,sienge_id:r.sienge_id||'',
-    observacao:r.observacao||'',tipo_conta:r.tipo_conta||'',alojamento_id:r.alojamento_id||null
-  }));
+
+  // Auditoria de contas dos alojamentos:
+  // A = Água/Saneago | E = Energia/Equatorial | I = Internet.
+  // O vínculo oficial vem do cadastro de Alojamentos, que guarda o contrato
+  // de locação e os três contratos de consumo associados.
+  const utilMap=new Map();
+  const putUtil=(code,a,tipo)=>{
+    const k=String(code||'').trim().toUpperCase();
+    if(!k)return;
+    utilMap.set(k,{
+      tipo,
+      alojamento_id:a.id||null,
+      alojamento_descricao:a.descricao||'Alojamento',
+      contrato_locacao:a.contrato_codigo||'',
+      endereco:a.endereco||''
+    });
+  };
+  (qa.data||[]).forEach(a=>{
+    putUtil(a.contrato_agua,a,'ÁGUA');
+    putUtil(a.contrato_energia,a,'ENERGIA');
+    putUtil(a.contrato_internet,a,'INTERNET');
+  });
+
+  const inferTipoConta=code=>{
+    const c=String(code||'').trim().toUpperCase();
+    if(/2026A$/.test(c))return 'ÁGUA';
+    if(/2026E$/.test(c))return 'ENERGIA';
+    if(/2026I$/.test(c))return 'INTERNET';
+    return '';
+  };
+
+  return (q.data||[]).map(r=>{
+    const contrato=String(r.contrato_codigo||'').trim();
+    const key=contrato.toUpperCase();
+    const vinc=utilMap.get(key)||null;
+    const tipoInferido=inferTipoConta(key);
+    return {
+      id:r.id,source_row:r.source_row,codigo_fornecedor:r.codigo_fornecedor,
+      contrato_id:r.contrato_id||null,impacta_saldo:r.impacta_saldo!==false,
+      contrato,fornecedor:r.fornecedor||'',
+      tipoContrato:typeMap.get(key)||'NÃO INFORMADO',
+      medido:Number(r.valor_medido||0),status:String(r.status||'PENDENTE').toUpperCase(),
+      justificativa:r.justificativa||'',numero_medicao:r.numero_medicao||'',numero_titulo:r.numero_titulo||'',
+      valor_bruto:Number(r.valor_bruto??r.valor_medido??0),descontos:Number(r.descontos||0),
+      data_sienge:r.data_lancamento_sienge||null,sienge_id:r.sienge_id||'',
+      observacao:r.observacao||'',
+      tipo_conta:vinc?.tipo||r.tipo_conta||tipoInferido||'',
+      alojamento_id:vinc?.alojamento_id||r.alojamento_id||null,
+      alojamento_descricao:vinc?.alojamento_descricao||'',
+      contrato_locacao:vinc?.contrato_locacao||'',
+      conta_vinculada:!!vinc
+    };
+  });
 }
 async function fetchPeriods(){
   const client=sb(),oid=await getObraId();
@@ -11361,9 +11406,22 @@ function render(){
       <td class="fornecedor-cell"><span class="fname">${esc(r.fornecedor)}</span></td>
       <td class="num">${fmt(r.medido)}</td>
       <td><span class="badge ${badgeClass(r.status)}">${statusLabel(r.status)}</span></td>
-      <td>${esc(r.numero_titulo||'')}</td>
+      <td>${r.tipo_conta && !r.numero_titulo
+        ? '<span class="badge badge-resc" title="Conta de alojamento sem Nº do Título">SEM TÍTULO</span>'
+        : esc(r.numero_titulo||'')}</td>
       <td>${esc(r.justificativa||'')}</td>
-      <td>${esc(r.tipo_conta||'—')}</td>
+      <td>${(()=>{
+        if(r.conta_vinculada){
+          return `<span class="badge ok">${esc(r.tipo_conta)}</span>
+            <div style="font-size:11px;margin-top:4px"><b>${esc(r.alojamento_descricao||'Alojamento')}</b></div>
+            <div style="font-size:10px;margin-top:2px;color:var(--ink-soft)">Locação: ${esc(r.contrato_locacao||'—')}</div>`;
+        }
+        if(r.tipo_conta){
+          return `<span class="badge badge-resc">${esc(r.tipo_conta)} · SEM VÍNCULO</span>
+            <div style="font-size:10px;margin-top:4px;color:var(--ink-soft)">Cadastrar este contrato no alojamento correspondente</div>`;
+        }
+        return '—';
+      })()}</td>
       <td style="white-space:nowrap">
         ${canDelete()?`<label style="display:inline-flex;align-items:center;gap:5px;margin-right:7px;cursor:pointer"><input type="checkbox" data-g63-select="${esc(r.id)}" ${state.selected.has(String(r.id))?'checked':''}> X</label>`:''}
         <button type="button" class="crud-mini" data-g57-edit="${esc(r.id)}">✏️ Editar</button>
@@ -11432,12 +11490,12 @@ async function edit(id){
         updated_at:new Date().toISOString()
       };
 
-      // Regra de saldo contratual:
-      // - Histórico importado: impacta_saldo=false e source_row preenchido.
-      //   Após salvar, o acumulado histórico do contrato é RECONSTRUÍDO pela soma real
-      //   de todas as medições históricas LANÇADAS desse contrato. Isso corrige também
-      //   contratos cujo medido_acumulado_inicial veio zerado (ex.: LCM).
-      // - Medições operacionais novas: impacta_saldo=true e entram diretamente na view.
+      // Regra de saldo contratual V114:
+      // - NUNCA reconstruir/zerar medido_acumulado_inicial ao lançar uma nova medição.
+      // - Medição operacional nova: impacta_saldo=true e soma diretamente na view.
+      // - Correção de linha histórica importada: ajusta SOMENTE a diferença (delta)
+      //   sobre o acumulado já existente. Se o acumulado estiver zerado, faz bootstrap
+      //   pela soma das linhas históricas uma única vez, sem apagar valores válidos.
       const atualQ=await sb().from('fechamentos_praca')
         .select('id,source_row,contrato_id,contrato_codigo,valor_medido,status,impacta_saldo')
         .eq('id',id).maybeSingle();
@@ -11446,41 +11504,51 @@ async function edit(id){
       const historica=(atual.impacta_saldo===false && atual.source_row!=null);
       patch.impacta_saldo=historica?false:true;
 
+      const antigoEfetivo=historica && String(atual.status||'').toUpperCase()==='LANCADO'
+        ? Number(atual.valor_medido||0) : 0;
+      const novoEfetivo=historica && novoStatus==='LANCADO' ? novoValor : 0;
+      const deltaHistorico=novoEfetivo-antigoEfetivo;
+
       const q=await sb().from('fechamentos_praca').update(patch).eq('id',id).select('*').maybeSingle();
       if(q.error)throw q.error;
 
-      if(historica){
+      if(historica && Math.abs(deltaHistorico)>0.000001){
         const oid=await getObraId();
         let cq=atual.contrato_id
-          ? await sb().from('contratos').select('id,codigo').eq('id',atual.contrato_id).maybeSingle()
-          : await sb().from('contratos').select('id,codigo').eq('obra_id',oid).eq('codigo',atual.contrato_codigo).maybeSingle();
+          ? await sb().from('contratos').select('id,codigo,medido_acumulado_inicial').eq('id',atual.contrato_id).maybeSingle()
+          : await sb().from('contratos').select('id,codigo,medido_acumulado_inicial').eq('obra_id',oid).eq('codigo',atual.contrato_codigo).maybeSingle();
         if(cq.error)throw cq.error;
-        if(!cq.data?.id)throw new Error('Contrato da medição não encontrado para recalcular o saldo.');
+        if(!cq.data?.id)throw new Error('Contrato da medição não encontrado para atualizar o saldo.');
 
-        // Busca todas as linhas históricas do mesmo contrato e recalcula a base do zero.
-        let hq=await sb().from('fechamentos_praca')
-          .select('valor_medido,status,impacta_saldo,source_row,contrato_id,contrato_codigo')
-          .eq('obra_id',oid)
-          .eq('contrato_id',cq.data.id);
-        if(hq.error)throw hq.error;
+        let baseAtual=Number(cq.data.medido_acumulado_inicial||0);
 
-        // Inclui eventual legado ainda sem contrato_id, identificado pelo código.
-        const legacyQ=await sb().from('fechamentos_praca')
-          .select('valor_medido,status,impacta_saldo,source_row,contrato_id,contrato_codigo')
-          .eq('obra_id',oid)
-          .is('contrato_id',null)
-          .eq('contrato_codigo',cq.data.codigo||atual.contrato_codigo);
-        if(legacyQ.error)throw legacyQ.error;
-
-        const hist=[...(hq.data||[]),...(legacyQ.data||[])];
-        const historicoTotal=hist.reduce((s,m)=>{
-          const ehHistorica=(m.impacta_saldo===false && m.source_row!=null);
-          const lancada=String(m.status||'').toUpperCase()==='LANCADO';
-          return s+(ehHistorica&&lancada?Number(m.valor_medido||0):0);
-        },0);
+        if(baseAtual===0){
+          // Base antiga ausente: inicializa pela soma do histórico importado.
+          const [hq,legacyQ]=await Promise.all([
+            sb().from('fechamentos_praca')
+              .select('valor_medido,status,impacta_saldo,source_row')
+              .eq('obra_id',oid).eq('contrato_id',cq.data.id),
+            sb().from('fechamentos_praca')
+              .select('valor_medido,status,impacta_saldo,source_row')
+              .eq('obra_id',oid).is('contrato_id',null)
+              .eq('contrato_codigo',cq.data.codigo||atual.contrato_codigo)
+          ]);
+          if(hq.error)throw hq.error;
+          if(legacyQ.error)throw legacyQ.error;
+          const hist=[...(hq.data||[]),...(legacyQ.data||[])];
+          baseAtual=hist.reduce((s,m)=>{
+            const ehHistorica=(m.impacta_saldo===false && m.source_row!=null);
+            const lancada=String(m.status||'').toUpperCase()==='LANCADO';
+            return s+(ehHistorica&&lancada?Number(m.valor_medido||0):0);
+          },0);
+          // Como a linha editada já foi salva, a soma acima já contém o novo valor.
+        }else{
+          // Base válida: preserva todo o histórico anterior e aplica só a diferença.
+          baseAtual=Math.max(0,baseAtual+deltaHistorico);
+        }
 
         const cu=await sb().from('contratos')
-          .update({medido_acumulado_inicial:Math.max(0,historicoTotal),updated_at:new Date().toISOString()})
+          .update({medido_acumulado_inicial:baseAtual,updated_at:new Date().toISOString()})
           .eq('id',cq.data.id);
         if(cu.error)throw cu.error;
       }
@@ -11715,7 +11783,12 @@ $('g360Fj57Modal').addEventListener('click',e=>{if(e.target.id==='g360Fj57Modal'
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,800));
 else setTimeout(boot,800);
 
-window.g360FechamentoV57={load,refreshSelect,edit,removeMeasurement,deleteSelected,clearCompetence,openCompetence};
+window.g360FechamentoV57={
+  load,refreshSelect,edit,removeMeasurement,deleteSelected,clearCompetence,openCompetence,
+  getExportRows:()=>filtered().map(r=>({...r})),
+  getAllRows:()=>state.rows.map(r=>({...r})),
+  getPeriod:()=>state.period
+};
 })();
 </script>
 
@@ -11908,6 +11981,211 @@ window.g360FechamentoV57={load,refreshSelect,edit,removeMeasurement,deleteSelect
   mo.observe(root,{subtree:true,attributes:true,attributeFilter:['class']});
 
   window.g360NavPersistV111={saveCurrent,restore};
+})();
+</script>
+
+
+<script id="g360-export-audit-v113">
+(function(){
+  'use strict';
+
+  const $=id=>document.getElementById(id);
+  const escFile=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^A-Za-z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').toLowerCase();
+
+  function deps(kind){
+    if(kind==='pdf'){
+      if(!window.jspdf?.jsPDF) throw new Error('Biblioteca jsPDF não carregada.');
+      if(!window.jspdf.jsPDF.API?.autoTable) throw new Error('Biblioteca AutoTable não carregada.');
+    }else{
+      if(!window.XLSX?.utils) throw new Error('Biblioteca Excel (XLSX) não carregada.');
+    }
+  }
+
+  function money(n){
+    return Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  }
+
+  function contaTxt(r){
+    if(r?.conta_vinculada){
+      const loc=r.contrato_locacao||'—';
+      const aloj=r.alojamento_descricao||'Alojamento';
+      return `${r.tipo_conta||''} | ${aloj} | Locação: ${loc}`;
+    }
+    if(r?.tipo_conta) return `${r.tipo_conta} | SEM VÍNCULO`;
+    return '';
+  }
+
+  function fechamentoData(){
+    const api=window.g360FechamentoV57;
+    if(!api?.getExportRows) throw new Error('Fechamento de Praça ainda não terminou de carregar.');
+    const period=api.getPeriod()||'COMPETENCIA';
+    const rows=api.getExportRows()||[];
+    return {period,rows};
+  }
+
+  function exportFechamentoPDF(){
+    deps('pdf');
+    const {period,rows}=fechamentoData();
+    if(!rows.length){ alert('Nenhuma medição visível para exportar com os filtros atuais.'); return; }
+
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
+    const pageW=doc.internal.pageSize.getWidth();
+
+    doc.setFillColor(20,21,23); doc.rect(0,0,pageW,62,'F');
+    doc.setTextColor(245,197,24); doc.setFont('helvetica','bold'); doc.setFontSize(16);
+    doc.text('Fechamento de Praça — Medição '+period,30,27);
+    doc.setTextColor(230,230,230); doc.setFont('helvetica','normal'); doc.setFontSize(9.2);
+    doc.text(`Obra 202 - Implantação Auriverde · ${rows.length} registro(s) visível(is)`,30,45);
+
+    const total=rows.reduce((s,r)=>s+Number(r.medido||0),0);
+    doc.setTextColor(30,30,30); doc.setFontSize(9);
+    doc.text(`Valor das linhas exportadas: ${money(total)} · Gerado em: ${new Date().toLocaleString('pt-BR')}`,30,80);
+
+    doc.autoTable({
+      startY:94,
+      head:[['Contrato','Fornecedor','Medido','Status','Nº Título','Justificativa','Alojamento / Conta']],
+      body:rows.map(r=>[
+        r.contrato||'',
+        r.fornecedor||'',
+        money(r.medido),
+        r.status==='LANCADO'?'LANÇADO NO SIENGE':'PENDENTE',
+        r.numero_titulo||'',
+        r.justificativa||'',
+        contaTxt(r)
+      ]),
+      styles:{fontSize:7.2,cellPadding:3,valign:'middle',overflow:'linebreak'},
+      headStyles:{fillColor:[20,21,23],textColor:[245,197,24],fontStyle:'bold'},
+      alternateRowStyles:{fillColor:[247,247,247]},
+      columnStyles:{
+        0:{cellWidth:82},
+        1:{cellWidth:138},
+        2:{cellWidth:72,halign:'right'},
+        3:{cellWidth:78},
+        4:{cellWidth:58},
+        5:{cellWidth:112},
+        6:{cellWidth:150}
+      },
+      margin:{left:24,right:24,bottom:32},
+      didDrawPage:function(){
+        const h=doc.internal.pageSize.getHeight();
+        doc.setFontSize(7.5); doc.setTextColor(100);
+        doc.text('CONSTRU-X 360º · Fechamento de Praça',24,h-14);
+        doc.text('Página '+doc.internal.getCurrentPageInfo().pageNumber,pageW-24,h-14,{align:'right'});
+      }
+    });
+
+    doc.save(`fechamento-praca-${escFile(period)}.pdf`);
+  }
+
+  function exportFechamentoXLS(){
+    deps('xls');
+    const {period,rows}=fechamentoData();
+    if(!rows.length){ alert('Nenhuma medição visível para exportar com os filtros atuais.'); return; }
+
+    const aoa=[
+      ['Fechamento de Praça — Medição '+period],
+      ['Obra 202 - Implantação Auriverde'],
+      [],
+      ['Quantidade exportada',rows.length],
+      ['Valor total',rows.reduce((s,r)=>s+Number(r.medido||0),0)],
+      ['Gerado em',new Date().toLocaleString('pt-BR')],
+      [],
+      ['Contrato','Fornecedor','Medido','Status','Nº Título','Justificativa','Tipo de Conta','Alojamento','Contrato de Locação','Situação do Vínculo'],
+      ...rows.map(r=>[
+        r.contrato||'',
+        r.fornecedor||'',
+        Number(r.medido||0),
+        r.status==='LANCADO'?'LANÇADO NO SIENGE':'PENDENTE',
+        r.numero_titulo||'',
+        r.justificativa||'',
+        r.tipo_conta||'',
+        r.alojamento_descricao||'',
+        r.contrato_locacao||'',
+        r.tipo_conta?(r.conta_vinculada?'VINCULADO':'SEM VÍNCULO'):''
+      ])
+    ];
+    const ws=XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols']=[
+      {wch:20},{wch:38},{wch:15},{wch:22},{wch:14},{wch:34},
+      {wch:16},{wch:28},{wch:22},{wch:18}
+    ];
+    for(let r=8;r<aoa.length;r++){
+      const addr=XLSX.utils.encode_cell({r,c:2});
+      if(ws[addr]) ws[addr].z='#,##0.00';
+    }
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Fechamento');
+    XLSX.writeFile(wb,`fechamento-praca-${escFile(period)}.xlsx`);
+  }
+
+  // Fechamento V57: captura antes do exportador legado, que usava fjState.
+  document.addEventListener('click',function(e){
+    const pdf=e.target.closest?.('#fjExportPdfBtn');
+    const xls=e.target.closest?.('#fjExportXlsBtn');
+    if(!pdf&&!xls)return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    try{
+      if(pdf) exportFechamentoPDF();
+      else exportFechamentoXLS();
+    }catch(err){
+      console.error('Exportação Fechamento V113:',err);
+      alert('Não foi possível exportar o Fechamento de Praça: '+(err?.message||err));
+    }
+  },true);
+
+  // Auditoria estrutural de todos os botões de exportação existentes.
+  // Não troca a lógica dos demais módulos; apenas detecta biblioteca ausente
+  // antes do clique e evita falha silenciosa.
+  const pdfIds=[
+    'colabExportPdfBtn','alojImoveisExportPdfBtn','colabAlojExportPdfBtn',
+    'orgExportPdfBtn','orgExportFlowBtn','exportPdfBtn','alertExportPdfBtn',
+    'baixadaExportPdfBtn','sesmtExportPdfBtn'
+  ];
+  const xlsIds=[
+    'colabExportXlsBtn','alojImoveisExportXlsBtn','colabAlojExportXlsBtn',
+    'orgExportXlsBtn','exportXlsBtn','alertExportXlsBtn',
+    'baixadaExportXlsBtn','sesmtExportXlsBtn'
+  ];
+
+  document.addEventListener('click',function(e){
+    const b=e.target.closest?.('button');
+    if(!b)return;
+    try{
+      if(pdfIds.includes(b.id)) deps('pdf');
+      if(xlsIds.includes(b.id)) deps('xls');
+    }catch(err){
+      e.preventDefault(); e.stopImmediatePropagation();
+      console.error('Auditoria de exportação V113:',b.id,err);
+      alert('Exportação indisponível: '+(err?.message||err)+' Atualize a página e tente novamente.');
+    }
+  },true);
+
+  function audit(){
+    const expected=[...pdfIds,...xlsIds,'fjExportPdfBtn','fjExportXlsBtn'];
+    const missing=expected.filter(id=>!$(id));
+    const duplicates=expected.filter(id=>document.querySelectorAll('#'+CSS.escape(id)).length>1);
+    const result={
+      checked:expected.length,
+      missing,
+      duplicates,
+      jspdf:!!window.jspdf?.jsPDF,
+      autotable:!!window.jspdf?.jsPDF?.API?.autoTable,
+      xlsx:!!window.XLSX?.utils
+    };
+    window.g360ExportAuditV113=result;
+    if(missing.length||duplicates.length||!result.jspdf||!result.autotable||!result.xlsx){
+      console.warn('Auditoria de exportação V113:',result);
+    }else{
+      console.info('Auditoria de exportação V113: OK',result);
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',audit,{once:true});
+  else audit();
+
+  window.g360ExportV113={exportFechamentoPDF,exportFechamentoXLS,audit};
 })();
 </script>
 
