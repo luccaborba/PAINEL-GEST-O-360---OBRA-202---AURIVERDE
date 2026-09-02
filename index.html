@@ -11805,6 +11805,112 @@ window.g360FechamentoV57={load,refreshSelect,edit,removeMeasurement,deleteSelect
 #g360Fj57Modal:not(.open){display:none!important}
 #g360Fj57Modal.open{display:flex!important}
 </style>
+
+<script id="g360-nav-persist-v111">
+(function(){
+  'use strict';
+
+  const KEY_VIEW='g360_last_active_view_v111';
+  const KEY_CTR='g360_last_contract_subview_v111';
+
+  function currentView(){
+    const v=document.querySelector('.view.active[id^="view-"]');
+    return v ? v.id.replace(/^view-/,'') : null;
+  }
+
+  function saveCurrent(){
+    const v=currentView();
+    if(v && v!=='executivo') sessionStorage.setItem(KEY_VIEW,v);
+
+    if(v==='contratos'){
+      const sub=window.g360LastContractSubview ||
+        document.querySelector('.side-link[data-view="contratos"].active')?.dataset?.contractSubview;
+      if(sub) sessionStorage.setItem(KEY_CTR,sub);
+    }
+  }
+
+  function restore(){
+    const view=sessionStorage.getItem(KEY_VIEW);
+    if(!view || view==='executivo') return;
+
+    const target=document.getElementById('view-'+view);
+    if(!target) return;
+
+    if(view==='contratos'){
+      const sub=sessionStorage.getItem(KEY_CTR);
+      if(sub) window.g360LastContractSubview=sub;
+    }
+
+    if(window.g360NavV64?.activate){
+      window.g360NavV64.activate(view);
+    }else{
+      document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('.side-link[data-view]').forEach(x=>x.classList.remove('active'));
+      target.classList.add('active');
+      const link=document.querySelector('.side-link[data-view="'+CSS.escape(view)+'"]');
+      link?.classList.add('active');
+    }
+
+    // Renderiza novamente o projeto restaurado quando necessário.
+    try{
+      if(typeof RENDERERS!=='undefined' && RENDERERS[view]) RENDERERS[view]();
+    }catch(e){ console.warn('V111 restore renderer:',e); }
+
+    if(view==='contratos' && typeof window.g360ContratoShowView==='function'){
+      const sub=sessionStorage.getItem(KEY_CTR)||window.g360LastContractSubview||'dashboard';
+      window.g360LastContractSubview=sub;
+      window.g360ContratoShowView(sub);
+    }
+  }
+
+  // Toda navegação escolhida pelo usuário passa a ser persistida.
+  document.addEventListener('click',function(e){
+    const link=e.target.closest?.('.side-link[data-view]');
+    if(link){
+      const view=link.dataset.view;
+      if(view){
+        sessionStorage.setItem(KEY_VIEW,view);
+        if(view==='contratos' && link.dataset.contractSubview){
+          sessionStorage.setItem(KEY_CTR,link.dataset.contractSubview);
+        }
+      }
+      return;
+    }
+
+    // Antes de qualquer botão de ação/submit potencialmente provocar reload,
+    // registra a tela em que o usuário está.
+    const action=e.target.closest?.('button,a,[data-action],[onclick]');
+    if(action) saveCurrent();
+  },true);
+
+  document.addEventListener('submit',saveCurrent,true);
+  window.addEventListener('beforeunload',saveCurrent);
+
+  // Restaura após bootstrap/auth/Supabase, inclusive contra rotinas tardias
+  // que tentem voltar ao Dashboard Gerencial.
+  const delays=[0,120,350,700,1200,2000,3500];
+  function scheduleRestore(){delays.forEach(ms=>setTimeout(restore,ms));}
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',scheduleRestore,{once:true});
+  }else scheduleRestore();
+
+  // Observa trocas indevidas para executivo logo após uma ação/reload.
+  const mo=new MutationObserver(()=>{
+    const wanted=sessionStorage.getItem(KEY_VIEW);
+    if(!wanted || wanted==='executivo') return;
+    const target=document.getElementById('view-'+wanted);
+    const exec=document.getElementById('view-executivo');
+    if(target && exec?.classList.contains('active') && !target.classList.contains('active')){
+      restore();
+    }
+  });
+  const root=document.querySelector('.content-col')||document.body;
+  mo.observe(root,{subtree:true,attributes:true,attributeFilter:['class']});
+
+  window.g360NavPersistV111={saveCurrent,restore};
+})();
+</script>
+
 </body>
 </html>
 
