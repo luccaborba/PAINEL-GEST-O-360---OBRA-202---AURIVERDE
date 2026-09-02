@@ -10007,6 +10007,9 @@ window.GESTAO360_CONFIG = {
     try{ if(typeof renderExecutivo==='function') renderExecutivo(); }catch(e){ console.error('Erro ao atualizar Painel Gerencial após Supabase:',e); }
     return true;
   }
+  // V101: permite que módulos operacionais forcem uma sincronização completa
+  // após alterar dados que impactam indicadores/contratos.
+  window.g360PullAll = pullAll;
   function authUI(){
     if(document.getElementById('g360Auth')) return;
     document.body.insertAdjacentHTML('beforeend', `<div id="g360Auth"><div class="box"><h1>CONSTRU-X</h1><p style="margin-top:-2px;color:#f5c518;font-weight:800">GESTÃO INTELIGENTE 360º</p><p>Entre com seu usuário cadastrado.</p><input class="g360-input" id="g360Email" type="email" placeholder="E-mail"><input class="g360-input" id="g360Pass" type="password" placeholder="Senha"><button class="g360-btn" id="g360Login" style="width:100%;margin-top:8px">Entrar</button><button class="g360-auth-link" id="g360Forgot" type="button">Esqueci minha senha</button><p id="g360AuthMsg"></p><div style="margin-top:18px;padding-top:12px;border-top:1px solid #34363b;font-size:10.5px;color:#888;line-height:1.5">Idealização e Desenvolvimento<br><b style="color:#bbb">Luciano Garcia Borba</b><br>© 2026 · Todos os direitos reservados</div></div></div>`);
@@ -10032,7 +10035,7 @@ window.GESTAO360_CONFIG = {
   const defs={
     cargosSalarios:{title:'Cargos e Salários',table:'cargos_salarios',order:'funcao',fields:[['funcao','Função / Cargo','span2'],['nivel','Nível'],['salario','Salário','number'],['ativo','Ativo','','ativo-cargo']],cols:['funcao','nivel','salario','ativo']},
     funcionarios:{title:'Funcionários',table:'funcionarios',order:'nome',fields:[['matricula','Matrícula'],['cpf','CPF'],['nome','Nome','span2'],['tipo_contrato','Tipo contrato'],['admissao','Admissão','date'],['venc_aso','Venc. ASO (pode informar depois)','date'],['depto','Setor','','setor-cadastro'],['setor_equipe','Setor / Equipe','','setor-equipe-master-base'],['funcao','Função / Cargo','span2','funcao-cadastro'],['nivel','Nível','','nivel-cadastro'],['status','Status','','status-func'],['obra','Obra','span2','obra-cadastro'],['jornada_tipo','Jornada / Escala','','jornada-select'],['horario_entrada','Entrada','','time'],['horario_saida','Saída','','time'],['intervalo_inicio','Início do intervalo','','time'],['intervalo_fim','Fim do intervalo','','time'],['jornada_observacao','Detalhes da jornada','span2'],['cnh','CNH'],['cat_cnh','Cat. CNH'],['venc_cnh','Venc. CNH','date'],['salario','Salário','','salario-cadastro'],['gratificacao','Gratificação','number'],['cidade','Cidade / Estado','span2','cidade-ibge'],['distancia_baixada_km','Distância da obra (km)','number'],['ult_baixada','Últ. baixada','date'],['prox_baixada','Próx. baixada','date'],['periodicidade_baixada','Periodicidade de baixada','','periodicidade-baixada'],['custo_baixada','Custo baixada (opcional)','number'],['vt','VT (opcional)','number'],['beneficios','Benefícios','number'],['usa_aloj','Usa alojamento?','','usa-aloj'],['alojamento','Alojamento','span2','aloj-select']],cols:['matricula','nome','funcao','setor_equipe','status']},
-    contratos:{title:'Contratos',table:'contratos',order:'codigo',fields:[['codigo','Contrato'],['fornecedor','Fornecedor','span2'],['tipo','Tipo','span2'],['objeto','Objeto','span4','textarea'],['valor_contratado','Valor contratado','number'],['valor_mensal','Valor mensal','number'],['data_inicio','Início','date'],['data_fim','Fim','date'],['situacao','Situação'],['fechamento','Fechamento'],['justificativa','Justificativa','span2']],cols:['codigo','fornecedor','tipo','situacao','valor_contratado']},
+    contratos:{title:'Contratos',table:'contratos',order:'codigo',fields:[['codigo','Contrato'],['fornecedor','Fornecedor','span2'],['tipo','Tipo','span2'],['objeto','Objeto','span4','textarea'],['valor_contratado','Valor contratado','number'],['valor_medido_total','Valor medido','number'],['valor_mensal','Valor mensal','number'],['data_inicio','Início','date'],['data_fim','Fim','date'],['situacao','Situação'],['fechamento','Fechamento'],['justificativa','Justificativa','span2']],cols:['codigo','fornecedor','tipo','situacao','valor_contratado']},
     alojamentos:{title:'Alojamentos',table:'alojamentos',order:'descricao',fields:[['contrato_codigo','Contrato de locação'],['descricao','Descrição','span2'],['fornecedor','Fornecedor / Locador','span2'],['endereco','Endereço completo','span4','textarea'],['contrato_agua','Contrato de Água','span2','contrato-servico:A'],['contrato_energia','Contrato de Energia','span2','contrato-servico:E'],['contrato_internet','Contrato de Internet','span2','contrato-servico:I'],['valor_mensal','Valor mensal','number'],['capacidade','Capacidade','number'],['ocupados','Ocupados','number'],['custo_rateado','Rateio por ocupante','number-readonly'],['status','Status']],cols:['contrato_codigo','descricao','endereco','contrato_agua','contrato_energia','contrato_internet','capacidade','status']},
     patrimonio:{title:'Inventário de Patrimônio',table:'patrimonio_itens',order:'descricao',fields:[['codigo_patrimonio','Nº Patrimônio'],['tag','Tag'],['descricao','Descrição','span2'],['categoria','Categoria'],['marca','Marca'],['modelo','Modelo'],['numero_serie','Nº de série'],['alojamento_codigo','Alojamento','span2','aloj-select'],['comodo','Cômodo'],['quantidade','Quantidade','number'],['valor_unitario','Valor unitário','number'],['data_aquisicao','Data aquisição','date'],['estado_conservacao','Estado conservação'],['status','Status'],['responsavel','Responsável','span2'],['origem','Origem / fornecedor','span2'],['observacao','Observação','span4','textarea']],cols:['codigo_patrimonio','descricao','categoria','alojamento_codigo','comodo','estado_conservacao','status']},
     movimentacoes:{title:'Movimentações Patrimoniais',table:'patrimonio_movimentacoes',order:'data_movimentacao',fields:[['patrimonio_codigo','Nº Patrimônio'],['data_movimentacao','Data','date'],['tipo','Tipo'],['origem','Origem','span2'],['destino','Destino','span2'],['responsavel','Responsável','span2'],['observacao','Observação','span4','textarea']],cols:['data_movimentacao','patrimonio_codigo','tipo','origem','destino','responsavel']},
@@ -10133,6 +10136,13 @@ window.GESTAO360_CONFIG = {
     const edit=editId?(data||[]).find(x=>x.id===editId):null;
     const prefill=(!editId&&opts?.prefill)?opts.prefill:null;
     const current=edit||prefill||{};
+    // V102 — no editor de Contratos, o campo "Valor medido" representa o total
+    // consolidado exibido na Base de Contratos (histórico + Fechamento de Praça).
+    if(kind==='contratos' && edit){
+      const vr=await sb.from('vw_contratos_saldo').select('total_medido').eq('id',edit.id).maybeSingle();
+      if(vr.error){g360Content.innerHTML=esc(vr.error.message);return;}
+      current.valor_medido_total=Number(vr.data?.total_medido||0);
+    }
     let desligItens=[];
     if(kind==='funcionarios' && edit){
       try{
@@ -10372,6 +10382,30 @@ window.GESTAO360_CONFIG = {
     }
     if(kind==='alojamentos'){const vf=g360Form.elements.valor_mensal,of=g360Form.elements.ocupados,rf=g360Form.elements.custo_rateado;const calc=()=>{if(rf)rf.value=(Number(of?.value||0)>0?(Number(vf?.value||0)/Number(of.value)):0).toFixed(2)};vf?.addEventListener('input',calc);of?.addEventListener('input',calc);calc();}
     g360Form.onsubmit=async e=>{e.preventDefault();if(!g360Form.checkValidity()){g360Form.reportValidity();return;}const fd=new FormData(e.target),obj={};d.fields.forEach(f=>{let v=fd.get(f[0]);if(v==='')v=null;if((f[2]==='number'||f[3]==='number'||f[2]==='number-readonly'||f[3]==='number-readonly'||f[3]==='salario-cadastro')&&v!==null)v=Number(v);obj[f[0]]=v});
+      if(kind==='contratos'){
+        // "Valor medido" é um campo virtual do formulário. Para manter o Fechamento
+        // de Praça como fonte das medições operacionais, ajustamos apenas o acumulado
+        // histórico necessário para que o total consolidado resulte no valor informado.
+        const alvo=Number(obj.valor_medido_total||0);
+        if(!Number.isFinite(alvo)||alvo<0){alert('Informe um Valor medido válido.');g360Form.elements.valor_medido_total?.focus();return;}
+        const [fpId,fpLegado]=await Promise.all([
+          sb.from('fechamentos_praca').select('valor_medido,status,impacta_saldo').eq('contrato_id',edit.id),
+          sb.from('fechamentos_praca').select('valor_medido,status,impacta_saldo').is('contrato_id',null).eq('contrato_codigo',edit.codigo)
+        ]);
+        if(fpId.error||fpLegado.error){alert('Não foi possível calcular as medições do contrato: '+(fpId.error?.message||fpLegado.error?.message));return;}
+        const fpRows=[...(fpId.data||[]),...(fpLegado.data||[])];
+        const medidoOperacional=fpRows.reduce((s,m)=>{
+          const lancado=String(m.status||'').toUpperCase()==='LANCADO';
+          const impacta=m.impacta_saldo!==false;
+          return s+(lancado&&impacta?Number(m.valor_medido||0):0);
+        },0);
+        if(alvo+0.005<medidoOperacional){
+          alert(`O valor informado (${alvo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}) é menor que as medições do Fechamento de Praça que já impactam o saldo (${medidoOperacional.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}). Ajuste primeiro essas medições no Fechamento de Praça.`);
+          return;
+        }
+        obj.medido_acumulado_inicial=Math.max(0,alvo-medidoOperacional);
+        delete obj.valor_medido_total;
+      }
       if(kind==='funcionarios'){
         const labels=Object.fromEntries(d.fields.map(f=>[f[0],f[1]]));
         const opcionais=new Set(['venc_aso','cnh','cat_cnh','venc_cnh','ult_baixada','prox_baixada','periodicidade_baixada','custo_baixada','vt','horario_entrada','horario_saida','intervalo_inicio','intervalo_fim','jornada_observacao']);
@@ -11248,6 +11282,7 @@ async function fetchRows(period){
   });
   return (q.data||[]).map(r=>({
     id:r.id,source_row:r.source_row,codigo_fornecedor:r.codigo_fornecedor,
+    contrato_id:r.contrato_id||null,impacta_saldo:r.impacta_saldo!==false,
     contrato:r.contrato_codigo||'',fornecedor:r.fornecedor||'',
     tipoContrato:typeMap.get(String(r.contrato_codigo||'').trim().toUpperCase())||'NÃO INFORMADO',
     medido:Number(r.valor_medido||0),status:String(r.status||'PENDENTE').toUpperCase(),
@@ -11387,10 +11422,56 @@ async function edit(id){
     const b=e.currentTarget.querySelector('[type=submit]'),fd=new FormData(e.currentTarget);
     try{
       b.disabled=true;b.textContent='Salvando...';
-      const patch={valor_medido:Number(fd.get('medido')||0),status:String(fd.get('status')||'PENDENTE'),justificativa:String(fd.get('justificativa')||'').trim()||null,updated_at:new Date().toISOString()};
+      const novoValor=Number(fd.get('medido')||0);
+      const novoStatus=String(fd.get('status')||'PENDENTE');
+      const patch={
+        valor_medido:novoValor,
+        status:novoStatus,
+        numero_titulo:String(fd.get('numero_titulo')||'').trim()||null,
+        justificativa:String(fd.get('justificativa')||'').trim()||null,
+        updated_at:new Date().toISOString()
+      };
+
+      // Regra de saldo contratual:
+      // 1) Linhas históricas importadas da planilha (source_row preenchido) já estavam
+      //    incorporadas em contratos.medido_acumulado_inicial. Ao corrigir uma delas,
+      //    ajustamos somente a diferença no acumulado inicial para não somar em dobro.
+      // 2) Linhas operacionais novas devem impactar o saldo diretamente pela view.
+      const atualQ=await sb().from('fechamentos_praca')
+        .select('id,source_row,contrato_id,contrato_codigo,valor_medido,status,impacta_saldo')
+        .eq('id',id).maybeSingle();
+      if(atualQ.error)throw atualQ.error;
+      const atual=atualQ.data||{};
+      const historica=(atual.impacta_saldo===false && atual.source_row!=null);
+      if(historica){
+        const antigoEfetivo=String(atual.status||'').toUpperCase()==='LANCADO'?Number(atual.valor_medido||0):0;
+        const novoEfetivo=novoStatus==='LANCADO'?novoValor:0;
+        const delta=novoEfetivo-antigoEfetivo;
+        if(Math.abs(delta)>0.000001){
+          let cq=atual.contrato_id
+            ? await sb().from('contratos').select('id,medido_acumulado_inicial').eq('id',atual.contrato_id).maybeSingle()
+            : await sb().from('contratos').select('id,medido_acumulado_inicial').eq('obra_id',await getObraId()).eq('codigo',atual.contrato_codigo).maybeSingle();
+          if(cq.error)throw cq.error;
+          if(!cq.data?.id)throw new Error('Contrato da medição não encontrado para recalcular o saldo.');
+          const baseAtual=Number(cq.data.medido_acumulado_inicial||0);
+          const cu=await sb().from('contratos').update({medido_acumulado_inicial:Math.max(0,baseAtual+delta),updated_at:new Date().toISOString()}).eq('id',cq.data.id);
+          if(cu.error)throw cu.error;
+        }
+        patch.impacta_saldo=false;
+      }else{
+        // Corrige também competências criadas por versões anteriores que gravavam false.
+        patch.impacta_saldo=true;
+      }
+
       const q=await sb().from('fechamentos_praca').update(patch).eq('id',id).select('id').maybeSingle();
       if(q.error)throw q.error;
-      modalClose();await load(state.period);
+      modalClose();
+      sessionStorage.removeItem('g360_db_sig');
+      if(typeof window.g360PullAll==='function'){
+        const ok=await window.g360PullAll();
+        if(ok===false)return;
+      }
+      await load(state.period);
     }catch(err){alert('Erro ao salvar medição: '+(err?.message||err))}
     finally{if(b){b.disabled=false;b.textContent='💾 Salvar alteração'}}
   };
@@ -11509,7 +11590,7 @@ async function openCompetence(mode){
     try{
       b.disabled=true;b.textContent='Salvando...';
       const oid=await getObraId();
-      const payload=chosen.map(c=>({obra_id:oid,competencia:comp,codigo_fornecedor:c.codigo_fornecedor,contrato_codigo:String(c.codigo).trim(),fornecedor:String(c.fornecedor||'NÃO INFORMADO').trim(),valor_medido:0,status:'PENDENTE',numero_titulo:null,justificativa:null,impacta_saldo:false}));
+      const payload=chosen.map(c=>({obra_id:oid,competencia:comp,codigo_fornecedor:c.codigo_fornecedor,contrato_codigo:String(c.codigo).trim(),fornecedor:String(c.fornecedor||'NÃO INFORMADO').trim(),valor_medido:0,status:'PENDENTE',numero_titulo:null,justificativa:null,impacta_saldo:true}));
       const q=await sb().from('fechamentos_praca').insert(payload).select('id');
       if(q.error)throw q.error;
       modalClose();
