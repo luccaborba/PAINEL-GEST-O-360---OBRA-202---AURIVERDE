@@ -1515,7 +1515,7 @@ html.g360-ui-ready .content-col {
   </header>
 
   <div class="crud-mainbar" id="g360ContratoOrigemSolicitacaoBar" style="display:none;">
-    <button type="button" class="crud-primary" id="g360NovoContratoViaSolicitacao">＋ Transformar solicitação em contrato</button>
+    <button type="button" class="crud-primary" id="g360NovoContratoViaSolicitacao">＋ Importar solicitação para contrato</button>
   </div>
 
   <div id="viewDashboard">
@@ -8771,7 +8771,7 @@ const FORMS = {
   prestacao_servicos:{
     code:'PJ', label:'Prestação de Serviços (PJ)', docTitle:'FORMULÁRIO DE PREENCHIMENTO – CONTRATO DE PRESTAÇÃO DE SERVIÇOS – PESSOA JURÍDICA',
     desc:'Contratação de empresa (PJ) para execução de serviços na obra.',
-    hasChecklist:true, checklist:CHECK_PJ, hasPricingTable:true, pricingAfterFields:['valor_mensal'],
+    hasChecklist:true, checklist:CHECK_PJ, hasPricingTable:true, pricingAfterFields:['valor_mensal','valor_total_contrato'],
     sections:[
       {num:'2°', title:'PRESTADORA DE SERVIÇOS', fields:locadoraFields('2.0', 'CNPJ')},
       {num:'3°', title:'OBJETO DO CONTRATO', fields:[ F.textarea('objeto','') ]},
@@ -8779,6 +8779,7 @@ const FORMS = {
       {num:'5°', title:'DATA DE FIM DA PRESTAÇÃO DE SERVIÇOS', fields:[ F.date('data_fim','') ]},
       {num:'6°', title:'VALOR', fields:[
         F.money('valor_mensal','Mensal'),
+        F.money('valor_total_contrato','Valor total do contrato', {hint:'Sugerido automaticamente pela vigência: valor mensal × meses. Você pode ajustar manualmente.'}),
         F.text('data_fechamento_medicoes','Data do Fechamento das Medições', {hint:'Ex.: 30 dias após emissão da nota fiscal', oneColumn:true}),
         F.text('data_pagamento_medicoes','Data do Pagamento das Medições', {hint:'Ex.: 30 dias após emissão da nota fiscal', oneColumn:true}),
         F.choice('pagamento_avista','O pagamento será à vista?',SIMNAO),
@@ -9086,7 +9087,17 @@ function renderAditivoTable(typeId, data, readonly){
       ${readonly?'':'<td style="width:28px;"><button type="button" class="tbl-rm" onclick="SolContratos.removeAditivoRow(\''+typeId+'\',\''+r.id+'\')">✕</button></td>'}
     </tr>`;
   }).join('');
+  const usarItens = data.usar_precificacao === 'SIM';
   return `
+  <div class="field" style="margin-bottom:12px;">
+    <label>Deseja incluir itens / precificação?</label>
+    <select data-pricing-toggle="${typeId}" ${readonly?'disabled':''}>
+      <option value="NAO" ${!usarItens?'selected':''}>NÃO</option>
+      <option value="SIM" ${usarItens?'selected':''}>SIM</option>
+    </select>
+    <div class="field-hint">Use SIM quando o serviço tiver composição por item, unidade, quantidade e valor unitário.</div>
+  </div>
+  <div data-pricing-content="${typeId}" style="${usarItens?'':'display:none;'}">
   <div class="aditivo-table-wrap">
     <table class="aditivo-tbl">
       <thead>
@@ -9140,7 +9151,12 @@ function renderPricingTable(typeId, data, readonly){
     total += rowTotal;
     return `<tr data-prow="${r.id}">
       <td><input type="text" data-price-field="item" value="${esc(r.item)}" placeholder="Ex.: Demolição de estrutura de concreto" ${readonly?'disabled':''}></td>
-      <td style="width:90px;"><input type="text" data-price-field="unidade" value="${esc(r.unidade)}" placeholder="m³, un, h..." ${readonly?'disabled':''}></td>
+      <td style="width:130px;">
+        <select data-price-field="unidade" ${readonly?'disabled':''}>
+          <option value="">Selecione</option>
+          ${['UND','UN','MÊS','DIA','HORA','H','KG','G','TON','T','M','MT','M²','M2','M³','M3','CM','MM','L','ML','M³/KM','KM','VIAGEM','VB','CJ','KIT','PAR','PÇ','PEÇA','ROLO','SACO','SC','CX','CAIXA','PACOTE','PCT','GALÃO','GL','BALDE','BD','SERVIÇO','SV','LOTE'].map(u=>`<option value="${u}" ${String(r.unidade||'').toUpperCase()===u?'selected':''}>${u}</option>`).join('')}
+        </select>
+      </td>
       <td style="width:100px;"><input type="text" data-price-field="quantidade" value="${esc(r.quantidade)}" placeholder="0,00" ${readonly?'disabled':''}></td>
       <td style="width:110px;"><input type="text" data-price-field="valor_unitario" value="${esc(r.valor_unitario)}" placeholder="0,00" ${readonly?'disabled':''}></td>
       <td style="width:120px;text-align:right;padding-right:8px;" class="mono" data-price-row-total="${r.id}">R$ ${fmtMoney(rowTotal)}</td>
@@ -9162,6 +9178,7 @@ function renderPricingTable(typeId, data, readonly){
     </table>
   </div>
   ${readonly?'':'<button type="button" class="btn tbl-add-row" onclick="SolContratos.addPricingRow(\''+typeId+'\')">+ Adicionar item</button>'}
+  </div>
   `;
 }
 function addPricingRow(typeId){
@@ -9276,6 +9293,40 @@ function toggleCheck(typeId, checkId, checked){
 }
 
 /* ---------- form view ---------- */
+
+function parseMoneySol(v){
+  if(v===undefined||v===null||v==='') return 0;
+  let s=String(v).trim().replace(/R\$\s*/gi,'');
+  if(s.includes(',') && s.includes('.')) s=s.replace(/\./g,'').replace(',','.');
+  else if(s.includes(',')) s=s.replace(',','.');
+  const n=Number(s); return Number.isFinite(n)?n:0;
+}
+function vigenciaMesesSol(inicio,fim){
+  if(!inicio||!fim) return 0;
+  const a=new Date(inicio+'T00:00:00'), b=new Date(fim+'T00:00:00');
+  if(isNaN(a)||isNaN(b)||b<a) return 0;
+  let meses=(b.getFullYear()-a.getFullYear())*12+(b.getMonth()-a.getMonth());
+  if(b.getDate()>=a.getDate()) meses+=1;
+  return Math.max(1,meses);
+}
+function updateValorTotalContrato(typeId, holder){
+  if(typeId!=='prestacao_servicos') return;
+  const d=getFormData(typeId);
+  let total=0;
+  if(d.usar_precificacao==='SIM'){
+    total=(d.__pricing||[]).reduce((s,r)=>s+calcPricingRowTotal(r),0);
+    d.valor_total_contrato = total ? total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '';
+    d.__valor_total_manual=false;
+  }else if(!d.__valor_total_manual){
+    const meses=vigenciaMesesSol(d.data_inicio,d.data_fim);
+    total=parseMoneySol(d.valor_mensal)*(meses||1);
+    d.valor_total_contrato = total ? total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '';
+  }
+  saveDrafts(drafts);
+  const inp=holder?.querySelector('[data-field="valor_total_contrato"]');
+  if(inp && document.activeElement!==inp) inp.value=d.valor_total_contrato||'';
+}
+
 function renderFormBody(){
   const holder = document.getElementById('solFormBody');
   if(!holder) return;
@@ -9355,11 +9406,30 @@ function renderFormBody(){
   }
 
   holder.innerHTML = html;
+  if(typeId==='prestacao_servicos') updateValorTotalContrato(typeId, holder);
 
   // attach text/textarea/money/date change listeners
   holder.querySelectorAll('[data-field]').forEach(inp=>{
     inp.addEventListener('input', (e)=>{
-      setField(typeId, inp.getAttribute('data-field'), e.target.value);
+      const fieldId=inp.getAttribute('data-field');
+      setField(typeId, fieldId, e.target.value);
+      if(typeId==='prestacao_servicos'){
+        if(fieldId==='valor_total_contrato'){
+          const d=getFormData(typeId); d.__valor_total_manual=true; saveDrafts(drafts);
+        }else if(['valor_mensal','data_inicio','data_fim'].includes(fieldId)){
+          updateValorTotalContrato(typeId, holder);
+        }
+      }
+    });
+  });
+  holder.querySelectorAll('[data-pricing-toggle]').forEach(sel=>{
+    sel.addEventListener('change',e=>{
+      const d=getFormData(typeId);
+      d.usar_precificacao=e.target.value;
+      saveDrafts(drafts);
+      const content=holder.querySelector(`[data-pricing-content="${typeId}"]`);
+      if(content) content.style.display=e.target.value==='SIM'?'':'none';
+      updateValorTotalContrato(typeId, holder);
     });
   });
   holder.querySelectorAll('[data-adt-field]').forEach(inp=>{
@@ -9403,6 +9473,7 @@ function renderFormBody(){
       rows.forEach(r=>{ total += calcPricingRowTotal(r); });
       const totCell = holder.querySelector('[data-price-total]');
       if(totCell) totCell.textContent = `R$ ${fmtMoney(total)}`;
+      if(typeId==='prestacao_servicos') updateValorTotalContrato(typeId, holder);
     });
   });
   holder.querySelectorAll('[data-attach-field]').forEach(inp=>{
@@ -9558,8 +9629,10 @@ function reqFornecedor(it){ const d=it.data||{}; return d.prest_nome||d.parte_no
 function reqObjeto(it){ const d=it.data||{}; return d.objeto||d.negociado||d.eq_tipo||d.imovel_endereco||FORMS[it.type]?.label||'CONTRATO'; }
 function reqValorTotal(it){
   const d=it.data||{};
-  if(Array.isArray(d.__pricing) && d.__pricing.length){ return d.__pricing.reduce((s,r)=>s+calcPricingRowTotal(r),0); }
-  return reqMoney(d.valor_total||d.valor_contrato||d.valor_mensal||d.valor_locacao||0);
+  if(d.usar_precificacao==='SIM' && Array.isArray(d.__pricing) && d.__pricing.length){
+    return d.__pricing.reduce((s,r)=>s+calcPricingRowTotal(r),0);
+  }
+  return reqMoney(d.valor_total_contrato||d.valor_total||d.valor_contrato||d.valor_mensal||d.valor_locacao||0);
 }
 function reqValorMensal(it){ const d=it.data||{}; return reqMoney(d.valor_mensal||d.valor_locacao||0)||null; }
 function reqDate(it,which){ const d=it.data||{}; return which==='ini'?(d.data_inicio||d.inicio_locacao||''):(d.data_fim||d.fim_locacao||''); }
@@ -9660,17 +9733,19 @@ function buildPrintHTML(typeId, data, proto){
       before.forEach(fl=>{ html += renderPrField(fl); });
       html += `</div>`;
 
-      const rows = (data.__pricing||[]);
-      let total = 0;
-      html += `<div class="pr-block">`;
-      html += `<h2>Itens da Prestação / Precificação</h2><table><tr><th>Item</th><th>Unidade</th><th>Quantidade</th><th>Valor Unitário</th><th>Total</th></tr>`;
-      rows.forEach(r=>{
-        const rowTotal = calcPricingRowTotal(r);
-        total += rowTotal;
-        html += `<tr><td>${esc(r.item)}</td><td>${esc(r.unidade)}</td><td>${esc(r.quantidade)}</td><td>R$ ${fmtMoney(r.valor_unitario)}</td><td>R$ ${fmtMoney(rowTotal)}</td></tr>`;
-      });
-      html += `<tr><td colspan="4" style="text-align:right;"><b>TOTAL GERAL</b></td><td><b>R$ ${fmtMoney(total)}</b></td></tr>`;
-      html += `</table></div>`;
+      if(data.usar_precificacao==='SIM'){
+        const rows = (data.__pricing||[]);
+        let total = 0;
+        html += `<div class="pr-block">`;
+        html += `<h2>Itens da Prestação / Precificação</h2><table><tr><th>Item</th><th>Unidade</th><th>Quantidade</th><th>Valor Unitário</th><th>Total</th></tr>`;
+        rows.forEach(r=>{
+          const rowTotal = calcPricingRowTotal(r);
+          total += rowTotal;
+          html += `<tr><td>${esc(r.item)}</td><td>${esc(r.unidade)}</td><td>${esc(r.quantidade)}</td><td>R$ ${fmtMoney(r.valor_unitario)}</td><td>R$ ${fmtMoney(rowTotal)}</td></tr>`;
+        });
+        html += `<tr><td colspan="4" style="text-align:right;"><b>TOTAL GERAL</b></td><td><b>R$ ${fmtMoney(total)}</b></td></tr>`;
+        html += `</table></div>`;
+      }
 
       if(after.length){
         html += `<div class="pr-block">`;
@@ -12954,33 +13029,66 @@ window.g360FechamentoV57={
 </script>
 
 
-<script id="g360-login-dashboard-v128">
+<script id="g360-login-dashboard-v129">
 (function(){
   'use strict';
 
-  async function applyDashboardAfterLogin(){
+  function clearLastView(){
+    try{
+      sessionStorage.removeItem('g360_last_active_view_v111');
+      sessionStorage.removeItem('g360_last_contract_subview_v111');
+    }catch(_){}
+  }
+
+  function forceDashboard(){
+    clearLastView();
+
+    try{
+      if(window.g360NavV64?.activate){
+        window.g360NavV64.activate('executivo');
+      }else{
+        const link=document.querySelector('.side-link[data-view="executivo"]');
+        if(link) link.click();
+        else{
+          document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+          document.getElementById('view-executivo')?.classList.add('active');
+        }
+      }
+    }catch(e){
+      console.warn('[G360 V129] ativação do Dashboard:',e);
+    }
+
+    // Corrige qualquer rotina tardia que tente restaurar a última tela logo após o login.
+    [120,350,700,1200,2000].forEach(ms=>{
+      setTimeout(()=>{
+        clearLastView();
+        try{
+          if(window.g360NavV64?.activate) window.g360NavV64.activate('executivo');
+          else document.querySelector('.side-link[data-view="executivo"]')?.click();
+        }catch(_){}
+      },ms);
+    });
+  }
+
+  async function applyAfterLogin(){
     try{
       if(sessionStorage.getItem('g360_force_dashboard_after_login')!=='1') return;
+
       const client=window.g360SupabaseClient;
       if(!client?.auth) return;
 
       const {data}=await client.auth.getSession();
       if(!data?.session) return;
 
-      sessionStorage.removeItem('g360_last_active_view_v111');
-      sessionStorage.removeItem('g360_last_contract_subview_v111');
+      forceDashboard();
 
-      if(window.g360NavV64?.activate){
-        window.g360NavV64.activate('executivo');
-      }else{
-        document.querySelector('.side-link[data-view="executivo"]')?.click();
-      }
-
-      // A flag só é removida depois que a sessão já voltou e a tela principal foi aplicada.
-      sessionStorage.removeItem('g360_force_dashboard_after_login');
-      window.g360ForceDashboardAfterLogin=false;
+      // Mantém a flag durante a janela de estabilização; remove só depois.
+      setTimeout(()=>{
+        try{sessionStorage.removeItem('g360_force_dashboard_after_login')}catch(_){}
+        window.g360ForceDashboardAfterLogin=false;
+      },2300);
     }catch(e){
-      console.warn('[G360 V128] Dashboard após login:',e);
+      console.warn('[G360 V129] Dashboard após login:',e);
     }
   }
 
@@ -12992,12 +13100,12 @@ window.g360FechamentoV57={
     }
 
     client.auth.onAuthStateChange((event,session)=>{
-      if((event==='SIGNED_IN'||event==='TOKEN_REFRESHED') && session){
-        setTimeout(applyDashboardAfterLogin,80);
+      if(event==='SIGNED_IN' && session){
+        setTimeout(applyAfterLogin,60);
       }
     });
 
-    applyDashboardAfterLogin();
+    applyAfterLogin();
   }
 
   if(document.readyState==='loading'){
