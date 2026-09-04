@@ -10426,26 +10426,6 @@ window.GESTAO360_CONFIG = {
       setoresCadastro=rs.data||[];equipesMasterCadastro=re.data||[];setoresEquipeCadastro=[];
       if(rp.error){console.warn('Cadastro de periodicidades de baixada:',rp.error.message);periodicidadesBaixadaCadastro=[];}else periodicidadesBaixadaCadastro=rp.data||[];
     }
-    if(kind==='contratos'){
-      const agua=g360Form.elements.contrato_agua_vinculo;
-      if(agua){
-        const tipoContrato=String(current?.tipo||'').toUpperCase();
-        const ehLocacao=tipoContrato.includes('LOCAÇÃO DE IMÓVEIS')||tipoContrato.includes('LOCACAO DE IMOVEIS');
-        const fields=['contrato_agua_vinculo','contrato_energia_vinculo','contrato_internet_vinculo'];
-        fields.forEach(n=>{
-          const el=g360Form.elements[n],wrap=el?.closest('label');
-          if(el) el.disabled=!ehLocacao;
-          if(wrap) wrap.style.opacity=ehLocacao?'1':'0.5';
-        });
-        const wrap=agua.closest('label');
-        if(wrap){
-          wrap.insertAdjacentHTML('beforebegin',`<div class="span4 crud-pro-note" style="margin-top:2px">
-            <b>Contas do alojamento</b><br>
-            Para contratos do tipo <b>LOCAÇÃO DE IMÓVEIS</b>, vincule aqui Água/Saneago (2026A), Energia/Equatorial (2026E) e Internet (2026I). Esses vínculos alimentam a auditoria do Fechamento de Praça.
-          </div>`);
-        }
-      }
-    }
     if(kind==='alojamentos'){const cr=await sb.from('contratos').select('codigo,fornecedor').order('codigo');contratosCadastro=cr.data||[];}
     const listHtml=edit?'':`<table class="g360-list"><thead><tr>${d.cols.map(c=>`<th>${c}</th>`).join('')}<th>Ações</th></tr></thead><tbody>${(data||[]).map(r=>`<tr>${d.cols.map(c=>`<td>${esc(r[c])}</td>`).join('')}<td class="g360-actions"><button class="g360-btn sec" data-edit="${r.id}">Editar</button><button class="g360-btn danger" data-del="${r.id}">Excluir</button></td></tr>`).join('')}</tbody></table>`;
     const desligHtml=(kind==='funcionarios'&&edit)?`<section id="g360DesligamentoBox" class="span4 deslig-box" style="display:none">
@@ -10458,7 +10438,30 @@ window.GESTAO360_CONFIG = {
       <div class="deslig-list">${desligItens.length?desligItens.map((x,i)=>`<label class="deslig-item"><input type="checkbox" class="deslig-check" data-idx="${i}"><span><b>${esc(x.fonte)} — ${esc(x.descricao)}</b><small>${esc(x.codigo||'Sem código')} · Qtd. ${esc(x.quantidade)}</small></span><input type="date" class="deslig-date" data-idx="${i}" aria-label="Data de devolução"><input type="text" class="deslig-obs" data-idx="${i}" placeholder="Observação (opcional)" value="${esc(x.obs||'')}"></label>`).join(''):'<div class="deslig-empty">Nenhum EPI ou equipamento pendente encontrado nos termos deste colaborador.</div>'}</div>
       ${desligItens.length?'<div class="deslig-alert">Para concluir o desligamento, todos os itens pendentes precisam ser conferidos e marcados como devolvidos.</div>':''}
     </section>`:'';
-    g360Content.innerHTML=`<form id="g360Form" class="g360-grid">${kind==='funcionarios'?'<div class="span4" style="padding:9px 11px;border-left:3px solid #f5c518;background:#202226;color:#bbb;font-size:11px"><b style="color:#eee">Campos obrigatórios:</b> dados cadastrais, Setor, Setor/Equipe, função e jornada. <b>Vencimento do ASO e datas de baixada podem ser informados depois.</b> A periodicidade de baixada é opcional no cadastro inicial e vem da base mestre do Supabase. Cidade e Estado são selecionados pelo cadastro nacional do IBGE. CNH é opcional quando o colaborador não possui. Demissão é preenchida somente no desligamento. Função e nível vêm do cadastro de Cargos e Salários. O salário-base é sugerido pelo Supabase, mas pode ser ajustado no colaborador. Gratificação inicia em R$ 0,00. Benefícios inicia em R$ 230,00 e pode ser alterado.</div>':''}${d.fields.map(f=>fieldHTML(f,current?.[f[0]],{alojamentos:alojamentosCadastro,contratos:contratosCadastro,cargos:cargosCadastro,setores:setoresCadastro,equipesMaster:equipesMasterCadastro,obrasPermitidas:obrasPermitidasCadastro,periodicidadesBaixada:periodicidadesBaixadaCadastro,current:current||{}})).join('')}${desligHtml}<div class="span4"><button class="g360-btn" type="submit">${edit?'Salvar alterações':'Incluir registro'}</button> ${edit?'<button type="button" class="g360-btn sec" id="g360CancelEdit">Cancelar edição</button>':''}</div></form>`;
+    g360Content.innerHTML=`<form id="g360Form" class="g360-grid">${kind==='funcionarios'?'<div class="span4" style="padding:9px 11px;border-left:3px solid #f5c518;background:#202226;color:#bbb;font-size:11px"><b style="color:#eee">Campos obrigatórios:</b> dados cadastrais, Setor, Setor/Equipe, função e jornada. <b>Vencimento do ASO e datas de baixada podem ser informados depois.</b> A periodicidade de baixada é opcional no cadastro inicial e vem da base mestre do Supabase. Cidade e Estado são selecionados pelo cadastro nacional do IBGE. CNH é opcional quando o colaborador não possui. Demissão é preenchida somente no desligamento. Função e nível vêm do cadastro de Cargos e Salários. O salário-base é sugerido pelo Supabase, mas pode ser ajustado no colaborador. Gratificação inicia em R$ 0,00. Benefícios inicia em R$ 230,00 e pode ser alterado.</div>':''}${d.fields.map(f=>fieldHTML(f,current?.[f[0]],{alojamentos:alojamentosCadastro,contratos:contratosCadastro,contratosCadastro:contratosCadastro,cargos:cargosCadastro,setores:setoresCadastro,equipesMaster:equipesMasterCadastro,obrasPermitidas:obrasPermitidasCadastro,periodicidadesBaixada:periodicidadesBaixadaCadastro,current:current||{}})).join('')}${desligHtml}<div class="span4"><button class="g360-btn" type="submit">${edit?'Salvar alterações':'Incluir registro'}</button> ${edit?'<button type="button" class="g360-btn sec" id="g360CancelEdit">Cancelar edição</button>':''}</div></form>`;
+    if(kind==='contratos'){
+      const form=document.getElementById('g360Form');
+      const agua=form?.elements?.contrato_agua_vinculo;
+      if(agua){
+        const tipoContrato=String(current?.tipo||'').toUpperCase();
+        const ehLocacao=tipoContrato.includes('LOCAÇÃO DE IMÓVEIS')||tipoContrato.includes('LOCACAO DE IMOVEIS');
+        const fields=['contrato_agua_vinculo','contrato_energia_vinculo','contrato_internet_vinculo'];
+
+        fields.forEach(n=>{
+          const el=form.elements[n],wrap=el?.closest('label');
+          if(el) el.disabled=!ehLocacao;
+          if(wrap) wrap.style.opacity=ehLocacao?'1':'0.5';
+        });
+
+        const wrap=agua.closest('label');
+        if(wrap && !document.getElementById('g360ContratoContasInfo')){
+          wrap.insertAdjacentHTML('beforebegin',`<div id="g360ContratoContasInfo" class="span4 crud-pro-note" style="margin-top:2px">
+            <b>Contas do alojamento</b><br>
+            Para contratos do tipo <b>LOCAÇÃO DE IMÓVEIS</b>, vincule Água/Saneago (2026A), Energia/Equatorial (2026E) e Internet (2026I). Esses vínculos alimentam a auditoria do Fechamento de Praça.
+          </div>`);
+        }
+      }
+    }
     if(kind==='funcionarios'&&opts?.fromAdmission){
       const n=document.createElement('div');
       n.className='crud-pro-note';
@@ -10741,10 +10744,17 @@ window.GESTAO360_CONFIG = {
       }
 if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios'&&edit&&String(obj.status||'').toUpperCase()==='DESLIGADO'){const persisted=saved?.demissao ?? saved?.data_demissao ?? saved?.['demissão'] ?? null;if(!persisted){alert('O Supabase não confirmou a data de demissão. O desligamento não será considerado concluído.');return;}if(String(saved?.status||'').trim().toUpperCase()!=='DESLIGADO'){alert('O Supabase não confirmou o status DESLIGADO.');return;}}sessionStorage.removeItem('g360_db_sig');await pullAll();if(kind==='patrimonio'||kind==='movimentacoes'){await loadPatrimonio();openCrud(kind)}};
     if(edit) g360CancelEdit.onclick=()=>openCrud(kind);
-    g360Content.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openCrud(kind,b.dataset.edit));
+    g360Content.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openCrud(kind,b.dataset.edit).catch(err=>{
+      console.error('[G360 V132] Erro ao editar:',err);
+      g360Content.innerHTML='<div class="crud-pro-note"><b>Não foi possível abrir o registro.</b><br>'+esc(err?.message||err)+'</div>';
+    }));
     g360Content.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{if(!confirm('Excluir este registro?'))return;const {error}=await sb.from(d.table).delete().eq('id',b.dataset.del);if(error){alert(error.message);return}sessionStorage.removeItem('g360_db_sig');await pullAll();if(kind==='patrimonio'||kind==='movimentacoes'){await loadPatrimonio();openCrud(kind)}});
   }
-  window.g360OpenCrudProduction=openCrud;
+  window.g360OpenCrudProduction=(kind,editId=null,opts={})=>openCrud(kind,editId,opts).catch(err=>{
+    console.error('[G360 V132] Erro ao abrir cadastro:',err);
+    const box=document.getElementById('g360Content');
+    if(box) box.innerHTML='<div class="crud-pro-note"><b>Não foi possível abrir o cadastro.</b><br>'+esc(err?.message||err)+'</div>';
+  });
   let g360PatItems=[], g360PatMovs=[], g360PatCharts=[];
   const brl=v=>(Number(v||0)).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   function destroyPatCharts(){g360PatCharts.forEach(c=>{try{c.destroy()}catch(_){}});g360PatCharts=[]}
