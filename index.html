@@ -11110,13 +11110,16 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
     setTimeout(()=>{ try{ window.SolContratos?.go('lista'); }catch(_){} },60);
   }
   document.getElementById('g360NovoContratoViaSolicitacao')?.addEventListener('click',abrirSolicitacoesParaConversao);
-  document.getElementById('g360NovoContratoManual')?.addEventListener('click',()=>{
+  document.getElementById('g360NovoContratoManual')?.addEventListener('click',(e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
     if(typeof window.g360OpenCrudProduction==='function'){
       window.g360OpenCrudProduction('contratos',null,{manual:true});
     }else{
       alert('Cadastro manual de contratos não está disponível.');
     }
-  });
+  },true);
 })();
 </script>
 
@@ -13355,6 +13358,31 @@ function bind(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();
 window.g360BackupV135={generate,history,authMaster};
+})();
+</script>
+
+
+<script id="g360-contrato-manual-v137">
+(function(){
+  'use strict';
+
+  function abrirManual(e){
+    const btn=e.target?.closest?.('#g360NovoContratoManual');
+    if(!btn) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    if(typeof window.g360OpenCrudProduction==='function'){
+      window.g360OpenCrudProduction('contratos',null,{manual:true});
+    }else{
+      alert('Editor de contratos ainda não carregou. Aguarde alguns segundos e tente novamente.');
+    }
+  }
+
+  // Captura antes de qualquer rotina antiga que redirecione contratos para Solicitações.
+  document.addEventListener('click',abrirManual,true);
 })();
 </script>
 
