@@ -991,6 +991,46 @@ html.g360-ui-ready .content-col {
   setTimeout(()=>document.documentElement.classList.add('g360-ui-ready'),1800);
 </script>
 
+
+<style id="g360-alertas-destaque-v128">
+#g360AlertasDestaque{
+  position:relative;
+  margin:2px 8px 14px!important;
+  padding:11px 12px!important;
+  border:1px solid rgba(239,68,68,.55)!important;
+  border-left:4px solid #ef4444!important;
+  border-radius:7px!important;
+  background:linear-gradient(90deg,rgba(239,68,68,.16),rgba(245,197,24,.06))!important;
+  color:#ffd7d7!important;
+  font-weight:900!important;
+  text-transform:uppercase;
+  letter-spacing:.025em;
+  box-shadow:0 0 0 1px rgba(239,68,68,.06),0 5px 14px rgba(0,0,0,.13);
+}
+#g360AlertasDestaque:hover{
+  background:linear-gradient(90deg,rgba(239,68,68,.25),rgba(245,197,24,.10))!important;
+  color:#fff!important;
+}
+#g360AlertasDestaque.active{
+  background:linear-gradient(90deg,rgba(239,68,68,.30),rgba(245,197,24,.12))!important;
+  color:#fff!important;
+  border-color:#ef4444!important;
+}
+#g360AlertasDestaque .ic{font-size:15px}
+.g360-alertas-pulse{
+  width:8px;height:8px;border-radius:50%;
+  background:#ef4444;
+  margin-left:auto;
+  box-shadow:0 0 0 0 rgba(239,68,68,.55);
+  animation:g360AlertPulse 2s infinite;
+}
+@keyframes g360AlertPulse{
+  0%{box-shadow:0 0 0 0 rgba(239,68,68,.55)}
+  70%{box-shadow:0 0 0 6px rgba(239,68,68,0)}
+  100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}
+}
+</style>
+
 </head>
 <body>
 <!-- V38: only Collaborators Experience cell + RH/DP Advertencia visibility -->
@@ -1050,6 +1090,11 @@ html.g360-ui-ready .content-col {
   <div class="app-shell">
     <aside class="sidebar" id="sidebarNav">
       <div class="sidebar-group sidebar-group-dev">
+        <div class="side-link g360-alertas-destaque" data-view="alertas" id="g360AlertasDestaque">
+          <span class="ic">🚨</span>
+          <span>Central de Alertas</span>
+          <span class="g360-alertas-pulse" aria-hidden="true"></span>
+        </div>
         <div class="sidebar-group-label">GESTÃO OBRAS</div>
         <div class="side-link active" data-view="executivo"><span class="ic">📊</span>Dashboard Gerencial</div>
         <div class="side-link" data-view="projetosObras"><span class="ic">🏗️</span>Projetos / Obras</div>
@@ -1097,7 +1142,7 @@ html.g360-ui-ready .content-col {
             <div class="side-link" data-view="rhdpMovimentacao"><span class="ic">🔀</span>Movimentação Interna</div>
             <div class="side-link" id="g360AdvertenciaMenu" data-view="rhdpAdvertencia" style="display:flex!important"><span class="ic">⚠️</span>Advertência Disciplinar</div>
             <div class="side-link" data-view="baixadas"><span class="ic">🧳</span>Folga de Campo</div>
-            <div class="side-link" data-view="alertas"><span class="ic">🚨</span>Central de Alertas</div>
+
           </div>
         </div>
       </div>
@@ -10082,7 +10127,7 @@ window.GESTAO360_CONFIG = {
   const defs={
     cargosSalarios:{title:'Cargos e Salários',table:'cargos_salarios',order:'funcao',fields:[['funcao','Função / Cargo','span2'],['nivel','Nível'],['salario','Salário','number'],['ativo','Ativo','','ativo-cargo']],cols:['funcao','nivel','salario','ativo']},
     funcionarios:{title:'Funcionários',table:'funcionarios',order:'nome',fields:[['matricula','Matrícula'],['cpf','CPF'],['nome','Nome','span2'],['tipo_contrato','Tipo contrato','','tipo-contrato-func'],['admissao','Admissão','date'],['venc_aso','Venc. ASO (pode informar depois)','date'],['depto','Setor','','setor-cadastro'],['setor_equipe','Setor / Equipe','','setor-equipe-master-base'],['funcao','Função / Cargo','span2','funcao-cadastro'],['nivel','Nível','','nivel-cadastro'],['status','Status','','status-func'],['obra','Obra','span2','obra-cadastro'],['jornada_tipo','Jornada / Escala','','jornada-select'],['horario_entrada','Entrada','','time'],['horario_saida','Saída','','time'],['intervalo_inicio','Início do intervalo','','time'],['intervalo_fim','Fim do intervalo','','time'],['jornada_observacao','Detalhes da jornada','span2'],['cnh','CNH'],['cat_cnh','Cat. CNH'],['venc_cnh','Venc. CNH','date'],['salario','Salário','','salario-cadastro'],['gratificacao','Gratificação','number'],['cidade','Cidade / Estado','span2','cidade-ibge'],['distancia_baixada_km','Distância da obra (km)','number'],['direito_baixada','Tem direito de baixada?','','direito-baixada'],['ult_baixada','Últ. baixada','date'],['prox_baixada','Próx. baixada','date'],['periodicidade_baixada','Periodicidade de baixada','','periodicidade-baixada'],['custo_baixada','Custo baixada (opcional)','number'],['vt','VT (opcional)','number'],['beneficios','Benefícios','number'],['usa_aloj','Usa alojamento?','','usa-aloj'],['alojamento','Alojamento','span2','aloj-select']],cols:['matricula','nome','funcao','setor_equipe','status']},
-    contratos:{title:'Contratos',table:'contratos',order:'codigo',fields:[['codigo','Contrato'],['fornecedor','Fornecedor','span2'],['tipo','Tipo','span2'],['objeto','Objeto','span4','textarea'],['valor_contratado','Valor contratado','number'],['valor_medido_total','Valor medido','number'],['valor_mensal','Valor mensal','number'],['data_inicio','Início','date'],['data_fim','Fim','date'],['situacao','Situação'],['fechamento','Fechamento'],['justificativa','Justificativa','span2']],cols:['codigo','fornecedor','tipo','situacao','valor_contratado']},
+    contratos:{title:'Contratos',table:'contratos',order:'codigo',fields:[['codigo','Contrato'],['fornecedor','Fornecedor','span2'],['tipo','Tipo','span2'],['objeto','Objeto','span4','textarea'],['contrato_agua_vinculo','Contrato Água / Saneago','span2','contrato-servico-locacao:A'],['contrato_energia_vinculo','Contrato Energia / Equatorial','span2','contrato-servico-locacao:E'],['contrato_internet_vinculo','Contrato Internet','span2','contrato-servico-locacao:I'],['valor_contratado','Valor contratado','number'],['valor_medido_total','Valor medido','number'],['valor_mensal','Valor mensal','number'],['data_inicio','Início','date'],['data_fim','Fim','date'],['situacao','Situação']],cols:['codigo','fornecedor','tipo','situacao','valor_contratado']},
     alojamentos:{title:'Alojamentos',table:'alojamentos',order:'descricao',fields:[['contrato_codigo','Contrato de locação'],['descricao','Descrição','span2'],['fornecedor','Fornecedor / Locador','span2'],['endereco','Endereço completo','span4','textarea'],['contrato_agua','Contrato de Água','span2','contrato-servico:A'],['contrato_energia','Contrato de Energia','span2','contrato-servico:E'],['contrato_internet','Contrato de Internet','span2','contrato-servico:I'],['valor_mensal','Valor mensal','number'],['capacidade','Capacidade','number'],['ocupados','Ocupados','number'],['custo_rateado','Rateio por ocupante','number-readonly'],['status','Status']],cols:['contrato_codigo','descricao','endereco','contrato_agua','contrato_energia','contrato_internet','capacidade','status']},
     patrimonio:{title:'Inventário de Patrimônio',table:'patrimonio_itens',order:'descricao',fields:[['codigo_patrimonio','Nº Patrimônio'],['tag','Tag'],['descricao','Descrição','span2'],['categoria','Categoria'],['marca','Marca'],['modelo','Modelo'],['numero_serie','Nº de série'],['alojamento_codigo','Alojamento','span2','aloj-select'],['comodo','Cômodo'],['quantidade','Quantidade','number'],['valor_unitario','Valor unitário','number'],['data_aquisicao','Data aquisição','date'],['estado_conservacao','Estado conservação'],['status','Status'],['responsavel','Responsável','span2'],['origem','Origem / fornecedor','span2'],['observacao','Observação','span4','textarea']],cols:['codigo_patrimonio','descricao','categoria','alojamento_codigo','comodo','estado_conservacao','status']},
     movimentacoes:{title:'Movimentações Patrimoniais',table:'patrimonio_movimentacoes',order:'data_movimentacao',fields:[['patrimonio_codigo','Nº Patrimônio'],['data_movimentacao','Data','date'],['tipo','Tipo'],['origem','Origem','span2'],['destino','Destino','span2'],['responsavel','Responsável','span2'],['observacao','Observação','span4','textarea']],cols:['data_movimentacao','patrimonio_codigo','tipo','origem','destino','responsavel']},
@@ -10161,6 +10206,21 @@ window.GESTAO360_CONFIG = {
         <option value="false" ${raw==='false'?'selected':''}>NÃO</option>
       </select></label>`;
     }
+    if(String(t).startsWith('contrato-servico-locacao:')){
+      const suf=String(t).split(':')[1];
+      const rx=new RegExp('2026'+suf+'$','i');
+      const cur=String(v||'').trim();
+      const opts=(ctx.contratosCadastro||[])
+        .filter(x=>rx.test(String(x.codigo||'').trim()))
+        .map(x=>`<option value="${esc(x.codigo)}" ${String(x.codigo)===cur?'selected':''}>${esc(x.codigo)} — ${esc(x.fornecedor||'')}</option>`)
+        .join('');
+      const nome=suf==='A'?'Água / Saneago':suf==='E'?'Energia / Equatorial':'Internet';
+      return `<label class="${c}">${label}<select name="${name}">
+        <option value="">Não vinculado</option>${opts}
+      </select><small style="display:block;color:#777;margin-top:4px;text-transform:none">
+        ${nome}: serão exibidos os contratos cadastrados com final 2026${suf}.
+      </small></label>`;
+    }
     if(t==='periodicidade-baixada'){
       const cur=String(v??'').trim().toUpperCase();
       const rows=(ctx.periodicidadesBaixada||[]).filter(x=>x.ativo!==false);
@@ -10228,7 +10288,23 @@ window.GESTAO360_CONFIG = {
       }catch(ex){console.error('Checklist de desligamento:',ex);}
     }
     let alojamentosCadastro=[], contratosCadastro=[], cargosCadastro=[], setoresCadastro=[], equipesMasterCadastro=[], setoresEquipeCadastro=[], obrasPermitidasCadastro=[], periodicidadesBaixadaCadastro=[];
-    if(kind==='funcionarios'||kind==='patrimonio'){const ar=await sb.from('alojamentos').select('*').order('descricao');alojamentosCadastro=ar.data||[];}
+    if(kind==='funcionarios'||kind==='patrimonio'||kind==='contratos'){
+      const ar=await sb.from('alojamentos').select('*').order('descricao');
+      if(ar.error){console.warn('Cadastro de alojamentos:',ar.error.message);alojamentosCadastro=[];}else alojamentosCadastro=ar.data||[];
+    }
+    if(kind==='contratos'){
+      const cr=await sb.from('contratos').select('id,codigo,fornecedor,tipo,objeto').order('codigo');
+      if(cr.error){console.warn('Cadastro de contratos para vínculos A/E/I:',cr.error.message);contratosCadastro=[];}else contratosCadastro=cr.data||[];
+    }
+    if(kind==='contratos' && edit){
+      const cod=String(edit.codigo||'').trim().toUpperCase();
+      const aloj=(alojamentosCadastro||[]).find(a=>String(a.contrato_codigo||'').trim().toUpperCase()===cod);
+      current.contrato_agua_vinculo=aloj?.contrato_agua||'';
+      current.contrato_energia_vinculo=aloj?.contrato_energia||'';
+      current.contrato_internet_vinculo=aloj?.contrato_internet||'';
+      current._alojamento_id_vinculo=aloj?.id||null;
+    }
+
     if(kind==='funcionarios'){
       const auth=await sb.auth.getUser();
       const uid=auth?.data?.user?.id||null;
@@ -10274,6 +10350,26 @@ window.GESTAO360_CONFIG = {
       }
       setoresCadastro=rs.data||[];equipesMasterCadastro=re.data||[];setoresEquipeCadastro=[];
       if(rp.error){console.warn('Cadastro de periodicidades de baixada:',rp.error.message);periodicidadesBaixadaCadastro=[];}else periodicidadesBaixadaCadastro=rp.data||[];
+    }
+    if(kind==='contratos'){
+      const agua=g360Form.elements.contrato_agua_vinculo;
+      if(agua){
+        const tipoContrato=String(current?.tipo||'').toUpperCase();
+        const ehLocacao=tipoContrato.includes('LOCAÇÃO DE IMÓVEIS')||tipoContrato.includes('LOCACAO DE IMOVEIS');
+        const fields=['contrato_agua_vinculo','contrato_energia_vinculo','contrato_internet_vinculo'];
+        fields.forEach(n=>{
+          const el=g360Form.elements[n],wrap=el?.closest('label');
+          if(el) el.disabled=!ehLocacao;
+          if(wrap) wrap.style.opacity=ehLocacao?'1':'0.5';
+        });
+        const wrap=agua.closest('label');
+        if(wrap){
+          wrap.insertAdjacentHTML('beforebegin',`<div class="span4 crud-pro-note" style="margin-top:2px">
+            <b>Contas do alojamento</b><br>
+            Para contratos do tipo <b>LOCAÇÃO DE IMÓVEIS</b>, vincule aqui Água/Saneago (2026A), Energia/Equatorial (2026E) e Internet (2026I). Esses vínculos alimentam a auditoria do Fechamento de Praça.
+          </div>`);
+        }
+      }
     }
     if(kind==='alojamentos'){const cr=await sb.from('contratos').select('codigo,fornecedor').order('codigo');contratosCadastro=cr.data||[];}
     const listHtml=edit?'':`<table class="g360-list"><thead><tr>${d.cols.map(c=>`<th>${c}</th>`).join('')}<th>Ações</th></tr></thead><tbody>${(data||[]).map(r=>`<tr>${d.cols.map(c=>`<td>${esc(r[c])}</td>`).join('')}<td class="g360-actions"><button class="g360-btn sec" data-edit="${r.id}">Editar</button><button class="g360-btn danger" data-del="${r.id}">Excluir</button></td></tr>`).join('')}</tbody></table>`;
@@ -10445,6 +10541,15 @@ window.GESTAO360_CONFIG = {
     }
     if(kind==='alojamentos'){const vf=g360Form.elements.valor_mensal,of=g360Form.elements.ocupados,rf=g360Form.elements.custo_rateado;const calc=()=>{if(rf)rf.value=(Number(of?.value||0)>0?(Number(vf?.value||0)/Number(of.value)):0).toFixed(2)};vf?.addEventListener('input',calc);of?.addEventListener('input',calc);calc();}
     g360Form.onsubmit=async e=>{e.preventDefault();if(!g360Form.checkValidity()){g360Form.reportValidity();return;}const fd=new FormData(e.target),obj={};d.fields.forEach(f=>{let v=fd.get(f[0]);if(v==='')v=null;if((f[2]==='number'||f[3]==='number'||f[2]==='number-readonly'||f[3]==='number-readonly'||f[3]==='salario-cadastro')&&v!==null)v=Number(v);obj[f[0]]=v});
+      let vincAgua=null,vincEnergia=null,vincInternet=null;
+      if(kind==='contratos'){
+        vincAgua=String(obj.contrato_agua_vinculo||'').trim()||null;
+        vincEnergia=String(obj.contrato_energia_vinculo||'').trim()||null;
+        vincInternet=String(obj.contrato_internet_vinculo||'').trim()||null;
+        delete obj.contrato_agua_vinculo;
+        delete obj.contrato_energia_vinculo;
+        delete obj.contrato_internet_vinculo;
+      }
       if(kind==='contratos'){
         // "Valor medido" é um campo virtual do formulário. Para manter o Fechamento
         // de Praça como fonte das medições operacionais, ajustamos apenas o acumulado
@@ -10526,7 +10631,40 @@ window.GESTAO360_CONFIG = {
         // Dados de SESMT e custo de alojamento não são editados neste cadastro.
         delete obj.custo_aloj; delete obj.acidente; delete obj.data_acidente; delete obj.cat_emitida; delete obj.dias_afastado; delete obj.tipo_afastamento;
       }
-      if(kind==='funcionarios'&&edit&&String(obj.status||'').toUpperCase()==='DESLIGADO'){const dem=document.getElementById('g360Demissao')?.value||obj.demissao;if(!dem){alert('Informe a data de demissão para desligar o colaborador.');return;}obj.demissao=dem;obj.tipo_deslig=document.getElementById('g360TipoDeslig')?.value||null;obj.motivo_deslig=document.getElementById('g360MotivoDeslig')?.value||null;const checks=[...g360Content.querySelectorAll('.deslig-check')];if(checks.some(x=>!x.checked)){alert('Conclua o checklist de devolução de EPIs e equipamentos antes de desligar o colaborador.');return;}for(const ch of checks){const i=Number(ch.dataset.idx),it=desligItens[i],dt=g360Content.querySelector(`.deslig-date[data-idx="${i}"]`)?.value||dem,obs=g360Content.querySelector(`.deslig-obs[data-idx="${i}"]`)?.value||null;if(!dt){alert('Informe a data de devolução de todos os itens do checklist.');return;}const payload=it.tabela==='termo_epi_itens'?{data_devolucao:dt,observacoes:obs}:{data_devolucao:dt,observacao:obs};const ret=await sb.from(it.tabela).update(payload).eq('id',it.id);if(ret.error){alert('Falha ao registrar devolução de '+it.descricao+': '+ret.error.message);return;}}}else if(kind==='funcionarios'&&!edit&&String(obj.status||'').toUpperCase()!=='DESLIGADO'){obj.demissao=null;}if(kind==='alojamentos'){const val=Number(obj.valor_mensal||0), ocu=Number(obj.ocupados||0);obj.custo_rateado=ocu>0?val/ocu:0;}let q=edit?sb.from(d.table).update(obj).eq('id',edit.id).select('*').maybeSingle():sb.from(d.table).insert(obj).select('*').maybeSingle();const {data:saved,error}=await q;if(error){alert(error.message);return}if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios'&&edit&&String(obj.status||'').toUpperCase()==='DESLIGADO'){const persisted=saved?.demissao ?? saved?.data_demissao ?? saved?.['demissão'] ?? null;if(!persisted){alert('O Supabase não confirmou a data de demissão. O desligamento não será considerado concluído.');return;}if(String(saved?.status||'').trim().toUpperCase()!=='DESLIGADO'){alert('O Supabase não confirmou o status DESLIGADO.');return;}}sessionStorage.removeItem('g360_db_sig');await pullAll();if(kind==='patrimonio'||kind==='movimentacoes'){await loadPatrimonio();openCrud(kind)}};
+      if(kind==='funcionarios'&&edit&&String(obj.status||'').toUpperCase()==='DESLIGADO'){const dem=document.getElementById('g360Demissao')?.value||obj.demissao;if(!dem){alert('Informe a data de demissão para desligar o colaborador.');return;}obj.demissao=dem;obj.tipo_deslig=document.getElementById('g360TipoDeslig')?.value||null;obj.motivo_deslig=document.getElementById('g360MotivoDeslig')?.value||null;const checks=[...g360Content.querySelectorAll('.deslig-check')];if(checks.some(x=>!x.checked)){alert('Conclua o checklist de devolução de EPIs e equipamentos antes de desligar o colaborador.');return;}for(const ch of checks){const i=Number(ch.dataset.idx),it=desligItens[i],dt=g360Content.querySelector(`.deslig-date[data-idx="${i}"]`)?.value||dem,obs=g360Content.querySelector(`.deslig-obs[data-idx="${i}"]`)?.value||null;if(!dt){alert('Informe a data de devolução de todos os itens do checklist.');return;}const payload=it.tabela==='termo_epi_itens'?{data_devolucao:dt,observacoes:obs}:{data_devolucao:dt,observacao:obs};const ret=await sb.from(it.tabela).update(payload).eq('id',it.id);if(ret.error){alert('Falha ao registrar devolução de '+it.descricao+': '+ret.error.message);return;}}}else if(kind==='funcionarios'&&!edit&&String(obj.status||'').toUpperCase()!=='DESLIGADO'){obj.demissao=null;}if(kind==='alojamentos'){const val=Number(obj.valor_mensal||0), ocu=Number(obj.ocupados||0);obj.custo_rateado=ocu>0?val/ocu:0;}let q=edit?sb.from(d.table).update(obj).eq('id',edit.id).select('*').maybeSingle():sb.from(d.table).insert(obj).select('*').maybeSingle();const {data:saved,error}=await q;if(error){alert(error.message);return}
+      if(kind==='contratos'){
+        const codigo=String(saved?.codigo||edit?.codigo||obj.codigo||'').trim();
+        if(codigo){
+          let aq=await sb.from('alojamentos').select('id,contrato_codigo,descricao').eq('contrato_codigo',codigo).maybeSingle();
+          if(aq.error){alert('Contrato salvo, mas não foi possível localizar o alojamento vinculado: '+aq.error.message);return;}
+
+          // Se o contrato é de locação e ainda não existe cadastro de alojamento,
+          // cria um registro mínimo para permitir os vínculos A/E/I.
+          let alojId=aq.data?.id||null;
+          if(!alojId && /LOCA[CÇ][AÃ]O DE IM[ÓO]VEIS/i.test(String(saved?.tipo||obj.tipo||edit?.tipo||''))){
+            const ins=await sb.from('alojamentos').insert({
+              contrato_codigo:codigo,
+              descricao:String(saved?.objeto||obj.objeto||'ALOJAMENTO '+codigo).trim(),
+              fornecedor:String(saved?.fornecedor||obj.fornecedor||'').trim()||null,
+              valor_mensal:Number(saved?.valor_mensal??obj.valor_mensal??0)||0,
+              status:'ATIVO',
+              contrato_agua:vincAgua,
+              contrato_energia:vincEnergia,
+              contrato_internet:vincInternet
+            }).select('id').maybeSingle();
+            if(ins.error){alert('Contrato salvo, mas não foi possível criar/vincular o alojamento: '+ins.error.message);return;}
+            alojId=ins.data?.id||null;
+          }else if(alojId){
+            const up=await sb.from('alojamentos').update({
+              contrato_agua:vincAgua,
+              contrato_energia:vincEnergia,
+              contrato_internet:vincInternet
+            }).eq('id',alojId);
+            if(up.error){alert('Contrato salvo, mas não foi possível atualizar Água/Energia/Internet do alojamento: '+up.error.message);return;}
+          }
+        }
+      }
+if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios'&&edit&&String(obj.status||'').toUpperCase()==='DESLIGADO'){const persisted=saved?.demissao ?? saved?.data_demissao ?? saved?.['demissão'] ?? null;if(!persisted){alert('O Supabase não confirmou a data de demissão. O desligamento não será considerado concluído.');return;}if(String(saved?.status||'').trim().toUpperCase()!=='DESLIGADO'){alert('O Supabase não confirmou o status DESLIGADO.');return;}}sessionStorage.removeItem('g360_db_sig');await pullAll();if(kind==='patrimonio'||kind==='movimentacoes'){await loadPatrimonio();openCrud(kind)}};
     if(edit) g360CancelEdit.onclick=()=>openCrud(kind);
     g360Content.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openCrud(kind,b.dataset.edit));
     g360Content.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{if(!confirm('Excluir este registro?'))return;const {error}=await sb.from(d.table).delete().eq('id',b.dataset.del);if(error){alert(error.message);return}sessionStorage.removeItem('g360_db_sig');await pullAll();if(kind==='patrimonio'||kind==='movimentacoes'){await loadPatrimonio();openCrud(kind)}});
@@ -12001,6 +12139,7 @@ window.g360FechamentoV57={
   }
 
   function saveCurrent(){
+    if(window.g360ForceDashboardAfterLogin===true || sessionStorage.getItem('g360_force_dashboard_after_login')==='1') return;
     const v=currentView();
     if(v) sessionStorage.setItem(KEY_VIEW,v);
     if(v==='contratos'){
@@ -12037,8 +12176,16 @@ window.g360FechamentoV57={
 
   function restoreOnce(){
     if(restored || restoring) return;
-    const wanted=sessionStorage.getItem(KEY_VIEW);
-    if(wanted) activateStable(wanted);
+
+    const forceDashboard=sessionStorage.getItem('g360_force_dashboard_after_login')==='1';
+    if(forceDashboard){
+      sessionStorage.removeItem(KEY_VIEW);
+      sessionStorage.removeItem(KEY_CTR);
+      activateStable('executivo');
+    }else{
+      const wanted=sessionStorage.getItem(KEY_VIEW);
+      if(wanted) activateStable(wanted);
+    }
     restored=true;
 
     // Só libera a interface depois da tela final estar definida.
@@ -12642,7 +12789,7 @@ window.g360FechamentoV57={
 (function(){
   'use strict';
 
-  const IDLE_MS = 3 * 60 * 1000;       // 3 minutos
+  const IDLE_MS = 5 * 60 * 1000;       // 5 minutos
   const FORCE_POLL_MS = 10 * 1000;     // verifica derrubada a cada 10 s
   let idleTimer = null;
   let idleBound = false;
@@ -12675,8 +12822,10 @@ window.g360FechamentoV57={
       }
     }finally{
       try{
+        window.g360ForceDashboardAfterLogin=true;
         sessionStorage.removeItem('g360_last_active_view_v111');
         sessionStorage.removeItem('g360_last_contract_subview_v111');
+        sessionStorage.setItem('g360_force_dashboard_after_login','1');
       }catch(_){}
       location.reload();
     }
@@ -12801,6 +12950,61 @@ window.g360FechamentoV57={
     check:checkForcedLogin,
     resetIdle:armIdle
   };
+})();
+</script>
+
+
+<script id="g360-login-dashboard-v128">
+(function(){
+  'use strict';
+
+  async function applyDashboardAfterLogin(){
+    try{
+      if(sessionStorage.getItem('g360_force_dashboard_after_login')!=='1') return;
+      const client=window.g360SupabaseClient;
+      if(!client?.auth) return;
+
+      const {data}=await client.auth.getSession();
+      if(!data?.session) return;
+
+      sessionStorage.removeItem('g360_last_active_view_v111');
+      sessionStorage.removeItem('g360_last_contract_subview_v111');
+
+      if(window.g360NavV64?.activate){
+        window.g360NavV64.activate('executivo');
+      }else{
+        document.querySelector('.side-link[data-view="executivo"]')?.click();
+      }
+
+      // A flag só é removida depois que a sessão já voltou e a tela principal foi aplicada.
+      sessionStorage.removeItem('g360_force_dashboard_after_login');
+      window.g360ForceDashboardAfterLogin=false;
+    }catch(e){
+      console.warn('[G360 V128] Dashboard após login:',e);
+    }
+  }
+
+  function wire(){
+    const client=window.g360SupabaseClient;
+    if(!client?.auth){
+      setTimeout(wire,250);
+      return;
+    }
+
+    client.auth.onAuthStateChange((event,session)=>{
+      if((event==='SIGNED_IN'||event==='TOKEN_REFRESHED') && session){
+        setTimeout(applyDashboardAfterLogin,80);
+      }
+    });
+
+    applyDashboardAfterLogin();
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',wire,{once:true});
+  }else{
+    wire();
+  }
 })();
 </script>
 
