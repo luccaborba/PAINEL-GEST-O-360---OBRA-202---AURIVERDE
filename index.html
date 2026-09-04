@@ -10432,7 +10432,9 @@ window.GESTAO360_CONFIG = {
     }catch(ex){console.warn('Recalculo de rateio dos alojamentos:',ex?.message||ex)}
   }
   async function openCrud(kind, editId=null, opts={}){
-    if(kind==='contratos' && !editId){
+    // Contrato novo vindo do fluxo normal continua direcionando para Solicitações.
+    // Quando opts.manual=true, abre diretamente o mesmo CRUD usado na edição.
+    if(kind==='contratos' && !editId && !opts?.manual){
       const link=document.querySelector('.side-link[data-contract-subview="solicitacoes"]');
       if(link) link.click();
       setTimeout(()=>{ try{ window.SolContratos?.go('lista'); }catch(_){} },50);
