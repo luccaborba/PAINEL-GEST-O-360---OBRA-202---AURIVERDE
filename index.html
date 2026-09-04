@@ -8313,6 +8313,7 @@ function renderTable(list){
         <td class="crud-row-actions">
           <button type="button" class="crud-mini" onclick="g360CrudEdit('contratos','${encodeURIComponent(String(r.contrato))}')">✏️ Editar</button>
           <button type="button" class="crud-mini" onclick="g360OpenAditivosContrato(decodeURIComponent('${encodeURIComponent(String(r.contrato))}'))">🧩 Aditivos</button>
+          ${String(r.situacao||'').toUpperCase()==='RESCINDIDO'?'':`<button type="button" class="crud-mini danger" onclick="g360RescindirContrato(decodeURIComponent('${encodeURIComponent(String(r.contrato))}'))">✂️ Rescindir</button>`}
           <button type="button" class="crud-mini toggle" onclick="g360CrudToggle('contratos','${encodeURIComponent(String(r.contrato))}')">${String(r.situacao||'').toUpperCase()==='INATIVO'?'▶ Ativar':'⏸ Inativar'}</button>
           <button type="button" class="crud-mini danger" onclick="g360CrudDelete('contratos','${encodeURIComponent(String(r.contrato))}')">🗑</button>
         </td>
@@ -8332,6 +8333,69 @@ function renderTable(list){
 function findContrato(numero){
   return RAW_DATA.find(r=>r.contrato===numero) || null;
 }
+
+async function g360RescindirContrato(numero){
+  const sb=window.g360SupabaseClient;
+  if(!sb){alert('Supabase não está disponível.');return;}
+  const codigo=String(numero||'').trim();
+  if(!codigo)return;
+
+  try{
+    const obraId=window.G360_ACTIVE_OBRA_ID || null;
+    let q=sb.from('solicitacoes_contrato')
+      .select('id,protocolo,status,numero_contrato,dados,created_at')
+      .eq('tipo_solicitacao','distrato')
+      .order('created_at',{ascending:false});
+    if(obraId) q=q.eq('obra_id',obraId);
+    const {data:reqs,error}=await q;
+    if(error)throw error;
+
+    const norm=x=>String(x||'').trim().toUpperCase();
+    const match=(reqs||[]).find(r=>norm(r.numero_contrato||r.dados?.num_contrato)===norm(codigo));
+
+    if(!match){
+      alert('Não existe Solicitação de Distrato vinculada ao contrato '+codigo+'. Crie primeiro a Solicitação de Distrato informando obrigatoriamente o Nº do Contrato.');
+      return;
+    }
+
+    const dataEnc=match.dados?.data_encerramento||null;
+    const aviso=match.dados?.data_aviso||null;
+    const ok=confirm(
+      `Rescindir o contrato ${codigo} com base no distrato ${match.protocolo||match.id}?`+
+      (dataEnc?`\nData de encerramento: ${new Date(dataEnc+'T00:00:00').toLocaleDateString('pt-BR')}`:'')
+    );
+    if(!ok)return;
+
+    let cq=sb.from('contratos').select('id,codigo,situacao').eq('codigo',codigo);
+    if(obraId)cq=cq.eq('obra_id',obraId);
+    const cr=await cq.maybeSingle();
+    if(cr.error)throw cr.error;
+    if(!cr.data?.id)throw new Error('Contrato não encontrado na Base de Contratos.');
+
+    const up=await sb.from('contratos').update({
+      situacao:'RESCINDIDO',
+      data_rescisao:dataEnc||new Date().toISOString().slice(0,10),
+      distrato_solicitacao_id:match.id,
+      updated_at:new Date().toISOString()
+    }).eq('id',cr.data.id);
+    if(up.error)throw up.error;
+
+    const sr=await sb.from('solicitacoes_contrato').update({
+      numero_contrato:codigo,
+      status:'CONCLUÍDO',
+      updated_at:new Date().toISOString()
+    }).eq('id',match.id);
+    if(sr.error)console.warn('Contrato rescindido, mas não foi possível atualizar o status da solicitação:',sr.error);
+
+    sessionStorage.removeItem('g360_db_sig');
+    if(typeof window.g360PullAll==='function') await window.g360PullAll();
+    if(typeof render==='function') render();
+  }catch(err){
+    alert('Não foi possível rescindir o contrato: '+(err?.message||err));
+  }
+}
+window.g360RescindirContrato=g360RescindirContrato;
+
 
 
 
@@ -8529,6 +8593,7 @@ const F = {
   static:(html) => ({type:'static', html}),
   file:(id,label,opts={}) => ({type:'file', id, label, ...opts}),
   obraselect:(id,label,opts={}) => ({type:'obraselect', id, label, ...opts}),
+  contratoselect:(id,label,opts={}) => ({type:'contratoselect', id, label, ...opts}),
 };
 const SIMNAO = ['SIM','NÃO'];
 const CCL_LOCADORA = ['CCL','LOCADORA'];
@@ -8635,7 +8700,7 @@ const FORMS = {
       {num:'2°', title:'PRESTADORA DE SERVIÇO', fields:[
         F.text('prest_nome','2.0 Nome'), F.text('prest_endereco','2.1 Endereço'), F.text('prest_cnpj','2.2 CPF/CNPJ'),
       ]},
-      {num:'3º', title:'Nº DO CONTRATO', fields:[ F.text('num_contrato','') ]},
+      {num:'3º', title:'Nº DO CONTRATO', fields:[ F.contratoselect('num_contrato','', {required:true, hint:'Obrigatório. Este número amarra o distrato ao contrato da Base de Contratos.'}) ]},
       {num:'4º', title:'O QUE FOI NEGOCIADO?', fields:[ F.textarea('negociado','') ]},
       {num:'5º', title:'DATA DO AVISO', fields:[ F.date('data_aviso','') ]},
       {num:'6ª', title:'DATA DO ENCERRAMENTO DOS SERVIÇOS', fields:[ F.date('data_encerramento','') ]},
@@ -8977,6 +9042,15 @@ function renderFieldHTML(typeId, f, data, readonly){
     case 'text':
       return `<div class="field ${invalidCls}">${f.label?`<label>${esc(f.label)}${reqMark}</label>`:''}
         <input type="text" data-field="${f.id}" value="${esc(val)}" ${readonly?'disabled':''}>${hint}</div>`;
+    case 'contratoselect':
+      const contratosOpts = (typeof RAW_DATA!=='undefined' && Array.isArray(RAW_DATA) ? RAW_DATA : [])
+        .filter(c=>!['RESCINDIDO','CANCELADO','INATIVO'].includes(String(c.situacao||'').toUpperCase()))
+        .sort((a,b)=>String(a.contrato||'').localeCompare(String(b.contrato||''),'pt-BR'));
+      return `<div class="field ${invalidCls}">${f.label?`<label>${esc(f.label)}${reqMark}</label>`:''}
+        <select data-field="${f.id}" ${readonly?'disabled':''}>
+          <option value="">Selecione o contrato...</option>
+          ${contratosOpts.map(c=>`<option value="${esc(c.contrato)}" ${String(val)===String(c.contrato)?'selected':''}>${esc(c.contrato)} — ${esc(c.fornecedor||'')}</option>`).join('')}
+        </select>${hint}</div>`;
     case 'obraselect':
       const obraOpts = getObrasOptions();
       return `<div class="field ${invalidCls}">${f.label?`<label>${esc(f.label)}${reqMark}</label>`:''}
@@ -9574,7 +9648,7 @@ async function reqObraId(){
 }
 function reqPayload(typeId,data){
   const fake={type:typeId,data};
-  return {tipo_solicitacao:typeId,titulo:FORMS[typeId]?.label||typeId,fornecedor:reqFornecedor(fake),objeto:reqObjeto(fake),valor_estimado:reqValorTotal(fake)||null,valor_mensal:reqValorMensal(fake),data_inicio_prevista:reqDate(fake,'ini')||null,data_fim_prevista:reqDate(fake,'fim')||null,dados:data,status:'SOLICITADO'};
+  return {tipo_solicitacao:typeId,titulo:FORMS[typeId]?.label||typeId,fornecedor:reqFornecedor(fake),objeto:reqObjeto(fake),valor_estimado:reqValorTotal(fake)||null,valor_mensal:reqValorMensal(fake),data_inicio_prevista:reqDate(fake,'ini')||null,data_fim_prevista:reqDate(fake,'fim')||null,numero_contrato:String(data?.num_contrato||'').trim()||null,dados:data,status:'SOLICITADO'};
 }
 async function reqUploadPending(typeId,solicitacaoId,obraId){
   const sb=window.g360SupabaseClient; const groups=G360_REQ_PENDING_FILES[typeId]||{};
@@ -10059,7 +10133,16 @@ window.GESTAO360_CONFIG = {
   const snakeToColab=r=>({
     id:r.id,mat:r.matricula,nome:r.nome,cpf:r.cpf||null,tipoContrato:r.tipo_contrato,admissao:r.admissao,demissao:(r.demissao||r.data_demissao||r['demissão']||null),vencAso:r.venc_aso,depto:r.depto,equipe:r.equipe,funcao:r.funcao,nivel:r.nivel,status:r.status,obra:r.obra,setorEquipe:r.setor_equipe,setorId:r.setor_id,equipeMasterId:r.equipe_master_id,setorEquipeId:r.setor_equipe_id,jornadaTipo:r.jornada_tipo,horarioEntrada:r.horario_entrada,horarioSaida:r.horario_saida,intervaloInicio:r.intervalo_inicio,intervaloFim:r.intervalo_fim,jornadaObservacao:r.jornada_observacao,cnh:r.cnh,catCnh:r.cat_cnh,vencCnh:r.venc_cnh,salario:Number(r.salario||0)||null,gratificacao:Number(r.gratificacao||0)||null,cidade:r.cidade,distanciaBaixadaKm:r.distancia_baixada_km==null?null:Number(r.distancia_baixada_km),ultBaixada:r.ult_baixada,proxBaixada:r.prox_baixada,direitoBaixada:r.direito_baixada===true,periodicidadeBaixada:r.periodicidade_baixada,custoBaixada:Number(r.custo_baixada||0)||null,motivoDeslig:r.motivo_deslig,tipoDeslig:r.tipo_deslig,acidente:r.acidente,dataAcidente:r.data_acidente,catEmitida:r.cat_emitida,diasAfastado:Number(r.dias_afastado||0),tipoAfastamento:r.tipo_afastamento,vt:Number(r.vt||0)||null,beneficios:Number(r.beneficios||0)||null,usaAloj:r.usa_aloj,alojamento:r.alojamento,custoAloj:Number(r.custo_aloj||0)||null,obra_id:r.obra_id
   });
-  const mapContrato=r=>({contrato:r.codigo,fornecedor:r.fornecedor,tipo:r.tipo,objeto:r.objeto,contratado:Number(r.valor_atualizado??r.valor_contratado??0),medido:Number(r.total_medido??0),saldo:Number(r.saldo_disponivel??0),vrMensal:r.valor_mensal==null?null:Number(r.valor_mensal),dataInicio:r.data_inicio,dataFim:r.vigencia_atualizada??r.data_fim,situacao:r.situacao,fechamento:r.fechamento,justificativa:r.justificativa,obra_id:r.obra_id});
+  const contratoSituacaoAutomatica=r=>{
+    const atual=String(r.situacao||'').trim().toUpperCase();
+    if(['RESCINDIDO','CANCELADO','CANCELADO/RESCINDIDO','INATIVO','ENCERRADO'].includes(atual)) return atual;
+    const medido=Number(r.total_medido??0);
+    const saldo=Number(r.saldo_disponivel??0);
+    if(medido>0.005 && saldo<=0.005) return 'CONCLUÍDO';
+    if(medido>0.005) return 'PARCIALMENTE MEDIDO';
+    return 'PENDENTE';
+  };
+  const mapContrato=r=>({contrato:r.codigo,fornecedor:r.fornecedor,tipo:r.tipo,objeto:r.objeto,contratado:Number(r.valor_atualizado??r.valor_contratado??0),medido:Number(r.total_medido??0),saldo:Number(r.saldo_disponivel??0),vrMensal:r.valor_mensal==null?null:Number(r.valor_mensal),dataInicio:r.data_inicio,dataFim:r.vigencia_atualizada??r.data_fim,situacao:contratoSituacaoAutomatica(r),fechamento:r.fechamento,justificativa:r.justificativa,obra_id:r.obra_id});
   const mapAloj=r=>({id:r.id,contrato:r.contrato_codigo,fornecedor:r.fornecedor,descricao:r.descricao,endereco:r.endereco||'',contratoAgua:r.contrato_agua||'',contratoEnergia:r.contrato_energia||'',contratoInternet:r.contrato_internet||'',valor:Number(r.valor_mensal||0),capacidade:Number(r.capacidade||0),ocupados:Number(r.ocupados||0),custoRateado:Number(r.custo_rateado||0),status:r.status,ativo:String(r.status||'ATIVO').toUpperCase()!=='INATIVO',obra_id:r.obra_id});
   const periodoPt=d=>{if(!d)return '';const x=new Date(String(d).slice(0,10)+'T00:00:00');const ms=['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];return ms[x.getMonth()]+'/'+x.getFullYear()};
   async function pullAll(){
