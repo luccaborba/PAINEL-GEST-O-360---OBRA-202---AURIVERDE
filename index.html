@@ -10795,28 +10795,44 @@ window.GESTAO360_CONFIG = {
         delete obj.contrato_internet_vinculo;
       }
       if(kind==='contratos'){
-        // "Valor medido" é um campo virtual do formulário. Para manter o Fechamento
-        // de Praça como fonte das medições operacionais, ajustamos apenas o acumulado
-        // histórico necessário para que o total consolidado resulte no valor informado.
+        // "Valor medido" é virtual no formulário.
         const alvo=Number(obj.valor_medido_total||0);
-        if(!Number.isFinite(alvo)||alvo<0){alert('Informe um Valor medido válido.');g360Form.elements.valor_medido_total?.focus();return;}
-        const [fpId,fpLegado]=await Promise.all([
-          sb.from('fechamentos_praca').select('valor_medido,status,impacta_saldo').eq('contrato_id',edit.id),
-          sb.from('fechamentos_praca').select('valor_medido,status,impacta_saldo').is('contrato_id',null).eq('contrato_codigo',edit.codigo)
-        ]);
-        if(fpId.error||fpLegado.error){alert('Não foi possível calcular as medições do contrato: '+(fpId.error?.message||fpLegado.error?.message));return;}
-        const fpRows=[...(fpId.data||[]),...(fpLegado.data||[])];
-        const medidoOperacional=fpRows.reduce((s,m)=>{
-          const lancado=String(m.status||'').toUpperCase()==='LANCADO';
-          const impacta=m.impacta_saldo!==false;
-          return s+(lancado&&impacta?Number(m.valor_medido||0):0);
-        },0);
-        if(alvo+0.005<medidoOperacional){
-          alert(`O valor informado (${alvo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}) é menor que as medições do Fechamento de Praça que já impactam o saldo (${medidoOperacional.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}). Ajuste primeiro essas medições no Fechamento de Praça.`);
+        if(!Number.isFinite(alvo)||alvo<0){
+          alert('Informe um Valor medido válido.');
+          g360Form.elements.valor_medido_total?.focus();
           return;
         }
-        obj.medido_acumulado_inicial=Math.max(0,alvo-medidoOperacional);
-        delete obj.valor_medido_total;
+
+        if(!edit){
+          // CONTRATO NOVO / MANUAL:
+          // ainda não existe edit.id, portanto não há medições vinculadas para consultar.
+          // O valor informado entra como acumulado inicial (normalmente zero).
+          obj.medido_acumulado_inicial=Math.max(0,alvo);
+          delete obj.valor_medido_total;
+        }else{
+          // EDIÇÃO DE CONTRATO EXISTENTE:
+          // mantém o Fechamento de Praça como fonte das medições operacionais.
+          const [fpId,fpLegado]=await Promise.all([
+            sb.from('fechamentos_praca').select('valor_medido,status,impacta_saldo').eq('contrato_id',edit.id),
+            sb.from('fechamentos_praca').select('valor_medido,status,impacta_saldo').is('contrato_id',null).eq('contrato_codigo',edit.codigo)
+          ]);
+          if(fpId.error||fpLegado.error){
+            alert('Não foi possível calcular as medições do contrato: '+(fpId.error?.message||fpLegado.error?.message));
+            return;
+          }
+          const fpRows=[...(fpId.data||[]),...(fpLegado.data||[])];
+          const medidoOperacional=fpRows.reduce((s,m)=>{
+            const lancado=String(m.status||'').toUpperCase()==='LANCADO';
+            const impacta=m.impacta_saldo!==false;
+            return s+(lancado&&impacta?Number(m.valor_medido||0):0);
+          },0);
+          if(alvo+0.005<medidoOperacional){
+            alert(`O valor informado (${alvo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}) é menor que as medições do Fechamento de Praça que já impactam o saldo (${medidoOperacional.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}). Ajuste primeiro essas medições no Fechamento de Praça.`);
+            return;
+          }
+          obj.medido_acumulado_inicial=Math.max(0,alvo-medidoOperacional);
+          delete obj.valor_medido_total;
+        }
       }
       if(kind==='funcionarios'){
         const labels=Object.fromEntries(d.fields.map(f=>[f[0],f[1]]));
