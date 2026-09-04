@@ -1516,7 +1516,10 @@ html.g360-ui-ready .content-col {
   </header>
 
   <div class="crud-mainbar" id="g360ContratoOrigemSolicitacaoBar" style="display:none;">
-    <button type="button" class="crud-primary" id="g360NovoContratoViaSolicitacao">＋ Importar solicitação para contrato</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;width:100%;">
+      <button type="button" class="crud-primary" id="g360NovoContratoManual">＋ Incluir contrato manualmente</button>
+      <button type="button" class="crud-mini" id="g360NovoContratoViaSolicitacao">＋ Importar solicitação para contrato</button>
+    </div>
   </div>
 
   <div id="viewDashboard">
@@ -10545,6 +10548,16 @@ window.GESTAO360_CONFIG = {
       ${desligItens.length?'<div class="deslig-alert">Para concluir o desligamento, todos os itens pendentes precisam ser conferidos e marcados como devolvidos.</div>':''}
     </section>`:'';
     g360Content.innerHTML=`<form id="g360Form" class="g360-grid">${kind==='funcionarios'?'<div class="span4" style="padding:9px 11px;border-left:3px solid #f5c518;background:#202226;color:#bbb;font-size:11px"><b style="color:#eee">Campos obrigatórios:</b> dados cadastrais, Setor, Setor/Equipe, função e jornada. <b>Vencimento do ASO e datas de baixada podem ser informados depois.</b> A periodicidade de baixada é opcional no cadastro inicial e vem da base mestre do Supabase. Cidade e Estado são selecionados pelo cadastro nacional do IBGE. CNH é opcional quando o colaborador não possui. Demissão é preenchida somente no desligamento. Função e nível vêm do cadastro de Cargos e Salários. O salário-base é sugerido pelo Supabase, mas pode ser ajustado no colaborador. Gratificação inicia em R$ 0,00. Benefícios inicia em R$ 230,00 e pode ser alterado.</div>':''}${d.fields.map(f=>fieldHTML(f,current?.[f[0]],{alojamentos:alojamentosCadastro,contratos:contratosCadastro,contratosCadastro:contratosCadastro,cargos:cargosCadastro,setores:setoresCadastro,equipesMaster:equipesMasterCadastro,obrasPermitidas:obrasPermitidasCadastro,periodicidadesBaixada:periodicidadesBaixadaCadastro,current:current||{}})).join('')}${desligHtml}<div class="span4"><button class="g360-btn" type="submit">${edit?'Salvar alterações':'Incluir registro'}</button> ${edit?'<button type="button" class="g360-btn sec" id="g360CancelEdit">Cancelar edição</button>':''}</div></form>`;
+    if(kind==='contratos' && !edit){
+      const form=document.getElementById('g360Form');
+      if(form && !document.getElementById('g360ContratoManualInfo')){
+        form.insertAdjacentHTML('afterbegin',`
+          <div id="g360ContratoManualInfo" class="span4 crud-pro-note">
+            <b>Cadastro manual de contrato</b><br>
+            Preencha os dados do contrato já formalizado. O registro será incluído diretamente na Base de Contratos, sem necessidade de importar uma solicitação.
+          </div>`);
+      }
+    }
     if(kind==='contratos'){
       const form=document.getElementById('g360Form');
       const agua=form?.elements?.contrato_agua_vinculo;
@@ -10726,6 +10739,51 @@ window.GESTAO360_CONFIG = {
     if(kind==='alojamentos'){const vf=g360Form.elements.valor_mensal,of=g360Form.elements.ocupados,rf=g360Form.elements.custo_rateado;const calc=()=>{if(rf)rf.value=(Number(of?.value||0)>0?(Number(vf?.value||0)/Number(of.value)):0).toFixed(2)};vf?.addEventListener('input',calc);of?.addEventListener('input',calc);calc();}
     g360Form.onsubmit=async e=>{e.preventDefault();if(!g360Form.checkValidity()){g360Form.reportValidity();return;}const fd=new FormData(e.target),obj={};d.fields.forEach(f=>{let v=fd.get(f[0]);if(v==='')v=null;if((f[2]==='number'||f[3]==='number'||f[2]==='number-readonly'||f[3]==='number-readonly'||f[3]==='salario-cadastro')&&v!==null)v=Number(v);obj[f[0]]=v});
       let vincAgua=null,vincEnergia=null,vincInternet=null;
+      if(kind==='contratos' && !edit){
+        if(!String(obj.codigo||'').trim()){
+          alert('Informe o número do contrato.');
+          g360Form.elements.codigo?.focus();
+          return;
+        }
+        if(!String(obj.fornecedor||'').trim()){
+          alert('Informe o fornecedor.');
+          g360Form.elements.fornecedor?.focus();
+          return;
+        }
+        if(!String(obj.tipo||'').trim()){
+          alert('Informe o tipo do contrato.');
+          g360Form.elements.tipo?.focus();
+          return;
+        }
+        if(!String(obj.objeto||'').trim()){
+          alert('Informe o objeto do contrato.');
+          g360Form.elements.objeto?.focus();
+          return;
+        }
+
+        // Base de Contratos: contrato sem medição começa como PENDENTE.
+        if(!String(obj.situacao||'').trim() || String(obj.situacao||'').trim().toUpperCase()==='ATIVO'){
+          obj.situacao='PENDENTE';
+        }
+
+        if(!obj.obra_id && window.G360_ACTIVE_OBRA_ID){
+          obj.obra_id=window.G360_ACTIVE_OBRA_ID;
+        }
+
+        // Evita duplicar o mesmo número de contrato na obra.
+        let dq=sb.from('contratos').select('id,codigo').eq('codigo',String(obj.codigo).trim()).limit(1);
+        if(window.G360_ACTIVE_OBRA_ID) dq=dq.eq('obra_id',window.G360_ACTIVE_OBRA_ID);
+        const dup=await dq;
+        if(dup.error){
+          alert('Não foi possível validar o contrato: '+dup.error.message);
+          return;
+        }
+        if((dup.data||[]).length){
+          alert('Já existe o contrato '+String(obj.codigo).trim()+' nesta obra.');
+          g360Form.elements.codigo?.focus();
+          return;
+        }
+      }
       if(kind==='contratos'){
         vincAgua=String(obj.contrato_agua_vinculo||'').trim()||null;
         vincEnergia=String(obj.contrato_energia_vinculo||'').trim()||null;
@@ -11052,6 +11110,13 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
     setTimeout(()=>{ try{ window.SolContratos?.go('lista'); }catch(_){} },60);
   }
   document.getElementById('g360NovoContratoViaSolicitacao')?.addEventListener('click',abrirSolicitacoesParaConversao);
+  document.getElementById('g360NovoContratoManual')?.addEventListener('click',()=>{
+    if(typeof window.g360OpenCrudProduction==='function'){
+      window.g360OpenCrudProduction('contratos',null,{manual:true});
+    }else{
+      alert('Cadastro manual de contratos não está disponível.');
+    }
+  });
 })();
 </script>
 
