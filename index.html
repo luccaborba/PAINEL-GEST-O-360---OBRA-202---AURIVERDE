@@ -1516,6 +1516,7 @@ html.g360-ui-ready .content-col {
   </header>
 
   <div class="crud-mainbar" id="g360ContratoOrigemSolicitacaoBar" style="display:none;">
+    <button type="button" class="crud-primary" id="g360NovoContratoDireto">＋ Incluir contrato</button>
     <button type="button" class="crud-primary" id="g360NovoContratoViaSolicitacao">＋ Importar solicitação para contrato</button>
   </div>
 
@@ -10429,12 +10430,6 @@ window.GESTAO360_CONFIG = {
     }catch(ex){console.warn('Recalculo de rateio dos alojamentos:',ex?.message||ex)}
   }
   async function openCrud(kind, editId=null, opts={}){
-    if(kind==='contratos' && !editId){
-      const link=document.querySelector('.side-link[data-contract-subview="solicitacoes"]');
-      if(link) link.click();
-      setTimeout(()=>{ try{ window.SolContratos?.go('lista'); }catch(_){} },50);
-      return;
-    }
     const d=defs[kind], modal=document.getElementById('g360Modal'); g360Title.textContent='Cadastro — '+d.title; g360Content.innerHTML='Carregando...'; modal.classList.add('open');
     const {data,error}=await sb.from(d.table).select('*').order(d.order); if(error){g360Content.innerHTML=esc(error.message);return}
     const edit=editId?(data||[]).find(x=>x.id===editId):null;
@@ -10735,27 +10730,39 @@ window.GESTAO360_CONFIG = {
         delete obj.contrato_internet_vinculo;
       }
       if(kind==='contratos'){
-        // "Valor medido" é um campo virtual do formulário. Para manter o Fechamento
-        // de Praça como fonte das medições operacionais, ajustamos apenas o acumulado
-        // histórico necessário para que o total consolidado resulte no valor informado.
+        // "Valor medido" é um campo virtual do formulário. Para contratos novos,
+        // ele entra como acumulado inicial. Em edição, descontamos o que já veio do
+        // Fechamento de Praça para não duplicar a medição consolidada.
         const alvo=Number(obj.valor_medido_total||0);
         if(!Number.isFinite(alvo)||alvo<0){alert('Informe um Valor medido válido.');g360Form.elements.valor_medido_total?.focus();return;}
-        const [fpId,fpLegado]=await Promise.all([
-          sb.from('fechamentos_praca').select('valor_medido,status,impacta_saldo').eq('contrato_id',edit.id),
-          sb.from('fechamentos_praca').select('valor_medido,status,impacta_saldo').is('contrato_id',null).eq('contrato_codigo',edit.codigo)
-        ]);
-        if(fpId.error||fpLegado.error){alert('Não foi possível calcular as medições do contrato: '+(fpId.error?.message||fpLegado.error?.message));return;}
-        const fpRows=[...(fpId.data||[]),...(fpLegado.data||[])];
-        const medidoOperacional=fpRows.reduce((s,m)=>{
-          const lancado=String(m.status||'').toUpperCase()==='LANCADO';
-          const impacta=m.impacta_saldo!==false;
-          return s+(lancado&&impacta?Number(m.valor_medido||0):0);
-        },0);
-        if(alvo+0.005<medidoOperacional){
-          alert(`O valor informado (${alvo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}) é menor que as medições do Fechamento de Praça que já impactam o saldo (${medidoOperacional.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}). Ajuste primeiro essas medições no Fechamento de Praça.`);
-          return;
+        if(edit){
+          const [fpId,fpLegado]=await Promise.all([
+            sb.from('fechamentos_praca').select('valor_medido,status,impacta_saldo').eq('contrato_id',edit.id),
+            sb.from('fechamentos_praca').select('valor_medido,status,impacta_saldo').is('contrato_id',null).eq('contrato_codigo',edit.codigo)
+          ]);
+          if(fpId.error||fpLegado.error){alert('Não foi possível calcular as medições do contrato: '+(fpId.error?.message||fpLegado.error?.message));return;}
+          const fpRows=[...(fpId.data||[]),...(fpLegado.data||[])];
+          const medidoOperacional=fpRows.reduce((s,m)=>{
+            const lancado=String(m.status||'').toUpperCase()==='LANCADO';
+            const impacta=m.impacta_saldo!==false;
+            return s+(lancado&&impacta?Number(m.valor_medido||0):0);
+          },0);
+          if(alvo+0.005<medidoOperacional){
+            alert(`O valor informado (${alvo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}) é menor que as medições do Fechamento de Praça que já impactam o saldo (${medidoOperacional.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}). Ajuste primeiro essas medições no Fechamento de Praça.`);
+            return;
+          }
+          obj.medido_acumulado_inicial=Math.max(0,alvo-medidoOperacional);
+        }else{
+          obj.medido_acumulado_inicial=alvo;
+          let obraId=window.G360_ACTIVE_OBRA_ID||null;
+          if(!obraId){
+            const cod=localStorage.getItem('g360_obra_ativa')||window.GESTAO360_CONFIG?.OBRA_CODIGO||'202';
+            const oq=await sb.from('obras').select('id').eq('codigo',String(cod)).limit(1).maybeSingle();
+            if(oq.error||!oq.data?.id){alert(oq.error?.message||'Não foi possível identificar a obra ativa para cadastrar o contrato.');return;}
+            obraId=oq.data.id;
+          }
+          obj.obra_id=obraId;
         }
-        obj.medido_acumulado_inicial=Math.max(0,alvo-medidoOperacional);
         delete obj.valor_medido_total;
       }
       if(kind==='funcionarios'){
@@ -10985,7 +10992,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
   function addBar(viewId,kind,label){
     const v=document.getElementById(viewId); if(!v||v.querySelector('[data-prod-new="'+kind+'"]'))return;
     v.insertAdjacentHTML('afterbegin','<div class="crud-mainbar"><button type="button" class="crud-primary" data-prod-new="'+kind+'">＋ Novo '+label+'</button></div>');
-    v.querySelector('[data-prod-new="'+kind+'"]').onclick=()=>{ if(kind==='contratos'){const link=document.querySelector('.side-link[data-contract-subview="solicitacoes"]');if(link)link.click();setTimeout(()=>{try{window.SolContratos?.go('lista')}catch(_){}},50);return;} window.g360OpenCrudProduction?.(kind,null); };
+    v.querySelector('[data-prod-new="'+kind+'"]').onclick=()=>{ window.g360OpenCrudProduction?.(kind,null); };
   }
   const boot=()=>{addBar('view-alojamento','alojamentos','alojamento');};
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,700));
@@ -11033,10 +11040,11 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
   function esc(v){return String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m]))}
   function find(kind,key){return load(kind).find(r=>String(r[cfg[kind].key])===String(key))}
   function inputHtml(f,v){const [name,label,type='']=f;let cls=type==='wide'?'wide':type==='full'?'full':'';let mode=type;if(type==='wide'||type==='full')mode='';if(type==='alojamento-select'){const opts=load('alojamentos').filter(a=>String(a.ativo??'true')!=='false');const current=String(v??'');return `<label class="wide">${label}<select name="${name}"><option value="">Não utiliza alojamento</option>${opts.map(a=>{const val=String(a.contrato??'');const desc=String(a.descricao??a.contrato??'Alojamento');return `<option value="${esc(val)}" ${current===val?'selected':''}>${esc(desc)}${a.capacidade!=null?' · cap. '+esc(a.capacidade):''}</option>`}).join('')}</select></label>`}if(String(type).startsWith('contrato-servico:')){const suf=String(type).split(':')[1];const rx=new RegExp('^CTS/C\\d+-2026'+suf+'$','i');const current=String(v??'');const opts=load('contratos').filter(x=>rx.test(String(x.contrato||''))).sort((a,b)=>String(a.contrato||'').localeCompare(String(b.contrato||''),'pt-BR',{numeric:true}));return `<label class="wide">${label}<select name="${name}"><option value="">Não informado</option>${opts.map(x=>`<option value="${esc(x.contrato)}" ${current===String(x.contrato)?'selected':''}>${esc(x.contrato)} · ${esc(x.fornecedor||'')}</option>`).join('')}</select><small style="display:block;color:#777;margin-top:4px;text-transform:none">Somente contratos CTS/C…-2026${suf}.</small></label>`}if(type==='number-readonly')return `<label class="${cls}">${label}<input name="${name}" type="number" step="any" value="${esc(v??'')}" readonly><small style="display:block;color:#777;margin-top:4px;text-transform:none">Calculado: valor do aluguel ÷ ocupação.</small></label>`;if(type.startsWith('select:')){const opts=type.slice(7).split('|');return `<label class="${cls}">${label}<select name="${name}">${opts.map(o=>`<option value="${esc(o)}" ${String(v)===o?'selected':''}>${o==='true'?'ATIVO':o==='false'?'INATIVO':esc(o)}</option>`).join('')}</select></label>`}return `<label class="${cls}">${label}<input name="${name}" type="${mode==='date'?'date':mode==='number'?'number':'text'}" ${mode==='number'?'step="any"':''} value="${esc(v??'')}"></label>`}
-  function open(kind,key){if(kind==='contratos' && key==null){const link=document.querySelector('.side-link[data-contract-subview="solicitacoes"]');if(link)link.click();setTimeout(()=>{try{window.SolContratos?.go('lista')}catch(_){}},50);return;}const c=cfg[kind], row=key!=null?find(kind,key):{};title.textContent=(key!=null?'Editar ':'Novo ')+c.label;form.dataset.kind=kind;form.dataset.original=key??'';form.innerHTML=c.fields.map(f=>inputHtml(f,row?.[f[0]])).join('')+`<div class="crud-pro-foot"><button type="button" class="crud-mini" id="crudCancel">Cancelar</button><button type="submit" class="crud-primary">💾 Salvar</button></div>`;modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.getElementById('crudCancel').onclick=close;if(kind==='alojamentos'){const vf=form.elements.valor,of=form.elements.ocupados,rf=form.elements.custoRateado;const calc=()=>{if(rf)rf.value=(Number(of?.value||0)>0?(Number(vf?.value||0)/Number(of.value)):0).toFixed(2)};vf?.addEventListener('input',calc);of?.addEventListener('input',calc);calc();}}
+  function open(kind,key){const c=cfg[kind], row=key!=null?find(kind,key):{};title.textContent=(key!=null?'Editar ':'Novo ')+c.label;form.dataset.kind=kind;form.dataset.original=key??'';form.innerHTML=c.fields.map(f=>inputHtml(f,row?.[f[0]])).join('')+`<div class="crud-pro-foot"><button type="button" class="crud-mini" id="crudCancel">Cancelar</button><button type="submit" class="crud-primary">💾 Salvar</button></div>`;modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.getElementById('crudCancel').onclick=close;if(kind==='alojamentos'){const vf=form.elements.valor,of=form.elements.ocupados,rf=form.elements.custoRateado;const calc=()=>{if(rf)rf.value=(Number(of?.value||0)>0?(Number(vf?.value||0)/Number(of.value)):0).toFixed(2)};vf?.addEventListener('input',calc);of?.addEventListener('input',calc);calc();}}
   function close(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true')}
   document.getElementById('crudProClose').onclick=close;modal.addEventListener('click',e=>{if(e.target===modal)close()});
   form.addEventListener('submit',e=>{e.preventDefault();const kind=form.dataset.kind,c=cfg[kind],oldKey=form.dataset.original,rows=load(kind),fd=new FormData(form),obj={};c.fields.forEach(([name,,type=''])=>{let v=fd.get(name);if(type==='number'||type==='number-readonly')v=v===''?null:Number(v);else if(type==='select:true|false')v=v==='true';else v=v===''?null:v;obj[name]=v});if(kind==='alojamentos'){const val=Number(obj.valor||0),ocu=Number(obj.ocupados||0);obj.custoRateado=ocu>0?val/ocu:0;}if(oldKey){const i=rows.findIndex(r=>String(r[c.key])===String(oldKey));if(i>=0)rows[i]={...rows[i],...obj}}else rows.push(obj);save(kind,rows);location.reload()});
+  window.g360OpenCrudPreview=(kind,key=null)=>open(kind,key);
   window.g360CrudEdit=(kind,key)=>open(kind,decodeURIComponent(key));
   window.g360CrudToggle=(kind,key)=>{key=decodeURIComponent(key);const c=cfg[kind],rows=load(kind),i=rows.findIndex(r=>String(r[c.key])===String(key));if(i<0)return;if(kind==='funcionarios')rows[i].status=String(rows[i].status||'').toUpperCase()==='ATIVO'?'INATIVO':'ATIVO';if(kind==='contratos')rows[i].situacao=String(rows[i].situacao||'').toUpperCase()==='INATIVO'?'ATIVO':'INATIVO';if(kind==='alojamentos')rows[i].ativo=rows[i].ativo===false?true:false;save(kind,rows);location.reload()};
   window.g360CrudDelete=(kind,key)=>{key=decodeURIComponent(key);const c=cfg[kind];if(!confirm(`Excluir definitivamente este ${c.label.toLowerCase()} da prévia?`))return;const rows=load(kind).filter(r=>String(r[c.key])!==String(key));save(kind,rows);location.reload()};
@@ -11051,6 +11059,15 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
     if(link) link.click();
     setTimeout(()=>{ try{ window.SolContratos?.go('lista'); }catch(_){} },60);
   }
+  document.getElementById('g360NovoContratoDireto')?.addEventListener('click',()=>{
+    if(window.g360PreviewMode===false){
+      if(typeof window.g360OpenCrudProduction==='function') window.g360OpenCrudProduction('contratos',null);
+      else alert('Cadastro de contratos ainda não foi carregado. Tente novamente em instantes.');
+    }else{
+      if(typeof window.g360OpenCrudPreview==='function') window.g360OpenCrudPreview('contratos',null);
+      else alert('Cadastro de contratos ainda não foi carregado.');
+    }
+  });
   document.getElementById('g360NovoContratoViaSolicitacao')?.addEventListener('click',abrirSolicitacoesParaConversao);
 })();
 </script>
