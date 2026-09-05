@@ -1038,6 +1038,15 @@ html.g360-ui-ready .content-col {
 [data-g57-title]:disabled{opacity:.35!important;cursor:not-allowed!important}
 </style>
 
+
+<style id="g360-fechamento-auditoria-v142">
+#view-fechamentoPraca .badge.ok{
+  background:rgba(37,99,235,.20)!important;
+  color:#7db4ff!important;
+  border:1px solid rgba(59,130,246,.35)!important;
+}
+</style>
+
 </head>
 <body>
 <!-- V38: only Collaborators Experience cell + RH/DP Advertencia visibility -->
@@ -1674,13 +1683,14 @@ html.g360-ui-ready .content-col {
               <button type="button" class="crud-mini" id="g360FjAtualizarCompetencia" data-g360-competencia="1">↻ Atualizar competência</button>
             </div>
           </div>
-          <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:14px;max-width:680px;">Competência <span id="fjPeriodoLabel2">AGOSTO/2026</span>. A lista abaixo contém somente as medições/contratos escolhidos para esta competência. Use <b>Abrir nova competência</b> para iniciar um novo mês e <b>Atualizar competência</b> para acrescentar contratos que entrarem no decorrer do mês. <span style="color:var(--red);font-weight:700;">Vermelho</span> = pendente. <span style="color:var(--green);font-weight:700;">Verde</span> = lançado no SIENGE.</div>
+          <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:14px;max-width:680px;">Competência <span id="fjPeriodoLabel2">AGOSTO/2026</span>. A lista abaixo contém somente as medições/contratos escolhidos para esta competência. Use <b>Abrir nova competência</b> para iniciar um novo mês e <b>Atualizar competência</b> para acrescentar contratos que entrarem no decorrer do mês. A auditoria utiliza três etapas: <b>PENDENTE</b> → <b>LANÇADO NO SIENGE</b> → <b>TÍTULO GERADO</b>.</div>
           <div class="filters" style="margin-bottom:14px;">
             <input type="text" id="fjSearchInput" placeholder="Buscar por contrato ou fornecedor...">
             <select id="fjStatusSelect">
               <option value="">Todos os status</option>
-              <option value="PENDENTE">Pendente (sem fechar)</option>
+              <option value="PENDENTE">Pendente</option>
               <option value="LANCADO">Lançado no Sienge</option>
+              <option value="TITULO_GERADO">Título gerado</option>
             </select>
             <button class="clear-btn" id="fjClearBtn">Limpar filtros</button>
             <button class="clear-btn" id="fjExportPdfBtn">📄 Exportar PDF</button>
@@ -1698,7 +1708,6 @@ html.g360-ui-ready .content-col {
                   <th data-fjkey="status">Status<span class="arrow"></span></th>
                   <th>Nº Título</th>
                   <th data-fjkey="justificativa">Justificativa<span class="arrow"></span></th>
-                  <th>Alojamento / Conta</th>
                   <th>Ações</th>
                 </tr>
               </thead>
@@ -10829,7 +10838,7 @@ window.GESTAO360_CONFIG = {
           }
           const fpRows=[...(fpId.data||[]),...(fpLegado.data||[])];
           const medidoOperacional=fpRows.reduce((s,m)=>{
-            const lancado=String(m.status||'').toUpperCase()==='LANCADO';
+            const lancado=['LANCADO','TITULO_GERADO'].includes(String(m.status||'').toUpperCase());
             const impacta=m.impacta_saldo!==false;
             return s+(lancado&&impacta?Number(m.valor_medido||0):0);
           },0);
@@ -11855,8 +11864,18 @@ function filtered(){
     return true;
   });
 }
-function statusLabel(s){return s==='LANCADO'?'LANÇADO NO SIENGE':'PENDENTE'}
-function badgeClass(s){return s==='LANCADO'?'badge-conclu':'badge-resc'}
+function statusLabel(s){
+  const v=String(s||'').toUpperCase();
+  if(v==='TITULO_GERADO') return 'TÍTULO GERADO';
+  if(v==='LANCADO') return 'LANÇADO NO SIENGE';
+  return 'PENDENTE';
+}
+function badgeClass(s){
+  const v=String(s||'').toUpperCase();
+  if(v==='TITULO_GERADO') return 'ok';
+  if(v==='LANCADO') return 'badge-conclu';
+  return 'badge-resc';
+}
 
 function ensureTypeFilter(){
   const statusSel=$('fjStatusSelect');
@@ -11876,8 +11895,14 @@ function ensureTypeFilter(){
 function render(){
   ensureTypeFilter();
   const rows=filtered();
-  const total=state.rows.length,lanc=state.rows.filter(r=>r.status==='LANCADO').length,pend=state.rows.filter(r=>r.status==='PENDENTE').length;
-  const totalVal=state.rows.reduce((a,r)=>a+r.medido,0),lancVal=state.rows.filter(r=>r.status==='LANCADO').reduce((a,r)=>a+r.medido,0),pendVal=state.rows.filter(r=>r.status==='PENDENTE').reduce((a,r)=>a+r.medido,0);
+  const total=state.rows.length;
+  const pend=state.rows.filter(r=>String(r.status||'').toUpperCase()==='PENDENTE').length;
+  const lanc=state.rows.filter(r=>String(r.status||'').toUpperCase()==='LANCADO').length;
+  const tit=state.rows.filter(r=>String(r.status||'').toUpperCase()==='TITULO_GERADO').length;
+  const totalVal=state.rows.reduce((a,r)=>a+r.medido,0);
+  const pendVal=state.rows.filter(r=>String(r.status||'').toUpperCase()==='PENDENTE').reduce((a,r)=>a+r.medido,0);
+  const lancVal=state.rows.filter(r=>String(r.status||'').toUpperCase()==='LANCADO').reduce((a,r)=>a+r.medido,0);
+  const titVal=state.rows.filter(r=>String(r.status||'').toUpperCase()==='TITULO_GERADO').reduce((a,r)=>a+r.medido,0);
 
   if($('fjPeriodoLabel1'))$('fjPeriodoLabel1').textContent=labelPeriod(state.period);
   if($('fjPeriodoLabel2'))$('fjPeriodoLabel2').textContent=state.period;
@@ -11885,8 +11910,9 @@ function render(){
 
   if($('fjKpiRow'))$('fjKpiRow').innerHTML=[
     {l:'Praças no Fechamento',v:total,f:state.period},
+    {l:'Pendentes',v:pend,f:fmt(pendVal),alt:true},
     {l:'Lançados no Sienge',v:lanc,f:fmt(lancVal)},
-    {l:'Pendentes de Fechar',v:pend,f:fmt(pendVal),alt:true},
+    {l:'Títulos Gerados',v:tit,f:fmt(titVal)},
     {l:'Valor Total',v:fmt(totalVal),f:'Base da competência'}
   ].map(k=>`<div class="kpi ${k.alt?'alt':''}"><div class="kpi-label">${k.l}</div><div class="kpi-value">${k.v}</div><div class="kpi-foot">${k.f}</div></div>`).join('');
 
@@ -11914,28 +11940,16 @@ function render(){
         ? '<span class="badge badge-resc" title="Conta de alojamento sem Nº do Título">SEM TÍTULO</span>'
         : esc(r.numero_titulo||'')}</td>
       <td>${esc(r.justificativa||'')}</td>
-      <td>${(()=>{
-        if(r.conta_vinculada){
-          return `<span class="badge ok">${esc(r.tipo_conta)}</span>
-            <div style="font-size:11px;margin-top:4px"><b>${esc(r.alojamento_descricao||'Alojamento')}</b></div>
-            <div style="font-size:10px;margin-top:2px;color:var(--ink-soft)">Locação: ${esc(r.contrato_locacao||'—')}</div>`;
-        }
-        if(r.tipo_conta){
-          return `<span class="badge badge-resc">${esc(r.tipo_conta)} · SEM VÍNCULO</span>
-            <div style="font-size:10px;margin-top:4px;color:var(--ink-soft)">Cadastrar este contrato no alojamento correspondente</div>`;
-        }
-        return '—';
-      })()}</td>
       <td style="white-space:nowrap">
         ${canDelete()?`<label style="display:inline-flex;align-items:center;gap:5px;margin-right:7px;cursor:pointer"><input type="checkbox" data-g63-select="${esc(r.id)}" ${state.selected.has(String(r.id))?'checked':''}> X</label>`:''}
         <button type="button" class="crud-mini" data-g57-process="${esc(r.id)}">⚙️ Processar</button>
         <button type="button" class="crud-mini" data-g57-title="${esc(r.id)}"
-          ${r.status!=='LANCADO'?'disabled title="Processe a medição antes de informar o título"':''}>
+          ${!['LANCADO','TITULO_GERADO'].includes(String(r.status||'').toUpperCase())?'disabled title="Processe a medição antes de informar o título"':''}>
           🏷️ ${r.numero_titulo?'Alterar título':'Informar título'}
         </button>
         ${canDelete()?`<button type="button" class="crud-mini" data-g57-delete="${esc(r.id)}" style="margin-left:6px">🗑️ Excluir</button>`:''}
       </td>
-    </tr>`).join(''):`<tr><td colspan="8"><div class="empty-state">Nenhuma medição nesta competência.</div></td></tr>`;
+    </tr>`).join(''):`<tr><td colspan="7"><div class="empty-state">Nenhuma medição nesta competência.</div></td></tr>`;
 
   if($('fjPageInfo'))$('fjPageInfo').textContent=`${rows.length} praça(s)`;
   if($('fjCountTag'))$('fjCountTag').textContent=total;
@@ -12054,7 +12068,7 @@ async function processar(id){
       if(saldoAntesQ.error)throw saldoAntesQ.error;
 
       const totalAntes=Number(saldoAntesQ.data?.total_medido||0);
-      const antigoEfetivo=String(atual.status||'').toUpperCase()==='LANCADO'
+      const antigoEfetivo=['LANCADO','TITULO_GERADO'].includes(String(atual.status||'').toUpperCase())
         ? Number(atual.valor_medido||0)
         : 0;
 
@@ -12153,7 +12167,7 @@ async function informarTitulo(id){
   const r=state.rows.find(x=>String(x.id)===String(id));
   if(!r){alert('Medição não encontrada.');return}
 
-  if(String(r.status||'').toUpperCase()!=='LANCADO'){
+  if(!['LANCADO','TITULO_GERADO'].includes(String(r.status||'').toUpperCase())){
     alert('Primeiro processe a medição e faça o lançamento no Sienge.');
     return;
   }
@@ -12196,16 +12210,18 @@ async function informarTitulo(id){
       const q=await sb().from('fechamentos_praca')
         .update({
           numero_titulo:numero,
+          status:'TITULO_GERADO',
           justificativa,
           updated_at:new Date().toISOString()
         })
         .eq('id',id)
-        .select('id,numero_titulo,justificativa')
+        .select('id,numero_titulo,status,justificativa')
         .maybeSingle();
 
       if(q.error)throw q.error;
 
       r.numero_titulo=q.data?.numero_titulo||numero;
+      r.status='TITULO_GERADO';
       r.justificativa=q.data?.justificativa||justificativa;
 
       modalClose();
@@ -12440,7 +12456,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 else setTimeout(boot,800);
 
 window.g360FechamentoV57={
-  load,refreshSelect,edit,removeMeasurement,deleteSelected,clearCompetence,openCompetence,
+  load,refreshSelect,processar,informarTitulo,removeMeasurement,deleteSelected,clearCompetence,openCompetence,
   getExportRows:()=>filtered().map(r=>({...r})),
   getAllRows:()=>state.rows.map(r=>({...r})),
   getPeriod:()=>state.period
@@ -12700,27 +12716,26 @@ window.g360FechamentoV57={
 
     doc.autoTable({
       startY:94,
-      head:[['Contrato','Fornecedor','Medido','Status','Nº Título','Justificativa','Alojamento / Conta']],
+      head:[['Contrato','Fornecedor','Medido','Status','Nº Título','Justificativa']],
       body:rows.map(r=>[
         r.contrato||'',
         r.fornecedor||'',
         money(r.medido),
-        r.status==='LANCADO'?'LANÇADO NO SIENGE':'PENDENTE',
+        String(r.status||'').toUpperCase()==='TITULO_GERADO'?'TÍTULO GERADO':
+          String(r.status||'').toUpperCase()==='LANCADO'?'LANÇADO NO SIENGE':'PENDENTE',
         r.numero_titulo||'',
-        r.justificativa||'',
-        contaTxt(r)
+        r.justificativa||''
       ]),
       styles:{fontSize:7.2,cellPadding:3,valign:'middle',overflow:'linebreak'},
       headStyles:{fillColor:[20,21,23],textColor:[245,197,24],fontStyle:'bold'},
       alternateRowStyles:{fillColor:[247,247,247]},
       columnStyles:{
-        0:{cellWidth:82},
-        1:{cellWidth:138},
-        2:{cellWidth:72,halign:'right'},
-        3:{cellWidth:78},
-        4:{cellWidth:58},
-        5:{cellWidth:112},
-        6:{cellWidth:150}
+        0:{cellWidth:100},
+        1:{cellWidth:185},
+        2:{cellWidth:85,halign:'right'},
+        3:{cellWidth:105},
+        4:{cellWidth:90},
+        5:{cellWidth:190}
       },
       margin:{left:24,right:24,bottom:32},
       didDrawPage:function(){
@@ -12747,24 +12762,20 @@ window.g360FechamentoV57={
       ['Valor total',rows.reduce((s,r)=>s+Number(r.medido||0),0)],
       ['Gerado em',new Date().toLocaleString('pt-BR')],
       [],
-      ['Contrato','Fornecedor','Medido','Status','Nº Título','Justificativa','Tipo de Conta','Alojamento','Contrato de Locação','Situação do Vínculo'],
+      ['Contrato','Fornecedor','Medido','Status','Nº Título','Justificativa'],
       ...rows.map(r=>[
         r.contrato||'',
         r.fornecedor||'',
         Number(r.medido||0),
-        r.status==='LANCADO'?'LANÇADO NO SIENGE':'PENDENTE',
+        String(r.status||'').toUpperCase()==='TITULO_GERADO'?'TÍTULO GERADO':
+          String(r.status||'').toUpperCase()==='LANCADO'?'LANÇADO NO SIENGE':'PENDENTE',
         r.numero_titulo||'',
-        r.justificativa||'',
-        r.tipo_conta||'',
-        r.alojamento_descricao||'',
-        r.contrato_locacao||'',
-        r.tipo_conta?(r.conta_vinculada?'VINCULADO':'SEM VÍNCULO'):''
+        r.justificativa||''
       ])
     ];
     const ws=XLSX.utils.aoa_to_sheet(aoa);
     ws['!cols']=[
-      {wch:20},{wch:38},{wch:15},{wch:22},{wch:14},{wch:34},
-      {wch:16},{wch:28},{wch:22},{wch:18}
+      {wch:20},{wch:42},{wch:15},{wch:22},{wch:16},{wch:38}
     ];
     for(let r=8;r<aoa.length;r++){
       const addr=XLSX.utils.encode_cell({r,c:2});
