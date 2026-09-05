@@ -1690,6 +1690,7 @@ html.g360-ui-ready .content-col {
               <option value="">Todos os status</option>
               <option value="PENDENTE">Pendente</option>
               <option value="LANCADO">Lançado no Sienge</option>
+              <option value="TITULO_GERADO">Título Gerado</option>
               <option value="TITULO_GERADO">Título gerado</option>
             </select>
             <button class="clear-btn" id="fjClearBtn">Limpar filtros</button>
@@ -7685,8 +7686,16 @@ function getFjData(){ return FECHAMENTOS_BY_PERIOD[fjState.periodo] || []; }
 // (Essa aba não tem coluna "Tipo", então o filtro e a coluna de tipo foram removidos daqui.)
 let fjState = { search:'', status:'', sortKey:'contrato', sortDir:'asc', periodo:'AGOSTO/2026' };
 
-function fjStatusLabel(s){ return s==='LANCADO' ? 'LANÇADO NO SIENGE' : 'PENDENTE'; }
-function fjBadgeClass(s){ return s==='LANCADO' ? 'badge-conclu' : 'badge-resc'; }
+function fjStatusLabel(s){
+  const v=String(s||'').toUpperCase();
+  if(v==='TITULO_GERADO') return 'TÍTULO GERADO';
+  return v==='LANCADO' ? 'LANÇADO NO SIENGE' : 'PENDENTE';
+}
+function fjBadgeClass(s){
+  const v=String(s||'').toUpperCase();
+  if(v==='TITULO_GERADO') return 'ok';
+  return v==='LANCADO' ? 'badge-conclu' : 'badge-resc';
+}
 // Normaliza removendo acentos, pra "goias" encontrar "GOIÁS", "araujo" encontrar "ARAÚJO" etc.
 const fjNorm = s => (s===null || s===undefined) ? '' : String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
@@ -13691,6 +13700,48 @@ window.g360BackupV135={generate,history,authMaster};
 
   // Captura antes de qualquer rotina antiga que redirecione contratos para Solicitações.
   document.addEventListener('click',abrirManual,true);
+})();
+</script>
+
+
+<script id="g360-fechamento-status-filter-v143">
+(function(){
+  'use strict';
+  function corrigir(){
+    const sel=document.getElementById('fjStatusSelect');
+    if(!sel) return;
+
+    const atual=sel.value;
+    const desejado=[
+      ['','Todos os status'],
+      ['PENDENTE','Pendente'],
+      ['LANCADO','Lançado no Sienge'],
+      ['TITULO_GERADO','Título Gerado']
+    ];
+
+    const assinatura=[...sel.options].map(o=>o.value+'|'+o.textContent).join(';;');
+    const alvo=desejado.map(x=>x[0]+'|'+x[1]).join(';;');
+
+    if(assinatura!==alvo){
+      sel.innerHTML=desejado.map(([v,t])=>`<option value="${v}">${t}</option>`).join('');
+      if(desejado.some(x=>x[0]===atual)) sel.value=atual;
+    }
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',()=>{
+      corrigir();
+      setTimeout(corrigir,300);
+      setTimeout(corrigir,900);
+    },{once:true});
+  }else{
+    corrigir();
+    setTimeout(corrigir,300);
+    setTimeout(corrigir,900);
+  }
+
+  const mo=new MutationObserver(corrigir);
+  mo.observe(document.body,{childList:true,subtree:true});
 })();
 </script>
 
