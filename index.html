@@ -1031,6 +1031,13 @@ html.g360-ui-ready .content-col {
 }
 </style>
 
+
+<style id="g360-fechamento-processo-v141">
+[data-g57-process]{border-color:#8a6d16!important;color:#f5c518!important}
+[data-g57-title]{border-color:#2f6f58!important;color:#78e6b6!important}
+[data-g57-title]:disabled{opacity:.35!important;cursor:not-allowed!important}
+</style>
+
 </head>
 <body>
 <!-- V38: only Collaborators Experience cell + RH/DP Advertencia visibility -->
@@ -11921,7 +11928,11 @@ function render(){
       })()}</td>
       <td style="white-space:nowrap">
         ${canDelete()?`<label style="display:inline-flex;align-items:center;gap:5px;margin-right:7px;cursor:pointer"><input type="checkbox" data-g63-select="${esc(r.id)}" ${state.selected.has(String(r.id))?'checked':''}> X</label>`:''}
-        <button type="button" class="crud-mini" data-g57-edit="${esc(r.id)}">✏️ Editar</button>
+        <button type="button" class="crud-mini" data-g57-process="${esc(r.id)}">⚙️ Processar</button>
+        <button type="button" class="crud-mini" data-g57-title="${esc(r.id)}"
+          ${r.status!=='LANCADO'?'disabled title="Processe a medição antes de informar o título"':''}>
+          🏷️ ${r.numero_titulo?'Alterar título':'Informar título'}
+        </button>
         ${canDelete()?`<button type="button" class="crud-mini" data-g57-delete="${esc(r.id)}" style="margin-left:6px">🗑️ Excluir</button>`:''}
       </td>
     </tr>`).join(''):`<tr><td colspan="8"><div class="empty-state">Nenhuma medição nesta competência.</div></td></tr>`;
@@ -11955,83 +11966,112 @@ async function refreshSelect(prefer,keepMissing=false){
 function modalOpen(t,c){const m=$('g360Fj57Modal');$('g360Fj57Title').textContent=t;$('g360Fj57Body').innerHTML=c;m.classList.add('open');m.style.display='flex'}
 function modalClose(){const m=$('g360Fj57Modal');m.classList.remove('open');m.style.display='none';$('g360Fj57Body').innerHTML=''}
 
-async function edit(id){
+async function processar(id){
   let r=state.rows.find(x=>String(x.id)===String(id));
   if(!r){alert('Medição não encontrada.');return}
-  modalOpen('Editar medição — '+r.contrato,`
-    <form id="g57EditForm">
+
+  modalOpen('Processar medição — '+r.contrato,`
+    <form id="g57ProcessForm">
       <div class="g57grid">
         <label>Competência<input value="${esc(state.period)}" disabled></label>
         <label>Contrato<input value="${esc(r.contrato)}" disabled></label>
         <label class="g57full">Fornecedor<input value="${esc(r.fornecedor)}" disabled></label>
-        <label>Valor medido<input name="medido" type="number" min="0" step="0.01" value="${r.medido}"></label>
-        <label>Status<select name="status"><option value="PENDENTE" ${r.status==='PENDENTE'?'selected':''}>Pendente</option><option value="LANCADO" ${r.status==='LANCADO'?'selected':''}>Lançado no Sienge</option></select></label>
-        <label>Nº do Título<input name="numero_titulo" type="text" value="${esc(r.numero_titulo||'')}" placeholder="Ex.: 123456"></label>
-        <label class="g57full">Justificativa / observação<textarea name="justificativa">${esc(r.justificativa)}</textarea></label>
+
+        <label>Valor medido
+          <input name="medido" type="number" min="0" step="0.01" value="${Number(r.medido||0)}" required>
+        </label>
+
+        <label class="g57full">Observação
+          <textarea name="justificativa" placeholder="Ex.: Lançado no Sienge / aguardando aprovação do título">${esc(
+            (!r.justificativa || r.justificativa==='MÊS VIGENTE')
+              ? ''
+              : r.justificativa
+          )}</textarea>
+        </label>
+
+        <div class="g57full crud-pro-note">
+          Ao confirmar, esta medição será marcada como <b>LANÇADA NO SIENGE</b>.
+          O Nº do Título será informado depois, em uma etapa separada, após a aprovação no Sienge.
+        </div>
       </div>
-      <div class="g57actions"><button type="button" class="crud-mini" id="g57Cancel">Cancelar</button><button type="submit" class="crud-primary">💾 Salvar alteração</button></div>
+
+      <div class="g57actions">
+        <button type="button" class="crud-mini" id="g57Cancel">Cancelar</button>
+        <button type="submit" class="crud-primary">⚙️ Confirmar processamento</button>
+      </div>
     </form>`);
+
   $('g57Cancel').onclick=modalClose;
-  $('g57EditForm').onsubmit=async e=>{
+
+  $('g57ProcessForm').onsubmit=async e=>{
     e.preventDefault();
-    const b=e.currentTarget.querySelector('[type=submit]'),fd=new FormData(e.currentTarget);
+    const b=e.currentTarget.querySelector('[type=submit]');
+    const fd=new FormData(e.currentTarget);
+
     try{
-      b.disabled=true;b.textContent='Salvando...';
+      b.disabled=true;
+      b.textContent='Processando...';
+
       const novoValor=Number(fd.get('medido')||0);
-      const novoStatus=String(fd.get('status')||'PENDENTE');
+      if(!Number.isFinite(novoValor) || novoValor<0){
+        throw new Error('Informe um valor medido válido.');
+      }
+
+      const novoStatus='LANCADO';
+      let obs=String(fd.get('justificativa')||'').trim();
+      if(!obs) obs='LANÇADO / AGUARD APROV TIT';
+
       const patch={
         valor_medido:novoValor,
         status:novoStatus,
-        numero_titulo:String(fd.get('numero_titulo')||'').trim()||null,
-        justificativa:String(fd.get('justificativa')||'').trim()||null,
+        justificativa:obs,
         updated_at:new Date().toISOString()
       };
 
-      // Regra de saldo contratual V115 — PRESERVAÇÃO ABSOLUTA DO MEDIDO:
-      // Antes de salvar, captura o TOTAL MEDIDO oficial da view.
-      // Depois calcula apenas a diferença causada por ESTA edição.
-      // Por fim, recalibra medido_acumulado_inicial para que:
-      // TOTAL MEDIDO FINAL = TOTAL ANTERIOR + (novo valor efetivo - valor efetivo anterior).
-      //
-      // Isso impede que uma nova medição ou edição zere/reconstrua o histórico do contrato,
-      // mesmo que a linha tenha vindo de importação antiga com impacta_saldo=false/source_row.
+      // V115 — preservação absoluta do total medido e do saldo contratual.
       const atualQ=await sb().from('fechamentos_praca')
         .select('id,source_row,contrato_id,contrato_codigo,valor_medido,status,impacta_saldo')
         .eq('id',id).maybeSingle();
       if(atualQ.error)throw atualQ.error;
+
       const atual=atualQ.data||{};
       const oid=await getObraId();
 
-      // Resolve o contrato da medição.
       let cq=atual.contrato_id
         ? await sb().from('contratos').select('id,codigo').eq('id',atual.contrato_id).maybeSingle()
         : await sb().from('contratos').select('id,codigo').eq('obra_id',oid).eq('codigo',atual.contrato_codigo).maybeSingle();
+
       if(cq.error)throw cq.error;
       if(!cq.data?.id)throw new Error('Contrato da medição não encontrado para atualizar o saldo.');
 
       const contratoId=cq.data.id;
       const contratoCodigo=cq.data.codigo||atual.contrato_codigo||'';
 
-      // Total oficial imediatamente ANTES desta edição.
       const saldoAntesQ=await sb().from('vw_contratos_saldo')
         .select('id,total_medido')
         .eq('id',contratoId).maybeSingle();
-      if(saldoAntesQ.error)throw saldoAntesQ.error;
-      const totalAntes=Number(saldoAntesQ.data?.total_medido||0);
 
+      if(saldoAntesQ.error)throw saldoAntesQ.error;
+
+      const totalAntes=Number(saldoAntesQ.data?.total_medido||0);
       const antigoEfetivo=String(atual.status||'').toUpperCase()==='LANCADO'
-        ? Number(atual.valor_medido||0) : 0;
-      const novoEfetivo=novoStatus==='LANCADO' ? novoValor : 0;
+        ? Number(atual.valor_medido||0)
+        : 0;
+
+      const novoEfetivo=novoValor;
       const totalDesejado=Math.max(0,totalAntes+(novoEfetivo-antigoEfetivo));
 
-      // Mantém histórico importado fora da soma operacional; novas linhas entram diretamente.
       const historica=(atual.impacta_saldo===false && atual.source_row!=null);
       patch.impacta_saldo=historica?false:true;
 
-      const q=await sb().from('fechamentos_praca').update(patch).eq('id',id).select('*').maybeSingle();
+      const q=await sb().from('fechamentos_praca')
+        .update(patch)
+        .eq('id',id)
+        .select('*')
+        .maybeSingle();
+
       if(q.error)throw q.error;
 
-      // Soma tudo que a view passará a considerar diretamente como medição operacional.
       const [opQ,legacyOpQ]=await Promise.all([
         sb().from('fechamentos_praca')
           .select('valor_medido,status,impacta_saldo')
@@ -12043,6 +12083,7 @@ async function edit(id){
           .is('contrato_id',null)
           .eq('contrato_codigo',contratoCodigo)
       ]);
+
       if(opQ.error)throw opQ.error;
       if(legacyOpQ.error)throw legacyOpQ.error;
 
@@ -12053,16 +12094,15 @@ async function edit(id){
         return s+(lancada&&impacta?Number(m.valor_medido||0):0);
       },0);
 
-      // O acumulado histórico vira somente a parcela necessária para preservar
-      // exatamente o total medido correto após esta edição.
       const novaBase=totalDesejado-totalOperacional;
+
       if(novaBase < -0.005){
         throw new Error(
           'Inconsistência no saldo do contrato: as medições operacionais ('+
           totalOperacional.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+
           ') superam o total medido calculado ('+
           totalDesejado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+
-          '). A operação foi salva, mas o acumulado histórico não foi alterado.'
+          ').'
         );
       }
 
@@ -12072,6 +12112,7 @@ async function edit(id){
           updated_at:new Date().toISOString()
         })
         .eq('id',contratoId);
+
       if(cu.error)throw cu.error;
 
       if(q.data){
@@ -12079,25 +12120,108 @@ async function edit(id){
         if(alvo){
           alvo.medido=Number(q.data.valor_medido||0);
           alvo.valor_medido=Number(q.data.valor_medido||0);
-          alvo.status=String(q.data.status||'PENDENTE').toUpperCase();
-          alvo.numero_titulo=q.data.numero_titulo||'';
-          alvo.justificativa=q.data.justificativa||'';
+          alvo.status='LANCADO';
+          alvo.justificativa=q.data.justificativa||obs;
           alvo.impacta_saldo=q.data.impacta_saldo!==false;
         }
       }
+
       modalClose();
       render();
+
       sessionStorage.removeItem('g360_db_sig');
+
       if(typeof window.g360PullAll==='function'){
         const ok=await window.g360PullAll();
         if(ok===false)return;
       }
+
       await load(state.period);
-    }catch(err){alert('Erro ao salvar medição: '+(err?.message||err))}
-    finally{if(b){b.disabled=false;b.textContent='💾 Salvar alteração'}}
+
+    }catch(err){
+      alert('Erro ao processar medição: '+(err?.message||err));
+    }finally{
+      if(b){
+        b.disabled=false;
+        b.textContent='⚙️ Confirmar processamento';
+      }
+    }
   };
 }
 
+async function informarTitulo(id){
+  const r=state.rows.find(x=>String(x.id)===String(id));
+  if(!r){alert('Medição não encontrada.');return}
+
+  if(String(r.status||'').toUpperCase()!=='LANCADO'){
+    alert('Primeiro processe a medição e faça o lançamento no Sienge.');
+    return;
+  }
+
+  modalOpen((r.numero_titulo?'Alterar':'Informar')+' Nº do Título — '+r.contrato,`
+    <form id="g57TitleForm">
+      <div class="g57grid">
+        <label class="g57full">Nº do Título
+          <input name="numero_titulo" type="text" value="${esc(r.numero_titulo||'')}" placeholder="Ex.: 318182" autocomplete="off" required autofocus>
+        </label>
+      </div>
+      <div class="g57actions">
+        <button type="button" class="crud-mini" id="g57Cancel">Cancelar</button>
+        <button type="submit" class="crud-primary">🏷️ Salvar título</button>
+      </div>
+    </form>`);
+
+  $('g57Cancel').onclick=modalClose;
+
+  $('g57TitleForm').onsubmit=async e=>{
+    e.preventDefault();
+    const b=e.currentTarget.querySelector('[type=submit]');
+    const fd=new FormData(e.currentTarget);
+    const numero=String(fd.get('numero_titulo')||'').trim();
+
+    if(!numero){
+      alert('Informe o Nº do Título.');
+      return;
+    }
+
+    try{
+      b.disabled=true;
+      b.textContent='Salvando...';
+
+      let justificativa=String(r.justificativa||'').trim();
+      if(!justificativa || /AGUARD.*TIT/i.test(justificativa) || justificativa==='MÊS VIGENTE'){
+        justificativa='FINALIZADO';
+      }
+
+      const q=await sb().from('fechamentos_praca')
+        .update({
+          numero_titulo:numero,
+          justificativa,
+          updated_at:new Date().toISOString()
+        })
+        .eq('id',id)
+        .select('id,numero_titulo,justificativa')
+        .maybeSingle();
+
+      if(q.error)throw q.error;
+
+      r.numero_titulo=q.data?.numero_titulo||numero;
+      r.justificativa=q.data?.justificativa||justificativa;
+
+      modalClose();
+      render();
+      await load(state.period);
+
+    }catch(err){
+      alert('Erro ao salvar Nº do Título: '+(err?.message||err));
+    }finally{
+      if(b){
+        b.disabled=false;
+        b.textContent='🏷️ Salvar título';
+      }
+    }
+  };
+}
 
 async function removeMeasurement(id){
   if(!canDelete()){alert('Seu usuário não possui permissão para excluir medições.');return}
@@ -12251,13 +12375,23 @@ async function boot(){
 
 /* Um único controlador para o módulo inteiro. Captura antes dos listeners legados. */
 document.addEventListener('click',e=>{
-  const editBtn=e.target.closest('[data-g57-edit]');
-  if(editBtn){
+  const processBtn=e.target.closest('[data-g57-process]');
+  if(processBtn){
     e.preventDefault();
     e.stopImmediatePropagation();
-    edit(editBtn.dataset.g57Edit);
+    processar(processBtn.dataset.g57Process);
     return;
   }
+
+  const titleBtn=e.target.closest('[data-g57-title]');
+  if(titleBtn){
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    if(titleBtn.disabled)return;
+    informarTitulo(titleBtn.dataset.g57Title);
+    return;
+  }
+
   const deleteBtn=e.target.closest('[data-g57-delete]');
   if(deleteBtn){
     e.preventDefault();
@@ -13062,35 +13196,74 @@ window.g360FechamentoV57={
 </script>
 
 
-<script id="g360-session-control-v122">
+<script id="g360-session-control-v140">
 (function(){
   'use strict';
 
   const IDLE_MS = 5 * 60 * 1000;       // 5 minutos
   const FORCE_POLL_MS = 10 * 1000;     // verifica derrubada a cada 10 s
+  const LAST_ACTIVITY_KEY = 'g360_last_activity_at_v140';
+
   let idleTimer = null;
   let idleBound = false;
   let signingOut = false;
   let forcePolling = false;
+  let lastPersist = 0;
 
   function sb(){
     return window.g360SupabaseClient || null;
   }
 
-  async function hasSession(){
+  function now(){
+    return Date.now();
+  }
+
+  function readLastActivity(){
+    try{
+      const n=Number(localStorage.getItem(LAST_ACTIVITY_KEY)||0);
+      return Number.isFinite(n) ? n : 0;
+    }catch(_){
+      return 0;
+    }
+  }
+
+  function writeLastActivity(force=false){
+    const t=now();
+
+    // Evita escrever no localStorage milhares de vezes por movimento do mouse.
+    if(!force && t-lastPersist < 3000) return t;
+
+    try{
+      localStorage.setItem(LAST_ACTIVITY_KEY,String(t));
+      lastPersist=t;
+    }catch(_){}
+
+    return t;
+  }
+
+  function clearLastActivity(){
+    try{ localStorage.removeItem(LAST_ACTIVITY_KEY); }catch(_){}
+    lastPersist=0;
+  }
+
+  async function getSession(){
     try{
       const client=sb();
-      if(!client?.auth) return false;
+      if(!client?.auth) return null;
       const {data}=await client.auth.getSession();
-      return !!data?.session;
+      return data?.session || null;
     }catch(_){
-      return false;
+      return null;
     }
   }
 
   async function logoutSilent(){
     if(signingOut) return;
     signingOut=true;
+
+    clearTimeout(idleTimer);
+    clearLastActivity();
+
     try{
       const client=sb();
       if(client?.auth){
@@ -13108,32 +13281,109 @@ window.g360FechamentoV57={
     }
   }
 
-  function armIdle(){
+  async function armIdle(registerActivity=true){
     clearTimeout(idleTimer);
-    hasSession().then(ok=>{
-      if(!ok) return;
-      idleTimer=setTimeout(logoutSilent,IDLE_MS);
-    });
+
+    const session=await getSession();
+    if(!session) return;
+
+    if(registerActivity) writeLastActivity();
+
+    let last=readLastActivity();
+
+    // Primeira execução após a atualização:
+    // se não houver marcador antigo, usa o horário do último login como referência.
+    if(!last){
+      const loginMs=Date.parse(session.user?.last_sign_in_at||'') || 0;
+
+      if(loginMs && now()-loginMs >= IDLE_MS){
+        await logoutSilent();
+        return;
+      }
+
+      last=writeLastActivity(true);
+    }
+
+    const elapsed=now()-last;
+
+    if(elapsed >= IDLE_MS){
+      await logoutSilent();
+      return;
+    }
+
+    idleTimer=setTimeout(logoutSilent,Math.max(250,IDLE_MS-elapsed));
+  }
+
+  async function validateOnStartup(){
+    const session=await getSession();
+    if(!session) {
+      clearLastActivity();
+      return;
+    }
+
+    const last=readLastActivity();
+
+    if(last){
+      if(now()-last >= IDLE_MS){
+        await logoutSilent();
+        return;
+      }
+
+      // Ainda está dentro do prazo: NÃO renova só porque a página abriu.
+      // O prazo restante continua contando desde a última ação real.
+      clearTimeout(idleTimer);
+      idleTimer=setTimeout(logoutSilent,Math.max(250,IDLE_MS-(now()-last)));
+      return;
+    }
+
+    // Compatibilidade com sessões criadas antes do V140.
+    const loginMs=Date.parse(session.user?.last_sign_in_at||'') || 0;
+    if(loginMs && now()-loginMs >= IDLE_MS){
+      await logoutSilent();
+      return;
+    }
+
+    writeLastActivity(true);
+    clearTimeout(idleTimer);
+    idleTimer=setTimeout(logoutSilent,IDLE_MS);
+  }
+
+  function activity(){
+    if(signingOut) return;
+    writeLastActivity();
+    armIdle(false);
   }
 
   function bindIdle(){
     if(idleBound) return;
     idleBound=true;
+
     ['pointerdown','keydown','wheel','touchstart','scroll'].forEach(evt=>{
-      document.addEventListener(evt,armIdle,{passive:true,capture:true});
+      document.addEventListener(evt,activity,{passive:true,capture:true});
     });
-    // mousemove é limitado para não gerar milhares de resets
+
     let lastMove=0;
     document.addEventListener('mousemove',()=>{
-      const now=Date.now();
-      if(now-lastMove>5000){ lastMove=now; armIdle(); }
+      const t=now();
+      if(t-lastMove>5000){
+        lastMove=t;
+        activity();
+      }
     },{passive:true,capture:true});
-    armIdle();
+
+    // Voltar à aba/janela também valida o tempo transcorrido,
+    // mas NÃO renova a sessão automaticamente.
+    document.addEventListener('visibilitychange',()=>{
+      if(!document.hidden) validateOnStartup();
+    });
+
+    window.addEventListener('focus',validateOnStartup);
   }
 
   async function checkForcedLogin(){
     if(forcePolling || signingOut) return;
     forcePolling=true;
+
     try{
       const client=sb();
       if(!client?.auth) return;
@@ -13152,9 +13402,8 @@ window.g360FechamentoV57={
         .maybeSingle();
 
       if(error){
-        // Se o schema ainda não foi aplicado, não derruba nem trava o painel.
         if(String(error.message||'').toLowerCase().includes('force_reauth_at')) return;
-        console.warn('[G360 V122] verificação de sessão:',error.message||error);
+        console.warn('[G360 V140] verificação de sessão:',error.message||error);
         return;
       }
 
@@ -13163,7 +13412,7 @@ window.g360FechamentoV57={
         await logoutSilent();
       }
     }catch(e){
-      console.warn('[G360 V122] sessão:',e);
+      console.warn('[G360 V140] sessão:',e);
     }finally{
       forcePolling=false;
     }
@@ -13172,12 +13421,13 @@ window.g360FechamentoV57={
   async function forceUser(userId){
     const client=sb();
     if(!client || !userId) return;
+
     const {error}=await client.rpc('g360_forcar_relogin',{p_usuario_id:userId});
     if(error){
-      console.error('[G360 V122] falha ao forçar login:',error);
+      console.error('[G360 V140] falha ao forçar login:',error);
       return;
     }
-    // Se o administrador derrubou a própria sessão, sai imediatamente.
+
     try{
       const {data}=await client.auth.getUser();
       if(String(data?.user?.id||'')===String(userId)) await logoutSilent();
@@ -13187,12 +13437,13 @@ window.g360FechamentoV57={
   async function forceAll(){
     const client=sb();
     if(!client) return;
+
     const {error}=await client.rpc('g360_forcar_relogin',{p_usuario_id:null});
     if(error){
-      console.error('[G360 V122] falha ao forçar login de todos:',error);
+      console.error('[G360 V140] falha ao forçar login de todos:',error);
       return;
     }
-    // A ação global inclui quem executou.
+
     await logoutSilent();
   }
 
@@ -13204,10 +13455,36 @@ window.g360FechamentoV57={
     }
   }
 
+  function wireAuth(){
+    const client=sb();
+    if(!client?.auth){
+      setTimeout(wireAuth,250);
+      return;
+    }
+
+    client.auth.onAuthStateChange((event,session)=>{
+      if(event==='SIGNED_IN' && session){
+        // Novo login = nova janela de atividade.
+        writeLastActivity(true);
+        clearTimeout(idleTimer);
+        idleTimer=setTimeout(logoutSilent,IDLE_MS);
+      }
+
+      if(event==='SIGNED_OUT'){
+        clearLastActivity();
+      }
+    });
+  }
+
   function boot(){
     bindIdle();
     wireAdminButton();
+    wireAuth();
+
+    // Valida ANTES de simplesmente aceitar uma sessão persistida pelo navegador.
+    validateOnStartup();
     checkForcedLogin();
+
     setInterval(checkForcedLogin,FORCE_POLL_MS);
 
     const mo=new MutationObserver(wireAdminButton);
@@ -13220,12 +13497,14 @@ window.g360FechamentoV57={
     boot();
   }
 
-  window.g360SessionControlV122={
+  window.g360SessionControlV140={
     logout:logoutSilent,
     forceUser,
     forceAll,
     check:checkForcedLogin,
-    resetIdle:armIdle
+    validate:validateOnStartup,
+    resetIdle:activity,
+    lastActivity:readLastActivity
   };
 })();
 </script>
