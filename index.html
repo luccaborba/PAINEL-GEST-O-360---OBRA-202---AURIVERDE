@@ -1048,27 +1048,65 @@ html.g360-ui-ready .content-col {
 </style>
 
 
-<style id="g360-fechamento-status-multi-v144">
-#fjStatusSelect{display:none!important}
-#g360StatusMultiWrap{position:relative;min-width:220px}
-#g360StatusMultiBtn{
-  width:100%;min-height:38px;text-align:left;display:flex;align-items:center;
-  justify-content:space-between;gap:12px
+
+<style id="g360-fechamento-status-checkbox-v145">
+.g360-status-check-wrap{position:relative;min-width:220px}
+.g360-status-check-btn{
+  width:100%;
+  min-height:38px;
+  background:#181a1d;
+  color:#fff;
+  border:2px solid #f5c518;
+  border-radius:7px;
+  padding:0 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  font-weight:700;
+  cursor:pointer;
 }
-#g360StatusMultiMenu{
-  display:none;position:absolute;z-index:10020;top:calc(100% + 4px);left:0;
-  min-width:260px;background:var(--panel,#202327);border:1px solid var(--line,#45484e);
-  border-radius:6px;padding:7px;box-shadow:0 12px 30px rgba(0,0,0,.35)
+.g360-status-check-menu{
+  display:none;
+  position:absolute;
+  top:calc(100% + 4px);
+  left:0;
+  min-width:255px;
+  z-index:12000;
+  background:#1b1d21;
+  border:1px solid #4a4d53;
+  border-radius:6px;
+  padding:7px;
+  box-shadow:0 14px 30px rgba(0,0,0,.45);
 }
-#g360StatusMultiWrap.open #g360StatusMultiMenu{display:block}
-.g360-status-option{
-  display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:4px;
-  cursor:pointer;white-space:nowrap;font-size:13px
+.g360-status-check-wrap.open .g360-status-check-menu{display:block}
+.g360-status-check-menu label{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:9px 10px;
+  margin:0;
+  border-radius:4px;
+  color:#fff;
+  font-size:13px;
+  cursor:pointer;
+  white-space:nowrap;
 }
-.g360-status-option:hover{background:rgba(255,255,255,.06)}
-.g360-status-option input{width:16px;height:16px;accent-color:#f5c518}
-.g360-status-actions{display:flex;gap:6px;padding-top:7px;margin-top:5px;border-top:1px solid var(--line,#45484e)}
-.g360-status-actions button{flex:1}
+.g360-status-check-menu label:hover{background:#262a30}
+.g360-status-check-menu input[type="checkbox"]{
+  width:17px;
+  height:17px;
+  accent-color:#f5c518;
+  cursor:pointer;
+}
+.g360-status-check-actions{
+  display:flex;
+  gap:7px;
+  border-top:1px solid #3b3e44;
+  margin-top:5px;
+  padding-top:7px;
+}
+.g360-status-check-actions button{flex:1}
 </style>
 
 </head>
@@ -1710,13 +1748,21 @@ html.g360-ui-ready .content-col {
           <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:14px;max-width:680px;">Competência <span id="fjPeriodoLabel2">AGOSTO/2026</span>. A lista abaixo contém somente as medições/contratos escolhidos para esta competência. Use <b>Abrir nova competência</b> para iniciar um novo mês e <b>Atualizar competência</b> para acrescentar contratos que entrarem no decorrer do mês. A auditoria utiliza três etapas: <b>PENDENTE</b> → <b>LANÇADO NO SIENGE</b> → <b>TÍTULO GERADO</b>.</div>
           <div class="filters" style="margin-bottom:14px;">
             <input type="text" id="fjSearchInput" placeholder="Buscar por contrato ou fornecedor...">
-            <select id="fjStatusSelect">
-              <option value="">Todos os status</option>
-              <option value="PENDENTE">Pendente</option>
-              <option value="LANCADO">Lançado no Sienge</option>
-              <option value="TITULO_GERADO">Título Gerado</option>
-              <option value="TITULO_GERADO">Título gerado</option>
-            </select>
+            <div class="g360-status-check-wrap" id="g360StatusCheckWrap">
+              <button type="button" class="g360-status-check-btn" id="g360StatusCheckBtn">
+                <span id="g360StatusCheckLabel">Todos os status</span>
+                <span>⌄</span>
+              </button>
+              <div class="g360-status-check-menu" id="g360StatusCheckMenu">
+                <label><input type="checkbox" value="PENDENTE" data-fj-status-check> Pendente</label>
+                <label><input type="checkbox" value="LANCADO" data-fj-status-check> Lançado no Sienge</label>
+                <label><input type="checkbox" value="TITULO_GERADO" data-fj-status-check> Título Gerado</label>
+                <div class="g360-status-check-actions">
+                  <button type="button" class="clear-btn" id="g360StatusCheckAll">Todos</button>
+                  <button type="button" class="clear-btn" id="g360StatusCheckClose">Fechar</button>
+                </div>
+              </div>
+            </div>
             <button class="clear-btn" id="fjClearBtn">Limpar filtros</button>
             <button class="clear-btn" id="fjExportPdfBtn">📄 Exportar PDF</button>
             <button class="clear-btn" id="fjExportXlsBtn">📊 Exportar Excel</button>
@@ -11993,10 +12039,10 @@ async function load(period){
   state.period=period;
   state.rows=await fetchRows(period);
   state.selected.clear();
-  state.search='';state.status='';state.statuses=new Set();state.tipoContrato='';
+  state.search='';state.status='';state.statuses=new Set();state.tipoContrato='';syncStatusChecks();
   if($('fjSearchInput'))$('fjSearchInput').value='';
   if($('fjStatusSelect'))$('fjStatusSelect').value='';
-  render();
+  bindStatusChecks();syncStatusChecks();render();
 }
 async function refreshSelect(prefer,keepMissing=false){
   const periods=await fetchPeriods();
@@ -12010,6 +12056,64 @@ async function refreshSelect(prefer,keepMissing=false){
   if(current)sel.value=current;
   return periods;
 }
+
+function syncStatusChecks(){
+  const boxes=[...document.querySelectorAll('[data-fj-status-check]')];
+  boxes.forEach(b=>b.checked=state.statuses instanceof Set && state.statuses.has(String(b.value).toUpperCase()));
+
+  const label=$('g360StatusCheckLabel');
+  if(label){
+    const s=state.statuses instanceof Set?state.statuses:new Set();
+    if(!s.size) label.textContent='Todos os status';
+    else if(s.size===1){
+      const v=[...s][0];
+      label.textContent=v==='PENDENTE'?'Pendente':v==='LANCADO'?'Lançado no Sienge':'Título Gerado';
+    }else{
+      label.textContent=s.size+' status selecionados';
+    }
+  }
+}
+
+function bindStatusChecks(){
+  const wrap=$('g360StatusCheckWrap');
+  const btn=$('g360StatusCheckBtn');
+  if(!wrap||!btn||btn.dataset.bound==='1')return;
+  btn.dataset.bound='1';
+
+  btn.addEventListener('click',e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    wrap.classList.toggle('open');
+  });
+
+  document.querySelectorAll('[data-fj-status-check]').forEach(box=>{
+    box.addEventListener('change',()=>{
+      if(!(state.statuses instanceof Set))state.statuses=new Set();
+      const val=String(box.value||'').toUpperCase();
+      if(box.checked)state.statuses.add(val);
+      else state.statuses.delete(val);
+      syncStatusChecks();
+      render();
+    });
+  });
+
+  $('g360StatusCheckAll')?.addEventListener('click',()=>{
+    state.statuses=new Set();
+    syncStatusChecks();
+    render();
+  });
+
+  $('g360StatusCheckClose')?.addEventListener('click',()=>{
+    wrap.classList.remove('open');
+  });
+
+  document.addEventListener('click',e=>{
+    if(!wrap.contains(e.target))wrap.classList.remove('open');
+  });
+
+  syncStatusChecks();
+}
+
 function modalOpen(t,c){const m=$('g360Fj57Modal');$('g360Fj57Title').textContent=t;$('g360Fj57Body').innerHTML=c;m.classList.add('open');m.style.display='flex'}
 function modalClose(){const m=$('g360Fj57Modal');m.classList.remove('open');m.style.display='none';$('g360Fj57Body').innerHTML=''}
 
@@ -12322,7 +12426,7 @@ async function clearCompetence(){
       const sel=$('fjPeriodoSelect');if(sel)sel.value=nextPeriod;
       await load(nextPeriod);
     }else{
-      state.period='';state.rows=[];state.search='';state.status='';state.statuses=new Set();state.tipoContrato='';
+      state.period='';state.rows=[];state.search='';state.status='';state.statuses=new Set();state.tipoContrato='';syncStatusChecks();
       const sel=$('fjPeriodoSelect');if(sel)sel.innerHTML='';
       render();
     }
@@ -12406,7 +12510,7 @@ async function boot(){
       // Tela de login/deslogado: não consulta obras nem Fechamento de Praça.
       return;
     }
-    state.bound=true;
+    state.bound=true;bindStatusChecks();
     const periods=await fetchPeriods();
     const preferred=periods.includes('AGOSTO/2026')?'AGOSTO/2026':periods.at(-1)||'AGOSTO/2026';
     state.period=preferred;
@@ -12473,14 +12577,14 @@ document.addEventListener('change',e=>{
     e.stopImmediatePropagation();
     load(e.target.value).catch(err=>alert('Erro ao carregar competência: '+err.message));
   }
-  if(e.target?.id==='fjStatusSelect'){e.stopImmediatePropagation();state.status=e.target.value;render()}
+
   if(e.target?.id==='fjTipoContratoSelect'){e.stopImmediatePropagation();state.tipoContrato=e.target.value;render()}
 },true);
 document.addEventListener('input',e=>{
   if(e.target?.id==='fjSearchInput'){e.stopImmediatePropagation();state.search=norm(e.target.value);render()}
 },true);
 document.addEventListener('click',e=>{
-  if(e.target?.id==='fjClearBtn'){e.preventDefault();e.stopImmediatePropagation();state.search='';state.status='';state.statuses=new Set();state.tipoContrato='';if($('fjSearchInput'))$('fjSearchInput').value='';if($('fjStatusSelect'))$('fjStatusSelect').value='';if($('fjTipoContratoSelect'))$('fjTipoContratoSelect').value='';render()}
+  if(e.target?.id==='fjClearBtn'){e.preventDefault();e.stopImmediatePropagation();state.search='';state.status='';state.statuses=new Set();state.tipoContrato='';syncStatusChecks();if($('fjSearchInput'))$('fjSearchInput').value='';if($('fjStatusSelect'))$('fjStatusSelect').value='';if($('fjTipoContratoSelect'))$('fjTipoContratoSelect').value='';render()}
 },true);
 
 $('g360Fj57Close').onclick=modalClose;
@@ -12491,7 +12595,7 @@ else setTimeout(boot,800);
 window.g360FechamentoV57={
   load,refreshSelect,processar,informarTitulo,removeMeasurement,deleteSelected,clearCompetence,openCompetence,render,
   get statuses(){ if(!(state.statuses instanceof Set)) state.statuses=new Set(); return state.statuses; },
-  set statuses(v){ state.statuses=v instanceof Set?v:new Set(v||[]); },
+  set statuses(v){ state.statuses=v instanceof Set?v:new Set(v||[]); syncStatusChecks(); },
   getExportRows:()=>filtered().map(r=>({...r})),
   getAllRows:()=>state.rows.map(r=>({...r})),
   getPeriod:()=>state.period
@@ -13729,116 +13833,6 @@ window.g360BackupV135={generate,history,authMaster};
 })();
 </script>
 
-
-<script id="g360-fechamento-status-multi-v144">
-(function(){
-  'use strict';
-
-  const OPCOES=[
-    ['PENDENTE','Pendente'],
-    ['LANCADO','Lançado no Sienge'],
-    ['TITULO_GERADO','Título Gerado']
-  ];
-
-  function modulo(){
-    return window.g360FechamentoV57 || null;
-  }
-
-  function selected(){
-    const m=modulo();
-    if(!m) return new Set();
-    if(!(m.statuses instanceof Set)) m.statuses=new Set();
-    return m.statuses;
-  }
-
-  function label(set){
-    if(!set.size) return 'Todos os status';
-    if(set.size===1){
-      const v=[...set][0];
-      return OPCOES.find(x=>x[0]===v)?.[1] || v;
-    }
-    return `${set.size} status selecionados`;
-  }
-
-  function sync(){
-    const wrap=document.getElementById('g360StatusMultiWrap');
-    if(!wrap)return;
-    const set=selected();
-    wrap.querySelectorAll('input[data-g360-status]').forEach(i=>{
-      i.checked=set.has(i.dataset.g360Status);
-    });
-    const b=document.getElementById('g360StatusMultiBtnLabel');
-    if(b)b.textContent=label(set);
-  }
-
-  function render(){
-    const old=document.getElementById('fjStatusSelect');
-    if(!old)return;
-
-    let wrap=document.getElementById('g360StatusMultiWrap');
-    if(!wrap){
-      wrap=document.createElement('div');
-      wrap.id='g360StatusMultiWrap';
-      wrap.innerHTML=`
-        <button type="button" class="clear-btn" id="g360StatusMultiBtn">
-          <span id="g360StatusMultiBtnLabel">Todos os status</span>
-          <span>⌄</span>
-        </button>
-        <div id="g360StatusMultiMenu">
-          ${OPCOES.map(([v,t])=>`
-            <label class="g360-status-option">
-              <input type="checkbox" data-g360-status="${v}">
-              <span>${t}</span>
-            </label>`).join('')}
-          <div class="g360-status-actions">
-            <button type="button" class="clear-btn" id="g360StatusTodos">Todos</button>
-            <button type="button" class="clear-btn" id="g360StatusAplicar">Aplicar</button>
-          </div>
-        </div>`;
-      old.insertAdjacentElement('afterend',wrap);
-
-      document.getElementById('g360StatusMultiBtn').addEventListener('click',e=>{
-        e.preventDefault();e.stopPropagation();
-        wrap.classList.toggle('open');
-      });
-
-      wrap.querySelectorAll('input[data-g360-status]').forEach(i=>{
-        i.addEventListener('change',()=>{
-          const set=selected();
-          if(i.checked)set.add(i.dataset.g360Status);
-          else set.delete(i.dataset.g360Status);
-          sync();
-        });
-      });
-
-      document.getElementById('g360StatusTodos').addEventListener('click',()=>{
-        selected().clear();
-        sync();
-        modulo()?.render?.();
-      });
-
-      document.getElementById('g360StatusAplicar').addEventListener('click',()=>{
-        wrap.classList.remove('open');
-        modulo()?.render?.();
-      });
-
-      document.addEventListener('click',e=>{
-        if(!wrap.contains(e.target))wrap.classList.remove('open');
-      });
-    }
-    sync();
-  }
-
-  function boot(){
-    render();
-    const mo=new MutationObserver(()=>render());
-    mo.observe(document.body,{childList:true,subtree:true});
-  }
-
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
-  else boot();
-})();
-</script>
 
 </body>
 </html>
