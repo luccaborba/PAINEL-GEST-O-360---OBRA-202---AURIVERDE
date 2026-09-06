@@ -1111,6 +1111,7 @@ html.g360-ui-ready .content-col {
 
 </head>
 <body>
+<!-- V146: CRUD colaboradores resolve por UUID Supabase; corrige desligamento sem matrícula -->
 <!-- V38: only Collaborators Experience cell + RH/DP Advertencia visibility -->
 
 <!-- CONSTRUX V26: Advertência RH menu permission fallback -->
@@ -5252,10 +5253,16 @@ function renderColabTable(){
         <td class="experiencia-cell">${expBadge(c) || '<span style="color:var(--ink-dim);">—</span>'}</td>
         <td><span class="badge ${badgeStatus(c.status)}">${c.status}</span></td>
         <td class="crud-row-actions">
-          <button type="button" class="crud-mini" onclick="g360CrudEdit('funcionarios','${encodeURIComponent(String(c.mat))}')">✏️ Editar</button>
-          <button type="button" class="crud-mini toggle" onclick="g360CrudToggle('funcionarios','${encodeURIComponent(String(c.mat))}')">${String(c.status||'').toUpperCase()==='ATIVO'?'⏸ Inativar':'▶ Ativar'}</button>
-          ${String(c.status||'').toUpperCase()!=='DESLIGADO'?`<button type="button" class="crud-mini offboard" onclick="g360CrudOffboard('funcionarios','${encodeURIComponent(String(c.mat))}')">🚪 Desligar</button>`:''}
-          <button type="button" class="crud-mini danger" onclick="g360CrudDelete('funcionarios','${encodeURIComponent(String(c.mat))}')">🗑</button>
+          ${(()=>{
+            const ref=c.id ? 'id:'+c.id : (c.mat!==null && c.mat!==undefined && String(c.mat).trim()!=='' ? 'mat:'+String(c.mat).trim() : (c.cpf ? 'cpf:'+c.cpf : 'nome:'+c.nome));
+            const enc=encodeURIComponent(ref);
+            return `
+              <button type="button" class="crud-mini" onclick="g360CrudEdit('funcionarios','${enc}')">✏️ Editar</button>
+              <button type="button" class="crud-mini toggle" onclick="g360CrudToggle('funcionarios','${enc}')">${String(c.status||'').toUpperCase()==='ATIVO'?'⏸ Inativar':'▶ Ativar'}</button>
+              ${String(c.status||'').toUpperCase()!=='DESLIGADO'?`<button type="button" class="crud-mini offboard" onclick="g360CrudOffboard('funcionarios','${enc}')">🚪 Desligar</button>`:''}
+              <button type="button" class="crud-mini danger" onclick="g360CrudDelete('funcionarios','${enc}')">🗑</button>
+            `;
+          })()}
         </td>
       </tr>`).join('');
   }
@@ -11137,9 +11144,42 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
   };
   const err=e=>alert('Não foi possível concluir a operação: '+(e?.message||e||'erro desconhecido'));
   async function row(kind,key){
-    const m=meta[kind]; if(!m) throw new Error('Módulo CRUD não reconhecido: '+kind);
-    const q=await sb.from(m.table).select('*').eq(m.key,String(key)).limit(1).maybeSingle();
-    if(q.error) throw q.error; if(!q.data) throw new Error('Registro não encontrado no Supabase.'); return q.data;
+    const m=meta[kind];
+    if(!m) throw new Error('Módulo CRUD não reconhecido: '+kind);
+
+    const raw=String(key??'').trim();
+    let campo=m.key;
+    let valor=raw;
+
+    if(kind==='funcionarios'){
+      const ix=raw.indexOf(':');
+      if(ix>0){
+        const tipo=raw.slice(0,ix).toLowerCase();
+        valor=raw.slice(ix+1).trim();
+        if(tipo==='id') campo='id';
+        else if(tipo==='mat') campo='matricula';
+        else if(tipo==='cpf') campo='cpf';
+        else if(tipo==='nome') campo='nome';
+      }
+
+      if(!valor){
+        throw new Error('O colaborador não possui identificador válido para esta operação.');
+      }
+    }
+
+    const q=await sb.from(m.table).select('*').eq(campo,valor).limit(2);
+    if(q.error) throw q.error;
+
+    const rows=q.data||[];
+    if(!rows.length){
+      throw new Error('Registro não encontrado no Supabase. Atualize a página e tente novamente.');
+    }
+
+    if(rows.length>1 && kind==='funcionarios' && campo==='nome'){
+      throw new Error('Há mais de um colaborador com este nome. Informe/corrija a matrícula ou CPF antes de continuar.');
+    }
+
+    return rows[0];
   }
   window.g360CrudEdit=async(kind,key)=>{
     try{ key=decodeURIComponent(key); const r=await row(kind,key); if(typeof window.g360OpenCrudProduction!=='function')throw new Error('Editor de produção não carregado.'); window.g360OpenCrudProduction(kind,r.id); }catch(e){err(e)}
