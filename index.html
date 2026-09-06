@@ -11185,7 +11185,27 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
     try{ key=decodeURIComponent(key); const r=await row(kind,key); if(typeof window.g360OpenCrudProduction!=='function')throw new Error('Editor de produção não carregado.'); window.g360OpenCrudProduction(kind,r.id); }catch(e){err(e)}
   };
   window.g360CrudOffboard=async(kind,key)=>{
-    try{ key=decodeURIComponent(key); const r=await row(kind,key); if(kind!=='funcionarios')throw new Error('Desligamento disponível apenas para colaboradores.'); if(typeof window.g360OpenCrudProduction!=='function')throw new Error('Editor de produção não carregado.'); window.g360OpenCrudProduction(kind,r.id,{offboard:true}); }catch(e){err(e)}
+    try{
+      key=decodeURIComponent(key);
+      const r=await row(kind,key);
+      if(kind!=='funcionarios') throw new Error('Desligamento disponível apenas para colaboradores.');
+
+      const modal=document.getElementById('g360OffboardModalV147');
+      const form=document.getElementById('g360OffboardFormV147');
+      if(!modal||!form) throw new Error('Formulário de desligamento não carregado.');
+
+      document.getElementById('g360OffboardNomeV147').textContent=r.nome||'Colaborador';
+      document.getElementById('g360OffboardMatV147').textContent=r.matricula||r.mat||'—';
+
+      form.dataset.id=r.id;
+      form.elements.demissao.value=r.demissao||'';
+      form.elements.tipo_deslig.value=r.tipo_deslig||'';
+      form.elements.motivo_deslig.value=r.motivo_deslig||'';
+
+      modal.classList.add('open');
+      modal.style.display='flex';
+      setTimeout(()=>form.elements.demissao?.focus(),50);
+    }catch(e){err(e)}
   };
   window.g360CrudToggle=async(kind,key)=>{
     try{ key=decodeURIComponent(key); const m=meta[kind],r=await row(kind,key); const atual=String(r[m.status]||'ATIVO').toUpperCase(); const novo=atual==='INATIVO'?'ATIVO':'INATIVO'; const q=await sb.from(m.table).update({[m.status]:novo}).eq('id',r.id); if(q.error)throw q.error; sessionStorage.removeItem('g360_db_sig'); location.reload(); }catch(e){err(e)}
@@ -13873,6 +13893,162 @@ window.g360BackupV135={generate,history,authMaster};
 })();
 </script>
 
+
+
+<style id="g360-offboard-v147-style">
+#g360OffboardModalV147{
+  position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:100800;
+  display:none;align-items:center;justify-content:center;padding:18px
+}
+#g360OffboardModalV147.open{display:flex}
+#g360OffboardModalV147 .box{
+  width:min(640px,100%);background:#17181b;border:1px solid #414349;border-radius:12px;
+  color:#eee;padding:18px;box-shadow:0 25px 70px rgba(0,0,0,.6)
+}
+#g360OffboardModalV147 .head{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #303238;padding-bottom:10px;margin-bottom:14px}
+#g360OffboardModalV147 .head h2{margin:0;color:#f5c518;font-size:18px}
+#g360OffboardModalV147 .meta{background:#202226;border:1px solid #34363b;border-radius:7px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#bbb}
+#g360OffboardModalV147 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#g360OffboardModalV147 label{font-size:11px;color:#aaa}
+#g360OffboardModalV147 input,#g360OffboardModalV147 select,#g360OffboardModalV147 textarea{
+  width:100%;box-sizing:border-box;margin-top:4px;background:#0e0f11;border:1px solid #3b3d42;color:#eee;border-radius:6px;padding:9px
+}
+#g360OffboardModalV147 textarea{min-height:90px;resize:vertical}
+#g360OffboardModalV147 .full{grid-column:1/-1}
+#g360OffboardModalV147 .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+@media(max-width:640px){#g360OffboardModalV147 .grid{grid-template-columns:1fr}#g360OffboardModalV147 .full{grid-column:1}}
+</style>
+
+<div id="g360OffboardModalV147" aria-hidden="true">
+  <div class="box">
+    <div class="head">
+      <h2>Desligar colaborador</h2>
+      <button type="button" class="crud-mini" id="g360OffboardCloseV147">✕ Fechar</button>
+    </div>
+
+    <div class="meta">
+      <b id="g360OffboardNomeV147">Colaborador</b><br>
+      Matrícula: <span id="g360OffboardMatV147">—</span>
+    </div>
+
+    <form id="g360OffboardFormV147">
+      <div class="grid">
+        <label>Data do desligamento *
+          <input type="date" name="demissao" required>
+        </label>
+
+        <label>Tipo de desligamento *
+          <select name="tipo_deslig" required>
+            <option value="">Selecione</option>
+            <option value="PEDIDO DE DEMISSÃO">Pedido de demissão</option>
+            <option value="SEM JUSTA CAUSA">Sem justa causa</option>
+            <option value="COM JUSTA CAUSA">Com justa causa</option>
+            <option value="TÉRMINO DE CONTRATO">Término de contrato</option>
+            <option value="TÉRMINO DE EXPERIÊNCIA">Término de experiência</option>
+            <option value="ABANDONO">Abandono</option>
+            <option value="TRANSFERÊNCIA">Transferência</option>
+            <option value="OUTROS">Outros</option>
+          </select>
+        </label>
+
+        <label class="full">Motivo *
+          <textarea name="motivo_deslig" placeholder="Descreva o motivo do desligamento..." required></textarea>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="crud-mini" id="g360OffboardCancelV147">Cancelar</button>
+        <button type="submit" class="crud-primary">🚪 Confirmar desligamento</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script id="g360-offboard-v147">
+(function(){
+  'use strict';
+
+  const modal=document.getElementById('g360OffboardModalV147');
+  const form=document.getElementById('g360OffboardFormV147');
+
+  function close(){
+    modal?.classList.remove('open');
+    if(modal) modal.style.display='none';
+    if(form){
+      form.reset();
+      delete form.dataset.id;
+    }
+  }
+
+  document.getElementById('g360OffboardCloseV147')?.addEventListener('click',close);
+  document.getElementById('g360OffboardCancelV147')?.addEventListener('click',close);
+  modal?.addEventListener('click',e=>{if(e.target===modal)close()});
+
+  form?.addEventListener('submit',async e=>{
+    e.preventDefault();
+
+    const id=form.dataset.id;
+    const demissao=form.elements.demissao.value;
+    const tipo=String(form.elements.tipo_deslig.value||'').trim();
+    const motivo=String(form.elements.motivo_deslig.value||'').trim();
+    const btn=form.querySelector('[type="submit"]');
+
+    if(!id){alert('Colaborador não identificado.');return}
+    if(!demissao){alert('Informe a data do desligamento.');return}
+    if(!tipo){alert('Informe o tipo de desligamento.');return}
+    if(!motivo){alert('Informe o motivo do desligamento.');return}
+
+    try{
+      btn.disabled=true;
+      btn.textContent='Salvando...';
+
+      const sb=window.g360SupabaseClient;
+      if(!sb) throw new Error('Supabase não disponível.');
+
+      const {data,error}=await sb.from('funcionarios')
+        .update({
+          status:'DESLIGADO',
+          demissao,
+          tipo_deslig:tipo,
+          motivo_deslig:motivo,
+          updated_at:new Date().toISOString()
+        })
+        .eq('id',id)
+        .select('id,status,demissao,tipo_deslig,motivo_deslig')
+        .maybeSingle();
+
+      if(error) throw error;
+      if(!data?.id) throw new Error('O Supabase não confirmou o desligamento.');
+
+      if(String(data.status||'').toUpperCase()!=='DESLIGADO' || !data.demissao){
+        throw new Error('O Supabase não confirmou status e data do desligamento.');
+      }
+
+      close();
+      sessionStorage.removeItem('g360_db_sig');
+
+      if(typeof window.g360PullAll==='function'){
+        await window.g360PullAll();
+      }
+
+      // Reabre/permanece na área de colaboradores.
+      if(window.g360NavV64?.activate){
+        window.g360NavV64.activate('colaboradores');
+      }else{
+        document.querySelector('.side-link[data-view="colaboradores"]')?.click();
+      }
+
+    }catch(err){
+      alert('Não foi possível concluir o desligamento: '+(err?.message||err));
+    }finally{
+      if(btn){
+        btn.disabled=false;
+        btn.textContent='🚪 Confirmar desligamento';
+      }
+    }
+  });
+})();
+</script>
 
 </body>
 </html>
