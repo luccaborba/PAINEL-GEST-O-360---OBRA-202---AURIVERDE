@@ -1111,6 +1111,7 @@ html.g360-ui-ready .content-col {
 
 </head>
 <body>
+<!-- V154: carga resiliente de usuários/obras; usuario_permissoes legado não bloqueia perfis nativos -->
 <!-- V153: lista de usuários nunca some se usuario_obras falhar; fallback seguro + sync não destrutivo -->
 <!-- V152: seleção multiobra visível por checkboxes; sem select/dropdown de obra única -->
 <!-- V151: perfil define ações; obras definem escopo. ENGENHEIROS pode ser multiobra sem perfil adicional -->
@@ -11500,9 +11501,13 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
       sb.from('usuario_obras').select('usuario_id,obra_id')
     ]);
 
-    if(pr.error)throw pr.error;
-    if(up.error)throw up.error;
-    if(ob.error)throw ob.error;
+    if(pr.error)throw new Error('Falha ao carregar perfis: '+(pr.error.message||pr.error));
+    if(ob.error)throw new Error('Falha ao carregar obras: '+(ob.error.message||ob.error));
+
+    // V154: permissões legadas são opcionais. Os perfis nativos não dependem mais desta tabela.
+    if(up.error){
+      console.warn('[G360 V154] usuario_permissoes indisponível; perfis nativos continuam funcionando:',up.error.message||up.error);
+    }
 
     obras=ob.data||[];
     userObras={};
@@ -11533,7 +11538,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
     });
 
     perms={};
-    (up.data||[]).forEach(x=>{
+    ((up.error?[]:up.data)||[]).forEach(x=>{
       perms[x.usuario_id]=perms[x.usuario_id]||{};
       perms[x.usuario_id][x.modulo]={
         visualizar:x.pode_visualizar,criar:x.pode_criar,editar:x.pode_editar,
@@ -11550,7 +11555,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
       if(msg)msg.textContent='Usuários carregados normalmente. A função de múltiplas obras aguarda o SQL V150 no Supabase.';
     }
   }
-  function renderUsers(){const body=document.getElementById('g360UsersBody');if(!body)return;if(!users.length){body.innerHTML='<tr><td colspan="6"><div class="empty-state">Nenhum usuário cadastrado.</div></td></tr>';return}body.innerHTML=users.map(u=>`<tr><td><b>${u.nome||u.email||'Usuário'}</b><br><span style="font-size:11px;color:var(--ink-dim)">${u.email||''}</span></td><td>${u.perfil||'USUARIO'}${u.master?' <span class="g360-perm-badge master">MESTRE</span>':''}</td><td>${u.obraNome||'Sem obra definida'}</td><td><span class="g360-perm-badge ${u.ativo?'ok':'off'}">${u.ativo?'ATIVO':'INATIVO'}</span></td><td>${u.ativo?(u.master?'Total (Master)':(PERFIS_NATIVOS.has(normPerfil(u.perfil))?'Nativo — '+normPerfil(u.perfil):'Legado / Personalizado')):'Bloqueado'}</td><td class="crud-row-actions"><button type="button" class="crud-mini" data-perm-edit="${u.id}">✏️ Permissões</button><button type="button" class="crud-mini" data-user-edit="${u.id}">👤 Editar</button><button type="button" class="crud-mini" data-user-clone="${u.id}">📋 Duplicar acesso</button><button type="button" class="crud-mini danger" data-user-force-login="${u.id}">⛔ Forçar login</button>${u.master?'':`<button type="button" class="crud-mini toggle" data-user-toggle="${u.id}">${u.ativo?'⏸ Inativar':'▶ Ativar'}</button>`}${u.id===currentId?'':`<button type="button" class="crud-mini danger" data-user-delete="${u.id}">🗑 Excluir</button>`}</td></tr>`).join('');body.querySelectorAll('[data-perm-edit]').forEach(b=>b.onclick=()=>{editingId=b.dataset.permEdit;renderMatrix();document.getElementById('g360PermMatrixTitle')?.scrollIntoView({behavior:'smooth',block:'center'})});body.querySelectorAll('[data-user-edit]').forEach(b=>b.onclick=()=>openUser(b.dataset.userEdit));body.querySelectorAll('[data-user-clone]').forEach(b=>b.onclick=()=>openClone(b.dataset.userClone));body.querySelectorAll('[data-user-force-login]').forEach(b=>b.onclick=()=>window.g360SessionControlV148?.forceUser?.(b.dataset.userForceLogin));body.querySelectorAll('[data-user-toggle]').forEach(b=>b.onclick=()=>toggleUser(b.dataset.userToggle));body.querySelectorAll('[data-user-delete]').forEach(b=>b.onclick=()=>deleteUser(b.dataset.userDelete))}
+  function renderUsers(){const body=document.getElementById('g360UsersBody');if(!body)return;if(!users.length){body.innerHTML='<tr><td colspan="6"><div class="empty-state">Nenhum perfil foi retornado pelo Supabase para esta sessão. Os registros podem existir no banco, mas estar bloqueados por política de acesso (RLS).</div></td></tr>';return}body.innerHTML=users.map(u=>`<tr><td><b>${u.nome||u.email||'Usuário'}</b><br><span style="font-size:11px;color:var(--ink-dim)">${u.email||''}</span></td><td>${u.perfil||'USUARIO'}${u.master?' <span class="g360-perm-badge master">MESTRE</span>':''}</td><td>${u.obraNome||'Sem obra definida'}</td><td><span class="g360-perm-badge ${u.ativo?'ok':'off'}">${u.ativo?'ATIVO':'INATIVO'}</span></td><td>${u.ativo?(u.master?'Total (Master)':(PERFIS_NATIVOS.has(normPerfil(u.perfil))?'Nativo — '+normPerfil(u.perfil):'Legado / Personalizado')):'Bloqueado'}</td><td class="crud-row-actions"><button type="button" class="crud-mini" data-perm-edit="${u.id}">✏️ Permissões</button><button type="button" class="crud-mini" data-user-edit="${u.id}">👤 Editar</button><button type="button" class="crud-mini" data-user-clone="${u.id}">📋 Duplicar acesso</button><button type="button" class="crud-mini danger" data-user-force-login="${u.id}">⛔ Forçar login</button>${u.master?'':`<button type="button" class="crud-mini toggle" data-user-toggle="${u.id}">${u.ativo?'⏸ Inativar':'▶ Ativar'}</button>`}${u.id===currentId?'':`<button type="button" class="crud-mini danger" data-user-delete="${u.id}">🗑 Excluir</button>`}</td></tr>`).join('');body.querySelectorAll('[data-perm-edit]').forEach(b=>b.onclick=()=>{editingId=b.dataset.permEdit;renderMatrix();document.getElementById('g360PermMatrixTitle')?.scrollIntoView({behavior:'smooth',block:'center'})});body.querySelectorAll('[data-user-edit]').forEach(b=>b.onclick=()=>openUser(b.dataset.userEdit));body.querySelectorAll('[data-user-clone]').forEach(b=>b.onclick=()=>openClone(b.dataset.userClone));body.querySelectorAll('[data-user-force-login]').forEach(b=>b.onclick=()=>window.g360SessionControlV148?.forceUser?.(b.dataset.userForceLogin));body.querySelectorAll('[data-user-toggle]').forEach(b=>b.onclick=()=>toggleUser(b.dataset.userToggle));body.querySelectorAll('[data-user-delete]').forEach(b=>b.onclick=()=>deleteUser(b.dataset.userDelete))}
   function renderMatrix(){
     const body=document.getElementById('g360PermMatrixBody'),ttl=document.getElementById('g360PermMatrixTitle');
     if(!body)return;
