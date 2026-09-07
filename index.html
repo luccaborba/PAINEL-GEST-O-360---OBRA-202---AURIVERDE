@@ -1111,6 +1111,7 @@ html.g360-ui-ready .content-col {
 
 </head>
 <body>
+<!-- V148: sessão expira por última atividade persistente + login sempre inicia no Dashboard Gerencial -->
 <!-- V146: CRUD colaboradores resolve por UUID Supabase; corrige desligamento sem matrícula -->
 <!-- V38: only Collaborators Experience cell + RH/DP Advertencia visibility -->
 
@@ -10391,7 +10392,26 @@ window.GESTAO360_CONFIG = {
   function authUI(){
     if(document.getElementById('g360Auth')) return;
     document.body.insertAdjacentHTML('beforeend', `<div id="g360Auth"><div class="box"><h1>CONSTRU-X</h1><p style="margin-top:-2px;color:#f5c518;font-weight:800">GESTÃO INTELIGENTE 360º</p><p>Entre com seu usuário cadastrado.</p><input class="g360-input" id="g360Email" type="email" placeholder="E-mail"><input class="g360-input" id="g360Pass" type="password" placeholder="Senha"><button class="g360-btn" id="g360Login" style="width:100%;margin-top:8px">Entrar</button><button class="g360-auth-link" id="g360Forgot" type="button">Esqueci minha senha</button><p id="g360AuthMsg"></p><div style="margin-top:18px;padding-top:12px;border-top:1px solid #34363b;font-size:10.5px;color:#888;line-height:1.5">Idealização e Desenvolvimento<br><b style="color:#bbb">Luciano Garcia Borba</b><br>© 2026 · Todos os direitos reservados</div></div></div>`);
-    document.getElementById('g360Login').onclick=async()=>{const email=g360Email.value.trim(),password=g360Pass.value;g360AuthMsg.textContent='Entrando...';const {error}=await sb.auth.signInWithPassword({email,password});if(error){g360AuthMsg.textContent=error.message;return}location.reload()};
+    document.getElementById('g360Login').onclick=async()=>{
+      const email=g360Email.value.trim(),password=g360Pass.value;
+      g360AuthMsg.textContent='Entrando...';
+
+      const {error}=await sb.auth.signInWithPassword({email,password});
+      if(error){g360AuthMsg.textContent=error.message;return}
+
+      // V148: este marcador existe SOMENTE quando o usuário acabou de digitar login/senha.
+      // Uma sessão apenas restaurada pelo Chrome não recebe este marcador.
+      try{
+        const agora=Date.now();
+        localStorage.setItem('g360_last_activity_at_v148',String(agora));
+        sessionStorage.setItem('g360_fresh_login_v148','1');
+        sessionStorage.setItem('g360_force_dashboard_after_login','1');
+        sessionStorage.removeItem('g360_last_active_view_v111');
+        sessionStorage.removeItem('g360_last_contract_subview_v111');
+      }catch(_){}
+      window.g360ForceDashboardAfterLogin=true;
+      location.reload();
+    };
     document.getElementById('g360Forgot').onclick=async()=>{const email=g360Email.value.trim();if(!email){g360AuthMsg.textContent='Informe seu e-mail para receber o link de redefinição.';return}g360AuthMsg.textContent='Enviando link...';const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});g360AuthMsg.textContent=error?error.message:'Link de redefinição enviado para o e-mail.'};
   }
   async function recoveryUI(){
@@ -12803,7 +12823,10 @@ window.g360FechamentoV57={
   function restoreOnce(){
     if(restored || restoring) return;
 
-    const forceDashboard=sessionStorage.getItem('g360_force_dashboard_after_login')==='1';
+    const forceDashboard=
+      sessionStorage.getItem('g360_force_dashboard_after_login')==='1' ||
+      sessionStorage.getItem('g360_fresh_login_v148')==='1' ||
+      window.g360ForceDashboardAfterLogin===true;
     if(forceDashboard){
       sessionStorage.removeItem(KEY_VIEW);
       sessionStorage.removeItem(KEY_CTR);
@@ -13406,117 +13429,112 @@ window.g360FechamentoV57={
 </script>
 
 
-<script id="g360-session-control-v140">
+<script id="g360-session-control-v148">
 (function(){
   'use strict';
 
-  const IDLE_MS = 5 * 60 * 1000;       // 5 minutos
-  const FORCE_POLL_MS = 10 * 1000;     // verifica derrubada a cada 10 s
-  const LAST_ACTIVITY_KEY = 'g360_last_activity_at_v140';
+  const IDLE_MS = 5 * 60 * 1000;
+  const FORCE_POLL_MS = 10 * 1000;
+  const LAST_ACTIVITY_KEY = 'g360_last_activity_at_v148';
+  const OLD_ACTIVITY_KEY = 'g360_last_activity_at_v140';
+  const FRESH_LOGIN_KEY = 'g360_fresh_login_v148';
 
-  let idleTimer = null;
-  let idleBound = false;
-  let signingOut = false;
-  let forcePolling = false;
-  let lastPersist = 0;
+  let idleTimer=null;
+  let signingOut=false;
+  let bound=false;
+  let forcePolling=false;
+  let lastPersist=0;
 
-  function sb(){
-    return window.g360SupabaseClient || null;
-  }
+  function client(){ return window.g360SupabaseClient||null; }
+  function now(){ return Date.now(); }
 
-  function now(){
-    return Date.now();
-  }
-
-  function readLastActivity(){
+  function getStoredActivity(){
     try{
-      const n=Number(localStorage.getItem(LAST_ACTIVITY_KEY)||0);
-      return Number.isFinite(n) ? n : 0;
-    }catch(_){
-      return 0;
-    }
+      let n=Number(localStorage.getItem(LAST_ACTIVITY_KEY)||0);
+      if(Number.isFinite(n)&&n>0)return n;
+
+      // Migra o marcador da versão anterior sem "renovar" o horário.
+      const old=Number(localStorage.getItem(OLD_ACTIVITY_KEY)||0);
+      if(Number.isFinite(old)&&old>0){
+        localStorage.setItem(LAST_ACTIVITY_KEY,String(old));
+        return old;
+      }
+    }catch(_){}
+    return 0;
   }
 
-  function writeLastActivity(force=false){
+  function setActivity(force=false){
     const t=now();
-
-    // Evita escrever no localStorage milhares de vezes por movimento do mouse.
-    if(!force && t-lastPersist < 3000) return t;
-
+    if(!force && t-lastPersist<2500)return;
     try{
       localStorage.setItem(LAST_ACTIVITY_KEY,String(t));
       lastPersist=t;
     }catch(_){}
-
-    return t;
   }
 
-  function clearLastActivity(){
-    try{ localStorage.removeItem(LAST_ACTIVITY_KEY); }catch(_){}
+  function clearActivity(){
+    try{
+      localStorage.removeItem(LAST_ACTIVITY_KEY);
+      localStorage.removeItem(OLD_ACTIVITY_KEY);
+    }catch(_){}
     lastPersist=0;
   }
 
   async function getSession(){
     try{
-      const client=sb();
-      if(!client?.auth) return null;
-      const {data}=await client.auth.getSession();
-      return data?.session || null;
-    }catch(_){
-      return null;
-    }
+      const c=client();
+      if(!c?.auth)return null;
+      const {data}=await c.auth.getSession();
+      return data?.session||null;
+    }catch(_){return null}
   }
 
   async function logoutSilent(){
-    if(signingOut) return;
+    if(signingOut)return;
     signingOut=true;
-
     clearTimeout(idleTimer);
-    clearLastActivity();
+    clearActivity();
 
     try{
-      const client=sb();
-      if(client?.auth){
-        try{ await client.auth.signOut({scope:'local'}); }
-        catch(_){ try{ await client.auth.signOut(); }catch(__){} }
+      const c=client();
+      if(c?.auth){
+        try{await c.auth.signOut({scope:'local'})}
+        catch(_){try{await c.auth.signOut()}catch(__){}}
       }
     }finally{
       try{
-        window.g360ForceDashboardAfterLogin=true;
+        sessionStorage.removeItem(FRESH_LOGIN_KEY);
         sessionStorage.removeItem('g360_last_active_view_v111');
         sessionStorage.removeItem('g360_last_contract_subview_v111');
         sessionStorage.setItem('g360_force_dashboard_after_login','1');
       }catch(_){}
+      window.g360ForceDashboardAfterLogin=true;
       location.reload();
     }
   }
 
-  async function armIdle(registerActivity=true){
+  async function scheduleFromStored(){
     clearTimeout(idleTimer);
-
     const session=await getSession();
-    if(!session) return;
+    if(!session)return;
 
-    if(registerActivity) writeLastActivity();
+    const last=getStoredActivity();
+    const fresh=sessionStorage.getItem(FRESH_LOGIN_KEY)==='1';
 
-    let last=readLastActivity();
-
-    // Primeira execução após a atualização:
-    // se não houver marcador antigo, usa o horário do último login como referência.
+    // Sessão existente sem qualquer registro confiável de atividade:
+    // só é aceita quando acabou de ocorrer login explícito.
     if(!last){
-      const loginMs=Date.parse(session.user?.last_sign_in_at||'') || 0;
-
-      if(loginMs && now()-loginMs >= IDLE_MS){
-        await logoutSilent();
+      if(fresh){
+        setActivity(true);
+        idleTimer=setTimeout(logoutSilent,IDLE_MS);
         return;
       }
-
-      last=writeLastActivity(true);
+      await logoutSilent();
+      return;
     }
 
     const elapsed=now()-last;
-
-    if(elapsed >= IDLE_MS){
+    if(elapsed>=IDLE_MS){
       await logoutSilent();
       return;
     }
@@ -13524,286 +13542,229 @@ window.g360FechamentoV57={
     idleTimer=setTimeout(logoutSilent,Math.max(250,IDLE_MS-elapsed));
   }
 
-  async function validateOnStartup(){
+  async function realActivity(){
+    if(signingOut)return;
     const session=await getSession();
-    if(!session) {
-      clearLastActivity();
-      return;
-    }
-
-    const last=readLastActivity();
-
-    if(last){
-      if(now()-last >= IDLE_MS){
-        await logoutSilent();
-        return;
-      }
-
-      // Ainda está dentro do prazo: NÃO renova só porque a página abriu.
-      // O prazo restante continua contando desde a última ação real.
-      clearTimeout(idleTimer);
-      idleTimer=setTimeout(logoutSilent,Math.max(250,IDLE_MS-(now()-last)));
-      return;
-    }
-
-    // Compatibilidade com sessões criadas antes do V140.
-    const loginMs=Date.parse(session.user?.last_sign_in_at||'') || 0;
-    if(loginMs && now()-loginMs >= IDLE_MS){
-      await logoutSilent();
-      return;
-    }
-
-    writeLastActivity(true);
+    if(!session)return;
+    setActivity();
     clearTimeout(idleTimer);
     idleTimer=setTimeout(logoutSilent,IDLE_MS);
   }
 
-  function activity(){
-    if(signingOut) return;
-    writeLastActivity();
-    armIdle(false);
-  }
-
-  function bindIdle(){
-    if(idleBound) return;
-    idleBound=true;
+  function bindActivity(){
+    if(bound)return;
+    bound=true;
 
     ['pointerdown','keydown','wheel','touchstart','scroll'].forEach(evt=>{
-      document.addEventListener(evt,activity,{passive:true,capture:true});
+      document.addEventListener(evt,realActivity,{passive:true,capture:true});
     });
 
     let lastMove=0;
     document.addEventListener('mousemove',()=>{
       const t=now();
-      if(t-lastMove>5000){
-        lastMove=t;
-        activity();
-      }
+      if(t-lastMove>5000){lastMove=t;realActivity()}
     },{passive:true,capture:true});
 
-    // Voltar à aba/janela também valida o tempo transcorrido,
-    // mas NÃO renova a sessão automaticamente.
+    // Voltar para uma aba NÃO conta como atividade.
+    // Primeiro confere se o prazo já expirou.
     document.addEventListener('visibilitychange',()=>{
-      if(!document.hidden) validateOnStartup();
+      if(!document.hidden)scheduleFromStored();
     });
-
-    window.addEventListener('focus',validateOnStartup);
+    window.addEventListener('focus',scheduleFromStored);
   }
 
   async function checkForcedLogin(){
-    if(forcePolling || signingOut) return;
+    if(forcePolling||signingOut)return;
     forcePolling=true;
-
     try{
-      const client=sb();
-      if(!client?.auth) return;
-
-      const {data:sess}=await client.auth.getSession();
+      const c=client();
+      if(!c?.auth)return;
+      const {data:sess}=await c.auth.getSession();
       const session=sess?.session;
-      if(!session?.user?.id) return;
+      if(!session?.user?.id)return;
 
       const uid=session.user.id;
-      const lastSignInMs=Date.parse(session.user.last_sign_in_at||session.user.created_at||0) || 0;
-
-      const {data:prof,error}=await client
-        .from('profiles')
-        .select('force_reauth_at')
-        .eq('id',uid)
-        .maybeSingle();
+      const lastSignInMs=Date.parse(session.user.last_sign_in_at||session.user.created_at||0)||0;
+      const {data:prof,error}=await c.from('profiles').select('force_reauth_at').eq('id',uid).maybeSingle();
 
       if(error){
-        if(String(error.message||'').toLowerCase().includes('force_reauth_at')) return;
-        console.warn('[G360 V140] verificação de sessão:',error.message||error);
+        if(String(error.message||'').toLowerCase().includes('force_reauth_at'))return;
+        console.warn('[G360 V148] verificação de sessão:',error.message||error);
         return;
       }
 
-      const forceMs=Date.parse(prof?.force_reauth_at||0) || 0;
-      if(forceMs>lastSignInMs){
-        await logoutSilent();
-      }
+      const forceMs=Date.parse(prof?.force_reauth_at||0)||0;
+      if(forceMs>lastSignInMs)await logoutSilent();
     }catch(e){
-      console.warn('[G360 V140] sessão:',e);
+      console.warn('[G360 V148] sessão:',e);
     }finally{
       forcePolling=false;
     }
   }
 
   async function forceUser(userId){
-    const client=sb();
-    if(!client || !userId) return;
-
-    const {error}=await client.rpc('g360_forcar_relogin',{p_usuario_id:userId});
-    if(error){
-      console.error('[G360 V140] falha ao forçar login:',error);
-      return;
-    }
-
+    const c=client();
+    if(!c||!userId)return;
+    const {error}=await c.rpc('g360_forcar_relogin',{p_usuario_id:userId});
+    if(error){console.error('[G360 V148] falha ao forçar login:',error);return}
     try{
-      const {data}=await client.auth.getUser();
-      if(String(data?.user?.id||'')===String(userId)) await logoutSilent();
+      const {data}=await c.auth.getUser();
+      if(String(data?.user?.id||'')===String(userId))await logoutSilent();
     }catch(_){}
   }
 
   async function forceAll(){
-    const client=sb();
-    if(!client) return;
-
-    const {error}=await client.rpc('g360_forcar_relogin',{p_usuario_id:null});
-    if(error){
-      console.error('[G360 V140] falha ao forçar login de todos:',error);
-      return;
-    }
-
+    const c=client();
+    if(!c)return;
+    const {error}=await c.rpc('g360_forcar_relogin',{p_usuario_id:null});
+    if(error){console.error('[G360 V148] falha ao forçar login de todos:',error);return}
     await logoutSilent();
   }
 
   function wireAdminButton(){
     const b=document.getElementById('g360ForceAllLoginBtn');
-    if(b && !b.dataset.g360Bound){
+    if(b&&!b.dataset.g360Bound){
       b.dataset.g360Bound='1';
       b.addEventListener('click',forceAll);
     }
   }
 
   function wireAuth(){
-    const client=sb();
-    if(!client?.auth){
-      setTimeout(wireAuth,250);
-      return;
-    }
+    const c=client();
+    if(!c?.auth){setTimeout(wireAuth,200);return}
 
-    client.auth.onAuthStateChange((event,session)=>{
-      if(event==='SIGNED_IN' && session){
-        // Novo login = nova janela de atividade.
-        writeLastActivity(true);
-        clearTimeout(idleTimer);
-        idleTimer=setTimeout(logoutSilent,IDLE_MS);
+    c.auth.onAuthStateChange((event,session)=>{
+      if(event==='SIGNED_OUT'){
+        clearActivity();
+        return;
       }
 
-      if(event==='SIGNED_OUT'){
-        clearLastActivity();
+      // IMPORTANTE:
+      // SIGNED_IN/INITIAL_SESSION de sessão restaurada NÃO renova o relógio.
+      // O horário só é criado pelo clique real no botão Entrar ou por ação real.
+      if(session && (event==='SIGNED_IN'||event==='INITIAL_SESSION')){
+        setTimeout(scheduleFromStored,0);
       }
     });
   }
 
   function boot(){
-    bindIdle();
+    bindActivity();
     wireAdminButton();
     wireAuth();
 
-    // Valida ANTES de simplesmente aceitar uma sessão persistida pelo navegador.
-    validateOnStartup();
+    // A primeira ação da rotina é validar a sessão que o navegador recuperou.
+    scheduleFromStored();
     checkForcedLogin();
-
     setInterval(checkForcedLogin,FORCE_POLL_MS);
 
     const mo=new MutationObserver(wireAdminButton);
     mo.observe(document.body,{subtree:true,childList:true});
   }
 
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',boot,{once:true});
-  }else{
-    boot();
-  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
+  else boot();
 
-  window.g360SessionControlV140={
+  window.g360SessionControlV148={
     logout:logoutSilent,
     forceUser,
     forceAll,
-    check:checkForcedLogin,
-    validate:validateOnStartup,
-    resetIdle:activity,
-    lastActivity:readLastActivity
+    validate:scheduleFromStored,
+    resetIdle:realActivity,
+    lastActivity:getStoredActivity
   };
 })();
 </script>
 
 
-<script id="g360-login-dashboard-v129">
+<script id="g360-login-dashboard-v148">
 (function(){
   'use strict';
 
-  function clearLastView(){
+  const FRESH='g360_fresh_login_v148';
+  const FORCE='g360_force_dashboard_after_login';
+  const KEY_VIEW='g360_last_active_view_v111';
+  const KEY_CTR='g360_last_contract_subview_v111';
+
+  function mustForce(){
     try{
-      sessionStorage.removeItem('g360_last_active_view_v111');
-      sessionStorage.removeItem('g360_last_contract_subview_v111');
+      return sessionStorage.getItem(FRESH)==='1' ||
+             sessionStorage.getItem(FORCE)==='1' ||
+             window.g360ForceDashboardAfterLogin===true;
+    }catch(_){return false}
+  }
+
+  function clearSaved(){
+    try{
+      sessionStorage.removeItem(KEY_VIEW);
+      sessionStorage.removeItem(KEY_CTR);
     }catch(_){}
   }
 
-  function forceDashboard(){
-    clearLastView();
+  function activateDashboard(){
+    if(!mustForce())return false;
+
+    clearSaved();
 
     try{
       if(window.g360NavV64?.activate){
         window.g360NavV64.activate('executivo');
       }else{
         const link=document.querySelector('.side-link[data-view="executivo"]');
-        if(link) link.click();
+        if(link)link.click();
         else{
           document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
           document.getElementById('view-executivo')?.classList.add('active');
         }
       }
     }catch(e){
-      console.warn('[G360 V129] ativação do Dashboard:',e);
+      console.warn('[G360 V148] Dashboard após login:',e);
     }
-
-    // Corrige qualquer rotina tardia que tente restaurar a última tela logo após o login.
-    [120,350,700,1200,2000].forEach(ms=>{
-      setTimeout(()=>{
-        clearLastView();
-        try{
-          if(window.g360NavV64?.activate) window.g360NavV64.activate('executivo');
-          else document.querySelector('.side-link[data-view="executivo"]')?.click();
-        }catch(_){}
-      },ms);
-    });
+    return true;
   }
 
-  async function applyAfterLogin(){
-    try{
-      if(sessionStorage.getItem('g360_force_dashboard_after_login')!=='1') return;
+  async function confirmAndForce(){
+    if(!mustForce())return;
 
-      const client=window.g360SupabaseClient;
-      if(!client?.auth) return;
+    const c=window.g360SupabaseClient;
+    if(!c?.auth)return;
 
-      const {data}=await client.auth.getSession();
-      if(!data?.session) return;
+    const {data}=await c.auth.getSession();
+    if(!data?.session)return;
 
-      forceDashboard();
+    // Vários pontos porque alguns módulos terminam de renderizar depois da autenticação.
+    [0,80,220,500,900,1500,2300,3200].forEach(ms=>{
+      setTimeout(activateDashboard,ms);
+    });
 
-      // Mantém a flag durante a janela de estabilização; remove só depois.
-      setTimeout(()=>{
-        try{sessionStorage.removeItem('g360_force_dashboard_after_login')}catch(_){}
-        window.g360ForceDashboardAfterLogin=false;
-      },2300);
-    }catch(e){
-      console.warn('[G360 V129] Dashboard após login:',e);
-    }
+    // Só libera a persistência normal depois que o painel estabilizou no Dashboard.
+    setTimeout(()=>{
+      clearSaved();
+      try{
+        sessionStorage.removeItem(FRESH);
+        sessionStorage.removeItem(FORCE);
+      }catch(_){}
+      window.g360ForceDashboardAfterLogin=false;
+    },3500);
   }
 
   function wire(){
-    const client=window.g360SupabaseClient;
-    if(!client?.auth){
-      setTimeout(wire,250);
-      return;
-    }
+    const c=window.g360SupabaseClient;
+    if(!c?.auth){setTimeout(wire,200);return}
 
-    client.auth.onAuthStateChange((event,session)=>{
-      if(event==='SIGNED_IN' && session){
-        setTimeout(applyAfterLogin,60);
+    c.auth.onAuthStateChange((event,session)=>{
+      if(session && (event==='SIGNED_IN'||event==='INITIAL_SESSION')){
+        setTimeout(confirmAndForce,20);
       }
     });
 
-    applyAfterLogin();
+    confirmAndForce();
   }
 
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',wire,{once:true});
-  }else{
-    wire();
-  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire,{once:true});
+  else wire();
+
+  window.g360LoginDashboardV148={force:activateDashboard,check:confirmAndForce};
 })();
 </script>
 
