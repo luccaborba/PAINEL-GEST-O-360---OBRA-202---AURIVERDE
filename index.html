@@ -3396,7 +3396,7 @@ function renderExecutivo(){
     const ocupReal = ATIVOS.filter(c=>c.usaAloj==='S' && c.alojamento===a.contrato).length;
     return {...a, ocupReal};
   });
-  const alojLabels = alojComOcup.map(a=>a.descricao.length>22? a.descricao.slice(0,22)+'…' : a.descricao);
+  const alojLabels = alojComOcup.map(a=>String(a.descricao||a.contrato||'').trim());
   barChart('chExecOcupacao', alojLabels, [
     {label:'Ocupados', data: alojComOcup.map(a=>a.ocupReal), backgroundColor:PALETTE[5], borderRadius:3, barPercentage:1, categoryPercentage:1},
     {label:'Disponíveis', data: alojComOcup.map(a=>Math.max((a.capacidade||0)-a.ocupReal,0)), backgroundColor:PALETTE[3], borderRadius:3, barPercentage:1, categoryPercentage:1},
@@ -4817,7 +4817,7 @@ function renderAlojamento(){
     {label:'Reservadas', value: fmtInt(reservadas), alt:true},
   ]);
 
-  const alojLabels = alojComOcup.map(a=>a.descricao.length>22? a.descricao.slice(0,22)+'…' : a.descricao);
+  const alojLabels = alojComOcup.map(a=>String(a.descricao||a.contrato||'').trim());
   barChart('chAlojCidade', alojLabels, [
     {label:'Ocupados', data: alojComOcup.map(a=>a.ocupReal), backgroundColor:PALETTE[5], borderRadius:3, barPercentage:1, categoryPercentage:1},
     {label:'Disponíveis', data: alojComOcup.map(a=>Math.max((a.capacidade||0)-a.ocupReal,0)), backgroundColor:PALETTE[3], borderRadius:3, barPercentage:1, categoryPercentage:1},
