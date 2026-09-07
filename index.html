@@ -1249,7 +1249,467 @@ html.g360-ui-ready .content-col {
 
       <!-- ================= PROJETOS / OBRAS ================= -->
       <div class="view" id="view-projetosObras">
-        
+        <section class="panel">
+          <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+            <div><h2 style="margin-bottom:4px;">Projetos / Obras</h2><div style="font-size:12px;color:var(--ink-soft);">Cadastro corporativo de obras por código e nome. Todos os módulos ficam vinculados ao projeto selecionado.</div></div>
+            <button class="btn-primary" id="g360ProjetoNovo">＋ Novo projeto / obra</button>
+          </div>
+          <div class="filters" style="margin-top:14px;">
+            <input type="text" id="g360ProjetoBusca" placeholder="Buscar por código ou nome...">
+            <select id="g360ProjetoStatus"><option value="">Todos os status</option><option value="ATIVA">Ativas</option><option value="INATIVA">Inativas</option></select>
+            <button class="clear-btn" id="g360ProjetoLimpar">Limpar filtros</button>
+            <span class="count-badge" id="g360ProjetoCount"></span>
+          </div>
+          <div class="table-scroll"><table><thead><tr><th>Código</th><th>Nome da obra</th><th>Status</th><th>Início</th><th>Término</th><th>Ações</th></tr></thead><tbody id="g360ProjetoBody"></tbody></table></div>
+        </section>
+      </div>
+
+
+      <div class="view" id="view-cargosSalarios">
+        <section class="panel">
+          <div class="section-title">
+            <div><h2>CARGOS E SALÁRIOS</h2><p>Cadastro mestre utilizado no cadastro de colaboradores para preencher função, nível e salário.</p></div>
+            <button type="button" class="btn primary" id="g360NovoCargoSalario">＋ Novo cargo / salário</button>
+          </div>
+          <div id="g360CargosSalariosLista"><div class="empty-state">Carregando cargos e salários...</div></div>
+        </section>
+      </div>
+
+      <!-- ================= PROJETOS / OBRAS ================= -->
+      <div class="view active" id="view-executivo">
+        <section class="panel" style="margin-bottom:14px;">
+          <div>
+            <h2 style="margin-bottom:4px;">Dashboard Gerencial</h2>
+            <div style="font-size:12px;color:var(--ink-soft);">Visão executiva consolidada da obra: RH/DP, contratos, alojamentos, patrimônio e fechamento de praça. Os dashboards operacionais permanecem disponíveis em seus módulos.</div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>RH / DP <span class="tag">Resumo do Dashboard RH/DP</span></h2>
+          <section class="kpis-6" id="kpi-executivo-rh"></section>
+          <div class="panel" style="margin-top:14px;"><h2>Admissões x Demissões <span class="tag">Últimos 13 meses</span></h2><div style="height:300px;position:relative;"><canvas id="chExecRhAdmDem"></canvas></div></div>
+          <div class="grid-charts">
+            <div class="panel" style="margin:0;"><h2>Colaboradores por Função</h2><div style="height:340px;position:relative;"><canvas id="chExecRhFuncao"></canvas></div></div>
+            <div class="panel" style="margin:0;"><h2>Headcount por Setor/Equipe</h2><div style="height:340px;position:relative;"><canvas id="chExecSetor"></canvas></div></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Alojamentos <span class="tag">Resumo do Dashboard de Alojamentos</span></h2>
+          <section class="kpis-6" id="kpi-executivo-aloj"></section>
+          <div class="panel" style="margin-top:14px;"><h2>Ocupação por Imóvel</h2><div style="height:360px;position:relative;"><canvas id="chExecOcupacao"></canvas></div></div>
+        </section>
+
+        <section class="panel">
+          <h2>Contratos <span class="tag">Resumo do Dashboard de Contratos</span></h2>
+          <section class="kpis-6" id="kpi-executivo-contratos"></section>
+          <div class="panel" style="margin-top:14px;"><h2>Contratado vs. Medido por Tipo</h2><div style="height:360px;position:relative;"><canvas id="chExecContratos"></canvas></div></div>
+        </section>
+
+      </div>
+
+      <!-- ================= DASHBOARD RH / DP ================= -->
+      <div class="view" id="view-rhdpDashboard">
+        <section class="panel" style="margin-bottom:14px;">
+          <div>
+            <h2 style="margin-bottom:4px;">Dashboard RH / DP</h2>
+            <div style="font-size:12px;color:var(--ink-soft);">Indicadores de pessoas, admissões, desligamentos, experiência e distribuição do quadro.</div>
+          </div>
+        </section>
+        <section class="kpis-6" id="kpi-colaboradores"></section>
+        <div class="panel"><h2>Admissões x Demissões <span class="tag">Últimos 13 meses</span></h2><div style="height:300px;position:relative;"><canvas id="chColabAdmDem"></canvas></div></div>
+        <div class="grid-charts">
+          <div class="panel"><h2>Colaboradores por Função</h2><div style="height:340px;position:relative;"><canvas id="chColabFuncao"></canvas></div></div>
+          <div class="panel"><h2>Colaboradores por Setor/Equipe</h2><div style="height:340px;position:relative;"><canvas id="chColabSetor"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- ================= COLABORADORES ================= -->
+      <div class="view" id="view-base">
+        <section class="panel" style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
+            <div>
+              <h2 style="margin-bottom:4px;">Colaboradores</h2>
+              <div style="font-size:12px;color:var(--ink-soft);">Cadastro e gestão individual dos colaboradores da obra.</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button type="button" class="btn primary" onclick="g360OpenCrudProduction('funcionarios')">＋ Novo colaborador</button>
+              <button type="button" class="clear-btn" id="g360ImportarAdmColab">↪ Importar solicitação de admissão</button>
+            </div>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="filters">
+            <input type="text" id="searchInput" placeholder="Buscar por nome, função ou matrícula...">
+            <select id="statusSelect"></select>
+            <select id="deptoSelect"></select>
+            <select id="equipeSelect"></select>
+            <select id="setorSelect"></select>
+            <select id="alojadoSelect"></select>
+            <button class="clear-btn" id="clearBtn">Limpar filtros</button>
+            <button class="clear-btn" id="colabExportPdfBtn">📄 Exportar PDF</button>
+            <button class="clear-btn" id="colabExportXlsBtn">📊 Exportar Excel</button>
+            <span class="count-badge" id="countBadge"></span>
+          </div>
+        </section>
+        <section class="panel">
+          <h2>Colaboradores <span class="tag" id="tableCountTag"></span></h2>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th data-key="mat">Mat.<span class="arrow"></span></th>
+                  <th data-key="nome">Nome<span class="arrow"></span></th>
+                  <th data-key="funcao">Função<span class="arrow"></span></th>
+                  <th>CNH / Validade</th>
+                  <th data-key="depto">Departamento<span class="arrow"></span></th>
+                  <th data-key="equipe">Equipe<span class="arrow"></span></th>
+                  <th data-key="setorEquipe">Setor/Encarregado<span class="arrow"></span></th>
+                  <th data-key="alojamento">Alojamento<span class="arrow"></span></th>
+                  <th data-key="admissao">Admissão<span class="arrow"></span></th>
+                  <th data-key="salario" class="num">Salário<span class="arrow"></span></th>
+                  <th data-key="exp90" style="min-width:260px;white-space:nowrap;">Experiência (45/90 dias)<span class="arrow"></span></th>
+                  <th data-key="status">Status<span class="arrow"></span></th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+          <div class="pager"><span id="pageInfo"></span></div>
+        </section>
+      </div>
+
+      <!-- ================= ALOJAMENTO ================= -->
+      <div class="view" id="view-alojamento">
+        <div class="page-title">
+          <span class="pt-ic">🏘️</span>
+          <div>
+            <div class="pt-title">Workflow de Alojamentos</div>
+            <div class="pt-sub">Ciclo de ocupação, disponibilidade e custos dos imóveis contratados para hospedagem da equipe</div>
+          </div>
+        </div>
+        <section class="kpis-7" id="kpi-alojamento"></section>
+        <div class="panel"><h2>Ocupação por Imóvel</h2><div style="height:360px;position:relative;"><canvas id="chAlojCidade"></canvas></div></div>
+        <section class="panel">
+          <h2>Imóveis de Alojamento <span class="tag">Contratos ativos</span>
+            <span style="margin-left:auto;display:flex;gap:8px;">
+              <button class="clear-btn" id="alojImoveisExportPdfBtn">📄 Exportar PDF</button>
+              <button class="clear-btn" id="alojImoveisExportXlsBtn">📊 Exportar Excel</button>
+            </span>
+          </h2>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Contrato</th><th>Descrição</th><th>Fornecedor</th><th class="num">Valor Mensal</th><th>Capacidade</th><th>Ocupados</th><th>Ocupação</th><th>Status</th><th>Ações</th></tr></thead>
+              <tbody id="tableAloj"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="filters">
+            <input type="text" id="colabAlojSearch" placeholder="Buscar colaborador por nome...">
+            <select id="colabAlojSelect"></select>
+            <select id="colabSetorSelect"></select>
+            <button class="clear-btn" id="colabAlojClear">Limpar filtros</button>
+            <button class="clear-btn" id="colabAlojExportPdfBtn">📄 Exportar PDF</button>
+            <button class="clear-btn" id="colabAlojExportXlsBtn">📊 Exportar XLS</button>
+            <span class="count-badge" id="colabAlojCount"></span>
+          </div>
+        </section>
+        <section class="panel">
+          <h2>Colaboradores por Alojamento <span class="tag">Quadro ativo</span></h2>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Mat.</th><th>Nome</th><th>Função</th><th>Equipe</th><th>Departamento</th><th>Alojamento</th></tr></thead>
+              <tbody id="tableColabAloj"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- ================= INVENTÁRIO GERAL DE PATRIMÔNIO ================= -->
+      <div class="view" id="view-patrimonioInventario">
+        <div class="page-title">
+          <span class="pt-ic">📦</span>
+          <div>
+            <div class="pt-title">Inventário de Patrimônio</div>
+            <div class="pt-sub">Base geral de bens e equipamentos da obra. O alojamento é opcional e representa apenas a alocação atual do item.</div>
+          </div>
+        </div>
+        <section class="panel">
+          <div class="crud-mainbar"><button class="crud-primary" id="g360PatInvNovo">＋ Incluir item no inventário</button></div>
+          <div class="filters">
+            <input id="patInvBusca" type="text" placeholder="Buscar patrimônio, tag, descrição, marca, modelo ou responsável...">
+            <select id="patInvCategoria"><option value="">Todas as categorias</option></select>
+            <select id="patInvStatus"><option value="">Todos os status</option></select>
+            <button class="clear-btn" id="patInvLimpar">Limpar filtros</button>
+            <span class="count-badge" id="patInvCount"></span>
+          </div>
+        </section>
+        <section class="kpis-6" id="kpi-patrimonio-inventario"></section>
+        <section class="panel">
+          <h2>Base de Patrimônio <span class="tag">Inventário Geral</span><span style="margin-left:auto"><button class="clear-btn" id="patInvExportCsv">📊 Exportar CSV</button></span></h2>
+          <div class="table-scroll"><table><thead><tr><th>Nº Patrimônio</th><th>Tag</th><th>Descrição</th><th>Categoria</th><th>Marca / Modelo</th><th>Qtd.</th><th>Alojamento atual</th><th>Estado</th><th>Status</th><th>Responsável</th><th class="num">Valor Total</th><th>Ações</th></tr></thead><tbody id="tablePatrimonioInventario"></tbody></table></div>
+        </section>
+      </div>
+
+      <!-- ================= ESTOQUE DE PATRIMÔNIO ================= -->
+      <div class="view" id="view-patrimonioEstoque">
+        <div class="page-title"><span class="pt-ic">🏷️</span><div><div class="pt-title">Estoque de Patrimônio</div><div class="pt-sub">Controle de entradas, saídas, saldo e estoque mínimo de itens patrimoniais.</div></div></div>
+        <section class="panel" id="patEstoquePanel">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+            <div><h2 style="margin-bottom:4px">🏷️ Estoque de Patrimônio</h2><div style="font-size:11.5px;color:var(--ink-soft)">Cadastro e saldo por item patrimonial. Funciona no mesmo padrão do Estoque de EPIs, mantendo o Inventário Geral como cadastro patrimonial e o estoque como controle quantitativo.</div></div>
+          </div>
+          <div class="epi-stock-toolbar">
+            <label><span>DESCRIÇÃO DO ITEM</span><input id="patStockDescricao" placeholder="Ex.: CADEIRA PLÁSTICA BRANCA"></label>
+            <label><span>CATEGORIA</span><input id="patStockCategoria" placeholder="Ex.: MOBILIÁRIO"></label>
+            <label><span>CÓDIGO / SKU</span><input id="patStockCodigo" placeholder="Ex.: PAT-EST-001"></label>
+            <label><span>QUANTIDADE</span><input id="patStockQtd" type="number" min="0.01" step="0.01" value="1"></label>
+            <label><span>ESTOQUE MÍNIMO</span><input id="patStockMin" type="number" min="0" step="0.01" value="0"></label>
+            <button class="btn-primary" id="patStockEntrada">＋ Cadastrar / Entrada</button>
+            <button class="clear-btn" type="button" id="patStockLimpar">🗑 Limpar campos</button>
+          </div>
+          <div class="epi-stock-kpis">
+            <div class="epi-stock-kpi"><small>Itens cadastrados</small><strong id="patStockKpiItens">0</strong></div>
+            <div class="epi-stock-kpi"><small>Saldo total</small><strong id="patStockKpiSaldo">0</strong></div>
+            <div class="epi-stock-kpi"><small>Abaixo do mínimo</small><strong id="patStockKpiBaixo">0</strong></div>
+            <div class="epi-stock-kpi"><small>Sem estoque</small><strong id="patStockKpiZero">0</strong></div>
+          </div>
+          <div class="table-scroll" style="max-height:380px"><table><thead><tr><th>Código</th><th>Item patrimonial</th><th>Categoria</th><th>Saldo</th><th>Mínimo</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="patStockBody"></tbody></table></div>
+          <div class="epi-stock-note">As entradas e saídas ficam registradas neste controle. A alocação em alojamento continua sendo feita pelo módulo “Patrimônio por Alojamento”.</div>
+        </section>
+        <section class="panel"><h2>Movimentações do Estoque <span class="tag" id="patStockMovCount">0</span></h2><div class="table-scroll" style="max-height:280px"><table><thead><tr><th>Data</th><th>Código</th><th>Item</th><th>Tipo</th><th>Quantidade</th><th>Saldo após</th><th>Observação</th></tr></thead><tbody id="patStockMovBody"></tbody></table></div></section>
+      </div>
+
+      <!-- ================= PATRIMÔNIO / INVENTÁRIO ================= -->
+      <div class="view" id="view-patrimonio">
+        <div class="page-title">
+          <span class="pt-ic">🛋️</span>
+          <div>
+            <div class="pt-title">Patrimônio por Alojamento</div>
+            <div class="pt-sub">Visão da alocação dos bens do inventário geral em alojamentos, cômodos e responsáveis.</div>
+          </div>
+        </div>
+        <section class="kpis-6" id="kpi-patrimonio"></section>
+        <section class="panel">
+          <div class="filters">
+            <input id="patBusca" type="text" placeholder="Buscar patrimônio, descrição, marca ou responsável...">
+            <select id="patAlojFiltro"><option value="">Todos os alojamentos</option></select>
+            <select id="patCategoriaFiltro"><option value="">Todas as categorias</option></select>
+            <select id="patEstadoFiltro"><option value="">Todos os estados</option></select>
+            <button class="clear-btn" id="patLimparFiltro">Limpar filtros</button>
+            <span class="count-badge" id="patCount"></span>
+          </div>
+        </section>
+        <div class="grid-2">
+          <section class="panel"><h2>Patrimônio por Alojamento</h2><div style="height:300px;position:relative"><canvas id="chPatAloj"></canvas></div></section>
+          <section class="panel"><h2>Estado de Conservação</h2><div style="height:300px;position:relative"><canvas id="chPatEstado"></canvas></div></section>
+        </div>
+        <section class="panel">
+          <h2>Inventário de Bens <span class="tag">Móveis e eletros</span>
+            <span style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+              <button class="clear-btn" id="patExportCsv">📊 Exportar CSV</button>
+            </span>
+          </h2>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Patrimônio</th><th>Item</th><th>Categoria</th><th>Alojamento</th><th>Cômodo</th><th>Qtd.</th><th>Estado</th><th>Status</th><th>Responsável</th><th class="num">Valor Total</th><th>Ações</th></tr></thead>
+              <tbody id="tablePatrimonio"><tr><td colspan="10">Configure o Supabase para carregar o inventário.</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="panel">
+          <h2>Últimas Movimentações <span class="tag">Rastreabilidade</span></h2>
+          <div class="table-scroll"><table><thead><tr><th>Data</th><th>Patrimônio</th><th>Tipo</th><th>Origem</th><th>Destino</th><th>Responsável</th><th>Observação</th></tr></thead><tbody id="tablePatMov"><tr><td colspan="7">Nenhuma movimentação carregada.</td></tr></tbody></table></div>
+        </section>
+      </div>
+
+      <!-- ================= ORGANOGRAMA DE SETORES ================= -->
+      <div class="view" id="view-organograma">
+        <div class="page-title">
+          <span class="pt-ic">🗺️</span>
+          <div>
+            <div class="pt-title">Organograma Setor/Equipe</div>
+            <div class="pt-sub">Estrutura organizacional por setor/equipe (encarregado responsável) — Obra 202</div>
+          </div>
+        </div>
+        <section class="kpis-6" id="kpi-organograma"></section>
+        <section class="panel">
+          <div class="org-filters">
+            <select id="orgSetorSelect"></select>
+            <select id="orgCargoSelect"></select>
+            <button class="clear-btn" id="orgClearBtn">Limpar filtro</button>
+            <button class="clear-btn" id="orgExportPdfBtn">📄 Exportar PDF</button>
+            <button class="clear-btn" id="orgExportXlsBtn">📊 Exportar XLS</button>
+            <button class="clear-btn" id="orgExportFlowBtn">🌳 Exportar Organograma (PDF)</button>
+          </div>
+        </section>
+        <section class="panel">
+          <h2>Colaboradores <span class="tag" id="orgMembersCount"></span></h2>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Mat.</th><th>Nome</th><th>Função</th><th>Equipe</th><th>Departamento</th><th>Experiência</th></tr></thead>
+              <tbody id="tableOrgMembers"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+
+      <!-- ================= ADITIVOS CONTRATUAIS ================= -->
+      <div class="view" id="view-aditivosContratos">
+        <div class="page-title">
+          <span class="pt-ic">🧩</span>
+          <div>
+            <div class="pt-title">Aditivos Contratuais</div>
+            <div class="pt-sub">Gestão independente dos aditivos vinculados à Base de Contratos: prazo, valor, serviços/escopo e aprovações.</div>
+          </div>
+        </div>
+        <section class="panel" id="g360ContratoEvolucaoPanel" >
+    <div class="g360-ad-top">
+      <div>
+        <h2 style="margin:0 0 4px;">🧩 Aditivos do Contrato <span class="tag" id="g360AdCountTag"></span></h2>
+        <div style="font-size:11.5px;color:var(--ink-soft);">Controle de aditivos de prazo, valor e serviços. O valor atualizado e o saldo consideram automaticamente os aditivos aprovados e as medições válidas.</div>
+      </div>
+      <button type="button" class="crud-primary" id="g360AdNovo">＋ Incluir aditivo no contrato selecionado</button>
+    </div>
+    <div class="g360-ad-filter">
+      <label>Contrato<select id="g360AdContratoFiltro"></select></label>
+      <label>Status<select id="g360AdStatusFiltro"><option value="">Todos</option><option value="RASCUNHO">Rascunho</option><option value="APROVADO">Aprovado</option><option value="CANCELADO">Cancelado</option></select></label>
+      <button type="button" class="clear-btn" id="g360AdLimpar">Limpar</button>
+    </div>
+    <div class="g360-ad-kpis" id="g360AdKpis"></div>
+    <div class="g360-ad-contract-card" id="g360AdResumoContrato"></div>
+    <div class="table-scroll" style="margin-top:12px;">
+      <table>
+        <thead><tr><th>Aditivo</th><th>Data</th><th>Contrato</th><th>Natureza</th><th>Impacto financeiro</th><th>Nova vigência</th><th>Serviços / Escopo</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="g360AdBody"></tbody>
+      </table>
+    </div>
+  </section>
+      </div>
+
+      <!-- ================= CONTRATOS (nativo — antes era um iframe separado) ================= -->
+      <div class="view" id="view-contratos">
+<div class="wrap">
+
+  <header class="top">
+    <div class="page-title-embed">
+      <span class="pt-ic">📄</span>
+      <div>
+        <div class="pt-title" id="g360ContratosPageTitle">Dashboard de Contratos</div>
+        <div class="pt-sub" id="g360ContratosPageSub">Obra 202 - Implantação Auriverde · Indicadores e visão gerencial da carteira de contratos.</div>
+      </div>
+    </div>
+
+  </header>
+
+  <div class="crud-mainbar" id="g360ContratoOrigemSolicitacaoBar" style="display:none;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;width:100%;">
+      <button type="button" class="crud-primary" id="g360NovoContratoManual">＋ Incluir contrato manualmente</button>
+      <button type="button" class="crud-mini" id="g360NovoContratoViaSolicitacao">＋ Importar solicitação para contrato</button>
+    </div>
+  </div>
+
+  <div id="viewDashboard">
+
+  <div id="contractDashboardOnly">
+  <section class="kpis" id="kpiRow"></section>
+
+  <div class="panel" style="margin-top:16px;">
+    <h2>
+      Contratado vs. Medido por Tipo
+      <span class="tipo-filter-wrap">
+        <button class="clear-btn" id="tipoFilterBtn" type="button">Filtrar tipos ▾</button>
+        <div id="tipoFilterPanel" class="tipo-filter-panel">
+          <div class="tipo-filter-actions">
+            <button id="tipoFilterAll" type="button">Selecionar todos</button>
+            <button id="tipoFilterNone" type="button">Limpar</button>
+          </div>
+          <div id="tipoFilterList"></div>
+        </div>
+      </span>
+    </h2>
+    <div style="height:520px; position:relative;">
+      <canvas id="chartTipo"></canvas>
+    </div>
+  </div>
+
+  <div class="grid-charts2">
+    <div class="panel">
+      <h2>Top Fornecedores <span class="tag">Contratado vs. Medido</span></h2>
+      <canvas id="chartFornecedores"></canvas>
+    </div>
+    <div class="panel">
+      <h2>Vencendo em Breve <span class="tag">Próximos 180 dias</span></h2>
+      <div class="expiring-list" id="expiringList"></div>
+    </div>
+  </div>
+
+  </div>
+
+  <div id="contractBaseOnly" style="display:none;">
+  <section class="panel">
+    <div class="filters">
+      <input type="text" id="ctrSearchInput" placeholder="Buscar por contrato, fornecedor, objeto, tipo ou situação...">
+      <select id="tipoSelect"></select>
+      <span class="tipo-filter-wrap" style="margin-left:0;">
+        <button class="clear-btn" id="sitFilterBtn" type="button">Filtrar situação ▾</button>
+        <div id="sitFilterPanel" class="tipo-filter-panel">
+          <div class="tipo-filter-actions">
+            <button id="sitFilterAll" type="button">Selecionar todos</button>
+            <button id="sitFilterNone" type="button">Limpar</button>
+          </div>
+          <div id="sitFilterList"></div>
+        </div>
+      </span>
+      <button class="clear-btn" id="ctrClearBtn">Limpar filtros</button>
+      <button class="clear-btn" id="exportPdfBtn">📄 Exportar PDF</button>
+      <button class="clear-btn" id="exportXlsBtn">📊 Exportar Excel</button>
+      <span class="count-badge" id="ctrCountBadge"></span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Contratos <span class="tag" id="ctrTableCountTag"></span></h2>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th data-key="contrato">Contrato<span class="arrow"></span></th>
+            <th data-key="fornecedor">Fornecedor<span class="arrow"></span></th>
+            <th data-key="tipo">Tipo<span class="arrow"></span></th>
+            <th data-key="contratado" class="num">Contratado<span class="arrow"></span></th>
+            <th data-key="medido" class="num">Medido<span class="arrow"></span></th>
+            <th data-key="saldo" class="num">Saldo<span class="arrow"></span></th>
+            <th data-key="avanco">Avanço<span class="arrow"></span></th>
+            <th data-key="situacao">Situação<span class="arrow"></span></th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="ctrTableBody"></tbody>
+      </table>
+    </div>
+    <div class="pager">
+      <span id="ctrPageInfo"></span>
+    </div>
+  </section>
+
+
+  
+
+  </div>
+
+  <!-- ALERTA NO FINAL DA VISÃO GERAL — CONTRATOS SEM FECHAMENTO DE PRAÇA NOS ÚLTIMOS 40 DIAS -->
+  <section class="panel" id="overviewFechamento40Panel" style="margin-top:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:4px;">
+      <h2 style="margin-bottom:0;">⚠️ Contratos sem fechamento de praça <span class="tag" id="overviewFechamento40Tag"></span></h2>
+      <span style="font-size:11px;color:var(--ink-soft);font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Últimos 40 dias</span>
+    </div>
+    <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:10px;">Contratos que não possuem nenhum fechamento lançado no Sienge dentro dos períodos abrangidos pelos últimos 40 dias.</div>
+    <div id="overviewFechamento40List"></div>
+  </section>
 
   </div>
 
