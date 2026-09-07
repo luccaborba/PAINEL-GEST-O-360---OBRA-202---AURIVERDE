@@ -10308,11 +10308,17 @@ window.GESTAO360_CONFIG = {
   async function pullAll(){
     if(PREVIEW_MODE) return true;
     const activeCode=localStorage.getItem('g360_obra_ativa')||window.GESTAO360_CONFIG?.OBRA_CODIGO||'202';
-    const ow=await sb.from('obras').select('id,codigo,nome').eq('codigo',String(activeCode)).limit(1).maybeSingle();
-    if(ow.error) throw ow.error;
-    if(!ow.data?.id) throw new Error('Obra selecionada não encontrada no Supabase: '+activeCode);
-    window.GESTAO360_CONFIG.OBRA_CODIGO=String(ow.data.codigo); window.GESTAO360_CONFIG.OBRA_NOME=ow.data.nome;
-    const obraId=ow.data.id; window.G360_ACTIVE_OBRA_ID=obraId;
+    let obraId=null;
+    if(typeof window.g360ResolveActiveObraId==='function') obraId=await window.g360ResolveActiveObraId();
+    if(!obraId){
+      const ow=await sb.from('obras').select('id,codigo,nome').eq('codigo',String(activeCode)).limit(1).maybeSingle();
+      if(ow.error) throw ow.error;
+      if(!ow.data?.id) throw new Error('Nenhuma obra vinculada a este usuário.');
+      obraId=ow.data.id;
+      window.GESTAO360_CONFIG.OBRA_CODIGO=String(ow.data.codigo||activeCode);
+      if(ow.data.nome)window.GESTAO360_CONFIG.OBRA_NOME=ow.data.nome;
+    }
+    window.G360_ACTIVE_OBRA_ID=obraId;
     const [f,c,a,fp,sols,anxs,fol]=await Promise.all([
       sb.from('funcionarios').select('*').eq('obra_id',obraId).order('nome'), sb.from('vw_contratos_saldo').select('*').eq('obra_id',obraId).order('codigo'), sb.from('alojamentos').select('*').eq('obra_id',obraId).order('descricao'), sb.from('fechamentos_praca').select('*').eq('obra_id',obraId).order('competencia').order('contrato_codigo'), sb.from('solicitacoes_contrato').select('*').eq('obra_id',obraId).order('created_at',{ascending:false}), sb.from('solicitacao_contrato_anexos').select('*').order('created_at',{ascending:true}), sb.from('folga_campo').select('*').eq('obra_id',obraId).order('competencia').order('colaborador_nome')
     ]);
@@ -11547,7 +11553,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
   function classifyAction(el){const txt=(el.textContent||'').toLowerCase();if(el.classList.contains('danger')||/excluir|remover|apagar|delet/.test(txt))return'excluir';if(/aprovar|aprovação/.test(txt))return'aprovar';if(el.classList.contains('toggle')||/ativar|inativar/.test(txt))return'ativar';if(/editar|alterar|salvar|atualizar|preencher|registrar/.test(txt))return'editar';if(/novo|nova|cadastrar|adicionar|criar|incluir|solicitar/.test(txt))return'criar';if(/export|pdf|excel|xls|csv|baixar/.test(txt))return'exportar';return null}
   function actionFromCrudButton(el){if(el.matches('.crud-row-actions .danger'))return'excluir';if(el.matches('.crud-row-actions .toggle'))return'ativar';return classifyAction(el)}
   function ensureNote(v){let n=v.querySelector(':scope > .g360-access-note');if(!n){n=document.createElement('div');n.className='g360-access-note';v.insertBefore(n,v.firstChild)}return n}
-  function applyViewControls(view,module){const p=perm(currentId,module),note=ensureNote(view),limitations=[];if(!p.criar)limitations.push('criar');if(!p.editar)limitations.push('editar');if(!p.aprovar)limitations.push('aprovar');if(!p.ativar)limitations.push('ativar/inativar');if(!p.excluir)limitations.push('excluir');if(!p.exportar)limitations.push('exportar');if(limitations.length){note.textContent='🔒 Acesso controlado: sem permissão para '+limitations.join(', ')+'.';note.classList.add('show')}else note.classList.remove('show');view.querySelectorAll('button,a.btn-primary,a.clear-btn').forEach(el=>{if(el.matches('[data-g360-competencia="1"],[data-g360-fechamento-action="1"]')||el.closest('.filters,.org-filters,#view-usuariosPermissoes,#g360FjCompetModal,#g360FjEditModal'))return;const a=actionFromCrudButton(el);if(a)el.classList.toggle('g360-perm-hidden',!p[a])})}
+  function applyViewControls(view,module){const p=perm(currentId,module),note=ensureNote(view);note.classList.remove('show');note.textContent='';view.querySelectorAll('button,a.btn-primary,a.clear-btn').forEach(el=>{if(el.matches('[data-g360-competencia="1"],[data-g360-fechamento-action="1"]')||el.closest('.filters,.org-filters,#view-usuariosPermissoes,#g360FjCompetModal,#g360FjEditModal'))return;const a=actionFromCrudButton(el);if(a)el.classList.toggle('g360-perm-hidden',!p[a])})}
   function applyAccess(fallback=false){document.querySelectorAll('.side-link[data-view]').forEach(link=>{const m=moduleByView(link.dataset.view);if(m)link.classList.toggle('g360-perm-hidden',!window.g360Can(m,'visualizar'))});const adv=document.getElementById('g360AdvertenciaMenu');if(adv){adv.classList.remove('g360-perm-hidden');adv.style.setProperty('display','flex','important');}const adminGroup=document.querySelector('.g360-perm-admin-group');if(adminGroup)adminGroup.style.display=window.g360Can('usuarios','visualizar')?'':'none';document.querySelectorAll('.view').forEach(v=>{const m=moduleByView(v.id.replace(/^view-/,''));if(m&&window.g360Can(m,'visualizar'))applyViewControls(v,m)});if(fallback){const m=moduleByView(currentView());if(m&&!window.g360Can(m,'visualizar'))document.querySelector('.side-link[data-view="executivo"]:not(.g360-perm-hidden)')?.click()}renderUsers();renderMatrix()}
   async function adminApi(method,body){const {data:{session}}=await sb.auth.getSession();if(!session)throw new Error('Sessão expirada');const r=await fetch('/api/admin-users',{method,headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:body?JSON.stringify(body):undefined});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||data.msg||data.message||'Falha na administração de usuários');return data}
   async function ensureFirstMaster(session){
@@ -12315,6 +12321,45 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
     <div id="g360Fj57Body"></div>
   </div>
 </div>
+<script id="g360-obra-resolver-v161">
+(function(){
+'use strict';
+window.g360ResolveActiveObraId=async function(){
+  if(window.G360_ACTIVE_OBRA_ID)return window.G360_ACTIVE_OBRA_ID;
+  const sb=window.g360SupabaseClient;
+  if(!sb)throw new Error('Supabase não está conectado.');
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session?.user?.id)throw new Error('Sessão não encontrada.');
+  const uid=session.user.id;
+  let obraId=null;
+  try{
+    const p=await sb.from('profiles').select('obra_id').eq('id',uid).maybeSingle();
+    if(!p.error&&p.data?.obra_id)obraId=p.data.obra_id;
+  }catch(_){}
+  if(!obraId){
+    try{
+      const u=await sb.from('usuario_obras').select('obra_id').eq('usuario_id',uid).limit(1);
+      if(!u.error&&u.data?.[0]?.obra_id)obraId=u.data[0].obra_id;
+    }catch(_){}
+  }
+  if(!obraId){
+    const cod=localStorage.getItem('g360_obra_ativa')||window.GESTAO360_CONFIG?.OBRA_CODIGO||'202';
+    try{
+      const o=await sb.from('obras').select('id,codigo,nome').eq('codigo',String(cod)).limit(1).maybeSingle();
+      if(!o.error&&o.data?.id){
+        obraId=o.data.id;
+        window.GESTAO360_CONFIG=window.GESTAO360_CONFIG||{};
+        window.GESTAO360_CONFIG.OBRA_CODIGO=String(o.data.codigo||cod);
+        if(o.data.nome)window.GESTAO360_CONFIG.OBRA_NOME=o.data.nome;
+      }
+    }catch(_){}
+  }
+  if(!obraId)throw new Error('Nenhuma obra vinculada a este usuário.');
+  window.G360_ACTIVE_OBRA_ID=obraId;
+  return obraId;
+};
+})();
+</script>
 <script id="g360-fechamento-v57">
 (function(){
 'use strict';
@@ -12347,12 +12392,11 @@ function canDelete(){
 async function getObraId(){
   if(state.obraId)return state.obraId;
   if(window.G360_ACTIVE_OBRA_ID){state.obraId=window.G360_ACTIVE_OBRA_ID;return state.obraId}
-  const client=sb();if(!client)throw new Error('Supabase não está conectado.');
-  const cod=localStorage.getItem('g360_obra_ativa')||window.GESTAO360_CONFIG?.OBRA_CODIGO||'202';
-  const q=await client.from('obras').select('id').eq('codigo',String(cod)).limit(1).maybeSingle();
-  if(q.error)throw q.error;
-  if(!q.data?.id)throw new Error('Obra ativa '+String(cod)+' não encontrada ou sem acesso.');
-  state.obraId=q.data.id;return state.obraId;
+  if(typeof window.g360ResolveActiveObraId==='function'){
+    state.obraId=await window.g360ResolveActiveObraId();
+    return state.obraId;
+  }
+  throw new Error('Nenhuma obra vinculada a este usuário.');
 }
 async function fetchRows(period){
   const client=sb(),oid=await getObraId(),comp=periodToDate(period);
@@ -14441,6 +14485,7 @@ window.g360BackupV135={generate,history,authMaster};
 })();
 </script>
 
+<!-- GESTAO360 V161: remove aviso acesso controlado + resolve obra do usuario por profile/usuario_obras -->
 </body>
 </html>
 
