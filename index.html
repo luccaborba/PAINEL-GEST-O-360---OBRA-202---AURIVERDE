@@ -1111,6 +1111,7 @@ html.g360-ui-ready .content-col {
 
 </head>
 <body>
+<!-- V153: lista de usuários nunca some se usuario_obras falhar; fallback seguro + sync não destrutivo -->
 <!-- V152: seleção multiobra visível por checkboxes; sem select/dropdown de obra única -->
 <!-- V151: perfil define ações; obras definem escopo. ENGENHEIROS pode ser multiobra sem perfil adicional -->
 <!-- V150: usuários vinculados a múltiplas obras por caixa de seleção -->
@@ -11398,7 +11399,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
   ];
   const ACTIONS=['visualizar','criar','editar','aprovar','ativar','excluir','exportar'];
   const sb=window.g360SupabaseClient, PROD=window.g360PreviewMode===false && !!sb;
-  let users=[],perms={},currentId=null,editingId=null,obras=[],userObras={};
+  let users=[],perms={},currentId=null,editingId=null,obras=[],userObras={},multiObrasDisponivel=true;
   const blankPerm=(v=false)=>Object.fromEntries(ACTIONS.map(a=>[a,v]));
   const allPerm=()=>blankPerm(true);
 
@@ -11502,15 +11503,23 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
     if(pr.error)throw pr.error;
     if(up.error)throw up.error;
     if(ob.error)throw ob.error;
-    if(uo.error)throw new Error('Execute o SQL V150 de múltiplas obras antes de usar esta versão: '+uo.error.message);
 
     obras=ob.data||[];
     userObras={};
-    (uo.data||[]).forEach(r=>{
-      const uid=String(r.usuario_id);
-      userObras[uid]=userObras[uid]||[];
-      if(r.obra_id)userObras[uid].push(String(r.obra_id));
-    });
+
+    // V153: a tabela multiobra é complementar.
+    // Se ela ainda não existir / estiver bloqueada por RLS, NÃO deixa a tela de usuários vazia.
+    if(uo.error){
+      multiObrasDisponivel=false;
+      console.warn('[G360 V153] usuario_obras indisponível; usando profiles.obra_id como fallback:',uo.error.message||uo.error);
+    }else{
+      multiObrasDisponivel=true;
+      (uo.data||[]).forEach(r=>{
+        const uid=String(r.usuario_id);
+        userObras[uid]=userObras[uid]||[];
+        if(r.obra_id)userObras[uid].push(String(r.obra_id));
+      });
+    }
 
     users=(pr.data||[]).map(x=>{
       const ids=(userObras[String(x.id)]||[]).length
@@ -11535,6 +11544,11 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
 
     editingId=editingId&&user(editingId)?editingId:currentId;
     applyAccess(false);
+
+    if(!multiObrasDisponivel){
+      const msg=document.getElementById('g360PermMsg');
+      if(msg)msg.textContent='Usuários carregados normalmente. A função de múltiplas obras aguarda o SQL V150 no Supabase.';
+    }
   }
   function renderUsers(){const body=document.getElementById('g360UsersBody');if(!body)return;if(!users.length){body.innerHTML='<tr><td colspan="6"><div class="empty-state">Nenhum usuário cadastrado.</div></td></tr>';return}body.innerHTML=users.map(u=>`<tr><td><b>${u.nome||u.email||'Usuário'}</b><br><span style="font-size:11px;color:var(--ink-dim)">${u.email||''}</span></td><td>${u.perfil||'USUARIO'}${u.master?' <span class="g360-perm-badge master">MESTRE</span>':''}</td><td>${u.obraNome||'Sem obra definida'}</td><td><span class="g360-perm-badge ${u.ativo?'ok':'off'}">${u.ativo?'ATIVO':'INATIVO'}</span></td><td>${u.ativo?(u.master?'Total (Master)':(PERFIS_NATIVOS.has(normPerfil(u.perfil))?'Nativo — '+normPerfil(u.perfil):'Legado / Personalizado')):'Bloqueado'}</td><td class="crud-row-actions"><button type="button" class="crud-mini" data-perm-edit="${u.id}">✏️ Permissões</button><button type="button" class="crud-mini" data-user-edit="${u.id}">👤 Editar</button><button type="button" class="crud-mini" data-user-clone="${u.id}">📋 Duplicar acesso</button><button type="button" class="crud-mini danger" data-user-force-login="${u.id}">⛔ Forçar login</button>${u.master?'':`<button type="button" class="crud-mini toggle" data-user-toggle="${u.id}">${u.ativo?'⏸ Inativar':'▶ Ativar'}</button>`}${u.id===currentId?'':`<button type="button" class="crud-mini danger" data-user-delete="${u.id}">🗑 Excluir</button>`}</td></tr>`).join('');body.querySelectorAll('[data-perm-edit]').forEach(b=>b.onclick=()=>{editingId=b.dataset.permEdit;renderMatrix();document.getElementById('g360PermMatrixTitle')?.scrollIntoView({behavior:'smooth',block:'center'})});body.querySelectorAll('[data-user-edit]').forEach(b=>b.onclick=()=>openUser(b.dataset.userEdit));body.querySelectorAll('[data-user-clone]').forEach(b=>b.onclick=()=>openClone(b.dataset.userClone));body.querySelectorAll('[data-user-force-login]').forEach(b=>b.onclick=()=>window.g360SessionControlV148?.forceUser?.(b.dataset.userForceLogin));body.querySelectorAll('[data-user-toggle]').forEach(b=>b.onclick=()=>toggleUser(b.dataset.userToggle));body.querySelectorAll('[data-user-delete]').forEach(b=>b.onclick=()=>deleteUser(b.dataset.userDelete))}
   function renderMatrix(){
@@ -11621,20 +11635,46 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
     const ids=u?.obraIds?.length ? u.obraIds : (u?.obra_id?[String(u.obra_id)]:(obras[0]?.id?[String(obras[0].id)]:[]));
     fillObrasMulti(ids);
 
+    const box=document.getElementById('g360ObrasMulti');
+    if(box){
+      box.style.opacity=multiObrasDisponivel?'1':'.65';
+      box.title=multiObrasDisponivel?'':'Execute o SQL V150 no Supabase para habilitar múltiplas obras.';
+    }
+
     modal.classList.add('open');
   }
 
   async function syncUserObras(userId,obraIds){
     const uid=String(userId||'').trim();
     const ids=[...new Set((obraIds||[]).map(String).filter(Boolean))];
+
     if(!uid)throw new Error('Usuário não identificado para vincular as obras.');
+    if(!ids.length)throw new Error('Selecione pelo menos uma obra.');
 
-    const del=await sb.from('usuario_obras').delete().eq('usuario_id',uid);
-    if(del.error)throw del.error;
+    // V153: nunca mexe nos vínculos se a estrutura multiobra não estiver disponível.
+    const probe=await sb.from('usuario_obras').select('usuario_id,obra_id').eq('usuario_id',uid).limit(1);
+    if(probe.error){
+      throw new Error('A estrutura de múltiplas obras ainda não está disponível no Supabase. Execute o SQL V150 antes de salvar este usuário. Nenhum vínculo foi alterado.');
+    }
 
-    if(ids.length){
-      const ins=await sb.from('usuario_obras').insert(ids.map(obra_id=>({usuario_id:uid,obra_id})));
-      if(ins.error)throw ins.error;
+    // Insere primeiro o novo conjunto; depois remove apenas o que deixou de ser selecionado.
+    // Assim uma falha de insert não apaga os vínculos atuais.
+    const ins=await sb.from('usuario_obras').upsert(
+      ids.map(obra_id=>({usuario_id:uid,obra_id})),
+      {onConflict:'usuario_id,obra_id'}
+    );
+    if(ins.error)throw ins.error;
+
+    const atuais=await sb.from('usuario_obras').select('obra_id').eq('usuario_id',uid);
+    if(atuais.error)throw atuais.error;
+
+    const remover=(atuais.data||[])
+      .map(r=>String(r.obra_id))
+      .filter(id=>!ids.includes(id));
+
+    for(const obraId of remover){
+      const del=await sb.from('usuario_obras').delete().eq('usuario_id',uid).eq('obra_id',obraId);
+      if(del.error)throw del.error;
     }
   }
 
