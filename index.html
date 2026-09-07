@@ -10413,8 +10413,11 @@ window.GESTAO360_CONFIG = {
     localStorage.setItem('painel202_contratos_override_ts_v2',cacheNow);
     localStorage.setItem('painel202_fechamentos_override_ts_v2',cacheNow);
     localStorage.setItem('painel202_alojamentos_override_ts_v1',cacheNow);
-    if(old!==sig){sessionStorage.setItem('g360_db_sig',sig); location.reload(); return false}
-    // Mesmo sem mudança de assinatura, recalcula os indicadores a partir do retorno vivo do banco.
+    // V162: atualização de dados ocorre em memória, sem reload da página.
+    // O reload antigo causava o efeito visual de carregar -> apagar -> carregar e podia
+    // exibir temporariamente KPIs zerados antes da segunda inicialização.
+    if(old!==sig) sessionStorage.setItem('g360_db_sig',sig);
+    // Recalcula os indicadores diretamente a partir do retorno vivo do banco.
     try{ if(typeof renderColabKpis==='function') renderColabKpis(); }catch(_){ }
     try{ if(typeof renderColabCharts==='function') await renderColabCharts(); }catch(_){ }
     try{ if(typeof renderAdmissoes==='function') renderAdmissoes(); }catch(_){ }
@@ -11221,16 +11224,29 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
   }
   g360Close.onclick=()=>g360Modal.classList.remove('open');
   function addToolbar(viewId,kind,label){const v=document.getElementById(viewId);if(!v||v.querySelector(`[data-g360="${kind}"]`))return;v.insertAdjacentHTML('afterbegin',`<div class="g360-toolbar"><button class="g360-adminbtn" data-g360="${kind}">＋ ${label}</button></div>`);v.querySelector(`[data-g360="${kind}"]`).onclick=()=>openCrud(kind)}
+  // V162: inicialização transacional. O dashboard só é revelado depois de sessão,
+  // obra e dados do Supabase estarem resolvidos. Evita KPIs zerados e dupla renderização visual.
+  function g360BootStart(){
+    if(document.getElementById('g360BootV162'))return;
+    const st=document.createElement('style');
+    st.id='g360BootV162Style';
+    st.textContent='#g360BootV162{position:fixed;inset:0;z-index:2147482500;background:#111317;display:flex;align-items:center;justify-content:center;color:#f5c518;font:800 13px Arial;letter-spacing:.4px}#g360BootV162 .b{padding:18px 22px;border:1px solid #3b3e44;border-radius:10px;background:#1c1e22;box-shadow:0 20px 60px rgba(0,0,0,.45)}';
+    document.head.appendChild(st);
+    const d=document.createElement('div');d.id='g360BootV162';d.innerHTML='<div class="b">Carregando Gestão 360º...</div>';document.body.appendChild(d);
+  }
+  function g360BootEnd(){document.getElementById('g360BootV162')?.remove();}
+  g360BootStart();
   (async()=>{
-    const {data:{session}}=await sb.auth.getSession(); if(!session){authUI();return}
+    const {data:{session}}=await sb.auth.getSession(); if(!session){g360BootEnd();authUI();return}
     // V159: convite/primeiro acesso é uma etapa isolada. Enquanto a senha ainda
     // não foi criada, não inicia o painel, não sincroniza módulos e não consulta a Obra 202.
     if(window.g360PrimeiroAcessoPendente?.()){
+      g360BootEnd();
       await firstAccessUI();
       return;
     }
     await addLogout();
-    try{const ok=await pullAll();if(!ok)return}catch(e){console.error(e);toast('Falha ao sincronizar Supabase: '+e.message)}
+    try{await pullAll()}catch(e){console.error(e);g360BootEnd();toast('Falha ao sincronizar Supabase: '+e.message);return}
     // V48: o Painel Gerencial inicia ativo. Renderiza novamente somente depois
     // que os dados vivos do Supabase chegaram e o layout já possui dimensões.
     try{
@@ -11252,6 +11268,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
         });
       }
     }catch(e){console.error('Falha ao iniciar Painel Gerencial:',e);}
+    g360BootEnd();
     addToolbar('view-contratos','contratos','Gerenciar contratos'); addToolbar('view-alojamento','alojamentos','Gerenciar alojamentos');
     bindPatrimonio(); try{await loadPatrimonio()}catch(e){console.error(e);toast('Falha ao carregar patrimônio: '+e.message)}
   })();
@@ -14519,3 +14536,5 @@ window.g360BackupV135={generate,history,authMaster};
   body.g360-mobile-open #g360MobileMenuBtn{left:calc(84vw - 58px)!important}
 }
 </style>
+
+<!-- GESTAO360 V162: boot unico sem reload + dashboard somente apos dados Supabase -->
