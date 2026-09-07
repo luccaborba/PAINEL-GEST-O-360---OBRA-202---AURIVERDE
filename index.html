@@ -1111,6 +1111,7 @@ html.g360-ui-ready .content-col {
 
 </head>
 <body>
+<!-- V152: seleção multiobra visível por checkboxes; sem select/dropdown de obra única -->
 <!-- V151: perfil define ações; obras definem escopo. ENGENHEIROS pode ser multiobra sem perfil adicional -->
 <!-- V150: usuários vinculados a múltiplas obras por caixa de seleção -->
 <!-- V149: perfis nativos ENGENHEIROS / RH / GESTOR -->
@@ -11356,15 +11357,17 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
 #g360UserModal{position:fixed;inset:0;background:#000c;z-index:100800;display:none;align-items:center;justify-content:center;padding:18px}#g360UserModal.open{display:flex}.g360-user-box{width:min(650px,100%);background:#17181b;border:1px solid #414349;border-radius:12px;color:#eee;padding:18px;box-shadow:0 25px 70px #000a}.g360-user-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.g360-user-form label{font-size:11px;color:#aaa}.g360-user-form input,.g360-user-form select{width:100%;box-sizing:border-box;margin-top:4px;background:#0e0f11;border:1px solid #3b3d42;color:#eee;border-radius:6px;padding:9px}.g360-user-form .full{grid-column:1/-1}.g360-user-foot{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
 @media(max-width:760px){.g360-user-form{grid-template-columns:1fr}.g360-user-form .full{grid-column:1}.g360-user-sim{margin:6px 0 0}}
 
-.g360-obras-multi{position:relative;width:100%;margin-top:4px}
-.g360-obras-multi-btn{width:100%;text-align:left;background:#0e0f11;border:1px solid #3b3d42;color:#eee;border-radius:6px;padding:10px 12px;cursor:pointer}
-.g360-obras-multi-btn:after{content:'▾';float:right;color:#aaa}
-.g360-obras-multi-panel{display:none;position:absolute;z-index:100900;left:0;right:0;top:calc(100% + 4px);max-height:240px;overflow:auto;background:#111316;border:1px solid #414349;border-radius:8px;padding:8px;box-shadow:0 18px 45px #000a}
-.g360-obras-multi.open .g360-obras-multi-panel{display:block}
-.g360-obras-multi-option{display:flex!important;align-items:center;gap:8px;padding:8px 7px;border-radius:6px;color:#ddd!important;font-size:12px!important;cursor:pointer}
-.g360-obras-multi-option:hover{background:#202226}
-.g360-obras-multi-option input{width:auto!important;margin:0!important}
+
+.g360-obras-checkbox-box{width:100%;margin-top:5px;border:1px solid #3b3d42;background:#0e0f11;border-radius:8px;overflow:hidden}
+.g360-obras-checkbox-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border-bottom:1px solid #34363b;color:#ddd;font-size:11px;font-weight:700}
+.g360-obras-checkbox-head>div{display:flex;gap:6px;flex-wrap:wrap}
+.g360-obras-multi-panel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px;padding:7px;max-height:260px;overflow:auto;background:#111316}
+.g360-obras-multi-option{display:flex!important;align-items:center;gap:8px;padding:8px;border-radius:6px;color:#ddd!important;font-size:11px!important;cursor:pointer;border:1px solid transparent}
+.g360-obras-multi-option:hover{background:#202226;border-color:#34363b}
+.g360-obras-multi-option input{width:auto!important;min-width:16px;height:16px;margin:0!important}
+.g360-obras-selected-count{padding:8px 10px;border-top:1px solid #34363b;color:#f5c518;font-size:10.5px;font-weight:800}
 .g360-obras-multi-help{display:block;margin-top:6px;font-size:10.5px;color:#8e939b;line-height:1.4}
+@media(max-width:650px){.g360-obras-multi-panel{grid-template-columns:1fr}}
 #g360CloneModal{position:fixed;inset:0;background:#000c;z-index:100850;display:none;align-items:center;justify-content:center;padding:18px}#g360CloneModal.open{display:flex}.g360-clone-box{width:min(620px,100%);background:#17181b;border:1px solid #414349;border-radius:12px;color:#eee;padding:18px;box-shadow:0 25px 70px #000a}.g360-clone-form{display:grid;grid-template-columns:1fr;gap:12px}.g360-clone-form label{font-size:11px;color:#aaa}.g360-clone-form select{width:100%;box-sizing:border-box;margin-top:4px;background:#0e0f11;border:1px solid #3b3d42;color:#eee;border-radius:6px;padding:9px}.g360-clone-checks{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px;border:1px solid var(--line);border-radius:8px;background:#111316}.g360-clone-checks label{display:flex;gap:8px;align-items:center;color:#ddd}.g360-clone-note{font-size:11px;line-height:1.45;color:var(--ink-soft);padding:9px 10px;border-left:3px solid #f5c518;background:#24220f}.g360-clone-foot{display:flex;justify-content:flex-end;gap:8px}@media(max-width:620px){.g360-clone-checks{grid-template-columns:1fr}}
 </style>
 <div id="g360UserModal" aria-hidden="true"><div class="g360-user-box"><div class="crud-pro-head"><h2 id="g360UserModalTitle">Novo usuário</h2><button type="button" class="crud-mini" id="g360UserModalClose">✕ Fechar</button></div><form id="g360UserForm" class="g360-user-form"><input type="hidden" name="id"><label class="full">Nome<input name="nome" required></label><label class="full">E-mail<input name="email" type="email" required></label><label>Perfil
@@ -11374,11 +11377,18 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
     <option value="GESTOR">GESTOR — acesso operacional completo</option>
   </select>
 </label><label class="full">Obras permitidas
-  <div id="g360ObrasMulti" class="g360-obras-multi">
-    <button type="button" class="g360-obras-multi-btn" id="g360ObrasMultiBtn">Selecione uma ou mais obras</button>
+  <div id="g360ObrasMulti" class="g360-obras-checkbox-box">
+    <div class="g360-obras-checkbox-head">
+      <span>Marque uma ou mais obras</span>
+      <div>
+        <button type="button" class="crud-mini" id="g360ObrasMarcarTodas">Marcar todas</button>
+        <button type="button" class="crud-mini" id="g360ObrasLimpar">Limpar</button>
+      </div>
+    </div>
     <div class="g360-obras-multi-panel" id="g360ObrasMultiPanel"></div>
+    <div class="g360-obras-selected-count" id="g360ObrasSelectedCount">0 obras selecionadas</div>
   </div>
-  <span class="g360-obras-multi-help">O perfil define o que o usuário pode fazer; as obras definem onde ele pode acessar. Um usuário ENGENHEIROS pode visualizar várias obras sem ganhar permissão de edição. A primeira obra selecionada é mantida apenas como principal para compatibilidade.</span>
+  <span class="g360-obras-multi-help">O perfil define o que o usuário pode fazer; as obras definem onde ele pode acessar. ENGENHEIROS continua somente consulta, mesmo com várias obras vinculadas.</span>
 </label><label>Status<select name="ativo"><option value="true">ATIVO</option><option value="false">INATIVO</option></select></label><div class="g360-user-foot"><button type="button" class="clear-btn" id="g360UserCancel">Cancelar</button><button type="submit" class="crud-primary">💾 Salvar usuário</button></div></form></div></div>
 <div id="g360CloneModal" aria-hidden="true"><div class="g360-clone-box"><div class="crud-pro-head"><h2>Duplicar acesso</h2><button type="button" class="crud-mini" id="g360CloneClose">✕ Fechar</button></div><form id="g360CloneForm" class="g360-clone-form"><input type="hidden" name="source_id"><div class="g360-clone-note" id="g360CloneSourceLabel">Copiar acesso de:</div><label>Usuário destino<select name="target_id" required><option value="">Selecione o usuário</option></select></label><div class="g360-clone-checks"><label><input type="checkbox" name="copy_profile" checked> Copiar perfil</label><label><input type="checkbox" name="copy_obra" checked> Copiar obra</label><label><input type="checkbox" name="copy_permissions" checked> Copiar permissões</label><label><input type="checkbox" name="replace_permissions" checked> Substituir permissões atuais</label></div><div class="g360-clone-note">Não copia nome, e-mail, senha, UUID, status ativo/inativo nem privilégio de Administrador Mestre.</div><div class="g360-clone-foot"><button type="button" class="clear-btn" id="g360CloneCancel">Cancelar</button><button type="submit" class="crud-primary">📋 Duplicar acesso</button></div></form></div></div>
 <script>
@@ -11573,16 +11583,8 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
 
   function refreshObrasMultiLabel(){
     const ids=selectedObraIds();
-    const btn=document.getElementById('g360ObrasMultiBtn');
-    if(!btn)return;
-
-    if(!ids.length){btn.textContent='Selecione uma ou mais obras';return}
-    const labels=ids.map(id=>{
-      const o=obras.find(x=>String(x.id)===String(id));
-      return o?`${o.codigo} - ${o.nome}`:'';
-    }).filter(Boolean);
-
-    btn.textContent=labels.length<=2 ? labels.join(' • ') : `${labels.length} obras selecionadas`;
+    const count=document.getElementById('g360ObrasSelectedCount');
+    if(count)count.textContent=`${ids.length} obra${ids.length===1?'':'s'} selecionada${ids.length===1?'':'s'}`;
   }
 
   function fillObrasMulti(selected=[]){
@@ -11619,7 +11621,6 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
     const ids=u?.obraIds?.length ? u.obraIds : (u?.obra_id?[String(u.obra_id)]:(obras[0]?.id?[String(obras[0].id)]:[]));
     fillObrasMulti(ids);
 
-    document.getElementById('g360ObrasMulti')?.classList.remove('open');
     modal.classList.add('open');
   }
 
@@ -11690,13 +11691,13 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
 
   async function toggleUser(id){const u=user(id);if(!u||u.master)return;try{await adminApi('PATCH',{user_id:id,ativo:!u.ativo});toastPerm(u.ativo?'Usuário inativado.':'Usuário ativado.');await loadAll()}catch(err){toastPerm(err.message)}}
   async function deleteUser(id){const u=user(id);if(!u||id===currentId)return;if(!confirm(`Excluir definitivamente o usuário ${u.nome||u.email}?\n\nA conta de login, perfil e permissões serão removidos.`))return;try{await adminApi('DELETE',{user_id:id});toastPerm('Usuário excluído definitivamente.');if(editingId===id)editingId=currentId;await loadAll()}catch(err){toastPerm(err.message)}}
-  document.getElementById('g360ObrasMultiBtn')?.addEventListener('click',(e)=>{
-    e.stopPropagation();
-    document.getElementById('g360ObrasMulti')?.classList.toggle('open');
+  document.getElementById('g360ObrasMarcarTodas')?.addEventListener('click',()=>{
+    document.querySelectorAll('#g360ObrasMultiPanel input[type="checkbox"]').forEach(c=>c.checked=true);
+    refreshObrasMultiLabel();
   });
-  document.addEventListener('click',(e)=>{
-    const box=document.getElementById('g360ObrasMulti');
-    if(box && !box.contains(e.target))box.classList.remove('open');
+  document.getElementById('g360ObrasLimpar')?.addEventListener('click',()=>{
+    document.querySelectorAll('#g360ObrasMultiPanel input[type="checkbox"]').forEach(c=>c.checked=false);
+    refreshObrasMultiLabel();
   });
 
   document.getElementById('g360PermSave')?.addEventListener('click',saveMatrix);document.getElementById('g360PermAll')?.addEventListener('click',()=>setMatrix('all'));document.getElementById('g360PermReadOnly')?.addEventListener('click',()=>setMatrix('read'));document.getElementById('g360NewUserBtn')?.addEventListener('click',()=>openUser());document.getElementById('g360UserModalClose')?.addEventListener('click',closeUser);document.getElementById('g360UserCancel')?.addEventListener('click',closeUser);modal?.addEventListener('click',e=>{if(e.target===modal)closeUser()});uf?.addEventListener('submit',saveUser);document.getElementById('g360CloneClose')?.addEventListener('click',closeClone);document.getElementById('g360CloneCancel')?.addEventListener('click',closeClone);cloneModal?.addEventListener('click',e=>{if(e.target===cloneModal)closeClone()});cloneForm?.addEventListener('submit',duplicateAccess);
