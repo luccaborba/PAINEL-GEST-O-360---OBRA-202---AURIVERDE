@@ -10431,7 +10431,7 @@ window.GESTAO360_CONFIG = {
   window.g360PullAll = pullAll;
   function authUI(){
     if(document.getElementById('g360Auth')) return;
-    document.body.insertAdjacentHTML('beforeend', `<div id="g360Auth"><div class="box"><h1>CONSTRU-X</h1><p style="margin-top:-2px;color:#f5c518;font-weight:800">GESTÃO INTELIGENTE 360º</p><p>Entre com seu usuário cadastrado.</p><input class="g360-input" id="g360Email" type="email" placeholder="E-mail"><input class="g360-input" id="g360Pass" type="password" placeholder="Senha"><button class="g360-btn" id="g360Login" style="width:100%;margin-top:8px">Entrar</button><button class="g360-auth-link" id="g360Forgot" type="button">Esqueci minha senha</button><p id="g360AuthMsg"></p><div style="margin-top:18px;padding-top:12px;border-top:1px solid #34363b;font-size:10.5px;color:#888;line-height:1.5">Idealização e Desenvolvimento<br><b style="color:#bbb">Luciano Garcia Borba</b><br>© 2026 · Todos os direitos reservados</div></div></div>`);
+    document.body.insertAdjacentHTML('beforeend', `<div id="g360Auth"><div class="box"><h1>CONSTRU-X</h1><p style="margin-top:-2px;color:#f5c518;font-weight:800">GESTÃO INTELIGENTE 360º</p><p>Entre com seu usuário cadastrado.</p><form id="g360LoginForm" autocomplete="on"><input class="g360-input" id="g360Email" name="email" type="email" placeholder="E-mail" autocomplete="username"><input class="g360-input" id="g360Pass" name="password" type="password" placeholder="Senha" autocomplete="current-password"><button class="g360-btn" id="g360Login" type="submit" style="width:100%;margin-top:8px">Entrar</button></form><button class="g360-auth-link" id="g360Forgot" type="button">Esqueci minha senha</button><p id="g360AuthMsg"></p><div style="margin-top:18px;padding-top:12px;border-top:1px solid #34363b;font-size:10.5px;color:#888;line-height:1.5">Idealização e Desenvolvimento<br><b style="color:#bbb">Luciano Garcia Borba</b><br>© 2026 · Todos os direitos reservados</div></div></div>`);
     const g360DoLogin=async()=>{
       const email=g360Email.value.trim(),password=g360Pass.value;
       const loginBtn=document.getElementById('g360Login');
@@ -10460,11 +10460,10 @@ window.GESTAO360_CONFIG = {
       window.g360ForceDashboardAfterLogin=true;
       location.reload();
     };
-    document.getElementById('g360Login').onclick=g360DoLogin;
-    ['g360Email','g360Pass'].forEach(id=>{
-      document.getElementById(id)?.addEventListener('keydown',e=>{
-        if(e.key==='Enter'){e.preventDefault();g360DoLogin()}
-      });
+    const g360LoginForm=document.getElementById('g360LoginForm');
+    g360LoginForm?.addEventListener('submit',e=>{
+      e.preventDefault();
+      g360DoLogin();
     });
     document.getElementById('g360Forgot').onclick=async()=>{const email=g360Email.value.trim();if(!email){g360AuthMsg.textContent='Informe seu e-mail para receber o link de redefinição.';return}g360AuthMsg.textContent='Enviando link...';const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});g360AuthMsg.textContent=error?error.message:'Link de redefinição enviado para o e-mail.'};
   }
@@ -11499,7 +11498,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
     <div class="g360-obras-selected-count" id="g360ObrasSelectedCount">0 obras selecionadas</div>
   </div>
   <span class="g360-obras-multi-help">O perfil define o que o usuário pode fazer; as obras definem onde ele pode acessar. ENGENHEIROS continua somente consulta, mesmo com várias obras vinculadas.</span>
-</label><label>Status<select name="ativo"><option value="true">ATIVO</option><option value="false">INATIVO</option></select></label><div class="g360-user-foot"><button type="button" class="clear-btn" id="g360UserCancel">Cancelar</button><button type="submit" class="crud-primary">💾 Salvar usuário</button></div></form></div></div>
+</label><label>Status<select name="ativo"><option value="true">ATIVO</option><option value="false">INATIVO</option></select></label><div class="g360-user-foot"><button type="button" class="clear-btn" id="g360UserCancel">Cancelar</button><button type="submit" class="crud-primary" id="g360UserSave">💾 Salvar usuário</button></div></form></div></div>
 <div id="g360CloneModal" aria-hidden="true"><div class="g360-clone-box"><div class="crud-pro-head"><h2>Duplicar acesso</h2><button type="button" class="crud-mini" id="g360CloneClose">✕ Fechar</button></div><form id="g360CloneForm" class="g360-clone-form"><input type="hidden" name="source_id"><div class="g360-clone-note" id="g360CloneSourceLabel">Copiar acesso de:</div><label>Usuário destino<select name="target_id" required><option value="">Selecione o usuário</option></select></label><div class="g360-clone-checks"><label><input type="checkbox" name="copy_profile" checked> Copiar perfil</label><label><input type="checkbox" name="copy_obra" checked> Copiar obra</label><label><input type="checkbox" name="copy_permissions" checked> Copiar permissões</label><label><input type="checkbox" name="replace_permissions" checked> Substituir permissões atuais</label></div><div class="g360-clone-note">Não copia nome, e-mail, senha, UUID, status ativo/inativo nem privilégio de Administrador Mestre.</div><div class="g360-clone-foot"><button type="button" class="clear-btn" id="g360CloneCancel">Cancelar</button><button type="submit" class="crud-primary">📋 Duplicar acesso</button></div></form></div></div>
 <script>
 (function(){
@@ -11732,6 +11731,10 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
     const u=id?user(id):null;
     document.getElementById('g360UserModalTitle').textContent=u?'Editar usuário':'Novo usuário';
 
+    const saveStatus=document.getElementById('g360UserSaveStatus');
+    if(saveStatus){saveStatus.textContent='';saveStatus.style.color='#f5c518'}
+    const saveBtn=document.getElementById('g360UserSave');
+    if(saveBtn){saveBtn.disabled=false;saveBtn.innerHTML='💾 Salvar usuário';saveBtn.style.cursor='';saveBtn.style.opacity=''}
     uf.elements.id.value=u?.id||'';
     uf.elements.nome.value=u?.nome||'';
     uf.elements.email.value=u?.email||'';
@@ -11797,16 +11800,30 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
   async function duplicateAccess(e){e.preventDefault();const sourceId=String(cloneForm.elements.source_id.value||''),targetId=String(cloneForm.elements.target_id.value||'');if(!sourceId||!targetId)return toastPerm('Selecione o usuário destino.');const src=user(sourceId),dst=user(targetId);if(!confirm(`Duplicar acesso de ${src?.nome||src?.email} para ${dst?.nome||dst?.email}?`))return;try{await adminApi('PATCH',{action:'duplicate_access',source_user_id:sourceId,target_user_id:targetId,copy_profile:cloneForm.elements.copy_profile.checked,copy_obra:cloneForm.elements.copy_obra.checked,copy_permissions:cloneForm.elements.copy_permissions.checked,replace_permissions:cloneForm.elements.replace_permissions.checked});closeClone();toastPerm('Acesso duplicado com sucesso.');await loadAll()}catch(err){toastPerm(err.message||'Falha ao duplicar acesso.')}}
   async function saveUser(e){
     e.preventDefault();
-    const submitBtn=uf?.querySelector('button[type="submit"]');
+    const submitBtn=document.getElementById('g360UserSave')||uf?.querySelector('button[type="submit"]');
     if(submitBtn?.disabled)return;
     const originalBtnText=submitBtn?.innerHTML||'💾 Salvar usuário';
+
+    let status=document.getElementById('g360UserSaveStatus');
+    if(!status && submitBtn?.parentElement){
+      status=document.createElement('div');
+      status.id='g360UserSaveStatus';
+      status.style.cssText='width:100%;text-align:right;margin-top:8px;font-size:12px;font-weight:700;color:#f5c518';
+      submitBtn.parentElement.appendChild(status);
+    }
+
     if(submitBtn){
       submitBtn.disabled=true;
       submitBtn.setAttribute('aria-busy','true');
-      submitBtn.innerHTML='⏳ Salvando...';
+      submitBtn.innerHTML='⏳ SALVANDO...';
       submitBtn.style.cursor='wait';
-      submitBtn.style.opacity='.78';
+      submitBtn.style.opacity='.72';
     }
+    if(status)status.textContent='Aguarde: criando usuário e vinculando as obras...';
+
+    // Garante que o navegador pinte o estado "SALVANDO" antes de iniciar as chamadas de rede.
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+
     try{
       const id=String(uf.elements.id.value||'').trim();
       const obraIds=selectedObraIds();
@@ -11845,11 +11862,15 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
         ? `Usuário atualizado com ${obraIds.length} obra(s).`
         : `Usuário criado com ${obraIds.length} obra(s). Convite enviado para definir a senha.`);
 
-      if(submitBtn)submitBtn.innerHTML='✓ Salvo';
+      if(submitBtn)submitBtn.innerHTML='✓ SALVO';
+      if(status){status.style.color='#22c55e';status.textContent=id?'Usuário atualizado com sucesso.':'Usuário criado. Convite enviado com sucesso.'}
+      await new Promise(resolve=>setTimeout(resolve,500));
       closeUser();
       await loadAll();
     }catch(err){
-      toastPerm(err.message||'Falha ao salvar usuário.');
+      const msg=err.message||'Falha ao salvar usuário.';
+      if(status){status.style.color='#ef4444';status.textContent='Erro: '+msg}
+      toastPerm(msg);
     }finally{
       if(submitBtn){
         submitBtn.disabled=false;
