@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- V157: corrige contratosBase e listener legado do fechamento -->
+<!-- V158: remove contratosBase quebrado e protege listeners legados do fechamento -->
 <html lang="pt-BR">
 <head>
 <script>(function(){try{const v='2026-09-01-fechamento-v49-planilha-supabase';if(localStorage.getItem('g360_base_version')!==v){localStorage.removeItem('painel202_fechamentos_multi_override_v4');localStorage.removeItem('painel202_fechamentos_override_ts_v2');localStorage.removeItem('g360_medicoes_sienge_preview_v1');localStorage.setItem('g360_base_version',v)}}catch(e){}})();</script>
@@ -3250,7 +3250,13 @@ function renderOverviewFechamento40(){
   // Só contratos operacionais ativos podem gerar alerta de falta de fechamento.
   // RESCINDIDO/CANCELADO/CONCLUÍDO/INATIVO permanecem no histórico da Base de Contratos,
   // mas não aparecem como pendência operacional.
-  const situacaoPorContrato = new Map((contratosBase() || []).map(c=>[
+  let contratosPainelGerencial=[];
+  try{
+    const rawContratos=localStorage.getItem('painel202_contratos_override_v2');
+    const parsedContratos=rawContratos?JSON.parse(rawContratos):[];
+    contratosPainelGerencial=Array.isArray(parsedContratos)?parsedContratos:[];
+  }catch(_){ contratosPainelGerencial=[]; }
+  const situacaoPorContrato = new Map(contratosPainelGerencial.map(c=>[
     String(c.contrato || '').trim().toUpperCase(),
     String(c.situacao || c.status || '').trim().toUpperCase()
   ]));
@@ -3278,18 +3284,6 @@ function renderOverviewFechamento40(){
 // ---------------------------------------------------------------
 // PÁGINA — PAINEL GERENCIAL
 // ---------------------------------------------------------------
-function contratosBase(){
-  try{
-    const raw=localStorage.getItem('painel202_contratos_override_v2');
-    if(raw){
-      const arr=JSON.parse(raw);
-      if(Array.isArray(arr)) return arr;
-    }
-    const el=document.getElementById('seedContratosData');
-    const arr=el?JSON.parse(el.textContent||'[]'):[];
-    return Array.isArray(arr)?arr:[];
-  }catch(_){ return []; }
-}
 function renderOverviewFechamento(){
   const sel = document.getElementById('overviewFechPeriodo');
   const kpis = document.getElementById('overviewFechKpis');
@@ -7936,18 +7930,22 @@ function closeFjEdit(){ const m=document.getElementById('g360FjEditModal'); m?.c
 window.openFjEdit=openFjEdit;
 window.closeFjEdit=closeFjEdit;
 function renderFechamentoJulho(){
-  document.getElementById('fjPeriodoLabel1').textContent = fjState.periodo.split('/')[0].charAt(0)+fjState.periodo.split('/')[0].slice(1).toLowerCase()+'/'+fjState.periodo.split('/')[1];
-  document.getElementById('fjPeriodoLabel2').textContent = fjState.periodo;
-  document.getElementById('fjMedidoColLabel').textContent = 'Medido '+fjState.periodo;
+  const fjPeriodoLabel1=document.getElementById('fjPeriodoLabel1');
+  const fjPeriodoLabel2=document.getElementById('fjPeriodoLabel2');
+  const fjMedidoColLabel=document.getElementById('fjMedidoColLabel');
+  if(fjPeriodoLabel1) fjPeriodoLabel1.textContent = fjState.periodo.split('/')[0].charAt(0)+fjState.periodo.split('/')[0].slice(1).toLowerCase()+'/'+fjState.periodo.split('/')[1];
+  if(fjPeriodoLabel2) fjPeriodoLabel2.textContent = fjState.periodo;
+  if(fjMedidoColLabel) fjMedidoColLabel.textContent = 'Medido '+fjState.periodo;
   const filtered = getFjFiltered();
   const sorted = getFjSorted(filtered);
   renderFjKpis(filtered);
   renderFjTable(sorted);
 }
-document.getElementById('fjSearchInput').addEventListener('input', e=>{ fjState.search = fjNorm(e.target.value); renderFechamentoJulho(); });
+document.getElementById('fjSearchInput')?.addEventListener('input', e=>{ fjState.search = fjNorm(e.target.value); renderFechamentoJulho(); });
 document.getElementById('fjStatusSelect')?.addEventListener('change', e=>{ fjState.status = e.target.value; renderFechamentoJulho(); });
 (function(){
   const sel = document.getElementById('fjPeriodoSelect');
+  if(!sel) return;
   sel.innerHTML = FECHAMENTOS_PERIODOS.map(p=>`<option value="${p}" ${p===fjState.periodo?'selected':''}>${p.split('/')[0].charAt(0)+p.split('/')[0].slice(1).toLowerCase()}/${p.split('/')[1]}</option>`).join('');
   sel.addEventListener('change', e=>{
     fjState.periodo = e.target.value;
