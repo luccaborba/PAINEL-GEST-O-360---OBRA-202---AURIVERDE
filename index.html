@@ -1111,6 +1111,8 @@ html.g360-ui-ready .content-col {
 
 </head>
 <body>
+<!-- V151: perfil define ações; obras definem escopo. ENGENHEIROS pode ser multiobra sem perfil adicional -->
+<!-- V150: usuários vinculados a múltiplas obras por caixa de seleção -->
 <!-- V149: perfis nativos ENGENHEIROS / RH / GESTOR -->
 <!-- V148: sessão expira por última atividade persistente + login sempre inicia no Dashboard Gerencial -->
 <!-- V146: CRUD colaboradores resolve por UUID Supabase; corrige desligamento sem matrícula -->
@@ -2752,7 +2754,7 @@ html.g360-ui-ready .content-col {
           </div>
           <div class="table-scroll">
             <table class="g360-perm-users-table">
-              <thead><tr><th>Usuário</th><th>Perfil</th><th>Obra</th><th>Status</th><th>Acesso</th><th>Ações</th></tr></thead>
+              <thead><tr><th>Usuário</th><th>Perfil</th><th>Obras</th><th>Status</th><th>Acesso</th><th>Ações</th></tr></thead>
               <tbody id="g360UsersBody"></tbody>
             </table>
           </div>
@@ -2763,7 +2765,7 @@ html.g360-ui-ready .content-col {
             <div class="g360-perm-help">O perfil escolhido já determina automaticamente as permissões do usuário.</div>
           </div></div>
           <div class="kpis" style="margin-top:12px">
-            <div class="kpi"><div class="kpi-label">ENGENHEIROS</div><div class="kpi-value" style="font-size:18px">CONSULTA</div><div class="kpi-sub">Visualiza e exporta. Não altera dados.</div></div>
+            <div class="kpi"><div class="kpi-label">ENGENHEIROS</div><div class="kpi-value" style="font-size:18px">CONSULTA</div><div class="kpi-sub">Visualiza e exporta nas obras vinculadas. Pode ter uma ou várias obras, sem alterar dados.</div></div>
             <div class="kpi"><div class="kpi-label">RH</div><div class="kpi-value" style="font-size:18px">RH / DP</div><div class="kpi-sub">Acesso completo somente aos módulos de RH.</div></div>
             <div class="kpi"><div class="kpi-label">GESTOR</div><div class="kpi-value" style="font-size:18px">TOTAL</div><div class="kpi-sub">Acesso operacional completo. Funções Master permanecem exclusivas.</div></div>
           </div>
@@ -10627,10 +10629,11 @@ window.GESTAO360_CONFIG = {
       const auth=await sb.auth.getUser();
       const uid=auth?.data?.user?.id||null;
       if(!uid){g360Content.innerHTML='<div class="crud-pro-note"><b>Usuário não identificado.</b></div>';return;}
-      const [prof,allObras,up]=await Promise.all([
-        sb.from('profiles').select('id,obra_id,master,ativo').eq('id',uid).maybeSingle(),
+      const [prof,allObras,up,uo]=await Promise.all([
+        sb.from('profiles').select('id,perfil,obra_id,master,ativo').eq('id',uid).maybeSingle(),
         sb.from('obras').select('id,codigo,nome,ativa').order('codigo'),
-        sb.from('usuario_permissoes').select('obra_id,pode_visualizar,pode_criar,pode_editar').eq('usuario_id',uid).eq('modulo','colaboradores')
+        sb.from('usuario_permissoes').select('obra_id,pode_visualizar,pode_criar,pode_editar').eq('usuario_id',uid).eq('modulo','colaboradores'),
+        sb.from('usuario_obras').select('obra_id').eq('usuario_id',uid)
       ]);
       if(allObras.error){g360Content.innerHTML='<div class="crud-pro-note">'+esc(allObras.error.message)+'</div>';return;}
       const isMaster=!!prof.data?.master;
@@ -10638,10 +10641,23 @@ window.GESTAO360_CONFIG = {
       if(isMaster){
         (allObras.data||[]).filter(o=>o.ativa!==false).forEach(o=>allowedIds.add(String(o.id)));
       }else{
-        (up.data||[]).forEach(r=>{
-          const ok=edit ? (r.pode_editar||r.pode_visualizar) : (r.pode_criar||r.pode_visualizar);
-          if(ok&&r.obra_id)allowedIds.add(String(r.obra_id));
-        });
+        const perfil=String(prof.data?.perfil||'').trim().toUpperCase();
+        const native=['ENGENHEIROS','RH','GESTOR','RH / DP','RH/DP','CONSULTA'].includes(perfil);
+
+        if(native){
+          // Perfil nativo: as ações vêm do perfil e as obras vêm de usuario_obras.
+          const moduleCan=window.g360Can?.('colaboradores',edit?'editar':'criar');
+          if(moduleCan){
+            (uo.data||[]).forEach(r=>{if(r.obra_id)allowedIds.add(String(r.obra_id))});
+          }
+        }else{
+          // Compatibilidade com usuários legados.
+          (up.data||[]).forEach(r=>{
+            const ok=edit ? (r.pode_editar||r.pode_visualizar) : (r.pode_criar||r.pode_visualizar);
+            if(ok&&r.obra_id)allowedIds.add(String(r.obra_id));
+          });
+        }
+
         if(!allowedIds.size&&prof.data?.obra_id)allowedIds.add(String(prof.data.obra_id));
       }
       obrasPermitidasCadastro=(allObras.data||[]).filter(o=>allowedIds.has(String(o.id))&&o.ativa!==false);
@@ -11339,15 +11355,31 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
 .g360-perm-msg{font-size:12px;color:var(--ink-soft);margin-top:12px}.g360-access-note{display:none;margin:0 0 14px;padding:10px 12px;border:1px solid #6e6520;border-radius:7px;background:#302d13;color:#f5df78;font-size:12px}.g360-access-note.show{display:block}.g360-perm-hidden{display:none!important}.g360-perm-disabled{opacity:.5!important;pointer-events:none!important;filter:grayscale(.35)}
 #g360UserModal{position:fixed;inset:0;background:#000c;z-index:100800;display:none;align-items:center;justify-content:center;padding:18px}#g360UserModal.open{display:flex}.g360-user-box{width:min(650px,100%);background:#17181b;border:1px solid #414349;border-radius:12px;color:#eee;padding:18px;box-shadow:0 25px 70px #000a}.g360-user-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.g360-user-form label{font-size:11px;color:#aaa}.g360-user-form input,.g360-user-form select{width:100%;box-sizing:border-box;margin-top:4px;background:#0e0f11;border:1px solid #3b3d42;color:#eee;border-radius:6px;padding:9px}.g360-user-form .full{grid-column:1/-1}.g360-user-foot{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
 @media(max-width:760px){.g360-user-form{grid-template-columns:1fr}.g360-user-form .full{grid-column:1}.g360-user-sim{margin:6px 0 0}}
+
+.g360-obras-multi{position:relative;width:100%;margin-top:4px}
+.g360-obras-multi-btn{width:100%;text-align:left;background:#0e0f11;border:1px solid #3b3d42;color:#eee;border-radius:6px;padding:10px 12px;cursor:pointer}
+.g360-obras-multi-btn:after{content:'▾';float:right;color:#aaa}
+.g360-obras-multi-panel{display:none;position:absolute;z-index:100900;left:0;right:0;top:calc(100% + 4px);max-height:240px;overflow:auto;background:#111316;border:1px solid #414349;border-radius:8px;padding:8px;box-shadow:0 18px 45px #000a}
+.g360-obras-multi.open .g360-obras-multi-panel{display:block}
+.g360-obras-multi-option{display:flex!important;align-items:center;gap:8px;padding:8px 7px;border-radius:6px;color:#ddd!important;font-size:12px!important;cursor:pointer}
+.g360-obras-multi-option:hover{background:#202226}
+.g360-obras-multi-option input{width:auto!important;margin:0!important}
+.g360-obras-multi-help{display:block;margin-top:6px;font-size:10.5px;color:#8e939b;line-height:1.4}
 #g360CloneModal{position:fixed;inset:0;background:#000c;z-index:100850;display:none;align-items:center;justify-content:center;padding:18px}#g360CloneModal.open{display:flex}.g360-clone-box{width:min(620px,100%);background:#17181b;border:1px solid #414349;border-radius:12px;color:#eee;padding:18px;box-shadow:0 25px 70px #000a}.g360-clone-form{display:grid;grid-template-columns:1fr;gap:12px}.g360-clone-form label{font-size:11px;color:#aaa}.g360-clone-form select{width:100%;box-sizing:border-box;margin-top:4px;background:#0e0f11;border:1px solid #3b3d42;color:#eee;border-radius:6px;padding:9px}.g360-clone-checks{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px;border:1px solid var(--line);border-radius:8px;background:#111316}.g360-clone-checks label{display:flex;gap:8px;align-items:center;color:#ddd}.g360-clone-note{font-size:11px;line-height:1.45;color:var(--ink-soft);padding:9px 10px;border-left:3px solid #f5c518;background:#24220f}.g360-clone-foot{display:flex;justify-content:flex-end;gap:8px}@media(max-width:620px){.g360-clone-checks{grid-template-columns:1fr}}
 </style>
 <div id="g360UserModal" aria-hidden="true"><div class="g360-user-box"><div class="crud-pro-head"><h2 id="g360UserModalTitle">Novo usuário</h2><button type="button" class="crud-mini" id="g360UserModalClose">✕ Fechar</button></div><form id="g360UserForm" class="g360-user-form"><input type="hidden" name="id"><label class="full">Nome<input name="nome" required></label><label class="full">E-mail<input name="email" type="email" required></label><label>Perfil
   <select name="perfil" required>
-    <option value="ENGENHEIROS">ENGENHEIROS — somente consultas</option>
+    <option value="ENGENHEIROS">ENGENHEIROS — somente consulta, inclusive multiobra</option>
     <option value="RH">RH — acesso completo ao RH/DP</option>
     <option value="GESTOR">GESTOR — acesso operacional completo</option>
   </select>
-</label><label>Obra<select name="obra"><option value="202">202 - Implantação Auriverde</option></select></label><label>Status<select name="ativo"><option value="true">ATIVO</option><option value="false">INATIVO</option></select></label><div class="g360-user-foot"><button type="button" class="clear-btn" id="g360UserCancel">Cancelar</button><button type="submit" class="crud-primary">💾 Salvar usuário</button></div></form></div></div>
+</label><label class="full">Obras permitidas
+  <div id="g360ObrasMulti" class="g360-obras-multi">
+    <button type="button" class="g360-obras-multi-btn" id="g360ObrasMultiBtn">Selecione uma ou mais obras</button>
+    <div class="g360-obras-multi-panel" id="g360ObrasMultiPanel"></div>
+  </div>
+  <span class="g360-obras-multi-help">O perfil define o que o usuário pode fazer; as obras definem onde ele pode acessar. Um usuário ENGENHEIROS pode visualizar várias obras sem ganhar permissão de edição. A primeira obra selecionada é mantida apenas como principal para compatibilidade.</span>
+</label><label>Status<select name="ativo"><option value="true">ATIVO</option><option value="false">INATIVO</option></select></label><div class="g360-user-foot"><button type="button" class="clear-btn" id="g360UserCancel">Cancelar</button><button type="submit" class="crud-primary">💾 Salvar usuário</button></div></form></div></div>
 <div id="g360CloneModal" aria-hidden="true"><div class="g360-clone-box"><div class="crud-pro-head"><h2>Duplicar acesso</h2><button type="button" class="crud-mini" id="g360CloneClose">✕ Fechar</button></div><form id="g360CloneForm" class="g360-clone-form"><input type="hidden" name="source_id"><div class="g360-clone-note" id="g360CloneSourceLabel">Copiar acesso de:</div><label>Usuário destino<select name="target_id" required><option value="">Selecione o usuário</option></select></label><div class="g360-clone-checks"><label><input type="checkbox" name="copy_profile" checked> Copiar perfil</label><label><input type="checkbox" name="copy_obra" checked> Copiar obra</label><label><input type="checkbox" name="copy_permissions" checked> Copiar permissões</label><label><input type="checkbox" name="replace_permissions" checked> Substituir permissões atuais</label></div><div class="g360-clone-note">Não copia nome, e-mail, senha, UUID, status ativo/inativo nem privilégio de Administrador Mestre.</div><div class="g360-clone-foot"><button type="button" class="clear-btn" id="g360CloneCancel">Cancelar</button><button type="submit" class="crud-primary">📋 Duplicar acesso</button></div></form></div></div>
 <script>
 (function(){
@@ -11356,7 +11388,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
   ];
   const ACTIONS=['visualizar','criar','editar','aprovar','ativar','excluir','exportar'];
   const sb=window.g360SupabaseClient, PROD=window.g360PreviewMode===false && !!sb;
-  let users=[],perms={},currentId=null,editingId=null,obras=[];
+  let users=[],perms={},currentId=null,editingId=null,obras=[],userObras={};
   const blankPerm=(v=false)=>Object.fromEntries(ACTIONS.map(a=>[a,v]));
   const allPerm=()=>blankPerm(true);
 
@@ -11442,7 +11474,58 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
       if(r.ok)sessionStorage.setItem('g360_bootstrap_checked','1');
     }catch(e){console.warn('Bootstrap admin:',e)}
   }
-  async function loadAll(){if(!PROD)return;const {data:{session}}=await sb.auth.getSession();if(!session)return;await ensureFirstMaster(session);currentId=session.user.id;const [pr,up,ob]=await Promise.all([sb.from('profiles').select('id,nome,email,perfil,obra_id,ativo,master,created_at').order('nome'),sb.from('usuario_permissoes').select('*'),sb.from('obras').select('id,codigo,nome,ativa').order('codigo')]);if(pr.error)throw pr.error;if(up.error)throw up.error;if(ob.error)throw ob.error;obras=ob.data||[];users=(pr.data||[]).map(x=>({...x,obra:x.obra_id,obraNome:(obras.find(o=>o.id===x.obra_id)?.codigo||'')+' - '+(obras.find(o=>o.id===x.obra_id)?.nome||'')}));perms={};(up.data||[]).forEach(x=>{perms[x.usuario_id]=perms[x.usuario_id]||{};perms[x.usuario_id][x.modulo]={visualizar:x.pode_visualizar,criar:x.pode_criar,editar:x.pode_editar,aprovar:x.pode_aprovar,ativar:x.pode_ativar_inativar,excluir:x.pode_excluir,exportar:x.pode_exportar}});editingId=editingId&&user(editingId)?editingId:currentId;applyAccess(false)}
+  async function loadAll(){
+    if(!PROD)return;
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session)return;
+
+    await ensureFirstMaster(session);
+    currentId=session.user.id;
+
+    const [pr,up,ob,uo]=await Promise.all([
+      sb.from('profiles').select('id,nome,email,perfil,obra_id,ativo,master,created_at').order('nome'),
+      sb.from('usuario_permissoes').select('*'),
+      sb.from('obras').select('id,codigo,nome,ativa').order('codigo'),
+      sb.from('usuario_obras').select('usuario_id,obra_id')
+    ]);
+
+    if(pr.error)throw pr.error;
+    if(up.error)throw up.error;
+    if(ob.error)throw ob.error;
+    if(uo.error)throw new Error('Execute o SQL V150 de múltiplas obras antes de usar esta versão: '+uo.error.message);
+
+    obras=ob.data||[];
+    userObras={};
+    (uo.data||[]).forEach(r=>{
+      const uid=String(r.usuario_id);
+      userObras[uid]=userObras[uid]||[];
+      if(r.obra_id)userObras[uid].push(String(r.obra_id));
+    });
+
+    users=(pr.data||[]).map(x=>{
+      const ids=(userObras[String(x.id)]||[]).length
+        ? userObras[String(x.id)]
+        : (x.obra_id?[String(x.obra_id)]:[]);
+      const names=ids.map(id=>{
+        const o=obras.find(o=>String(o.id)===String(id));
+        return o?`${o.codigo} - ${o.nome}`:'';
+      }).filter(Boolean);
+      return {...x,obra:x.obra_id,obraIds:ids,obraNome:names.join(' • ')};
+    });
+
+    perms={};
+    (up.data||[]).forEach(x=>{
+      perms[x.usuario_id]=perms[x.usuario_id]||{};
+      perms[x.usuario_id][x.modulo]={
+        visualizar:x.pode_visualizar,criar:x.pode_criar,editar:x.pode_editar,
+        aprovar:x.pode_aprovar,ativar:x.pode_ativar_inativar,
+        excluir:x.pode_excluir,exportar:x.pode_exportar
+      };
+    });
+
+    editingId=editingId&&user(editingId)?editingId:currentId;
+    applyAccess(false);
+  }
   function renderUsers(){const body=document.getElementById('g360UsersBody');if(!body)return;if(!users.length){body.innerHTML='<tr><td colspan="6"><div class="empty-state">Nenhum usuário cadastrado.</div></td></tr>';return}body.innerHTML=users.map(u=>`<tr><td><b>${u.nome||u.email||'Usuário'}</b><br><span style="font-size:11px;color:var(--ink-dim)">${u.email||''}</span></td><td>${u.perfil||'USUARIO'}${u.master?' <span class="g360-perm-badge master">MESTRE</span>':''}</td><td>${u.obraNome||'Sem obra definida'}</td><td><span class="g360-perm-badge ${u.ativo?'ok':'off'}">${u.ativo?'ATIVO':'INATIVO'}</span></td><td>${u.ativo?(u.master?'Total (Master)':(PERFIS_NATIVOS.has(normPerfil(u.perfil))?'Nativo — '+normPerfil(u.perfil):'Legado / Personalizado')):'Bloqueado'}</td><td class="crud-row-actions"><button type="button" class="crud-mini" data-perm-edit="${u.id}">✏️ Permissões</button><button type="button" class="crud-mini" data-user-edit="${u.id}">👤 Editar</button><button type="button" class="crud-mini" data-user-clone="${u.id}">📋 Duplicar acesso</button><button type="button" class="crud-mini danger" data-user-force-login="${u.id}">⛔ Forçar login</button>${u.master?'':`<button type="button" class="crud-mini toggle" data-user-toggle="${u.id}">${u.ativo?'⏸ Inativar':'▶ Ativar'}</button>`}${u.id===currentId?'':`<button type="button" class="crud-mini danger" data-user-delete="${u.id}">🗑 Excluir</button>`}</td></tr>`).join('');body.querySelectorAll('[data-perm-edit]').forEach(b=>b.onclick=()=>{editingId=b.dataset.permEdit;renderMatrix();document.getElementById('g360PermMatrixTitle')?.scrollIntoView({behavior:'smooth',block:'center'})});body.querySelectorAll('[data-user-edit]').forEach(b=>b.onclick=()=>openUser(b.dataset.userEdit));body.querySelectorAll('[data-user-clone]').forEach(b=>b.onclick=()=>openClone(b.dataset.userClone));body.querySelectorAll('[data-user-force-login]').forEach(b=>b.onclick=()=>window.g360SessionControlV148?.forceUser?.(b.dataset.userForceLogin));body.querySelectorAll('[data-user-toggle]').forEach(b=>b.onclick=()=>toggleUser(b.dataset.userToggle));body.querySelectorAll('[data-user-delete]').forEach(b=>b.onclick=()=>deleteUser(b.dataset.userDelete))}
   function renderMatrix(){
     const body=document.getElementById('g360PermMatrixBody'),ttl=document.getElementById('g360PermMatrixTitle');
@@ -11455,8 +11538,10 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
 
     const os=document.getElementById('g360PermObra');
     if(os){
-      os.innerHTML='<option value="">Selecione a obra</option>'+obras.map(o=>`<option value="${o.id}">${o.codigo} - ${o.nome}</option>`).join('');
-      os.value=u.obra_id||'';
+      const ids=u.obraIds||[];
+      const labels=ids.map(id=>{const o=obras.find(x=>String(x.id)===String(id));return o?`${o.codigo} - ${o.nome}`:''}).filter(Boolean);
+      os.innerHTML=`<option value="">${labels.length?labels.join(' • '):'Sem obra vinculada'}</option>`;
+      os.value='';
       os.disabled=true;
     }
 
@@ -11470,7 +11555,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
       msg.textContent=u.master
         ? 'Administrador Mestre: acesso técnico total.'
         : perfil==='ENGENHEIROS'
-          ? 'ENGENHEIROS: somente consulta/exportação, sem alteração de dados.'
+          ? 'ENGENHEIROS: somente consulta/exportação nas obras vinculadas, inclusive quando houver acesso a várias obras.'
           : perfil==='RH'
             ? 'RH: acesso completo somente aos módulos de RH/DP.'
             : perfil==='GESTOR'
@@ -11482,10 +11567,42 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
   function setMatrix(){ toastPerm('As permissões agora são nativas do perfil.'); }
   const modal=document.getElementById('g360UserModal'),uf=document.getElementById('g360UserForm');
   function closeUser(){modal?.classList.remove('open')}
-  function fillObras(selected){const sel=uf.elements.obra;sel.innerHTML='<option value="">Selecione a obra</option>'+obras.map(o=>`<option value="${o.id}" ${String(o.id)===String(selected)?'selected':''}>${o.codigo} - ${o.nome}</option>`).join('');sel.value=selected||''}
+  function selectedObraIds(){
+    return [...document.querySelectorAll('#g360ObrasMultiPanel input[type="checkbox"]:checked')].map(x=>String(x.value));
+  }
+
+  function refreshObrasMultiLabel(){
+    const ids=selectedObraIds();
+    const btn=document.getElementById('g360ObrasMultiBtn');
+    if(!btn)return;
+
+    if(!ids.length){btn.textContent='Selecione uma ou mais obras';return}
+    const labels=ids.map(id=>{
+      const o=obras.find(x=>String(x.id)===String(id));
+      return o?`${o.codigo} - ${o.nome}`:'';
+    }).filter(Boolean);
+
+    btn.textContent=labels.length<=2 ? labels.join(' • ') : `${labels.length} obras selecionadas`;
+  }
+
+  function fillObrasMulti(selected=[]){
+    const sel=new Set((selected||[]).map(String));
+    const panel=document.getElementById('g360ObrasMultiPanel');
+    if(!panel)return;
+
+    const ativas=obras.filter(o=>o.ativa!==false);
+    panel.innerHTML=ativas.length
+      ? ativas.map(o=>`<label class="g360-obras-multi-option"><input type="checkbox" value="${o.id}" ${sel.has(String(o.id))?'checked':''}> <span><b>${o.codigo}</b> - ${o.nome}</span></label>`).join('')
+      : '<div style="padding:8px;color:#999">Nenhuma obra ativa cadastrada.</div>';
+
+    panel.querySelectorAll('input[type="checkbox"]').forEach(c=>c.addEventListener('change',refreshObrasMultiLabel));
+    refreshObrasMultiLabel();
+  }
+
   function openUser(id=null){
     const u=id?user(id):null;
     document.getElementById('g360UserModalTitle').textContent=u?'Editar usuário':'Novo usuário';
+
     uf.elements.id.value=u?.id||'';
     uf.elements.nome.value=u?.nome||'';
     uf.elements.email.value=u?.email||'';
@@ -11495,31 +11612,93 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
 
     const perfilAtual=normPerfil(u?.perfil||'ENGENHEIROS');
     uf.elements.perfil.value=PERFIS_NATIVOS.has(perfilAtual)?perfilAtual:'ENGENHEIROS';
-
-    fillObras(u?.obra_id||obras[0]?.id);
     uf.elements.ativo.value=String(u?.ativo??true);
     uf.elements.ativo.disabled=!!u?.master;
     uf.elements.perfil.disabled=!!u?.master;
+
+    const ids=u?.obraIds?.length ? u.obraIds : (u?.obra_id?[String(u.obra_id)]:(obras[0]?.id?[String(obras[0].id)]:[]));
+    fillObrasMulti(ids);
+
+    document.getElementById('g360ObrasMulti')?.classList.remove('open');
     modal.classList.add('open');
   }
+
+  async function syncUserObras(userId,obraIds){
+    const uid=String(userId||'').trim();
+    const ids=[...new Set((obraIds||[]).map(String).filter(Boolean))];
+    if(!uid)throw new Error('Usuário não identificado para vincular as obras.');
+
+    const del=await sb.from('usuario_obras').delete().eq('usuario_id',uid);
+    if(del.error)throw del.error;
+
+    if(ids.length){
+      const ins=await sb.from('usuario_obras').insert(ids.map(obra_id=>({usuario_id:uid,obra_id})));
+      if(ins.error)throw ins.error;
+    }
+  }
+
   const cloneModal=document.getElementById('g360CloneModal'),cloneForm=document.getElementById('g360CloneForm');
   function closeClone(){cloneModal?.classList.remove('open')}
   function openClone(sourceId){const src=user(sourceId);if(!src)return;cloneForm.elements.source_id.value=sourceId;document.getElementById('g360CloneSourceLabel').textContent='Copiar acesso de: '+(src.nome||src.email);const sel=cloneForm.elements.target_id;sel.innerHTML='<option value="">Selecione o usuário</option>'+users.filter(x=>String(x.id)!==String(sourceId)&&!x.master).map(x=>`<option value="${x.id}">${x.nome||x.email} — ${x.email||''}</option>`).join('');cloneForm.elements.copy_profile.checked=true;cloneForm.elements.copy_obra.checked=true;cloneForm.elements.copy_permissions.checked=true;cloneForm.elements.replace_permissions.checked=true;cloneModal.classList.add('open')}
   async function duplicateAccess(e){e.preventDefault();const sourceId=String(cloneForm.elements.source_id.value||''),targetId=String(cloneForm.elements.target_id.value||'');if(!sourceId||!targetId)return toastPerm('Selecione o usuário destino.');const src=user(sourceId),dst=user(targetId);if(!confirm(`Duplicar acesso de ${src?.nome||src?.email} para ${dst?.nome||dst?.email}?`))return;try{await adminApi('PATCH',{action:'duplicate_access',source_user_id:sourceId,target_user_id:targetId,copy_profile:cloneForm.elements.copy_profile.checked,copy_obra:cloneForm.elements.copy_obra.checked,copy_permissions:cloneForm.elements.copy_permissions.checked,replace_permissions:cloneForm.elements.replace_permissions.checked});closeClone();toastPerm('Acesso duplicado com sucesso.');await loadAll()}catch(err){toastPerm(err.message||'Falha ao duplicar acesso.')}}
-  async function saveUser(e){e.preventDefault();try{
-    const id=String(uf.elements.id.value||'').trim(),
-      payload={
+  async function saveUser(e){
+    e.preventDefault();
+    try{
+      const id=String(uf.elements.id.value||'').trim();
+      const obraIds=selectedObraIds();
+      const payload={
         nome:String(uf.elements.nome.value||'').trim(),
         email:String(uf.elements.email.value||'').trim(),
         perfil:normPerfil(uf.elements.perfil.value||'ENGENHEIROS'),
-        obra_id:String(uf.elements.obra.value||''),
+        obra_id:String(obraIds[0]||''),
         ativo:String(uf.elements.ativo.value)==='true'
       };
-    if(!payload.nome||!payload.email)return toastPerm('Informe nome e e-mail.');
-    if(!payload.obra_id)return toastPerm('Selecione a obra do usuário.');
-    if(!PERFIS_NATIVOS.has(payload.perfil))return toastPerm('Selecione um perfil nativo válido: ENGENHEIROS, RH ou GESTOR.');if(id){await adminApi('PATCH',{user_id:id,nome:payload.nome,perfil:payload.perfil,obra_id:payload.obra_id,ativo:payload.ativo});toastPerm('Usuário atualizado.')}else{await adminApi('POST',{...payload,redirectTo:location.origin+location.pathname});toastPerm('Usuário criado. Convite enviado para definir a senha.')}closeUser();await loadAll()}catch(err){toastPerm(err.message)}}
+
+      if(!payload.nome||!payload.email)return toastPerm('Informe nome e e-mail.');
+      if(!obraIds.length)return toastPerm('Selecione pelo menos uma obra para o usuário.');
+      if(!PERFIS_NATIVOS.has(payload.perfil))return toastPerm('Selecione ENGENHEIROS, RH ou GESTOR.');
+
+      let uid=id;
+
+      if(id){
+        await adminApi('PATCH',{
+          user_id:id,nome:payload.nome,perfil:payload.perfil,
+          obra_id:payload.obra_id,ativo:payload.ativo
+        });
+      }else{
+        await adminApi('POST',{...payload,redirectTo:location.origin+location.pathname});
+
+        // Localiza o perfil recém-criado pelo e-mail para gravar todas as obras.
+        const qp=await sb.from('profiles').select('id').eq('email',payload.email).maybeSingle();
+        if(qp.error)throw qp.error;
+        uid=qp.data?.id||'';
+        if(!uid)throw new Error('Usuário criado, mas não foi possível localizar o perfil para vincular as obras.');
+      }
+
+      await syncUserObras(uid,obraIds);
+
+      toastPerm(id
+        ? `Usuário atualizado com ${obraIds.length} obra(s).`
+        : `Usuário criado com ${obraIds.length} obra(s). Convite enviado para definir a senha.`);
+
+      closeUser();
+      await loadAll();
+    }catch(err){
+      toastPerm(err.message||'Falha ao salvar usuário.');
+    }
+  }
+
   async function toggleUser(id){const u=user(id);if(!u||u.master)return;try{await adminApi('PATCH',{user_id:id,ativo:!u.ativo});toastPerm(u.ativo?'Usuário inativado.':'Usuário ativado.');await loadAll()}catch(err){toastPerm(err.message)}}
   async function deleteUser(id){const u=user(id);if(!u||id===currentId)return;if(!confirm(`Excluir definitivamente o usuário ${u.nome||u.email}?\n\nA conta de login, perfil e permissões serão removidos.`))return;try{await adminApi('DELETE',{user_id:id});toastPerm('Usuário excluído definitivamente.');if(editingId===id)editingId=currentId;await loadAll()}catch(err){toastPerm(err.message)}}
+  document.getElementById('g360ObrasMultiBtn')?.addEventListener('click',(e)=>{
+    e.stopPropagation();
+    document.getElementById('g360ObrasMulti')?.classList.toggle('open');
+  });
+  document.addEventListener('click',(e)=>{
+    const box=document.getElementById('g360ObrasMulti');
+    if(box && !box.contains(e.target))box.classList.remove('open');
+  });
+
   document.getElementById('g360PermSave')?.addEventListener('click',saveMatrix);document.getElementById('g360PermAll')?.addEventListener('click',()=>setMatrix('all'));document.getElementById('g360PermReadOnly')?.addEventListener('click',()=>setMatrix('read'));document.getElementById('g360NewUserBtn')?.addEventListener('click',()=>openUser());document.getElementById('g360UserModalClose')?.addEventListener('click',closeUser);document.getElementById('g360UserCancel')?.addEventListener('click',closeUser);modal?.addEventListener('click',e=>{if(e.target===modal)closeUser()});uf?.addEventListener('submit',saveUser);document.getElementById('g360CloneClose')?.addEventListener('click',closeClone);document.getElementById('g360CloneCancel')?.addEventListener('click',closeClone);cloneModal?.addEventListener('click',e=>{if(e.target===cloneModal)closeClone()});cloneForm?.addEventListener('submit',duplicateAccess);
   const permMenu=document.getElementById('g360PermMenu');permMenu?.addEventListener('click',()=>{if(!window.g360Can('usuarios','visualizar'))return toastPerm('Sem permissão para administrar usuários.');document.querySelectorAll('.side-link').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));permMenu.classList.add('active');document.getElementById('view-usuariosPermissoes').classList.add('active');renderUsers();renderMatrix();window.scrollTo(0,0)});
   document.addEventListener('click',e=>{const el=e.target.closest('button,a');if(!el||el.matches('[data-g360-competencia="1"],[data-g360-fechamento-action="1"]')||el.closest('#g360FjCompetModal,#g360FjEditModal')||el.closest('#view-usuariosPermissoes')||el.closest('#g360UserModal')||!currentId)return;const view=el.closest('.view'),m=moduleByView(view?.id?.replace(/^view-/,'')||currentView());if(!m)return;const a=actionFromCrudButton(el);if(a&&!window.g360Can(m,a)){e.preventDefault();e.stopImmediatePropagation();toastPerm('Sem permissão para '+a+' neste módulo.')}},true);
@@ -13892,7 +14071,7 @@ window.g360FechamentoV57={
 <script id="g360-backup-seguranca-v135">
 (function(){
 'use strict';
-const TABLES=['obras','funcionarios','contratos','fechamentos_praca','alojamentos','cargos_salarios','folga_campo','patrimonio_itens','patrimonio_movimentacoes','epi_estoque','termos_epi','termo_epi_itens','termos_responsabilidade','termo_responsabilidade_itens','rh_advertencias','rh_setores','rh_equipes_master','rh_periodicidades_baixada','solicitacoes_contrato','solicitacao_contrato_anexos','profiles','usuario_permissoes'];
+const TABLES=['obras','funcionarios','contratos','fechamentos_praca','alojamentos','cargos_salarios','folga_campo','patrimonio_itens','patrimonio_movimentacoes','epi_estoque','termos_epi','termo_epi_itens','termos_responsabilidade','termo_responsabilidade_itens','rh_advertencias','rh_setores','rh_equipes_master','rh_periodicidades_baixada','solicitacoes_contrato','solicitacao_contrato_anexos','profiles','usuario_permissoes','usuario_obras'];
 let master=false,user=null;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const stamp=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`};
