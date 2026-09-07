@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- V156: corrige travamento de usuários / inicialização do fechamento -->
+<!-- V157: corrige contratosBase e listener legado do fechamento -->
 <html lang="pt-BR">
 <head>
 <script>(function(){try{const v='2026-09-01-fechamento-v49-planilha-supabase';if(localStorage.getItem('g360_base_version')!==v){localStorage.removeItem('painel202_fechamentos_multi_override_v4');localStorage.removeItem('painel202_fechamentos_override_ts_v2');localStorage.removeItem('g360_medicoes_sienge_preview_v1');localStorage.setItem('g360_base_version',v)}}catch(e){}})();</script>
@@ -3278,6 +3278,18 @@ function renderOverviewFechamento40(){
 // ---------------------------------------------------------------
 // PÁGINA — PAINEL GERENCIAL
 // ---------------------------------------------------------------
+function contratosBase(){
+  try{
+    const raw=localStorage.getItem('painel202_contratos_override_v2');
+    if(raw){
+      const arr=JSON.parse(raw);
+      if(Array.isArray(arr)) return arr;
+    }
+    const el=document.getElementById('seedContratosData');
+    const arr=el?JSON.parse(el.textContent||'[]'):[];
+    return Array.isArray(arr)?arr:[];
+  }catch(_){ return []; }
+}
 function renderOverviewFechamento(){
   const sel = document.getElementById('overviewFechPeriodo');
   const kpis = document.getElementById('overviewFechKpis');
@@ -7933,14 +7945,14 @@ function renderFechamentoJulho(){
   renderFjTable(sorted);
 }
 document.getElementById('fjSearchInput').addEventListener('input', e=>{ fjState.search = fjNorm(e.target.value); renderFechamentoJulho(); });
-document.getElementById('fjStatusSelect').addEventListener('change', e=>{ fjState.status = e.target.value; renderFechamentoJulho(); });
+document.getElementById('fjStatusSelect')?.addEventListener('change', e=>{ fjState.status = e.target.value; renderFechamentoJulho(); });
 (function(){
   const sel = document.getElementById('fjPeriodoSelect');
   sel.innerHTML = FECHAMENTOS_PERIODOS.map(p=>`<option value="${p}" ${p===fjState.periodo?'selected':''}>${p.split('/')[0].charAt(0)+p.split('/')[0].slice(1).toLowerCase()}/${p.split('/')[1]}</option>`).join('');
   sel.addEventListener('change', e=>{
     fjState.periodo = e.target.value;
     fjState.status=''; fjState.search='';
-    document.getElementById('fjStatusSelect').value='';
+    const fjStatusEl=document.getElementById('fjStatusSelect'); if(fjStatusEl) fjStatusEl.value='';
     document.getElementById('fjSearchInput').value='';
     renderFechamentoJulho();
   });
