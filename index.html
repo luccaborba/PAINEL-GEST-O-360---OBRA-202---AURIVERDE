@@ -1111,6 +1111,7 @@ html.g360-ui-ready .content-col {
 
 </head>
 <body>
+<!-- V155: convite personalizado + primeiro acesso com criação de senha -->
 <!-- V154: carga resiliente de usuários/obras; usuario_permissoes legado não bloqueia perfis nativos -->
 <!-- V153: lista de usuários nunca some se usuario_obras falhar; fallback seguro + sync não destrutivo -->
 <!-- V152: seleção multiobra visível por checkboxes; sem select/dropdown de obra única -->
@@ -10429,12 +10430,61 @@ window.GESTAO360_CONFIG = {
     };
     document.getElementById('g360Forgot').onclick=async()=>{const email=g360Email.value.trim();if(!email){g360AuthMsg.textContent='Informe seu e-mail para receber o link de redefinição.';return}g360AuthMsg.textContent='Enviando link...';const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});g360AuthMsg.textContent=error?error.message:'Link de redefinição enviado para o e-mail.'};
   }
+  async function firstAccessUI(){
+    const q=new URLSearchParams(location.search);
+    const h=new URLSearchParams((location.hash||'').replace(/^#/,''));
+    if(q.get('primeiro_acesso')==='1'||q.get('type')==='invite'||h.get('type')==='invite'){
+      try{sessionStorage.setItem('g360_primeiro_acesso_v155','1')}catch(_){}
+    }
+    let flagged=false;try{flagged=sessionStorage.getItem('g360_primeiro_acesso_v155')==='1'}catch(_){}
+    if(!flagged)return false;
+
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session)return false;
+
+    document.getElementById('g360Auth')?.remove();
+    document.body.insertAdjacentHTML('beforeend', `<div id="g360Auth"><div class="box">
+      <h1>CONSTRU-X</h1><p style="margin-top:-2px;color:#f5c518;font-weight:800">GESTÃO INTELIGENTE 360º</p>
+      <p style="font-weight:800;color:#fff">Primeiro acesso</p>
+      <p style="font-size:12px;color:#aaa;line-height:1.5">Convite validado. Crie sua senha para concluir a ativação da conta.</p>
+      <input class="g360-input" id="g360InvitePass" type="password" minlength="8" autocomplete="new-password" placeholder="Nova senha (mínimo 8 caracteres)">
+      <input class="g360-input" id="g360InvitePass2" type="password" minlength="8" autocomplete="new-password" placeholder="Confirmar nova senha">
+      <button class="g360-btn" id="g360InviteSetPass" style="width:100%;margin-top:8px">Ativar acesso</button>
+      <p id="g360AuthMsg"></p></div></div>`);
+
+    const save=async()=>{
+      const a=document.getElementById('g360InvitePass')?.value||'',b=document.getElementById('g360InvitePass2')?.value||'';
+      const m=document.getElementById('g360AuthMsg'),btn=document.getElementById('g360InviteSetPass');
+      if(a.length<8){m.textContent='A senha deve ter pelo menos 8 caracteres.';return}
+      if(a!==b){m.textContent='As senhas não conferem.';return}
+      btn.disabled=true;m.textContent='Ativando acesso...';
+      const {error}=await sb.auth.updateUser({password:a,data:{g360_primeiro_acesso_concluido:true}});
+      if(error){m.textContent=error.message;btn.disabled=false;return}
+      try{
+        sessionStorage.removeItem('g360_primeiro_acesso_v155');
+        sessionStorage.setItem('g360_fresh_login_v148','1');
+        sessionStorage.setItem('g360_force_dashboard_after_login','1');
+        localStorage.setItem('g360_last_activity_at_v148',String(Date.now()));
+      }catch(_){}
+      window.g360ForceDashboardAfterLogin=true;
+      history.replaceState({},document.title,location.pathname);
+      m.textContent='Senha criada. Entrando...';
+      setTimeout(()=>location.reload(),500);
+    };
+    document.getElementById('g360InviteSetPass').onclick=save;
+    document.getElementById('g360InvitePass2').addEventListener('keydown',e=>{if(e.key==='Enter')save()});
+    return true;
+  }
   async function recoveryUI(){
     const {data:{session}}=await sb.auth.getSession(); if(!session)return;
     document.body.insertAdjacentHTML('beforeend', `<div id="g360Auth"><div class="box"><h1>CONSTRU-X</h1><p style="margin-top:-2px;color:#f5c518;font-weight:800">GESTÃO INTELIGENTE 360º</p><p>Defina sua nova senha.</p><input class="g360-input" id="g360NewPass" type="password" minlength="8" placeholder="Nova senha (mínimo 8 caracteres)"><input class="g360-input" id="g360NewPass2" type="password" minlength="8" placeholder="Confirmar nova senha"><button class="g360-btn" id="g360SetPass" style="width:100%;margin-top:8px">Salvar nova senha</button><p id="g360AuthMsg"></p></div></div>`);
     document.getElementById('g360SetPass').onclick=async()=>{const a=g360NewPass.value,b=g360NewPass2.value;if(a.length<8){g360AuthMsg.textContent='A senha deve ter pelo menos 8 caracteres.';return}if(a!==b){g360AuthMsg.textContent='As senhas não conferem.';return}const {error}=await sb.auth.updateUser({password:a});if(error){g360AuthMsg.textContent=error.message;return}g360AuthMsg.textContent='Senha alterada. Entrando...';history.replaceState({},document.title,location.pathname);setTimeout(()=>location.reload(),700)};
   }
-  sb.auth.onAuthStateChange((event)=>{if(event==='PASSWORD_RECOVERY')setTimeout(recoveryUI,0)});
+  sb.auth.onAuthStateChange((event,session)=>{
+    if(event==='PASSWORD_RECOVERY')setTimeout(recoveryUI,0);
+    if(session && (event==='SIGNED_IN'||event==='INITIAL_SESSION'))setTimeout(firstAccessUI,0);
+  });
+  setTimeout(firstAccessUI,0);
   async function addLogout(){
     const side=document.getElementById('sidebarNav'); if(!side||document.getElementById('g360Logout'))return;
     if(PREVIEW_MODE){
@@ -11712,7 +11762,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
           obra_id:payload.obra_id,ativo:payload.ativo
         });
       }else{
-        await adminApi('POST',{...payload,redirectTo:location.origin+location.pathname});
+        await adminApi('POST',{...payload,redirectTo:location.origin+location.pathname+'?primeiro_acesso=1'});
 
         // Localiza o perfil recém-criado pelo e-mail para gravar todas as obras.
         const qp=await sb.from('profiles').select('id').eq('email',payload.email).maybeSingle();
@@ -13862,6 +13912,16 @@ window.g360FechamentoV57={
     clearTimeout(idleTimer);
     const session=await getSession();
     if(!session)return;
+
+    // V155: o link de convite cria uma sessão temporária para definição da senha.
+    // Ela não deve ser invalidada antes de o usuário concluir o primeiro acesso.
+    try{
+      if(sessionStorage.getItem('g360_primeiro_acesso_v155')==='1'){
+        setActivity(true);
+        idleTimer=setTimeout(logoutSilent,IDLE_MS);
+        return;
+      }
+    }catch(_){}
 
     const last=getStoredActivity();
     const fresh=sessionStorage.getItem(FRESH_LOGIN_KEY)==='1';
