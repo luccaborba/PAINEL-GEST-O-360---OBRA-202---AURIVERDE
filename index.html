@@ -2,7 +2,9 @@
 <!-- V158: remove contratosBase quebrado e protege listeners legados do fechamento -->
 <html lang="pt-BR">
 <head>
-<script>(function(){try{const v='2026-09-01-fechamento-v49-planilha-supabase';if(localStorage.getItem('g360_base_version')!==v){localStorage.removeItem('painel202_fechamentos_multi_override_v4');localStorage.removeItem('painel202_fechamentos_override_ts_v2');localStorage.removeItem('g360_medicoes_sienge_preview_v1');localStorage.setItem('g360_base_version',v)}}catch(e){}})();</script>
+<script>(function(){try{const v='2026-09-01-fechamento-v49-planilha-supabase';if(localStorage.getItem('g360_base_version')!==v){localStorage.removeItem('painel202_fechamentos_multi_override_v4');localStorage.removeItem('painel202_fechamentos_override_ts_v2');localStorage.removeItem('g360_medicoes_sienge_preview_v1');localStorage.setItem('g360_base_version',v)}}catch(e){}
+window.g360PrimeiroAcessoPendente=function(){try{const q=new URLSearchParams(location.search),h=new URLSearchParams((location.hash||'').replace(/^#/,''));const viaLink=q.get('primeiro_acesso')==='1'||q.get('type')==='invite'||h.get('type')==='invite';if(viaLink)sessionStorage.setItem('g360_primeiro_acesso_v155','1');return viaLink||sessionStorage.getItem('g360_primeiro_acesso_v155')==='1';}catch(_){return false}};
+try{window.g360PrimeiroAcessoPendente()}catch(_){}})();</script>
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11215,6 +11217,12 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
   function addToolbar(viewId,kind,label){const v=document.getElementById(viewId);if(!v||v.querySelector(`[data-g360="${kind}"]`))return;v.insertAdjacentHTML('afterbegin',`<div class="g360-toolbar"><button class="g360-adminbtn" data-g360="${kind}">＋ ${label}</button></div>`);v.querySelector(`[data-g360="${kind}"]`).onclick=()=>openCrud(kind)}
   (async()=>{
     const {data:{session}}=await sb.auth.getSession(); if(!session){authUI();return}
+    // V159: convite/primeiro acesso é uma etapa isolada. Enquanto a senha ainda
+    // não foi criada, não inicia o painel, não sincroniza módulos e não consulta a Obra 202.
+    if(window.g360PrimeiroAcessoPendente?.()){
+      await firstAccessUI();
+      return;
+    }
     await addLogout();
     try{const ok=await pullAll();if(!ok)return}catch(e){console.error(e);toast('Falha ao sincronizar Supabase: '+e.message)}
     // V48: o Painel Gerencial inicia ativo. Renderiza novamente somente depois
@@ -12989,6 +12997,8 @@ async function openCompetence(mode){
 
 async function boot(){
   if(state.bound)return;
+  // V159: não carrega Fechamento de Praça durante o fluxo de convite/primeiro acesso.
+  if(window.g360PrimeiroAcessoPendente?.()) return;
   const client=sb();
   if(!client){setTimeout(boot,500);return}
   try{
@@ -13268,6 +13278,8 @@ window.g360FechamentoV57={
 
   // Uma única restauração após o bootstrap inicial.
   function boot(){
+    // V159: o primeiro acesso não restaura nenhuma tela operacional por trás do formulário.
+    if(window.g360PrimeiroAcessoPendente?.()) return;
     // pequena janela para autenticação/layout terminarem sem ficar "pulando" telas
     setTimeout(restoreOnce,180);
     // fallback de segurança
