@@ -1227,7 +1227,7 @@ html.g360-ui-ready .content-col {
             <div class="side-link" data-view="organograma"><span class="ic">🗺️</span>Organograma Setor/Equipe</div>
             <div class="side-link" data-view="cargosSalarios"><span class="ic">💰</span>Cargos e Salários</div>
             <div class="side-link" data-view="termoResponsabilidade"><span class="ic">🧾</span>Termo de Responsabilidade</div>
-            <div class="side-link" data-view="rhdpAdmissao"><span class="ic">🧑‍💼</span>Solicitação de Admissão</div>
+            <div class="side-link" data-view="rhdpAdmissao"><span class="ic">🧑‍💼</span>Admissão</div>
             <div class="side-link" data-view="rhdpDemissao"><span class="ic">📤</span>Solicitação de Demissão</div>
             <div class="side-link" data-view="rhdpMovimentacao"><span class="ic">🔀</span>Movimentação Interna</div>
             <div class="side-link" id="g360AdvertenciaMenu" data-view="rhdpAdvertencia" style="display:flex!important"><span class="ic">⚠️</span>Advertência Disciplinar</div>
@@ -1794,17 +1794,76 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      <!-- ================= RH/DP — SOLICITAÇÃO DE ADMISSÃO ================= -->
+      <!-- ================= RH/DP — ADMISSÃO / TRIAGEM V182 ================= -->
       <div class="view" id="view-rhdpAdmissao">
-        <div class="page-title">
+        <style>
+          .adm-kpis{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+          .adm-kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:.15s}
+          .adm-kpi:hover{border-color:rgba(245,197,24,.55);transform:translateY(-1px)}
+          .adm-kpi .n{font:700 25px var(--font-display);margin-top:5px}
+          .adm-kpi .l{font-size:10px;text-transform:uppercase;letter-spacing:.055em;color:var(--ink-soft)}
+          .adm-status{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.035em;white-space:nowrap}
+          .adm-ok{background:rgba(62,207,142,.12);color:var(--green)} .adm-warn{background:rgba(245,197,24,.12);color:var(--yellow)}
+          .adm-bad{background:rgba(235,87,87,.13);color:#ff7373} .adm-muted{background:rgba(139,140,145,.12);color:var(--gray)}
+          .adm-date{font-size:11px;white-space:nowrap} .adm-date.done{color:var(--green)} .adm-date.empty{color:var(--ink-dim)}
+          .adm-grid2{display:grid;grid-template-columns:1.2fr .8fr;gap:14px;margin-bottom:14px}
+          .adm-bar-row{display:grid;grid-template-columns:110px 1fr 38px;gap:10px;align-items:center;margin:10px 0;font-size:11px}
+          .adm-bar-track{height:8px;background:var(--surface2);border-radius:10px;overflow:hidden} .adm-bar-fill{height:100%;background:var(--yellow);border-radius:10px}
+          .adm-modal-back{position:fixed;inset:0;background:rgba(0,0,0,.66);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}
+          .adm-modal{width:min(820px,96vw);max-height:90vh;overflow:auto;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 25px 70px rgba(0,0,0,.4)}
+          .adm-step-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+          @media(max-width:900px){.adm-kpis{grid-template-columns:repeat(2,1fr)}.adm-grid2{grid-template-columns:1fr}.adm-step-grid{grid-template-columns:1fr}}
+        </style>
+
+        <div class="page-title" style="align-items:flex-start;">
           <span class="pt-ic">🧑‍💼</span>
-          <div>
-            <div class="pt-title">RH / DP — Solicitação de Admissão</div>
-            <div class="pt-sub">Formulário de pré-digitalização da Solicitação de Admissão (MP-01), com cargos e faixas salariais da Tabela CCL — Obra 202 - Implantação Auriverde</div>
+          <div style="flex:1;">
+            <div class="pt-title">RH / DP — Admissão</div>
+            <div class="pt-sub">Base de admissões, 6 níveis de aprovação independentes e indicadores de triagem, aprovação e reprovação</div>
           </div>
+          <button class="btn-primary" id="rhAdmNovaBtn" style="white-space:nowrap;">＋ Nova Solicitação de Admissão</button>
+        </div>
+
+        <div class="adm-kpis" id="rhAdmKpis"></div>
+
+        <div class="adm-grid2">
+          <section class="panel" style="margin:0;">
+            <h2>Painel de Aprovações <span class="tag">6 níveis · sem ordem</span></h2>
+            <div id="rhAdmFunnel"></div>
+          </section>
+          <section class="panel" style="margin:0;">
+            <h2>Reprovações <span class="tag">Por quem / etapa</span></h2>
+            <div id="rhAdmReprovEtapa"></div>
+            <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:10px;">
+              <div style="font-size:10px;text-transform:uppercase;color:var(--ink-soft);margin-bottom:7px;">Principais motivos</div>
+              <div id="rhAdmReprovMotivos" style="font-size:11px;color:var(--ink-soft);"></div>
+            </div>
+          </section>
         </div>
 
         <section class="panel">
+          <div class="filters">
+            <input type="text" id="rhAdmSearch" placeholder="Buscar candidato ou função...">
+            <select id="rhAdmStatusFilter">
+              <option value="">Todas as etapas</option>
+              <option>APROVAÇÕES PENDENTES</option>
+              <option>PRONTO PARA ADMISSÃO</option><option>ADMITIDO</option><option>REPROVADO</option><option>DESISTÊNCIA</option><option>CANCELADO</option>
+            </select>
+            <button class="clear-btn" id="rhAdmClearFilter">Limpar filtros</button>
+            <span class="count-badge" id="rhAdmHistCountTag"></span>
+          </div>
+          <h2 style="margin-top:14px;">Base de Admissão <span class="tag">Controle operacional</span></h2>
+          <div class="table-scroll">
+            <table>
+              <thead><tr>
+                <th>Candidato</th><th>Função</th><th>Solicitação</th><th>Engenharia</th><th>Jurídico</th><th>Diretoria</th><th>RH</th><th>DP</th><th>Documentação Recebida</th><th>Admissão</th><th>Etapa Atual</th><th>Ações</th>
+              </tr></thead>
+              <tbody id="rhAdmHistBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel" id="rhAdmFormPanel" style="display:none;">
           <div class="form-doc-meta">
             <span>IDENTIFIC.: <b>MP-01</b></span>
             <span>VERSÃO: <b>01</b></span>
@@ -1938,41 +1997,58 @@ html.g360-ui-ready .content-col {
 
           <div class="form-section">
             <div class="form-section-title">Trilha de Aprovações</div>
-            <div class="approval-trail">
-              <span class="step">ADM</span><span class="arrow">→</span>
-              <span class="step">ENG. RESIDENTE</span><span class="arrow">→</span>
-              <span class="step">JURÍDICO</span><span class="arrow">→</span>
-              <span class="step">DIRETOR</span><span class="arrow">→</span>
-              <span class="step">DP</span><span class="arrow">→</span>
+            <div class="approval-trail" style="gap:8px;flex-wrap:wrap;">
+              <span class="step">ENGENHARIA</span>
+              <span class="step">JURÍDICO</span>
+              <span class="step">DIRETORIA</span>
               <span class="step">RH</span>
+              <span class="step">DP</span>
+              <span class="step">DOCUMENTAÇÃO RECEBIDA</span>
+              <span class="tag">SEM ORDEM OBRIGATÓRIA</span>
             </div>
           </div>
 
           <div class="form-actions">
             <button class="btn-primary" id="rhAdmGerarPdfBtn">📄 Gerar PDF</button>
-            <button class="clear-btn" id="rhAdmSalvarBtn">💾 Salvar Solicitação</button>
+            <button class="clear-btn" id="rhAdmSalvarBtn">💾 Salvar na Base de Admissão</button>
             <button class="clear-btn" id="rhAdmLimparBtn">🧹 Limpar Formulário</button>
           </div>
         </section>
 
-        <section class="panel">
-          <h2>Solicitações Registradas <span class="tag" id="rhAdmHistCountTag"></span></h2>
-          <div class="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Nome</th>
-                  <th>Cargo</th>
-                  <th>Nível</th>
-                  <th class="num">Salário</th>
-                  <th>Data</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody id="rhAdmHistBody"></tbody>
-            </table>
+        
+
+        <div class="adm-modal-back" id="rhAdmTriagemBack">
+          <div class="adm-modal">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;">
+              <div><h2 style="margin:0 0 3px;">Controle da Admissão</h2><div id="rhAdmTriagemNome" style="font-size:12px;color:var(--ink-soft);"></div></div>
+              <button class="clear-btn" id="rhAdmTriagemFechar">✕ Fechar</button>
+            </div>
+            <div class="form-section">
+              <div class="form-section-title">Controle de Aprovações — 6 níveis independentes</div>
+              <div style="font-size:11px;color:var(--ink-soft);margin-bottom:10px;">As datas podem ser preenchidas em qualquer ordem. O processo fica pronto quando os 6 níveis estiverem concluídos.</div>
+              <div class="adm-step-grid">
+                <div class="form-group"><label>Engenharia — Data</label><input type="date" id="rhAdmDtEng"></div>
+                <div class="form-group"><label>Jurídico — Data</label><input type="date" id="rhAdmDtJur"></div>
+                <div class="form-group"><label>Diretoria — Data</label><input type="date" id="rhAdmDtDir"></div>
+                <div class="form-group"><label>RH — Data</label><input type="date" id="rhAdmDtRH"></div>
+                <div class="form-group"><label>DP — Data</label><input type="date" id="rhAdmDtDP"></div>
+                <div class="form-group"><label>Documentação Recebida — Data</label><input type="date" id="rhAdmDtDocs"></div>
+                <div class="form-group"><label>Data de Admissão</label><input type="date" id="rhAdmDtAdmissao"></div>
+              </div>
+            </div>
+            <div class="form-section">
+              <div class="form-section-title">Resultado / Reprovação</div>
+              <div class="form-grid cols-2">
+                <div class="form-group"><label>Resultado</label><select id="rhAdmResultado"><option value="">Em andamento</option><option value="REPROVADO">Reprovado</option><option value="DESISTÊNCIA">Desistência</option><option value="CANCELADO">Cancelado</option></select></div>
+                <div class="form-group"><label>Data da ocorrência</label><input type="date" id="rhAdmDtResultado"></div>
+                <div class="form-group"><label>Reprovado por / etapa</label><select id="rhAdmReprovEtapaSel"><option value="">Selecione...</option><option>ENGENHARIA</option><option>JURÍDICO</option><option>DIRETORIA</option><option>RH</option><option>DP</option><option>DOCUMENTAÇÃO RECEBIDA</option></select></div>
+                <div class="form-group"><label>Motivo</label><input type="text" id="rhAdmMotivo" placeholder="Motivo da reprovação / encerramento"></div>
+                <div class="form-group span-2"><label>Observação</label><textarea id="rhAdmObs" placeholder="Observação do processo..."></textarea></div>
+              </div>
+            </div>
+            <div class="form-actions"><button class="btn-primary" id="rhAdmTriagemSalvar">💾 Salvar Controle</button></div>
           </div>
-        </section>
+        </div>
       </div>
 
       <!-- ================= RH/DP — ADVERTÊNCIA DISCIPLINAR ================= -->
@@ -2177,13 +2253,14 @@ html.g360-ui-ready .content-col {
 
           <div class="form-section">
             <div class="form-section-title">Trilha de Aprovações</div>
-            <div class="approval-trail">
-              <span class="step">ADM</span><span class="arrow">→</span>
-              <span class="step">ENG. RESIDENTE</span><span class="arrow">→</span>
-              <span class="step">JURÍDICO</span><span class="arrow">→</span>
-              <span class="step">DIRETOR</span><span class="arrow">→</span>
-              <span class="step">DP</span><span class="arrow">→</span>
+            <div class="approval-trail" style="gap:8px;flex-wrap:wrap;">
+              <span class="step">ENGENHARIA</span>
+              <span class="step">JURÍDICO</span>
+              <span class="step">DIRETORIA</span>
               <span class="step">RH</span>
+              <span class="step">DP</span>
+              <span class="step">DOCUMENTAÇÃO RECEBIDA</span>
+              <span class="tag">SEM ORDEM OBRIGATÓRIA</span>
             </div>
           </div>
 
@@ -2312,13 +2389,14 @@ html.g360-ui-ready .content-col {
 
           <div class="form-section">
             <div class="form-section-title">Trilha de Aprovações</div>
-            <div class="approval-trail">
-              <span class="step">ADM</span><span class="arrow">→</span>
-              <span class="step">ENG. RESIDENTE</span><span class="arrow">→</span>
-              <span class="step">JURÍDICO</span><span class="arrow">→</span>
-              <span class="step">DIRETOR</span><span class="arrow">→</span>
-              <span class="step">DP</span><span class="arrow">→</span>
+            <div class="approval-trail" style="gap:8px;flex-wrap:wrap;">
+              <span class="step">ENGENHARIA</span>
+              <span class="step">JURÍDICO</span>
+              <span class="step">DIRETORIA</span>
               <span class="step">RH</span>
+              <span class="step">DP</span>
+              <span class="step">DOCUMENTAÇÃO RECEBIDA</span>
+              <span class="tag">SEM ORDEM OBRIGATÓRIA</span>
             </div>
           </div>
 
@@ -6197,30 +6275,133 @@ function rhAdmGerarPDF(data){
   doc.save(fname);
 }
 
+function rhAdmFmtISO(v){
+  if(!v) return '—';
+  const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : '—';
+}
+// V184 — Admissão: 6 níveis independentes, sem ordem obrigatória\nfunction rhAdmEtapa(d){
+  const term=String(d.resultado||'').toUpperCase();
+  if(['REPROVADO','DESISTÊNCIA','CANCELADO'].includes(term)) return term;
+  if(d.dataAdmissao) return 'ADMITIDO';
+  const todas = d.dataEngenharia && d.dataJuridico && d.dataDiretoria && d.dataRH && d.dataDP && d.dataDocsObra;
+  if(todas) return 'PRONTO PARA ADMISSÃO';
+  return 'APROVAÇÕES PENDENTES';
+}
+function rhAdmPendenciasAprovacao(d){
+  const p=[];
+  if(!d.dataEngenharia)p.push('Engenharia');
+  if(!d.dataJuridico)p.push('Jurídico');
+  if(!d.dataDiretoria)p.push('Diretoria');
+  if(!d.dataRH)p.push('RH');
+  if(!d.dataDP)p.push('DP');
+  if(!d.dataDocsObra)p.push('Documentação');
+  return p;
+}
+function rhAdmEtapaLabel(d){
+  const st=rhAdmEtapa(d);
+  if(st!=='APROVAÇÕES PENDENTES') return st;
+  const p=rhAdmPendenciasAprovacao(d);
+  return p.length ? `PENDENTE — ${p.join(' · ')}` : st;
+}
+function rhAdmStatusClass(st){
+  if(st==='ADMITIDO'||st==='PRONTO PARA ADMISSÃO')return 'adm-ok';
+  if(st==='REPROVADO'||st==='CANCELADO')return 'adm-bad';
+  if(st==='DESISTÊNCIA')return 'adm-muted';
+  return 'adm-warn';
+}
+function rhAdmDateCell(v){return `<span class="adm-date ${v?'done':'empty'}">${v?'✓ '+rhAdmFmtISO(v):'—'}</span>`;}
+function rhAdmCalcDashboard(list){
+  const counts={}; list.forEach(d=>{const st=rhAdmEtapa(d);counts[st]=(counts[st]||0)+1;});
+  const ativos=list.filter(d=>!['ADMITIDO','REPROVADO','DESISTÊNCIA','CANCELADO'].includes(rhAdmEtapa(d)));
+  const niveis=[
+    ['Engenharia','dataEngenharia'],
+    ['Jurídico','dataJuridico'],
+    ['Diretoria','dataDiretoria'],
+    ['RH','dataRH'],
+    ['DP','dataDP'],
+    ['Documentação','dataDocsObra']
+  ];
+  const pend={};
+  niveis.forEach(([label,campo])=>pend[campo]=ativos.filter(d=>!d[campo]).length);
+  const concluidos=ativos.filter(d=>d.dataEngenharia&&d.dataJuridico&&d.dataDiretoria&&d.dataRH&&d.dataDP&&d.dataDocsObra).length;
+
+  const kpis=[
+    ['Em Processo',ativos.length,''],
+    ['Engenharia pendente',pend.dataEngenharia,'APROVAÇÕES PENDENTES'],
+    ['Jurídico pendente',pend.dataJuridico,'APROVAÇÕES PENDENTES'],
+    ['Diretoria pendente',pend.dataDiretoria,'APROVAÇÕES PENDENTES'],
+    ['RH pendente',pend.dataRH,'APROVAÇÕES PENDENTES'],
+    ['DP pendente',pend.dataDP,'APROVAÇÕES PENDENTES'],
+    ['Documentação pendente',pend.dataDocsObra,'APROVAÇÕES PENDENTES'],
+    ['6 níveis concluídos',concluidos,'PRONTO PARA ADMISSÃO'],
+    ['Admitidos',counts['ADMITIDO']||0,'ADMITIDO'],
+    ['Reprovados',counts['REPROVADO']||0,'REPROVADO'],
+  ];
+  const box=document.getElementById('rhAdmKpis'); if(box) box.innerHTML=kpis.map(([l,n,f])=>`<div class="adm-kpi" data-adm-filter="${f}"><div class="l">${l}</div><div class="n">${n}</div></div>`).join('');
+  box?.querySelectorAll('[data-adm-filter]').forEach(el=>el.onclick=()=>{document.getElementById('rhAdmStatusFilter').value=el.dataset.admFilter||'';rhAdmRenderHistorico();});
+
+  const aprovacoes=[
+    ['Engenharia concluída',ativos.filter(d=>!!d.dataEngenharia).length],
+    ['Jurídico concluído',ativos.filter(d=>!!d.dataJuridico).length],
+    ['Diretoria concluída',ativos.filter(d=>!!d.dataDiretoria).length],
+    ['RH concluído',ativos.filter(d=>!!d.dataRH).length],
+    ['DP concluído',ativos.filter(d=>!!d.dataDP).length],
+    ['Documentação recebida',ativos.filter(d=>!!d.dataDocsObra).length],
+    ['6 níveis concluídos',concluidos],
+    ['Admitidos',counts['ADMITIDO']||0]
+  ];
+  const max=Math.max(1,...aprovacoes.map(x=>x[1]));
+  const fun=document.getElementById('rhAdmFunnel'); if(fun) fun.innerHTML=aprovacoes.map(([l,n])=>`<div class="adm-bar-row"><span>${l}</span><div class="adm-bar-track"><div class="adm-bar-fill" style="width:${(n/max*100).toFixed(1)}%"></div></div><b>${n}</b></div>`).join('');
+
+  const reprov=list.filter(d=>rhAdmEtapa(d)==='REPROVADO');
+  const by={ENGENHARIA:0,'JURÍDICO':0,DIRETORIA:0,RH:0,DP:0,'DOCUMENTAÇÃO RECEBIDA':0};
+  reprov.forEach(d=>{const k=String(d.reprovadoEtapa||'').toUpperCase();if(k in by)by[k]++;});
+  const total=Math.max(1,reprov.length);
+  const rep=document.getElementById('rhAdmReprovEtapa');
+  if(rep) rep.innerHTML=Object.entries(by).map(([l,n])=>`<div class="adm-bar-row"><span>${l}</span><div class="adm-bar-track"><div class="adm-bar-fill" style="width:${(n/total*100).toFixed(1)}%"></div></div><b>${n}</b></div>`).join('') + `<div style="font-size:11px;color:var(--ink-soft);margin-top:8px;">Taxa de reprovação: <b>${list.length?(reprov.length/list.length*100).toFixed(1):'0.0'}%</b></div>`;
+  const motivos={}; reprov.forEach(d=>{const m=(d.motivoResultado||'Não informado').trim()||'Não informado';motivos[m]=(motivos[m]||0)+1;});
+  const mot=document.getElementById('rhAdmReprovMotivos'); if(mot) mot.innerHTML=Object.entries(motivos).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([m,n])=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:4px 0;"><span>${m}</span><b>${n}</b></div>`).join('')||'<span>Nenhuma reprovação registrada.</span>';
+}
 function rhAdmRenderHistorico(){
   const list = rhAdmLoadHistorico();
-  const tbody = document.getElementById('rhAdmHistBody');
-  document.getElementById('rhAdmHistCountTag').textContent = list.length;
-  if(!list.length){
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">Nenhuma solicitação registrada ainda.</div></td></tr>`;
-    return;
-  }
-  tbody.innerHTML = [...list].reverse().map((d,revIdx)=>{
-    const idx = list.length-1-revIdx;
-    return `<tr>
-      <td>${d.nome}</td>
-      <td>${d.cargo}</td>
-      <td>${d.nivel}</td>
-      <td class="num">${d.salario||'—'}</td>
-      <td>${new Date(d.dataGeracao).toLocaleDateString('pt-BR')}</td>
-      <td>
-        <button class="clear-btn" style="padding:5px 10px;font-size:11px;" onclick="rhAdmEditHistorico(${idx})">✏️ Editar</button>
-        <button class="clear-btn" style="padding:5px 10px;font-size:11px;" onclick="rhAdmDuplicarHistorico(${idx})">📑 Duplicar</button>
-        <button class="clear-btn" style="padding:5px 10px;font-size:11px;" onclick="rhAdmReprintPDF(${idx})">📄 PDF</button>
-        <button class="clear-btn" style="padding:5px 10px;font-size:11px;" onclick="rhAdmDeleteHistorico(${idx})">🗑</button>
-      </td>
-    </tr>`;
-  }).join('');
+  rhAdmCalcDashboard(list);
+  const tbody = document.getElementById('rhAdmHistBody'); if(!tbody)return;
+  const q=(document.getElementById('rhAdmSearch')?.value||'').trim().toLowerCase();
+  const sf=document.getElementById('rhAdmStatusFilter')?.value||'';
+  const rows=list.map((d,idx)=>({d,idx})).filter(({d})=>(!q||`${d.nome} ${d.cargo}`.toLowerCase().includes(q))&&(!sf||rhAdmEtapa(d)===sf));
+  document.getElementById('rhAdmHistCountTag').textContent = `${rows.length} de ${list.length}`;
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="12"><div class="empty-state">Nenhum processo de admissão encontrado.</div></td></tr>`;return;}
+  tbody.innerHTML=[...rows].reverse().map(({d,idx})=>{const st=rhAdmEtapa(d);return `<tr>
+    <td><b>${d.nome||'—'}</b><div style="font-size:10px;color:var(--ink-dim);">${d.nivel?'Nível '+d.nivel:''}</div></td>
+    <td>${d.cargo||'—'}</td><td>${d.dataGeracao?new Date(d.dataGeracao).toLocaleDateString('pt-BR'):'—'}</td>
+    <td>${rhAdmDateCell(d.dataEngenharia)}</td>
+    <td>${rhAdmDateCell(d.dataJuridico)}</td>
+    <td>${rhAdmDateCell(d.dataDiretoria)}</td>
+    <td>${rhAdmDateCell(d.dataRH)}</td>
+    <td>${rhAdmDateCell(d.dataDP)}</td>
+    <td>${rhAdmDateCell(d.dataDocsObra)}</td>
+    <td>${rhAdmDateCell(d.dataAdmissao)}</td>
+    <td><span class="adm-status ${rhAdmStatusClass(st)}">${rhAdmEtapaLabel(d)}</span>${st==='REPROVADO'&&d.reprovadoEtapa?`<div style="font-size:9px;color:var(--ink-soft);margin-top:4px;">por ${d.reprovadoEtapa}</div>`:''}</td>
+    <td style="white-space:nowrap;"><button class="clear-btn" style="padding:5px 8px;font-size:10px;" onclick="rhAdmOpenTriagem(${idx})">🧭 Triagem</button> <button class="clear-btn" style="padding:5px 8px;font-size:10px;" onclick="rhAdmEditHistorico(${idx})">✏️ Form.</button> <button class="clear-btn" style="padding:5px 8px;font-size:10px;" onclick="rhAdmReprintPDF(${idx})">📄</button></td>
+  </tr>`}).join('');
+}
+let rhAdmTriagemIndex=null;
+function rhAdmOpenTriagem(idx){
+  const list=rhAdmLoadHistorico(),d=list[idx];if(!d)return;rhAdmTriagemIndex=idx;
+  document.getElementById('rhAdmTriagemNome').textContent=`${d.nome||''} · ${d.cargo||''}`;
+  document.getElementById('rhAdmDtEng').value=d.dataEngenharia||'';document.getElementById('rhAdmDtJur').value=d.dataJuridico||'';document.getElementById('rhAdmDtDir').value=d.dataDiretoria||'';document.getElementById('rhAdmDtRH').value=d.dataRH||'';document.getElementById('rhAdmDtDP').value=d.dataDP||'';document.getElementById('rhAdmDtDocs').value=d.dataDocsObra||'';document.getElementById('rhAdmDtAdmissao').value=d.dataAdmissao||'';
+  document.getElementById('rhAdmResultado').value=d.resultado||'';document.getElementById('rhAdmDtResultado').value=d.dataResultado||'';document.getElementById('rhAdmReprovEtapaSel').value=d.reprovadoEtapa||'';document.getElementById('rhAdmMotivo').value=d.motivoResultado||'';document.getElementById('rhAdmObs').value=d.observacaoTriagem||'';
+  document.getElementById('rhAdmTriagemBack').style.display='flex';
+}
+function rhAdmSaveTriagem(){
+  const list=rhAdmLoadHistorico();if(rhAdmTriagemIndex==null||!list[rhAdmTriagemIndex])return;
+  const d=list[rhAdmTriagemIndex],res=document.getElementById('rhAdmResultado').value;
+  if(res==='REPROVADO'&&!document.getElementById('rhAdmReprovEtapaSel').value){alert('Informe por quem / em qual etapa ocorreu a reprovação.');return;}
+  if(res&&!document.getElementById('rhAdmDtResultado').value){alert('Informe a data da ocorrência.');return;}
+  Object.assign(d,{dataEngenharia:document.getElementById('rhAdmDtEng').value,dataJuridico:document.getElementById('rhAdmDtJur').value,dataDiretoria:document.getElementById('rhAdmDtDir').value,dataRH:document.getElementById('rhAdmDtRH').value,dataDP:document.getElementById('rhAdmDtDP').value,dataDocsObra:document.getElementById('rhAdmDtDocs').value,dataAdmissao:document.getElementById('rhAdmDtAdmissao').value,resultado:res,dataResultado:document.getElementById('rhAdmDtResultado').value,reprovadoEtapa:document.getElementById('rhAdmReprovEtapaSel').value,motivoResultado:document.getElementById('rhAdmMotivo').value.trim(),observacaoTriagem:document.getElementById('rhAdmObs').value.trim()});
+  rhAdmSaveHistorico(list);document.getElementById('rhAdmTriagemBack').style.display='none';rhAdmRenderHistorico();
+  try{window.g360Audit?.('admissao','ATUALIZAR_TRIAGEM','admissao',String(rhAdmTriagemIndex),d.nome,{etapa:rhAdmEtapa(d),resultado:d.resultado||null});}catch(e){}
 }
 function rhAdmReprintPDF(idx){
   const list = rhAdmLoadHistorico();
@@ -6271,8 +6452,8 @@ function rhAdmEditHistorico(idx){
   rhAdmEditIndex = idx;
   rhAdmFillForm(list[idx]);
   const btn = document.getElementById('rhAdmSalvarBtn');
-  if(btn) btn.textContent = '💾 Atualizar Solicitação';
-  document.getElementById('rhAdmNome').scrollIntoView({behavior:'smooth', block:'start'});
+  if(btn) btn.textContent = '💾 Atualizar Admissão';
+  document.getElementById('rhAdmFormPanel').style.display=''; document.getElementById('rhAdmNome').scrollIntoView({behavior:'smooth', block:'start'});
 }
 function rhAdmDuplicarHistorico(idx){
   const list = rhAdmLoadHistorico();
@@ -6282,7 +6463,8 @@ function rhAdmDuplicarHistorico(idx){
   rhAdmEditIndex = null;
   rhAdmFillForm(data);
   const btn = document.getElementById('rhAdmSalvarBtn');
-  if(btn) btn.textContent = '💾 Salvar Solicitação';
+  if(btn) btn.textContent = '💾 Salvar na Base de Admissão';
+  document.getElementById('rhAdmFormPanel').style.display='';
   const nomeInput = document.getElementById('rhAdmNome');
   nomeInput.scrollIntoView({behavior:'smooth', block:'start'});
   nomeInput.focus();
@@ -6310,43 +6492,33 @@ function rhAdmLimparFormulario(){
   rhAdmToggleConditionals();
   rhAdmEditIndex = null;
   const btn = document.getElementById('rhAdmSalvarBtn');
-  if(btn) btn.textContent = '💾 Salvar Solicitação';
+  if(btn) btn.textContent = '💾 Salvar na Base de Admissão';
 }
 
 function renderRhdpAdmissao(){
   document.getElementById('rhAdmDataAtual').textContent = new Date().toLocaleDateString('pt-BR');
-  rhAdmPopulateCargoSelect();
-  rhAdmOnCargoChange();
-  rhAdmPopulateCCustoSelect();
-  rhAdmToggleConditionals();
-  rhAdmRenderHistorico();
-
+  rhAdmPopulateCargoSelect(); rhAdmPopulateCCustoSelect(); rhAdmToggleConditionals(); rhAdmRenderHistorico();
   document.getElementById('rhAdmCargo').addEventListener('change', rhAdmOnCargoChange);
   document.getElementById('rhAdmNivel').addEventListener('change', rhAdmOnNivelChange);
   document.getElementById('rhAdmCCusto').addEventListener('change', rhAdmOnCCustoChange);
-  document.querySelectorAll('input[name="rhAdmTipoContrato"]').forEach(r=>r.addEventListener('change', rhAdmToggleConditionals));
-  document.querySelectorAll('input[name="rhAdmBaixada"]').forEach(r=>r.addEventListener('change', rhAdmToggleConditionals));
+  document.querySelectorAll('input[name="rhAdmTipoContrato"]').forEach(el=>el.addEventListener('change', rhAdmToggleConditionals));
+  document.querySelectorAll('input[name="rhAdmBaixada"]').forEach(el=>el.addEventListener('change', rhAdmToggleConditionals));
   document.getElementById('rhAdmPeriodo').addEventListener('change', rhAdmToggleConditionals);
-
-  document.getElementById('rhAdmGerarPdfBtn').addEventListener('click', ()=>{
-    const data = rhAdmCollectFormData();
-    if(!rhAdmValidate(data)) return;
-    rhAdmGerarPDF(data);
+  document.getElementById('rhAdmNovaBtn').addEventListener('click',()=>{rhAdmEditIndex=null;rhAdmLimparFormulario();document.getElementById('rhAdmFormPanel').style.display='';document.getElementById('rhAdmFormPanel').scrollIntoView({behavior:'smooth',block:'start'});});
+  document.getElementById('rhAdmSearch').addEventListener('input',rhAdmRenderHistorico);document.getElementById('rhAdmStatusFilter').addEventListener('change',rhAdmRenderHistorico);
+  document.getElementById('rhAdmClearFilter').addEventListener('click',()=>{document.getElementById('rhAdmSearch').value='';document.getElementById('rhAdmStatusFilter').value='';rhAdmRenderHistorico();});
+  document.getElementById('rhAdmTriagemFechar').addEventListener('click',()=>document.getElementById('rhAdmTriagemBack').style.display='none');
+  document.getElementById('rhAdmTriagemBack').addEventListener('click',e=>{if(e.target.id==='rhAdmTriagemBack')e.currentTarget.style.display='none';});
+  document.getElementById('rhAdmTriagemSalvar').addEventListener('click',rhAdmSaveTriagem);
+  document.getElementById('rhAdmResultado').addEventListener('change',e=>{const isRep=e.target.value==='REPROVADO';document.getElementById('rhAdmReprovEtapaSel').disabled=!isRep;if(!isRep)document.getElementById('rhAdmReprovEtapaSel').value='';});
+  document.getElementById('rhAdmGerarPdfBtn').addEventListener('click',()=>{const data=rhAdmCollectFormData();if(!rhAdmValidate(data))return;rhAdmGerarPDF(data);});
+  document.getElementById('rhAdmSalvarBtn').addEventListener('click',()=>{
+    const data=rhAdmCollectFormData();if(!rhAdmValidate(data))return;const list=rhAdmLoadHistorico();
+    if(rhAdmEditIndex!=null&&list[rhAdmEditIndex]){const old=list[rhAdmEditIndex];list[rhAdmEditIndex]={...old,...data,dataGeracao:old.dataGeracao||data.dataGeracao};}
+    else list.push(data);
+    rhAdmSaveHistorico(list);rhAdmRenderHistorico();rhAdmLimparFormulario();document.getElementById('rhAdmFormPanel').style.display='none';window.scrollTo({top:0,behavior:'smooth'});
   });
-  document.getElementById('rhAdmSalvarBtn').addEventListener('click', ()=>{
-    const data = rhAdmCollectFormData();
-    if(!rhAdmValidate(data)) return;
-    const list = rhAdmLoadHistorico();
-    if(rhAdmEditIndex!=null && list[rhAdmEditIndex]){
-      list[rhAdmEditIndex] = data;
-    } else {
-      list.push(data);
-    }
-    rhAdmSaveHistorico(list);
-    rhAdmRenderHistorico();
-    rhAdmLimparFormulario();
-  });
-  document.getElementById('rhAdmLimparBtn').addEventListener('click', rhAdmLimparFormulario);
+  document.getElementById('rhAdmLimparBtn').addEventListener('click',rhAdmLimparFormulario);
 }
 
 // ---------------------------------------------------------------
@@ -6653,7 +6825,7 @@ function rhDemEditHistorico(idx){
   rhDemEditIndex = idx;
   rhDemFillForm(list[idx]);
   const btn = document.getElementById('rhDemSalvarBtn');
-  if(btn) btn.textContent = '💾 Atualizar Solicitação';
+  if(btn) btn.textContent = '💾 Atualizar Admissão';
   document.getElementById('rhDemColab').scrollIntoView({behavior:'smooth', block:'start'});
 }
 function rhDemDuplicarHistorico(idx){
@@ -6664,7 +6836,7 @@ function rhDemDuplicarHistorico(idx){
   rhDemEditIndex = null;
   rhDemFillForm(data);
   const btn = document.getElementById('rhDemSalvarBtn');
-  if(btn) btn.textContent = '💾 Salvar Solicitação';
+  if(btn) btn.textContent = '💾 Salvar na Base de Admissão';
   document.getElementById('rhDemColab').scrollIntoView({behavior:'smooth', block:'start'});
 }
 
@@ -6681,7 +6853,7 @@ function rhDemLimparFormulario(){
   document.getElementById('rhDemObservacoes').value = '';
   rhDemEditIndex = null;
   const btn = document.getElementById('rhDemSalvarBtn');
-  if(btn) btn.textContent = '💾 Salvar Solicitação';
+  if(btn) btn.textContent = '💾 Salvar na Base de Admissão';
 }
 
 function renderRhdpDemissao(){
@@ -6998,7 +7170,7 @@ function rhMovEditHistorico(idx){
   rhMovEditIndex = idx;
   rhMovFillForm(list[idx]);
   const btn = document.getElementById('rhMovSalvarBtn');
-  if(btn) btn.textContent = '💾 Atualizar Solicitação';
+  if(btn) btn.textContent = '💾 Atualizar Admissão';
   document.getElementById('rhMovColab').scrollIntoView({behavior:'smooth', block:'start'});
 }
 function rhMovDuplicarHistorico(idx){
@@ -7009,7 +7181,7 @@ function rhMovDuplicarHistorico(idx){
   rhMovEditIndex = null;
   rhMovFillForm(data);
   const btn = document.getElementById('rhMovSalvarBtn');
-  if(btn) btn.textContent = '💾 Salvar Solicitação';
+  if(btn) btn.textContent = '💾 Salvar na Base de Admissão';
   document.getElementById('rhMovColab').scrollIntoView({behavior:'smooth', block:'start'});
 }
 
@@ -7026,7 +7198,7 @@ function rhMovLimparFormulario(){
   rhMovToggleConditionals();
   rhMovEditIndex = null;
   const btn = document.getElementById('rhMovSalvarBtn');
-  if(btn) btn.textContent = '💾 Salvar Solicitação';
+  if(btn) btn.textContent = '💾 Salvar na Base de Admissão';
 }
 
 function renderRhdpMovimentacao(){
@@ -12145,7 +12317,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
 <script>
 (function(){
   const MODULES=[
-    ['alertas','Central de Alertas','alertas'],['projetos','Projetos / Obras','projetosObras'],['executivo','Painel Gerencial','executivo'],['colaboradores','Colaboradores (RH / DP)','base'],['cargos_salarios','Cargos e Salários','cargosSalarios'],['termos','Termos de Responsabilidade','termoResponsabilidade'],['alojamentos','Alojamentos','alojamento'],['patrimonio_inventario','Inventário de Patrimônio','patrimonioInventario'],['patrimonio_estoque','Estoque de Patrimônio','patrimonioEstoque'],['patrimonio_alojamento','Patrimônio por Alojamento','patrimonio'],['organograma','Organograma Setor/Equipe','organograma'],['contratos','Contratos','contratos'],['aditivos','Aditivos de Contratos','aditivosContratos'],['fechamento','Fechamento de Praça','fechamentoPraca'],['admissao','Solicitação de Admissão','rhdpAdmissao'],['demissao','Solicitação de Demissão','rhdpDemissao'],['movimentacao','Movimentação Interna','rhdpMovimentacao'],['advertencia','Advertência Disciplinar','rhdpAdvertencia'],['folga','Folga de Campo','baixadas'],['sesmt','Segurança do Trabalho','sesmt'],['sesmt_estoque','Estoque de EPIs','sesmtEstoque'],['sesmt_termo','Termo de Entrega de EPIs','sesmtTermo'],['usuarios','Usuários & Permissões','usuariosPermissoes']
+    ['alertas','Central de Alertas','alertas'],['projetos','Projetos / Obras','projetosObras'],['executivo','Painel Gerencial','executivo'],['colaboradores','Colaboradores (RH / DP)','base'],['cargos_salarios','Cargos e Salários','cargosSalarios'],['termos','Termos de Responsabilidade','termoResponsabilidade'],['alojamentos','Alojamentos','alojamento'],['patrimonio_inventario','Inventário de Patrimônio','patrimonioInventario'],['patrimonio_estoque','Estoque de Patrimônio','patrimonioEstoque'],['patrimonio_alojamento','Patrimônio por Alojamento','patrimonio'],['organograma','Organograma Setor/Equipe','organograma'],['contratos','Contratos','contratos'],['aditivos','Aditivos de Contratos','aditivosContratos'],['fechamento','Fechamento de Praça','fechamentoPraca'],['admissao','Admissão','rhdpAdmissao'],['demissao','Solicitação de Demissão','rhdpDemissao'],['movimentacao','Movimentação Interna','rhdpMovimentacao'],['advertencia','Advertência Disciplinar','rhdpAdvertencia'],['folga','Folga de Campo','baixadas'],['sesmt','Segurança do Trabalho','sesmt'],['sesmt_estoque','Estoque de EPIs','sesmtEstoque'],['sesmt_termo','Termo de Entrega de EPIs','sesmtTermo'],['usuarios','Usuários & Permissões','usuariosPermissoes']
   ];
   const ACTIONS=['visualizar','criar','editar','aprovar','ativar','excluir','exportar'];
   const sb=window.g360SupabaseClient, PROD=window.g360PreviewMode===false && !!sb;
