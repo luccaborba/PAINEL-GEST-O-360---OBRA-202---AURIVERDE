@@ -1818,7 +1818,7 @@ html.g360-ui-ready .content-col {
         <div class="page-title" style="align-items:flex-start;">
           <span class="pt-ic">🧑‍💼</span>
           <div style="flex:1;">
-            <div class="pt-title">RH / DP — Admissão</div>
+            <div class="pt-title">RH / DP — Admissão <span class="tag" style="margin-left:8px;">V189 · 6 NÍVEIS</span></div>
             <div class="pt-sub">Base de admissões, 6 níveis de aprovação independentes e indicadores de aprovação e reprovação</div>
           </div>
           <button class="btn-primary" id="rhAdmNovaBtn" style="white-space:nowrap;">＋ Nova Solicitação de Admissão</button>
@@ -15715,6 +15715,104 @@ window.g360BackupV135={generate,history,authMaster};
   ['g360AuditSearch','g360AuditModule','g360AuditAction','g360AuditStart','g360AuditEnd'].forEach(id=>$(id)?.addEventListener(id==='g360AuditSearch'?'input':'change',render));
   document.addEventListener('DOMContentLoaded',protectMenu,{once:true});
   setTimeout(protectMenu,1800);
+})();
+</script>
+
+
+<script id="g360-admissao-v189-final-override">
+(function(){
+  const LEVELS = [
+    ['ENGENHARIA','dataEngenharia'],
+    ['JURÍDICO','dataJuridico'],
+    ['DIRETORIA','dataDiretoria'],
+    ['RH','dataRH'],
+    ['DP','dataDP'],
+    ['DOCUMENTAÇÃO RECEBIDA','dataDocsObra']
+  ];
+
+  function terminalStatus(d){
+    const r=String(d?.resultado||'').toUpperCase();
+    if(['REPROVADO','DESISTÊNCIA','CANCELADO'].includes(r)) return r;
+    if(d?.dataAdmissao) return 'ADMITIDO';
+    if(LEVELS.every(([,f])=>!!d?.[f])) return 'PRONTO PARA ADMISSÃO';
+    return 'APROVAÇÕES PENDENTES';
+  }
+
+  function renderSixLevels(list){
+    list = Array.isArray(list) ? list : [];
+    const ativos=list.filter(d=>!['ADMITIDO','REPROVADO','DESISTÊNCIA','CANCELADO'].includes(terminalStatus(d)));
+
+    const fun=document.getElementById('rhAdmFunnel');
+    if(fun){
+      const dados=LEVELS.map(([label,field])=>[label,ativos.filter(d=>!!d[field]).length]);
+      const max=Math.max(1,...dados.map(x=>x[1]));
+      fun.innerHTML=dados.map(([label,n])=>`
+        <div class="adm-bar-row">
+          <span>${label}</span>
+          <div class="adm-bar-track"><div class="adm-bar-fill" style="width:${(n/max*100).toFixed(1)}%"></div></div>
+          <b>${n}</b>
+        </div>`).join('');
+    }
+
+    const rep=document.getElementById('rhAdmReprovEtapa');
+    if(rep){
+      const reprov=list.filter(d=>terminalStatus(d)==='REPROVADO');
+      const by={ENGENHARIA:0,'JURÍDICO':0,DIRETORIA:0,RH:0,DP:0,'DOCUMENTAÇÃO RECEBIDA':0};
+      reprov.forEach(d=>{
+        const k=String(d?.reprovadoEtapa||'').toUpperCase();
+        if(Object.prototype.hasOwnProperty.call(by,k)) by[k]++;
+      });
+      const total=Math.max(1,reprov.length);
+      rep.innerHTML=Object.entries(by).map(([label,n])=>`
+        <div class="adm-bar-row">
+          <span>${label}</span>
+          <div class="adm-bar-track"><div class="adm-bar-fill" style="width:${(n/total*100).toFixed(1)}%"></div></div>
+          <b>${n}</b>
+        </div>`).join('')+
+        `<div style="font-size:11px;color:var(--ink-soft);margin-top:8px;">Taxa de reprovação: <b>${list.length?(reprov.length/list.length*100).toFixed(1):'0.0'}%</b></div>`;
+    }
+
+    const panelTitle=document.querySelector('#view-rhdpAdmissao #rhAdmFunnel')?.closest('.panel')?.querySelector('h2');
+    if(panelTitle) panelTitle.innerHTML='Painel de Aprovações <span class="tag">6 níveis · sem ordem</span>';
+  }
+
+  function forceRender(){
+    try{
+      const list = (typeof window.rhAdmLoadHistorico==='function') ? window.rhAdmLoadHistorico() :
+                   (typeof rhAdmLoadHistorico==='function' ? rhAdmLoadHistorico() : []);
+      renderSixLevels(list);
+    }catch(e){
+      renderSixLevels([]);
+    }
+  }
+
+  // Replace the global calculator after all earlier scripts.
+  window.rhAdmCalcDashboard = function(list){
+    renderSixLevels(list);
+    // KPIs: explicitly six pending levels + operational totals
+    const box=document.getElementById('rhAdmKpis');
+    if(box){
+      const ativos=(Array.isArray(list)?list:[]).filter(d=>!['ADMITIDO','REPROVADO','DESISTÊNCIA','CANCELADO'].includes(terminalStatus(d)));
+      const counts={};
+      (Array.isArray(list)?list:[]).forEach(d=>{const s=terminalStatus(d);counts[s]=(counts[s]||0)+1;});
+      const cards=[
+        ['EM PROCESSO',ativos.length],
+        ...LEVELS.map(([label,field])=>[label+' PENDENTE',ativos.filter(d=>!d[field]).length]),
+        ['PRONTOS P/ ADMISSÃO',counts['PRONTO PARA ADMISSÃO']||0],
+        ['ADMITIDOS',counts['ADMITIDO']||0],
+        ['REPROVADOS',counts['REPROVADO']||0]
+      ];
+      box.innerHTML=cards.map(([l,n])=>`<div class="adm-kpi"><div class="l">${l}</div><div class="n">${n}</div></div>`).join('');
+    }
+  };
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(forceRender,50));
+  else setTimeout(forceRender,50);
+
+  // Re-apply when the Admission menu/view is clicked.
+  document.addEventListener('click',e=>{
+    if(e.target?.closest?.('[data-view="rhdpAdmissao"]')) setTimeout(forceRender,120);
+  },true);
 })();
 </script>
 
