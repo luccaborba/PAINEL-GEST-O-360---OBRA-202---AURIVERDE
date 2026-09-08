@@ -2491,12 +2491,13 @@ html.g360-ui-ready .content-col {
             <div class="fc-month-tabs" id="fcMonthTabs"></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
               <button class="fc-btn-ghost" id="fcManageMonthPeopleBtn">👥 Colaboradores do mês</button>
-              <button class="fc-btn-ghost" id="fcNewMonthBtn">+ Novo mês</button>
+              <button class="fc-btn-ghost" id="fcUnplannedBtn">＋ Folga não programada</button>
+              <button class="fc-btn-primary" id="fcNewMonthBtn">+ Abrir nova competência</button>
             </div>
           </div>
 
           <h2>📋 Cadastro de Colaboradores — Folga de Campo <span class="tag" id="fcCountTag"></span></h2>
-          <p style="color:var(--ink-soft);font-size:12px;margin:0 0 16px;">Cada competência é controlada separadamente. Ao criar um novo mês, selecione quais colaboradores participarão daquele período. Somente quem tem <b style="color:var(--ink)">valor de reembolso</b> e <b style="color:var(--ink)">destino</b> preenchidos pode ter o formulário "Comunicação e Concessão de Folga de Campo" gerado; preencha manualmente pelo lápis quando ainda não tiver esses dados na planilha.</p>
+          <p style="color:var(--ink-soft);font-size:12px;margin:0 0 16px;">Cada competência é controlada separadamente. Ao abrir uma nova competência, o sistema analisa a <b style="color:var(--ink)">última baixada</b> e a <b style="color:var(--ink)">periodicidade</b> cadastradas em cada colaborador e sugere automaticamente quem deve sair no período. Você pode confirmar, incluir ou retirar colaboradores antes de abrir a competência.</p>
 
           <section class="fc-kpis">
             <div class="kpi"><div class="kpi-label">Colaboradores Ativos</div><div class="kpi-value" id="fcKpiTotal">–</div></div>
@@ -2535,15 +2536,19 @@ html.g360-ui-ready .content-col {
         <!-- Modal: novo mês -->
         <div class="fc-modal-backdrop" id="fcMonthModalBackdrop">
           <div class="fc-modal">
-            <h3>Novo mês de Folga de Campo</h3>
-            <p>Cria um novo projeto mensal — a lista de colaboradores é a mesma, mas todos começam como "Pendente" até você preencher ou importar os dados desse mês.</p>
-            <label class="fc-modal-field">Nome do mês
+            <h3>Abrir nova competência — Folga de Campo</h3>
+            <p>O sistema calcula a próxima baixada a partir da última baixada + periodicidade do cadastro. Os colaboradores cuja data sugerida cair dentro da competência serão pré-selecionados automaticamente.</p>
+            <label class="fc-modal-field">Competência
               <input type="text" id="fcNewMonthLabel" placeholder="Ex.: Outubro/2026">
             </label>
             <div class="fc-month-people">
               <div class="fc-month-people-head">
-                <div class="fc-month-people-title">Escolha os colaboradores deste mês</div>
+                <div>
+                  <div class="fc-month-people-title">Colaboradores da competência</div>
+                  <div id="fcMonthSuggestionSummary" style="font-size:11px;color:var(--ink-soft);margin-top:4px;"></div>
+                </div>
                 <div class="fc-month-people-actions">
+                  <button type="button" class="clear-btn" id="fcMonthSelectSuggested">Selecionar sugeridos</button>
                   <button type="button" class="clear-btn" id="fcMonthSelectAll">Selecionar todos</button>
                   <button type="button" class="clear-btn" id="fcMonthClearPeople">Limpar</button>
                 </div>
@@ -2554,7 +2559,40 @@ html.g360-ui-ready .content-col {
             </div>
             <div class="fc-modal-actions">
               <button class="clear-btn" id="fcNewMonthCancel">Cancelar</button>
-              <button class="fc-btn-primary" id="fcNewMonthConfirm">Criar mês</button>
+              <button class="fc-btn-primary" id="fcNewMonthConfirm">Abrir competência</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal: folga não programada / reembolso -->
+        <div class="fc-modal-backdrop" id="fcUnplannedModalBackdrop">
+          <div class="fc-modal">
+            <h3>Folga de campo não programada</h3>
+            <p>Inclua uma saída extraordinária para reembolso. O período informado passa a ser considerado como a última baixada efetiva para calcular as próximas programações.</p>
+            <div class="fc-modal-grid">
+              <label class="fc-modal-field" style="grid-column:1/-1">Colaborador
+                <select id="fcUnplannedColab"></select>
+              </label>
+              <label class="fc-modal-field">Cidade de origem / baixada
+                <input type="text" id="fcUnplannedDestino" readonly>
+              </label>
+              <label class="fc-modal-field">Distância da obra (km)
+                <input type="number" id="fcUnplannedKm" readonly>
+              </label>
+              <label class="fc-modal-field">Data início
+                <input type="date" id="fcUnplannedIni">
+              </label>
+              <label class="fc-modal-field">Data fim
+                <input type="date" id="fcUnplannedFim">
+              </label>
+              <label class="fc-modal-field" style="grid-column:1/-1">Valor para reembolso (R$)
+                <input type="number" id="fcUnplannedValor" min="0" step="0.01">
+              </label>
+              <div id="fcUnplannedMsg" style="grid-column:1/-1;font-size:12px;color:var(--ink-soft)"></div>
+            </div>
+            <div class="fc-modal-actions">
+              <button class="clear-btn" id="fcUnplannedCancel">Cancelar</button>
+              <button class="fc-btn-primary" id="fcUnplannedSave">💾 Incluir para reembolso</button>
             </div>
           </div>
         </div>
@@ -3775,34 +3813,195 @@ function fcSaveProj(){
 
 async function fcSupabaseObraId(){
   if(window.g360PreviewMode!==false || !window.g360SupabaseClient) return null;
+  if(window.G360_ACTIVE_OBRA_ID) return window.G360_ACTIVE_OBRA_ID;
   const selected=window.g360GetSelectedObra?.(); if(selected?.id) return selected.id;
   const cod=localStorage.getItem('g360_obra_ativa')||window.GESTAO360_CONFIG?.OBRA_CODIGO||'202';
   const r=await window.g360SupabaseClient.from('obras').select('id').eq('codigo',String(cod)).limit(1).maybeSingle();
   return r.data?.id||null;
 }
 async function fcSyncMonthToSupabase(key=fcProj.current){
-  if(window.g360PreviewMode!==false || !window.g360SupabaseClient) return;
+  if(window.g360PreviewMode!==false || !window.g360SupabaseClient) return true;
   try{
-    const sb=window.g360SupabaseClient, obraId=await fcSupabaseObraId(); if(!obraId)return;
+    const sb=window.g360SupabaseClient;
+    const obraId=await fcSupabaseObraId();
+    if(!obraId) throw new Error('Obra ativa não identificada para gravar Folga de Campo.');
+
+    // A coluna competencia no Supabase é DATE.
+    // Internamente o painel usa AAAA-MM, então sempre gravamos o primeiro dia do mês.
     const competencia=key+'-01';
-    // Primeiro desmarca os participantes anteriores; os selecionados serão reativados via upsert.
-    const off=await sb.from('folga_campo').update({incluido:false}).eq('obra_id',obraId).eq('competencia',competencia);
+
+    // Participantes retirados da competência não são apagados: ficam preservados
+    // no histórico, apenas marcado como incluido=false.
+    const off=await sb.from('folga_campo')
+      .update({incluido:false,updated_at:new Date().toISOString()})
+      .eq('obra_id',obraId)
+      .eq('competencia',competencia);
     if(off.error) throw off.error;
+
     const included=fcProj.included?.[key];
     const nomes=Array.isArray(included)?included:ATIVOS.map(c=>c.nome);
     const overrides=fcProj.overrides?.[key]||{};
-    const payload=nomes.map(nome=>{
-      const c=ATIVOS.find(x=>x.nome===nome); if(!c?.id)return null;
-      const f=Object.prototype.hasOwnProperty.call(overrides,nome)?overrides[nome]:(key===FC_SEED_MONTH?FOLGA_CAMPO_FORM_DATA[nome]||null:null);
-      return {obra_id:obraId,colaborador_id:c.id,matricula:String(c.matricula??c.mat??''),colaborador_nome:c.nome,competencia,destino:f?.destino||null,distancia_km:f?.km??null,data_inicio:f?.dataIni||null,data_fim:f?.dataFim||null,data_saida:f?.dataIni||null,data_retorno:f?.retorno||null,valor_reembolso:Number(f?.valor||0),custo:Number(f?.valor||0),dias:f?.dias??null,status:f?'PROGRAMADA':'PENDENTE',incluido:true,dados:{prazoDias:f?.prazoDias??null}};
-    }).filter(Boolean);
-    if(payload.length){const up=await sb.from('folga_campo').upsert(payload,{onConflict:'obra_id,colaborador_id,competencia'});if(up.error)throw up.error;}
-  }catch(e){console.error('Falha ao sincronizar Folga de Campo no Supabase:',e);}
+
+    for(const nome of nomes){
+      const c=ATIVOS.find(x=>x.nome===nome);
+      if(!c?.id) continue;
+
+      const f=Object.prototype.hasOwnProperty.call(overrides,nome)
+        ? overrides[nome]
+        : (key===FC_SEED_MONTH?FOLGA_CAMPO_FORM_DATA[nome]||null:null);
+
+      const naoProgramada=!!f?.naoProgramada;
+      const paraReembolso=!!(f?.paraReembolso || naoProgramada);
+      const baseNova=!!(f?.baseNovaProgramacao || naoProgramada);
+
+      const row={
+        obra_id:obraId,
+        colaborador_id:c.id,
+        matricula:String(c.matricula??c.mat??''),
+        colaborador_nome:c.nome,
+        competencia,
+        destino:f?.destino||null,
+        distancia_km:f?.km??null,
+        data_inicio:f?.dataIni||null,
+        data_fim:f?.dataFim||null,
+        data_saida:f?.dataIni||null,
+        data_retorno:f?.retorno||null,
+        valor_reembolso:Number(f?.valor||0),
+        custo:Number(f?.valor||0),
+        dias:f?.dias??null,
+        status:f?(naoProgramada?'NAO_PROGRAMADA':'PROGRAMADA'):'PENDENTE',
+        incluido:true,
+        tipo_folga:naoProgramada?'NAO_PROGRAMADA':'PROGRAMADA',
+        para_reembolso:paraReembolso,
+        base_nova_programacao:baseNova,
+        ultima_baixada_base:f?.ultimaBaixada||f?.ultimaBaixadaBase||null,
+        periodicidade_base:f?.periodicidade||f?.periodicidadeBase||String(c?.periodicidadeBaixada||'')||null,
+        dados:{
+          prazoDias:f?.prazoDias??null,
+          naoProgramada,
+          tipo:naoProgramada?'NAO_PROGRAMADA':'PROGRAMADA',
+          paraReembolso,
+          baseNovaProgramacao:baseNova,
+          lancadaEm:f?.lancadaEm||null
+        },
+        updated_at:new Date().toISOString()
+      };
+
+      // Não dependemos de constraint UNIQUE para persistir.
+      // Atualiza o registro já existente da competência; se não existir, insere.
+      const existing=await sb.from('folga_campo')
+        .select('id')
+        .eq('obra_id',obraId)
+        .eq('colaborador_id',c.id)
+        .eq('competencia',competencia)
+        .order('created_at',{ascending:false})
+        .limit(1)
+        .maybeSingle();
+      if(existing.error) throw existing.error;
+
+      if(existing.data?.id){
+        const up=await sb.from('folga_campo').update(row).eq('id',existing.data.id);
+        if(up.error) throw up.error;
+      }else{
+        const ins=await sb.from('folga_campo').insert(row);
+        if(ins.error) throw ins.error;
+      }
+    }
+
+    // Atualiza a cópia oficial em memória para que o cálculo posterior
+    // use imediatamente o que acabou de ser confirmado pelo Supabase.
+    await fcReloadSupabaseHistory();
+    return true;
+  }catch(e){
+    console.error('Falha ao sincronizar Folga de Campo no Supabase:',e);
+    alert('Não foi possível salvar a Folga de Campo no Supabase: '+(e?.message||e));
+    throw e;
+  }
 }
 
 let fcProj = fcLoadProj();
 let fcSelected = new Set(fcProj.selected[fcProj.current] || []);
 let fcState = { search:'', onlyReady:true };
+
+function fcDbCompetenciaKey(v){
+  const s=String(v||'').slice(0,10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(s)?s.slice(0,7):null;
+}
+function fcDbRowToFolga(r){
+  const dados=(r?.dados && typeof r.dados==='object')?r.dados:{};
+  const naoProgramada=
+    String(r?.tipo_folga||'').toUpperCase()==='NAO_PROGRAMADA' ||
+    String(r?.status||'').toUpperCase()==='NAO_PROGRAMADA' ||
+    !!dados.naoProgramada;
+
+  return {
+    destino:r?.destino||'',
+    km:r?.distancia_km==null?null:Number(r.distancia_km),
+    dataIni:r?.data_inicio||r?.data_saida||'',
+    dataFim:r?.data_fim||'',
+    retorno:r?.data_retorno||'',
+    valor:Number(r?.valor_reembolso??r?.custo??0),
+    dias:r?.dias==null?null:Number(r.dias),
+    prazoDias:dados.prazoDias??null,
+    naoProgramada,
+    tipo:naoProgramada?'NAO_PROGRAMADA':'PROGRAMADA',
+    paraReembolso:!!(r?.para_reembolso || dados.paraReembolso || naoProgramada),
+    baseNovaProgramacao:!!(r?.base_nova_programacao || dados.baseNovaProgramacao || naoProgramada),
+    ultimaBaixada:r?.ultima_baixada_base||null,
+    periodicidade:r?.periodicidade_base||null,
+    lancadaEm:dados.lancadaEm||r?.created_at||null,
+    supabaseId:r?.id||null,
+    persisted:true
+  };
+}
+function fcHydrateFromSupabaseRows(rows){
+  if(!Array.isArray(rows)) return;
+  window.G360_FOLGA_DB_ROWS=rows;
+
+  const activeRows=rows.filter(r=>r && r.incluido!==false && String(r.status||'').toUpperCase()!=='CANCELADA');
+  if(!activeRows.length) return;
+
+  const keys=[...new Set(activeRows.map(r=>fcDbCompetenciaKey(r.competencia)).filter(Boolean))].sort();
+
+  keys.forEach(key=>{
+    if(!fcProj.months.includes(key)) fcProj.months.push(key);
+    fcProj.overrides[key]={};
+    fcProj.included[key]=[];
+    if(!Array.isArray(fcProj.selected[key])) fcProj.selected[key]=[];
+
+    activeRows.filter(r=>fcDbCompetenciaKey(r.competencia)===key).forEach(r=>{
+      const nome=String(r.colaborador_nome||'').trim();
+      if(!nome) return;
+      fcProj.included[key].push(nome);
+      fcProj.overrides[key][nome]=fcDbRowToFolga(r);
+    });
+  });
+
+  fcProj.months=[...new Set(fcProj.months)].sort();
+
+  // Mantém a competência escolhida quando ela continua válida.
+  if(!fcProj.months.includes(fcProj.current)) fcProj.current=fcProj.months[fcProj.months.length-1]||FC_SEED_MONTH;
+  fcSelected=new Set((fcProj.selected[fcProj.current]||[]).filter(n=>(fcProj.included[fcProj.current]||[]).includes(n)));
+  fcSaveProj();
+}
+async function fcReloadSupabaseHistory(){
+  if(window.g360PreviewMode!==false || !window.g360SupabaseClient) return [];
+  const obraId=await fcSupabaseObraId();
+  if(!obraId) return [];
+  const q=await window.g360SupabaseClient.from('folga_campo')
+    .select('*')
+    .eq('obra_id',obraId)
+    .order('competencia',{ascending:true})
+    .order('colaborador_nome',{ascending:true});
+  if(q.error) throw q.error;
+  fcHydrateFromSupabaseRows(q.data||[]);
+  return q.data||[];
+}
+window.g360HydrateFolgaFromSupabase=fcHydrateFromSupabaseRows;
+if(Array.isArray(window.G360_FOLGA_DB_ROWS) && window.G360_FOLGA_DB_ROWS.length){
+  try{fcHydrateFromSupabaseRows(window.G360_FOLGA_DB_ROWS);}catch(e){console.error(e)}
+}
+
 let fcEditingNome = null;
 let fcMonthPeopleSelection = new Set();
 let fcMonthModalMode = 'create';
@@ -3909,7 +4108,11 @@ function renderFolgaCampoForm(){
     const valor = eleg ? fmtBRL(f.valor) : '—';
     const destino = eleg ? f.destino : '—';
     const km = eleg ? fmtInt(f.km) + ' km' : '—';
-    const badge = eleg ? '<span class="fc-badge fc-badge-pronto">Pronto</span>' : '<span class="fc-badge fc-badge-pendente">Pendente</span>';
+    const badge = eleg
+      ? (f?.naoProgramada
+          ? '<span class="fc-badge" style="background:rgba(245,197,24,.14);color:#f5c518;border:1px solid rgba(245,197,24,.28)">Não programada · Reembolso</span>'
+          : '<span class="fc-badge fc-badge-pronto">Pronto</span>')
+      : '<span class="fc-badge fc-badge-pendente">Pendente</span>';
     const checked = fcSelected.has(r.nome) ? 'checked' : '';
     return `<tr class="${eleg?'':'fc-pendente'}" data-nome="${r.nome}">
       <td class="fc-chkcol"><input type="checkbox" class="fc-chk fc-rowchk" data-nome="${r.nome}" ${eleg?'':'disabled'} ${checked}></td>
@@ -3982,25 +4185,175 @@ document.getElementById('fcGenBtn').addEventListener('click', ()=>{
   fcGerarPdfLote(lista);
 });
 
+
+function fcParseIsoDateLocal(v){
+  if(!v) return null;
+  const s=String(v).slice(0,10);
+  const m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return null;
+  const d=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]),12,0,0,0);
+  return Number.isNaN(d.getTime())?null:d;
+}
+function fcIsoLocal(d){
+  if(!(d instanceof Date)||Number.isNaN(d.getTime())) return null;
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function fcAddMonthsSafe(date,months){
+  const d=new Date(date.getTime());
+  const day=d.getDate();
+  d.setDate(1);
+  d.setMonth(d.getMonth()+months);
+  const last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+  d.setDate(Math.min(day,last));
+  return d;
+}
+function fcPeriodicidadeRegra(raw){
+  if(raw==null||String(raw).trim()==='') return null;
+  const s=String(raw).trim().toUpperCase();
+  const nMatch=s.match(/(\d+)/);
+  if(!nMatch) return null;
+  const n=Number(nMatch[1]);
+  if(!Number.isFinite(n)||n<=0) return null;
+  if(/DIA/.test(s)) return {tipo:'dias',valor:n,label:n+' dias'};
+  if(/MES|MÊS/.test(s) || s.includes('/')) return {tipo:'meses',valor:n,label:n+' mês(es)'};
+  // Cadastro atual trabalha normalmente com periodicidade mensal.
+  // Para valor numérico isolado, até 12 = meses; acima disso = dias.
+  return n<=12 ? {tipo:'meses',valor:n,label:n+' mês(es)'} : {tipo:'dias',valor:n,label:n+' dias'};
+}
+
+function fcUltimaBaixadaEfetiva(c){
+  const candidatos=[];
+  const cadastro=fcParseIsoDateLocal(c?.ultBaixada);
+  if(cadastro) candidatos.push({data:cadastro,fonte:'cadastro'});
+
+  const nome=c?.nome;
+  if(nome && fcProj?.overrides){
+    Object.keys(fcProj.overrides).forEach(key=>{
+      const f=fcProj.overrides?.[key]?.[nome];
+      if(!f || !f.dataIni) return;
+      // Uma folga não programada/reembolsável marcada como base da nova programação
+      // é uma ocorrência real e passa a redefinir a próxima baixada.
+      // Também aceitamos lançamentos persistidos/manualizados com período completo.
+      const realizada=!!f.baseNovaProgramacao || !!f.naoProgramada || (!!f.dataFim && (f.persisted || !f.sugestaoAutomatica));
+      if(!realizada) return;
+      const dt=fcParseIsoDateLocal(f.dataIni);
+      if(dt) candidatos.push({
+        data:dt,
+        fonte:f.naoProgramada?'nao_programada':'lancamento',
+        periodoFim:f.dataFim||null
+      });
+    });
+  }
+  if(!candidatos.length) return null;
+  candidatos.sort((a,b)=>b.data-a.data);
+  return candidatos[0];
+}
+
+function fcSugestaoProximaBaixada(c){
+  const regra=fcPeriodicidadeRegra(c?.periodicidadeBaixada);
+  const ultimaInfo=fcUltimaBaixadaEfetiva(c);
+  const ultima=ultimaInfo?.data||null;
+  if(ultima && regra){
+    const prox=regra.tipo==='meses'
+      ? fcAddMonthsSafe(ultima,regra.valor)
+      : new Date(ultima.getFullYear(),ultima.getMonth(),ultima.getDate()+regra.valor,12);
+    return {
+      data:fcIsoLocal(prox),
+      fonte:ultimaInfo?.fonte==='nao_programada'?'calculada_sobre_nao_programada':'calculada',
+      ultima:fcIsoLocal(ultima),
+      periodicidade:regra.label
+    };
+  }
+  // Se o cadastro já tiver próxima baixada preenchida, usamos como apoio,
+  // sem fingir que ela foi calculada.
+  const proxCadastro=fcParseIsoDateLocal(c?.proxBaixada);
+  if(proxCadastro){
+    return {
+      data:fcIsoLocal(proxCadastro),
+      fonte:'cadastro',
+      ultima:c?.ultBaixada||null,
+      periodicidade:regra?.label||String(c?.periodicidadeBaixada||'—')
+    };
+  }
+  return {
+    data:null,
+    fonte:'sem_base',
+    ultima:c?.ultBaixada||null,
+    periodicidade:regra?.label||String(c?.periodicidadeBaixada||'—')
+  };
+}
+function fcCompetenciaRange(key){
+  const m=String(key||'').match(/^(\d{4})-(\d{2})$/);
+  if(!m) return null;
+  const ano=Number(m[1]),mes=Number(m[2])-1;
+  return {
+    ini:new Date(ano,mes,1,0,0,0,0),
+    fim:new Date(ano,mes+1,0,23,59,59,999)
+  };
+}
+function fcSugestaoNaCompetencia(c,key){
+  const s=fcSugestaoProximaBaixada(c);
+  const d=fcParseIsoDateLocal(s.data);
+  const r=fcCompetenciaRange(key);
+  return !!(d&&r&&d>=r.ini&&d<=r.fim);
+}
+function fcKeyFromMonthInput(){
+  const raw=document.getElementById('fcNewMonthLabel')?.value||'';
+  return fcParseMonthLabel(raw);
+}
+function fcSuggestedNamesForKey(key){
+  if(!key) return [];
+  return ATIVOS.filter(c=>fcSugestaoNaCompetencia(c,key)).map(c=>c.nome);
+}
+
 function fcRenderMonthPeople(){
   const list = document.getElementById('fcMonthPeopleList');
   if (!list) return;
   const q = (document.getElementById('fcMonthPeopleSearch')?.value || '').trim().toUpperCase();
+  const key = fcKeyFromMonthInput() || fcProj.current;
   const rows = ATIVOS.filter(c=>{
     if (!q) return true;
-    const hay = [c.nome,c.mat,c.funcao,c.equipe,c.setorEquipe].filter(Boolean).join(' ').toUpperCase();
+    const hay = [c.nome,c.mat,c.funcao,c.equipe,c.setorEquipe,c.ultBaixada,c.periodicidadeBaixada,c.proxBaixada].filter(Boolean).join(' ').toUpperCase();
     return hay.includes(q);
   });
+  const sugeridos=new Set(fcSuggestedNamesForKey(key));
   list.innerHTML = rows.map(c=>{
     const checked = fcMonthPeopleSelection.has(c.nome) ? 'checked' : '';
-    const info = [c.mat ? 'Mat. '+c.mat : '', c.funcao||'', c.equipe||''].filter(Boolean).join(' · ');
-    return `<label class="fc-month-person"><input type="checkbox" class="fc-month-person-check" data-nome="${c.nome}" ${checked}><span>${c.nome}</span><small>${info}</small></label>`;
+    const s=fcSugestaoProximaBaixada(c);
+    const sug=sugeridos.has(c.nome);
+    const ultima=s.ultima?fmtDate(s.ultima):'—';
+    const proxima=s.data?fmtDate(s.data):'Sem base';
+    const periodic=s.periodicidade||'—';
+    const badge=sug
+      ? '<span style="padding:2px 6px;border-radius:10px;background:rgba(245,197,24,.14);color:#f5c518;font-weight:800;font-size:10px;">SUGERIDO</span>'
+      : '';
+    return `<label class="fc-month-person" style="align-items:flex-start;">
+      <input type="checkbox" class="fc-month-person-check" data-nome="${c.nome}" ${checked}>
+      <span style="min-width:0;flex:1;">
+        <span style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;font-weight:700;color:var(--ink);">${c.nome} ${badge}</span>
+        <small style="display:block;margin:3px 0 0;color:var(--ink-soft);">
+          ${c.mat ? 'Mat. '+c.mat+' · ' : ''}${c.funcao||'—'}${c.equipe?' · '+c.equipe:''}
+        </small>
+        <small style="display:block;margin:4px 0 0;color:var(--ink-soft);">
+          Última baixada: <b style="color:var(--ink)">${ultima}</b> · Periodicidade: <b style="color:var(--ink)">${periodic}</b> · Próxima sugerida: <b style="color:${sug?'#f5c518':'var(--ink)'}">${proxima}</b>
+        </small>
+      </span>
+    </label>`;
   }).join('') || '<div style="padding:12px;color:var(--ink-soft);font-size:12px;">Nenhum colaborador encontrado.</div>';
+
   list.querySelectorAll('.fc-month-person-check').forEach(chk=>chk.addEventListener('change',e=>{
     const nome=e.target.dataset.nome;
     if(e.target.checked) fcMonthPeopleSelection.add(nome); else fcMonthPeopleSelection.delete(nome);
     document.getElementById('fcMonthPeopleCount').textContent = `${fcMonthPeopleSelection.size} colaborador(es) selecionado(s)`;
   }));
+
+  const totalSug=sugeridos.size;
+  const resumo=document.getElementById('fcMonthSuggestionSummary');
+  if(resumo){
+    resumo.textContent=key
+      ? `${totalSug} colaborador(es) sugerido(s) automaticamente para ${fcMonthKeyToLabel(key)}.`
+      : 'Informe uma competência válida para calcular as sugestões.';
+  }
   document.getElementById('fcMonthPeopleCount').textContent = `${fcMonthPeopleSelection.size} colaborador(es) selecionado(s)`;
 }
 
@@ -4021,9 +4374,10 @@ function fcOpenMonthModal(mode='create'){
     const suggestion = fcMonthKeyToLabel(fcNextMonthKey(fcProj.months[fcProj.months.length-1]));
     input.value = suggestion;
     input.disabled = false;
-    title.textContent = 'Novo mês de Folga de Campo';
-    confirmBtn.textContent = 'Criar mês';
-    fcMonthPeopleSelection = new Set();
+    title.textContent = 'Abrir nova competência — Folga de Campo';
+    confirmBtn.textContent = 'Abrir competência';
+    const key=fcParseMonthLabel(suggestion);
+    fcMonthPeopleSelection = new Set(fcSuggestedNamesForKey(key));
   }
   fcRenderMonthPeople();
   document.getElementById('fcMonthModalBackdrop').classList.add('open');
@@ -4033,6 +4387,18 @@ function fcOpenMonthModal(mode='create'){
 document.getElementById('fcNewMonthBtn').addEventListener('click', ()=>fcOpenMonthModal('create'));
 document.getElementById('fcManageMonthPeopleBtn').addEventListener('click', ()=>fcOpenMonthModal('edit'));
 document.getElementById('fcMonthPeopleSearch').addEventListener('input', fcRenderMonthPeople);
+document.getElementById('fcNewMonthLabel').addEventListener('input', ()=>{
+  if(fcMonthModalMode==='create'){
+    const key=fcKeyFromMonthInput();
+    fcMonthPeopleSelection=new Set(fcSuggestedNamesForKey(key));
+  }
+  fcRenderMonthPeople();
+});
+document.getElementById('fcMonthSelectSuggested').addEventListener('click', ()=>{
+  const key=fcKeyFromMonthInput()||fcProj.current;
+  fcMonthPeopleSelection=new Set(fcSuggestedNamesForKey(key));
+  fcRenderMonthPeople();
+});
 document.getElementById('fcMonthSelectAll').addEventListener('click', ()=>{
   fcMonthPeopleSelection = new Set(ATIVOS.map(c=>c.nome));
   fcRenderMonthPeople();
@@ -4062,7 +4428,7 @@ document.getElementById('fcNewMonthConfirm').addEventListener('click', ()=>{
   }
   const raw = document.getElementById('fcNewMonthLabel').value;
   const key = fcParseMonthLabel(raw);
-  if (!key) { alert('Informe o mês no formato "Outubro/2026".'); return; }
+  if (!key) { alert('Informe a competência no formato "Outubro/2026".'); return; }
   fcProj.included = fcProj.included || {};
   if (!fcProj.months.includes(key)) {
     fcProj.months.push(key);
@@ -4070,12 +4436,138 @@ document.getElementById('fcNewMonthConfirm').addEventListener('click', ()=>{
     fcProj.selected[key] = [];
   }
   fcProj.included[key] = Array.from(fcMonthPeopleSelection);
+
+  // Pré-preenche apenas a data inicial sugerida. Os demais campos permanecem
+  // pendentes para conferência/edição antes da geração do formulário.
+  const ov=fcProj.overrides[key] || (fcProj.overrides[key]={});
+  Array.from(fcMonthPeopleSelection).forEach(nome=>{
+    if(Object.prototype.hasOwnProperty.call(ov,nome)) return;
+    const c=ATIVOS.find(x=>x.nome===nome);
+    const s=fcSugestaoProximaBaixada(c);
+    if(s.data){
+      ov[nome]={
+        destino:(c?.cidade?String(c.cidade).trim().toUpperCase():''),
+        km:(c?.distanciaBaixadaKm!=null?Number(c.distanciaBaixadaKm):null),
+        dataIni:s.data,
+        dataFim:'',
+        retorno:'',
+        valor:(c?.custoBaixada!=null?Number(c.custoBaixada):0),
+        dias:null,
+        prazoDias:null,
+        sugestaoAutomatica:true,
+        ultimaBaixada:s.ultima||null,
+        periodicidade:s.periodicidade||null
+      };
+    }
+  });
+
   fcSaveProj();
   fcSyncMonthToSupabase(key);
   document.getElementById('fcMonthModalBackdrop').classList.remove('open');
   fcState.onlyReady = false;
   const only = document.getElementById('fcOnlyReady'); if(only) only.checked=false;
   fcSwitchMonth(key);
+});
+
+
+function fcFillUnplannedColab(){
+  const sel=document.getElementById('fcUnplannedColab');
+  if(!sel)return;
+  const atuais=new Set(fcProj.included?.[fcProj.current]||[]);
+  sel.innerHTML='<option value="">Selecione...</option>'+ATIVOS
+    .slice().sort((a,b)=>String(a.nome).localeCompare(String(b.nome),'pt-BR'))
+    .map(c=>`<option value="${String(c.nome).replace(/"/g,'&quot;')}">${c.mat?c.mat+' — ':''}${c.nome}${atuais.has(c.nome)?' · já está na competência':''}</option>`)
+    .join('');
+}
+function fcUpdateUnplannedCadastro(){
+  const nome=document.getElementById('fcUnplannedColab')?.value||'';
+  const c=ATIVOS.find(x=>x.nome===nome);
+  document.getElementById('fcUnplannedDestino').value=c?.cidade?String(c.cidade).trim().toUpperCase():'';
+  document.getElementById('fcUnplannedKm').value=(c?.distanciaBaixadaKm!=null&&c?.distanciaBaixadaKm!=='')?Number(c.distanciaBaixadaKm):'';
+  const msg=document.getElementById('fcUnplannedMsg');
+  if(msg){
+    if(!c) msg.textContent='';
+    else if(!c.cidade || c.distanciaBaixadaKm==null || c.distanciaBaixadaKm==='') msg.textContent='Cadastre cidade de origem e distância no Cadastro de Colaboradores antes de lançar a folga.';
+    else msg.textContent='Esta folga será incluída em '+fcMonthKeyToLabel(fcProj.current)+' e servirá de base para as próximas sugestões.';
+  }
+}
+function fcOpenUnplannedModal(){
+  fcFillUnplannedColab();
+  ['fcUnplannedIni','fcUnplannedFim','fcUnplannedValor'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('fcUnplannedDestino').value='';
+  document.getElementById('fcUnplannedKm').value='';
+  document.getElementById('fcUnplannedMsg').textContent='Selecione o colaborador e informe o período realizado.';
+  document.getElementById('fcUnplannedModalBackdrop').classList.add('open');
+}
+document.getElementById('fcUnplannedBtn')?.addEventListener('click',fcOpenUnplannedModal);
+document.getElementById('fcUnplannedCancel')?.addEventListener('click',()=>document.getElementById('fcUnplannedModalBackdrop').classList.remove('open'));
+document.getElementById('fcUnplannedModalBackdrop')?.addEventListener('click',e=>{if(e.target.id==='fcUnplannedModalBackdrop')e.target.classList.remove('open')});
+document.getElementById('fcUnplannedColab')?.addEventListener('change',fcUpdateUnplannedCadastro);
+
+document.getElementById('fcUnplannedSave')?.addEventListener('click',async()=>{
+  const btn=document.getElementById('fcUnplannedSave');
+  if(btn?.disabled)return;
+  const nome=document.getElementById('fcUnplannedColab').value;
+  const c=ATIVOS.find(x=>x.nome===nome);
+  const destino=document.getElementById('fcUnplannedDestino').value.trim().toUpperCase();
+  const km=parseFloat(document.getElementById('fcUnplannedKm').value);
+  const dataIni=document.getElementById('fcUnplannedIni').value;
+  const dataFim=document.getElementById('fcUnplannedFim').value;
+  const valor=parseFloat(document.getElementById('fcUnplannedValor').value);
+
+  if(!c){alert('Selecione o colaborador.');return;}
+  if(!destino || Number.isNaN(km)){alert('Cadastre cidade de origem/baixada e distância no Cadastro de Colaboradores.');return;}
+  if(!dataIni || !dataFim || Number.isNaN(valor)){alert('Preencha o período completo e o valor para reembolso.');return;}
+  if(dataFim<dataIni){alert('A data fim não pode ser anterior à data início.');return;}
+
+  const mesIni=dataIni.slice(0,7);
+  if(mesIni!==fcProj.current){
+    const ok=confirm(`A saída começa em ${fmtDate(dataIni)}, mas a competência aberta é ${fcMonthKeyToLabel(fcProj.current)}. Deseja lançar mesmo assim nesta competência?`);
+    if(!ok)return;
+  }
+
+  const dias=Math.round((new Date(dataFim+'T00:00:00')-new Date(dataIni+'T00:00:00'))/86400000)+1;
+  const ret=new Date(dataFim+'T12:00:00');
+  ret.setDate(ret.getDate()+1);
+  const retorno=fcIsoLocal(ret);
+
+  const list=fcProj.included[fcProj.current] || (fcProj.included[fcProj.current]=[]);
+  if(!list.includes(nome)) list.push(nome);
+
+  const ov=fcProj.overrides[fcProj.current] || (fcProj.overrides[fcProj.current]={});
+  ov[nome]={
+    destino,
+    km,
+    dataIni,
+    dataFim,
+    retorno,
+    valor,
+    dias,
+    naoProgramada:true,
+    tipo:'NAO_PROGRAMADA',
+    paraReembolso:true,
+    baseNovaProgramacao:true,
+    lancadaEm:new Date().toISOString()
+  };
+
+  fcSaveProj();
+
+  const old=btn.innerHTML;
+  btn.disabled=true;
+  btn.innerHTML='⏳ Salvando...';
+  try{
+    await fcSyncMonthToSupabase(fcProj.current);
+    btn.innerHTML='✓ Gravada no Supabase';
+    await new Promise(r=>setTimeout(r,350));
+    document.getElementById('fcUnplannedModalBackdrop').classList.remove('open');
+    fcState.onlyReady=false;
+    const ready=document.getElementById('fcOnlyReady');
+    if(ready)ready.checked=false;
+    renderFolgaCampoForm();
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML=old;
+  }
 });
 
 function fcOpenEditModal(nome){
@@ -4111,7 +4603,7 @@ document.getElementById('fcEditClear').addEventListener('click', ()=>{
   document.getElementById('fcEditModalBackdrop').classList.remove('open');
   renderFolgaCampoForm();
 });
-document.getElementById('fcEditSave').addEventListener('click', ()=>{
+document.getElementById('fcEditSave').addEventListener('click', async ()=>{
   if (!fcEditingNome) return;
   const destino = document.getElementById('fcEditDestino').value.trim().toUpperCase();
   const kmRaw = parseFloat(document.getElementById('fcEditKm').value);
@@ -4135,13 +4627,24 @@ document.getElementById('fcEditSave').addEventListener('click', ()=>{
   retornoDt.setDate(retornoDt.getDate()+1);
   const retorno = retornoDt.toISOString().slice(0,10);
   const overrides = fcProj.overrides[fcProj.current] || (fcProj.overrides[fcProj.current] = {});
+  const anterior=overrides[fcEditingNome]||{};
   overrides[fcEditingNome] = {
+    ...anterior,
     destino, km: isNaN(kmRaw) ? null : kmRaw, dataIni, dataFim, retorno, valor, dias
   };
   fcSaveProj();
-  fcSyncMonthToSupabase(fcProj.current);
-  document.getElementById('fcEditModalBackdrop').classList.remove('open');
-  renderFolgaCampoForm();
+  const saveBtn=document.getElementById('fcEditSave');
+  const oldText=saveBtn?.innerHTML||'Salvar';
+  if(saveBtn){saveBtn.disabled=true;saveBtn.innerHTML='⏳ Salvando...';}
+  try{
+    await fcSyncMonthToSupabase(fcProj.current);
+    if(saveBtn)saveBtn.innerHTML='✓ Salvo no Supabase';
+    await new Promise(r=>setTimeout(r,300));
+    document.getElementById('fcEditModalBackdrop').classList.remove('open');
+    renderFolgaCampoForm();
+  }finally{
+    if(saveBtn){saveBtn.disabled=false;saveBtn.innerHTML=oldText;}
+  }
 });
 
 function fcDiasExtenso(n){ return FC_NUM_EXTENSO[n] || String(n); }
@@ -10313,6 +10816,14 @@ window.GESTAO360_CONFIG = {
       sb.from('funcionarios').select('*').eq('obra_id',obraId).order('nome'), sb.from('vw_contratos_saldo').select('*').eq('obra_id',obraId).order('codigo'), sb.from('alojamentos').select('*').eq('obra_id',obraId).order('descricao'), sb.from('fechamentos_praca').select('*').eq('obra_id',obraId).order('competencia').order('contrato_codigo'), sb.from('solicitacoes_contrato').select('*').eq('obra_id',obraId).order('created_at',{ascending:false}), sb.from('solicitacao_contrato_anexos').select('*').order('created_at',{ascending:true}), sb.from('folga_campo').select('*').eq('obra_id',obraId).order('competencia').order('colaborador_nome')
     ]);
     for(const x of [f,c,a,fp,sols,anxs,fol]) if(x.error) throw x.error;
+
+    // Folga de Campo: o Supabase é a fonte oficial persistente.
+    window.G360_FOLGA_DB_ROWS=fol.data||[];
+    if(typeof window.g360HydrateFolgaFromSupabase==='function'){
+      try{ window.g360HydrateFolgaFromSupabase(window.G360_FOLGA_DB_ROWS); }
+      catch(e){ console.error('Falha ao aplicar histórico persistente de Folga de Campo:',e); }
+    }
+
     // Contagem mensal de demissões calculada DIRETAMENTE do retorno atual da tabela funcionarios.
     // Esta matriz é a fonte do gráfico e não depende de localStorage, seed, DESLIGADOS ou reload.
     const fRows=(f.data||[]);
@@ -10777,7 +11288,7 @@ window.GESTAO360_CONFIG = {
       <div class="deslig-list">${desligItens.length?desligItens.map((x,i)=>`<label class="deslig-item"><input type="checkbox" class="deslig-check" data-idx="${i}"><span><b>${esc(x.fonte)} — ${esc(x.descricao)}</b><small>${esc(x.codigo||'Sem código')} · Qtd. ${esc(x.quantidade)}</small></span><input type="date" class="deslig-date" data-idx="${i}" aria-label="Data de devolução"><input type="text" class="deslig-obs" data-idx="${i}" placeholder="Observação (opcional)" value="${esc(x.obs||'')}"></label>`).join(''):'<div class="deslig-empty">Nenhum EPI ou equipamento pendente encontrado nos termos deste colaborador.</div>'}</div>
       ${desligItens.length?'<div class="deslig-alert">Para concluir o desligamento, todos os itens pendentes precisam ser conferidos e marcados como devolvidos.</div>':''}
     </section>`:'';
-    g360Content.innerHTML=`<form id="g360Form" class="g360-grid">${kind==='funcionarios'?'<div class="span4" style="padding:9px 11px;border-left:3px solid #f5c518;background:#202226;color:#bbb;font-size:11px"><b style="color:#eee">Campos obrigatórios:</b> dados cadastrais, Setor, Setor/Equipe, função e jornada. <b>Vencimento do ASO e datas de baixada podem ser informados depois.</b> A periodicidade de baixada é opcional no cadastro inicial e vem da base mestre do Supabase. Cidade e Estado são selecionados pelo cadastro nacional do IBGE. CNH é opcional quando o colaborador não possui. Demissão é preenchida somente no desligamento. Função e nível vêm do cadastro de Cargos e Salários. O salário-base é sugerido pelo Supabase, mas pode ser ajustado no colaborador. Gratificação inicia em R$ 0,00. Benefícios inicia em R$ 230,00 e pode ser alterado.</div>':''}${d.fields.map(f=>fieldHTML(f,current?.[f[0]],{alojamentos:alojamentosCadastro,contratos:contratosCadastro,contratosCadastro:contratosCadastro,cargos:cargosCadastro,setores:setoresCadastro,equipesMaster:equipesMasterCadastro,obrasPermitidas:obrasPermitidasCadastro,periodicidadesBaixada:periodicidadesBaixadaCadastro,current:current||{}})).join('')}${desligHtml}<div class="span4"><button class="g360-btn" type="submit">${edit?'Salvar alterações':'Incluir registro'}</button> ${edit?'<button type="button" class="g360-btn sec" id="g360CancelEdit">Cancelar edição</button>':''}</div></form>`;
+    g360Content.innerHTML=`<form id="g360Form" class="g360-grid">${kind==='funcionarios'?'<div class="span4" style="padding:9px 11px;border-left:3px solid #f5c518;background:#202226;color:#bbb;font-size:11px"><b style="color:#eee">Campos obrigatórios:</b> dados cadastrais, Setor, Setor/Equipe, função e jornada. <b>Vencimento do ASO e datas de baixada podem ser informados depois.</b> A periodicidade de baixada é opcional no cadastro inicial e vem da base mestre do Supabase. Cidade e Estado são selecionados pelo cadastro nacional do IBGE. CNH é opcional quando o colaborador não possui. Demissão é preenchida somente no desligamento. Função e nível vêm do cadastro de Cargos e Salários. O salário-base é sugerido pelo Supabase, mas pode ser ajustado no colaborador. Gratificação inicia em R$ 0,00. Benefícios inicia em R$ 230,00 e pode ser alterado.</div>':''}${d.fields.map(f=>fieldHTML(f,current?.[f[0]],{alojamentos:alojamentosCadastro,contratos:contratosCadastro,contratosCadastro:contratosCadastro,cargos:cargosCadastro,setores:setoresCadastro,equipesMaster:equipesMasterCadastro,obrasPermitidas:obrasPermitidasCadastro,periodicidadesBaixada:periodicidadesBaixadaCadastro,current:current||{}})).join('')}${desligHtml}<div class="span4"><button class="g360-btn" ${kind==='contratos'?'id="g360ContratoSaveBtn"':''} type="submit">${edit?'Salvar alterações':'Incluir registro'}</button> ${edit?'<button type="button" class="g360-btn sec" id="g360CancelEdit">Cancelar edição</button>':''}${kind==='contratos'?'<div id="g360ContratoSaveStatus" style="margin-top:8px;font-size:12px;font-weight:700;color:#f5c518;min-height:16px"></div>':''}</div></form>`;
     if(kind==='contratos' && !edit){
       const form=document.getElementById('g360Form');
       if(form && !document.getElementById('g360ContratoManualInfo')){
@@ -10967,25 +11478,68 @@ window.GESTAO360_CONFIG = {
       refreshDeslig();updateCount();
     }
     if(kind==='alojamentos'){const vf=g360Form.elements.valor_mensal,of=g360Form.elements.ocupados,rf=g360Form.elements.custo_rateado;const calc=()=>{if(rf)rf.value=(Number(of?.value||0)>0?(Number(vf?.value||0)/Number(of.value)):0).toFixed(2)};vf?.addEventListener('input',calc);of?.addEventListener('input',calc);calc();}
-    g360Form.onsubmit=async e=>{e.preventDefault();if(!g360Form.checkValidity()){g360Form.reportValidity();return;}const fd=new FormData(e.target),obj={};d.fields.forEach(f=>{let v=fd.get(f[0]);if(v==='')v=null;if((f[2]==='number'||f[3]==='number'||f[2]==='number-readonly'||f[3]==='number-readonly'||f[3]==='salario-cadastro')&&v!==null)v=Number(v);obj[f[0]]=v});
+    g360Form.onsubmit=async e=>{
+      e.preventDefault();
+      if(!g360Form.checkValidity()){g360Form.reportValidity();return;}
+
+      const contratoSaveBtn=kind==='contratos'?document.getElementById('g360ContratoSaveBtn'):null;
+      const contratoSaveStatus=kind==='contratos'?document.getElementById('g360ContratoSaveStatus'):null;
+      const contratoSaveOriginal=contratoSaveBtn?.innerHTML||'Salvar alterações';
+      const contratoSetSaving=(msg='Salvando alterações...')=>{
+        if(!contratoSaveBtn)return;
+        contratoSaveBtn.disabled=true;
+        contratoSaveBtn.setAttribute('aria-busy','true');
+        contratoSaveBtn.innerHTML='⏳ Salvando...';
+        contratoSaveBtn.style.cursor='wait';
+        contratoSaveBtn.style.opacity='.75';
+        if(contratoSaveStatus){
+          contratoSaveStatus.style.color='#f5c518';
+          contratoSaveStatus.textContent=msg;
+        }
+      };
+      const contratoResetSaving=()=>{
+        if(!contratoSaveBtn)return;
+        contratoSaveBtn.disabled=false;
+        contratoSaveBtn.removeAttribute('aria-busy');
+        contratoSaveBtn.innerHTML=contratoSaveOriginal;
+        contratoSaveBtn.style.cursor='';
+        contratoSaveBtn.style.opacity='';
+      };
+      const contratoFail=(msg)=>{
+        if(contratoSaveStatus){
+          contratoSaveStatus.style.color='#ff6b6b';
+          contratoSaveStatus.textContent=msg||'Não foi possível salvar.';
+        }
+        contratoResetSaving();
+      };
+      if(kind==='contratos'){
+        contratoSetSaving(edit?'Salvando alterações do contrato...':'Salvando contrato...');
+        await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      }
+
+      const fd=new FormData(e.target),obj={};d.fields.forEach(f=>{let v=fd.get(f[0]);if(v==='')v=null;if((f[2]==='number'||f[3]==='number'||f[2]==='number-readonly'||f[3]==='number-readonly'||f[3]==='salario-cadastro')&&v!==null)v=Number(v);obj[f[0]]=v});
       let vincAgua=null,vincEnergia=null,vincInternet=null;
       if(kind==='contratos' && !edit){
         if(!String(obj.codigo||'').trim()){
+          contratoFail('Informe o número do contrato.');
           alert('Informe o número do contrato.');
           g360Form.elements.codigo?.focus();
           return;
         }
         if(!String(obj.fornecedor||'').trim()){
+          contratoFail('Informe o fornecedor.');
           alert('Informe o fornecedor.');
           g360Form.elements.fornecedor?.focus();
           return;
         }
         if(!String(obj.tipo||'').trim()){
+          contratoFail('Informe o tipo do contrato.');
           alert('Informe o tipo do contrato.');
           g360Form.elements.tipo?.focus();
           return;
         }
         if(!String(obj.objeto||'').trim()){
+          contratoFail('Informe o objeto do contrato.');
           alert('Informe o objeto do contrato.');
           g360Form.elements.objeto?.focus();
           return;
@@ -11005,10 +11559,12 @@ window.GESTAO360_CONFIG = {
         if(window.G360_ACTIVE_OBRA_ID) dq=dq.eq('obra_id',window.G360_ACTIVE_OBRA_ID);
         const dup=await dq;
         if(dup.error){
+          contratoFail('Não foi possível validar o contrato.');
           alert('Não foi possível validar o contrato: '+dup.error.message);
           return;
         }
         if((dup.data||[]).length){
+          contratoFail('Já existe um contrato com esse número nesta obra.');
           alert('Já existe o contrato '+String(obj.codigo).trim()+' nesta obra.');
           g360Form.elements.codigo?.focus();
           return;
@@ -11026,6 +11582,7 @@ window.GESTAO360_CONFIG = {
         // "Valor medido" é virtual no formulário.
         const alvo=Number(obj.valor_medido_total||0);
         if(!Number.isFinite(alvo)||alvo<0){
+          contratoFail('Informe um Valor medido válido.');
           alert('Informe um Valor medido válido.');
           g360Form.elements.valor_medido_total?.focus();
           return;
@@ -11045,6 +11602,7 @@ window.GESTAO360_CONFIG = {
             sb.from('fechamentos_praca').select('valor_medido,status,impacta_saldo').is('contrato_id',null).eq('contrato_codigo',edit.codigo)
           ]);
           if(fpId.error||fpLegado.error){
+            contratoFail('Não foi possível calcular as medições do contrato.');
             alert('Não foi possível calcular as medições do contrato: '+(fpId.error?.message||fpLegado.error?.message));
             return;
           }
@@ -11055,6 +11613,7 @@ window.GESTAO360_CONFIG = {
             return s+(lancado&&impacta?Number(m.valor_medido||0):0);
           },0);
           if(alvo+0.005<medidoOperacional){
+            contratoFail('Valor medido inferior às medições que já impactam o saldo.');
             alert(`O valor informado (${alvo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}) é menor que as medições do Fechamento de Praça que já impactam o saldo (${medidoOperacional.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}). Ajuste primeiro essas medições no Fechamento de Praça.`);
             return;
           }
@@ -11119,12 +11678,13 @@ window.GESTAO360_CONFIG = {
         // Dados de SESMT e custo de alojamento não são editados neste cadastro.
         delete obj.custo_aloj; delete obj.acidente; delete obj.data_acidente; delete obj.cat_emitida; delete obj.dias_afastado; delete obj.tipo_afastamento;
       }
-      if(kind==='funcionarios'&&edit&&String(obj.status||'').toUpperCase()==='DESLIGADO'){const dem=document.getElementById('g360Demissao')?.value||obj.demissao;if(!dem){alert('Informe a data de demissão para desligar o colaborador.');return;}obj.demissao=dem;obj.tipo_deslig=document.getElementById('g360TipoDeslig')?.value||null;obj.motivo_deslig=document.getElementById('g360MotivoDeslig')?.value||null;const checks=[...g360Content.querySelectorAll('.deslig-check')];if(checks.some(x=>!x.checked)){alert('Conclua o checklist de devolução de EPIs e equipamentos antes de desligar o colaborador.');return;}for(const ch of checks){const i=Number(ch.dataset.idx),it=desligItens[i],dt=g360Content.querySelector(`.deslig-date[data-idx="${i}"]`)?.value||dem,obs=g360Content.querySelector(`.deslig-obs[data-idx="${i}"]`)?.value||null;if(!dt){alert('Informe a data de devolução de todos os itens do checklist.');return;}const payload=it.tabela==='termo_epi_itens'?{data_devolucao:dt,observacoes:obs}:{data_devolucao:dt,observacao:obs};const ret=await sb.from(it.tabela).update(payload).eq('id',it.id);if(ret.error){alert('Falha ao registrar devolução de '+it.descricao+': '+ret.error.message);return;}}}else if(kind==='funcionarios'&&!edit&&String(obj.status||'').toUpperCase()!=='DESLIGADO'){obj.demissao=null;}if(kind==='alojamentos'){const val=Number(obj.valor_mensal||0), ocu=Number(obj.ocupados||0);obj.custo_rateado=ocu>0?val/ocu:0;}let q=edit?sb.from(d.table).update(obj).eq('id',edit.id).select('*').maybeSingle():sb.from(d.table).insert(obj).select('*').maybeSingle();const {data:saved,error}=await q;if(error){alert(error.message);return}
+      if(kind==='funcionarios'&&edit&&String(obj.status||'').toUpperCase()==='DESLIGADO'){const dem=document.getElementById('g360Demissao')?.value||obj.demissao;if(!dem){alert('Informe a data de demissão para desligar o colaborador.');return;}obj.demissao=dem;obj.tipo_deslig=document.getElementById('g360TipoDeslig')?.value||null;obj.motivo_deslig=document.getElementById('g360MotivoDeslig')?.value||null;const checks=[...g360Content.querySelectorAll('.deslig-check')];if(checks.some(x=>!x.checked)){alert('Conclua o checklist de devolução de EPIs e equipamentos antes de desligar o colaborador.');return;}for(const ch of checks){const i=Number(ch.dataset.idx),it=desligItens[i],dt=g360Content.querySelector(`.deslig-date[data-idx="${i}"]`)?.value||dem,obs=g360Content.querySelector(`.deslig-obs[data-idx="${i}"]`)?.value||null;if(!dt){alert('Informe a data de devolução de todos os itens do checklist.');return;}const payload=it.tabela==='termo_epi_itens'?{data_devolucao:dt,observacoes:obs}:{data_devolucao:dt,observacao:obs};const ret=await sb.from(it.tabela).update(payload).eq('id',it.id);if(ret.error){alert('Falha ao registrar devolução de '+it.descricao+': '+ret.error.message);return;}}}else if(kind==='funcionarios'&&!edit&&String(obj.status||'').toUpperCase()!=='DESLIGADO'){obj.demissao=null;}if(kind==='alojamentos'){const val=Number(obj.valor_mensal||0), ocu=Number(obj.ocupados||0);obj.custo_rateado=ocu>0?val/ocu:0;}let q=edit?sb.from(d.table).update(obj).eq('id',edit.id).select('*').maybeSingle():sb.from(d.table).insert(obj).select('*').maybeSingle();const {data:saved,error}=await q;if(error){if(kind==='contratos')contratoFail('Erro do Supabase: '+error.message);alert(error.message);return}
+      let contratoSaveWarning='';
       if(kind==='contratos'){
         const codigo=String(saved?.codigo||edit?.codigo||obj.codigo||'').trim();
         if(codigo){
           let aq=await sb.from('alojamentos').select('id,contrato_codigo,descricao').eq('contrato_codigo',codigo).maybeSingle();
-          if(aq.error){alert('Contrato salvo, mas não foi possível localizar o alojamento vinculado: '+aq.error.message);return;}
+          if(aq.error){contratoSaveWarning='Contrato salvo, mas houve falha ao localizar o alojamento vinculado: '+aq.error.message;console.warn(contratoSaveWarning);}
 
           // Se o contrato é de locação e ainda não existe cadastro de alojamento,
           // cria um registro mínimo para permitir os vínculos A/E/I.
@@ -11140,7 +11700,7 @@ window.GESTAO360_CONFIG = {
               contrato_energia:vincEnergia,
               contrato_internet:vincInternet
             }).select('id').maybeSingle();
-            if(ins.error){alert('Contrato salvo, mas não foi possível criar/vincular o alojamento: '+ins.error.message);return;}
+            if(ins.error){contratoSaveWarning='Contrato salvo, mas houve falha ao criar/vincular o alojamento: '+ins.error.message;console.warn(contratoSaveWarning);}
             alojId=ins.data?.id||null;
           }else if(alojId){
             const up=await sb.from('alojamentos').update({
@@ -11148,11 +11708,38 @@ window.GESTAO360_CONFIG = {
               contrato_energia:vincEnergia,
               contrato_internet:vincInternet
             }).eq('id',alojId);
-            if(up.error){alert('Contrato salvo, mas não foi possível atualizar Água/Energia/Internet do alojamento: '+up.error.message);return;}
+            if(up.error){contratoSaveWarning='Contrato salvo, mas houve falha ao atualizar Água/Energia/Internet do alojamento: '+up.error.message;console.warn(contratoSaveWarning);}
           }
         }
       }
-if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios'&&edit&&String(obj.status||'').toUpperCase()==='DESLIGADO'){const persisted=saved?.demissao ?? saved?.data_demissao ?? saved?.['demissão'] ?? null;if(!persisted){alert('O Supabase não confirmou a data de demissão. O desligamento não será considerado concluído.');return;}if(String(saved?.status||'').trim().toUpperCase()!=='DESLIGADO'){alert('O Supabase não confirmou o status DESLIGADO.');return;}}sessionStorage.removeItem('g360_db_sig');await pullAll();if(kind==='patrimonio'||kind==='movimentacoes'){await loadPatrimonio();openCrud(kind)}};
+if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios'&&edit&&String(obj.status||'').toUpperCase()==='DESLIGADO'){const persisted=saved?.demissao ?? saved?.data_demissao ?? saved?.['demissão'] ?? null;if(!persisted){alert('O Supabase não confirmou a data de demissão. O desligamento não será considerado concluído.');return;}if(String(saved?.status||'').trim().toUpperCase()!=='DESLIGADO'){alert('O Supabase não confirmou o status DESLIGADO.');return;}}
+
+      sessionStorage.removeItem('g360_db_sig');
+
+      if(kind==='contratos'){
+        if(contratoSaveBtn)contratoSaveBtn.innerHTML='✓ Salvo';
+        if(contratoSaveStatus){
+          contratoSaveStatus.style.color=contratoSaveWarning?'#f5c518':'#35d07f';
+          contratoSaveStatus.textContent=contratoSaveWarning
+            ? 'Contrato salvo. Atenção: houve uma pendência nos vínculos do alojamento.'
+            : (edit?'Alterações salvas com sucesso.':'Contrato salvo com sucesso.');
+        }
+        await new Promise(resolve=>setTimeout(resolve,450));
+        modal.classList.remove('open');
+
+        try{
+          await pullAll();
+        }catch(refreshErr){
+          console.error('[G360] Contrato salvo; falha apenas ao atualizar a tela:',refreshErr);
+        }
+
+        if(contratoSaveWarning) alert(contratoSaveWarning);
+        return;
+      }
+
+      await pullAll();
+      if(kind==='patrimonio'||kind==='movimentacoes'){await loadPatrimonio();openCrud(kind)}
+    };
     if(edit) g360CancelEdit.onclick=()=>openCrud(kind);
     g360Content.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openCrud(kind,b.dataset.edit).catch(err=>{
       console.error('[G360 V132] Erro ao editar:',err);
