@@ -1240,8 +1240,8 @@ html.g360-ui-ready .content-col {
       <div class="sidebar-group sidebar-group-dev g360-perm-admin-group">
         <div class="sidebar-group-label">Administração</div>
         <div class="side-link" data-view="backupSeguranca" id="g360BackupMenu" style="display:none"><span class="ic">🛡️</span>Backup &amp; Segurança</div>
-        <div class="side-link" data-view="usuariosPermissoes" id="g360PermMenu"><span class="ic">🔐</span>Usuários &amp; Permissões</div>
         <div class="side-link" data-view="logAuditoria" id="g360AuditMenu"><span class="ic">🧾</span>Log de Auditoria</div>
+        <div class="side-link" data-view="usuariosPermissoes" id="g360PermMenu"><span class="ic">🔐</span>Usuários &amp; Permissões</div>
       </div>
     </aside>
 
@@ -2989,8 +2989,8 @@ function recalcExperienciaColaboradores(list=COLABS){
     }
     if(!adm || Number.isNaN(adm.getTime())){ c.exp45=null; c.exp90=null; return; }
 
-    const day45=new Date(adm.getFullYear(),adm.getMonth(),adm.getDate()+45);
-    const day90=new Date(adm.getFullYear(),adm.getMonth(),adm.getDate()+90);
+    const day45=new Date(adm.getFullYear(),adm.getMonth(),adm.getDate()+44);
+    const day90=new Date(adm.getFullYear(),adm.getMonth(),adm.getDate()+89);
     if(hoje<=day45){
       c.exp45=toISO(day45); c.exp90=null;
     }else if(hoje<=day90){
@@ -3627,8 +3627,8 @@ function renderAlertas(){
       }
       const adm = pDate(c.admissao);
       if(!adm || isNaN(adm)){ c.exp45=null; c.exp90=null; return; }
-      const day45 = new Date(adm.getFullYear(), adm.getMonth(), adm.getDate()+45);
-      const day90 = new Date(adm.getFullYear(), adm.getMonth(), adm.getDate()+90);
+      const day45 = new Date(adm.getFullYear(), adm.getMonth(), adm.getDate()+44);
+      const day90 = new Date(adm.getFullYear(), adm.getMonth(), adm.getDate()+89);
       if(TODAY <= day45){ c.exp45=toISO(day45); c.exp90=null; }
       else if(TODAY <= day90){ c.exp45=null; c.exp90=toISO(day90); }
       else { c.exp45=null; c.exp90=null; }
@@ -12172,6 +12172,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
   function moduleByView(view){
     if(view==='rhdpDashboard'||view==='rhdpAdvertencia')return 'colaboradores';
     if(view==='cargosSalarios')return 'cargos_salarios';
+    if(view==='logAuditoria'||view==='backupSeguranca')return 'usuarios';
     if(['sesmtEstoque','sesmtTermo'].includes(view))return view==='sesmtEstoque'?'sesmt_estoque':'sesmt_termo';
     const m=MODULES.find(x=>x[2]===view);
     return m?m[0]:null;
@@ -12231,7 +12232,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
   function actionFromCrudButton(el){if(el.matches('.crud-row-actions .danger'))return'excluir';if(el.matches('.crud-row-actions .toggle'))return'ativar';return classifyAction(el)}
   function ensureNote(v){let n=v.querySelector(':scope > .g360-access-note');if(!n){n=document.createElement('div');n.className='g360-access-note';v.insertBefore(n,v.firstChild)}return n}
   function applyViewControls(view,module){const p=perm(currentId,module),note=ensureNote(view);note.classList.remove('show');note.textContent='';view.querySelectorAll('button,a.btn-primary,a.clear-btn').forEach(el=>{if(el.matches('[data-g360-competencia="1"],[data-g360-fechamento-action="1"]')||el.closest('.filters,.org-filters,#view-usuariosPermissoes,#g360FjCompetModal,#g360FjEditModal'))return;const a=actionFromCrudButton(el);if(a)el.classList.toggle('g360-perm-hidden',!p[a])})}
-  function applyAccess(fallback=false){document.querySelectorAll('.side-link[data-view]').forEach(link=>{const m=moduleByView(link.dataset.view);if(m)link.classList.toggle('g360-perm-hidden',!window.g360Can(m,'visualizar'))});const adv=document.getElementById('g360AdvertenciaMenu');if(adv){adv.classList.remove('g360-perm-hidden');adv.style.setProperty('display','flex','important');}const adminGroup=document.querySelector('.g360-perm-admin-group');if(adminGroup)adminGroup.style.display=window.g360Can('usuarios','visualizar')?'':'none';document.querySelectorAll('.view').forEach(v=>{const m=moduleByView(v.id.replace(/^view-/,''));if(m&&window.g360Can(m,'visualizar'))applyViewControls(v,m)});if(fallback){const m=moduleByView(currentView());if(m&&!window.g360Can(m,'visualizar'))document.querySelector('.side-link[data-view="executivo"]:not(.g360-perm-hidden)')?.click()}renderUsers();renderMatrix()}
+  function applyAccess(fallback=false){document.querySelectorAll('.side-link[data-view]').forEach(link=>{const m=moduleByView(link.dataset.view);if(m)link.classList.toggle('g360-perm-hidden',!window.g360Can(m,'visualizar'))});const adv=document.getElementById('g360AdvertenciaMenu');if(adv){adv.classList.remove('g360-perm-hidden');adv.style.setProperty('display','flex','important');}const adminGroup=document.querySelector('.g360-perm-admin-group');if(adminGroup)adminGroup.style.display=window.g360Can('usuarios','visualizar')?'':'none';const auditMenu=document.getElementById('g360AuditMenu');if(auditMenu){const ok=window.g360Can('usuarios','visualizar');auditMenu.classList.toggle('g360-perm-hidden',!ok);auditMenu.style.setProperty('display',ok?'flex':'none','important');}document.querySelectorAll('.view').forEach(v=>{const m=moduleByView(v.id.replace(/^view-/,''));if(m&&window.g360Can(m,'visualizar'))applyViewControls(v,m)});if(fallback){const m=moduleByView(currentView());if(m&&!window.g360Can(m,'visualizar'))document.querySelector('.side-link[data-view="executivo"]:not(.g360-perm-hidden)')?.click()}renderUsers();renderMatrix()}
   async function adminApi(method,body){const {data:{session}}=await sb.auth.getSession();if(!session)throw new Error('Sessão expirada');const r=await fetch('/api/admin-users',{method,headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:body?JSON.stringify(body):undefined});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||data.msg||data.message||'Falha na administração de usuários');return data}
   async function ensureFirstMaster(session){
     if(!session||sessionStorage.getItem('g360_bootstrap_checked')==='1')return;
@@ -15525,10 +15526,18 @@ window.g360BackupV135={generate,history,authMaster};
     return false;
   }
   function protectMenu(){
-    const menu=$('g360AuditMenu'); if(menu)menu.style.display=isMaster()?'':'none';
+    const menu=$('g360AuditMenu'); if(!menu)return;
+    const ok=isMaster();
+    menu.classList.toggle('g360-perm-hidden',!ok);
+    menu.style.setProperty('display',ok?'flex':'none','important');
   }
   $('g360AuditMenu')?.addEventListener('click',e=>{
-    if(!isMaster()){e.preventDefault();return}
+    if(!isMaster()){e.preventDefault();e.stopPropagation();return}
+    document.querySelectorAll('.side-link[data-view]').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    $('g360AuditMenu')?.classList.add('active');
+    $('view-logAuditoria')?.classList.add('active');
+    window.scrollTo(0,0);
     setTimeout(load,0);
   });
   $('g360AuditRefresh')?.addEventListener('click',load);
