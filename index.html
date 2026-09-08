@@ -2,6 +2,9 @@
 <!-- V158: remove contratosBase quebrado e protege listeners legados do fechamento -->
 <html lang="pt-BR">
 <head>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
 <script>(function(){try{const v='2026-09-01-fechamento-v49-planilha-supabase';if(localStorage.getItem('g360_base_version')!==v){localStorage.removeItem('painel202_fechamentos_multi_override_v4');localStorage.removeItem('painel202_fechamentos_override_ts_v2');localStorage.removeItem('g360_medicoes_sienge_preview_v1');localStorage.setItem('g360_base_version',v)}}catch(e){}
 window.g360PrimeiroAcessoPendente=function(){try{const q=new URLSearchParams(location.search),h=new URLSearchParams((location.hash||'').replace(/^#/,''));const viaLink=q.get('primeiro_acesso')==='1'||q.get('type')==='invite'||h.get('type')==='invite';if(viaLink)sessionStorage.setItem('g360_primeiro_acesso_v155','1');return viaLink||sessionStorage.getItem('g360_primeiro_acesso_v155')==='1';}catch(_){return false}};
 try{window.g360PrimeiroAcessoPendente()}catch(_){}})();</script>
@@ -1826,21 +1829,11 @@ html.g360-ui-ready .content-col {
 
         <div class="adm-kpis" id="rhAdmKpis"></div>
 
-        <section class="panel" style="margin-top:12px;">
-          <h2>Níveis de Aprovação <span class="tag">Independentes · sem ordem obrigatória</span></h2>
-          <div style="display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:8px;overflow-x:auto;">
-            <div class="adm-kpi"><div class="l">Nível 1</div><div style="font-weight:800;font-size:12px;">ENGENHARIA</div></div>
-            <div class="adm-kpi"><div class="l">Nível 2</div><div style="font-weight:800;font-size:12px;">JURÍDICO</div></div>
-            <div class="adm-kpi"><div class="l">Nível 3</div><div style="font-weight:800;font-size:12px;">DIRETORIA</div></div>
-            <div class="adm-kpi"><div class="l">Nível 4</div><div style="font-weight:800;font-size:12px;">RH</div></div>
-            <div class="adm-kpi"><div class="l">Nível 5</div><div style="font-weight:800;font-size:12px;">DP</div></div>
-            <div class="adm-kpi"><div class="l">Nível 6</div><div style="font-weight:800;font-size:12px;">DOCUMENTAÇÃO RECEBIDA</div></div>
-          </div>
-        </section>
+        
 
         <div class="adm-grid2">
           <section class="panel" style="margin:0;">
-            <h2>Painel de Aprovações <span class="tag">6 níveis · sem ordem</span></h2>
+            <h2>6 NÍVEIS DE APROVAÇÃO <span class="tag">Independentes · sem ordem</span></h2>
             <div id="rhAdmFunnel"></div>
           </section>
           <section class="panel" style="margin:0;">
@@ -6292,7 +6285,7 @@ function rhAdmFmtISO(v){
   const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})/);
   return m ? `${m[3]}/${m[2]}/${m[1]}` : '—';
 }
-// V186 — Admissão: 6 níveis no controle; PDF original preservado sem alterações\nfunction rhAdmEtapa(d){
+// V187 — painel de aprovação corrigido para exatamente 6 níveis independentes; PDF preservado\nfunction rhAdmEtapa(d){
   const term=String(d.resultado||'').toUpperCase();
   if(['REPROVADO','DESISTÊNCIA','CANCELADO'].includes(term)) return term;
   if(d.dataAdmissao) return 'ADMITIDO';
@@ -6345,7 +6338,7 @@ function rhAdmCalcDashboard(list){
     ['Diretoria pendente',pend.dataDiretoria,'APROVAÇÕES PENDENTES'],
     ['RH pendente',pend.dataRH,'APROVAÇÕES PENDENTES'],
     ['DP pendente',pend.dataDP,'APROVAÇÕES PENDENTES'],
-    ['Documentação pendente',pend.dataDocsObra,'APROVAÇÕES PENDENTES'],
+    ['Documentação recebida pendente',pend.dataDocsObra,'APROVAÇÕES PENDENTES'],
     ['6 níveis concluídos',concluidos,'PRONTO PARA ADMISSÃO'],
     ['Admitidos',counts['ADMITIDO']||0,'ADMITIDO'],
     ['Reprovados',counts['REPROVADO']||0,'REPROVADO'],
@@ -6354,14 +6347,12 @@ function rhAdmCalcDashboard(list){
   box?.querySelectorAll('[data-adm-filter]').forEach(el=>el.onclick=()=>{document.getElementById('rhAdmStatusFilter').value=el.dataset.admFilter||'';rhAdmRenderHistorico();});
 
   const aprovacoes=[
-    ['Engenharia concluída',ativos.filter(d=>!!d.dataEngenharia).length],
-    ['Jurídico concluído',ativos.filter(d=>!!d.dataJuridico).length],
-    ['Diretoria concluída',ativos.filter(d=>!!d.dataDiretoria).length],
-    ['RH concluído',ativos.filter(d=>!!d.dataRH).length],
-    ['DP concluído',ativos.filter(d=>!!d.dataDP).length],
-    ['Documentação recebida',ativos.filter(d=>!!d.dataDocsObra).length],
-    ['6 níveis concluídos',concluidos],
-    ['Admitidos',counts['ADMITIDO']||0]
+    ['ENGENHARIA',ativos.filter(d=>!!d.dataEngenharia).length],
+    ['JURÍDICO',ativos.filter(d=>!!d.dataJuridico).length],
+    ['DIRETORIA',ativos.filter(d=>!!d.dataDiretoria).length],
+    ['RH',ativos.filter(d=>!!d.dataRH).length],
+    ['DP',ativos.filter(d=>!!d.dataDP).length],
+    ['DOCUMENTAÇÃO RECEBIDA',ativos.filter(d=>!!d.dataDocsObra).length]
   ];
   const max=Math.max(1,...aprovacoes.map(x=>x[1]));
   const fun=document.getElementById('rhAdmFunnel'); if(fun) fun.innerHTML=aprovacoes.map(([l,n])=>`<div class="adm-bar-row"><span>${l}</span><div class="adm-bar-track"><div class="adm-bar-fill" style="width:${(n/max*100).toFixed(1)}%"></div></div><b>${n}</b></div>`).join('');
