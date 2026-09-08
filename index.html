@@ -2822,10 +2822,11 @@ html.g360-ui-ready .content-col {
         <section class="panel">
           <div class="g360-perm-top">
             <div>
-              <h2 id="g360PermMatrixTitle">Permissões do usuário</h2>
-              <div class="g360-perm-help">O perfil nativo funciona como configuração inicial, mas o Administrador Mestre pode personalizar as permissões deste usuário. A personalização prevalece sobre o padrão do perfil. O módulo Usuários & Permissões continua exclusivo do Mestre.</div><div style="margin-top:10px;max-width:420px"><label style="font-size:11px;color:var(--ink-soft);font-weight:700">OBRA VINCULADA<select id="g360PermObra" style="width:100%;margin-top:5px;background:#0e0f11;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:9px"><option value="">Selecione a obra</option></select></label></div>
+              <h2 id="g360PermMatrixTitle">Permissões personalizáveis do usuário</h2>
+              <div class="g360-perm-help"><b>EDIÇÃO LIBERADA:</b> perfis RH, ENGENHEIROS e GESTOR podem ter permissões personalizadas por usuário. O perfil nativo é apenas o padrão inicial. Usuários & Permissões continua exclusivo do MASTER.</div><div style="margin-top:10px;max-width:420px"><label style="font-size:11px;color:var(--ink-soft);font-weight:700">OBRA VINCULADA<select id="g360PermObra" style="width:100%;margin-top:5px;background:#0e0f11;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:9px"><option value="">Selecione a obra</option></select></label></div>
             </div>
             <div class="g360-perm-actions">
+              <span style="padding:6px 9px;border:1px solid #35d07f;border-radius:999px;color:#35d07f;font-size:10px;font-weight:800;">V177 · EDITÁVEL</span>
               <button type="button" class="crud-mini" id="g360PermReadOnly">👁 Somente leitura</button>
               <button type="button" class="crud-mini" id="g360PermAll">✓ Marcar tudo</button>
               <button type="button" class="crud-mini" id="g360PermResetNative">↺ Restaurar padrão do perfil</button>
@@ -12314,7 +12315,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
     const personalizado=!!(perms[u.id] && Object.keys(perms[u.id]).length);
 
     if(ttl){
-      ttl.textContent='Permissões — '+(u.nome||u.email)+' · '+(u.master?'MASTER':perfil)+(personalizado?' · PERSONALIZADO':'');
+      ttl.textContent='Permissões editáveis — '+(u.nome||u.email)+' · '+(u.master?'MASTER':perfil)+(personalizado?' · PERSONALIZADO':'');
     }
 
     const os=document.getElementById('g360PermObra');
@@ -12334,9 +12335,17 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
       const exclusivoMaster=(k==='usuarios' && !u.master);
       return `<tr>
         <td class="g360-perm-module">${label}${exclusivoMaster?' <span style="font-size:9px;color:#f5c518">MASTER</span>':''}</td>
-        ${ACTIONS.map(a=>`<td><input type="checkbox" class="g360-perm-check" data-module="${k}" data-action="${a}" ${p[a]?'checked':''} ${(u.master||exclusivoMaster)?'disabled':''}></td>`).join('')}
+        ${ACTIONS.map(a=>`<td><input type="checkbox" class="g360-perm-check" data-module="${k}" data-action="${a}" ${p[a]?'checked':''}></td>`).join('')}
       </tr>`;
     }).join('');
+
+    // V177: força edição para qualquer perfil não-MASTER.
+    body.querySelectorAll('.g360-perm-check').forEach(c=>{
+      const exclusivoMaster=c.dataset.module==='usuarios';
+      c.disabled=!!u.master || exclusivoMaster;
+      c.style.cursor=c.disabled?'not-allowed':'pointer';
+      c.style.opacity=c.disabled?'.45':'1';
+    });
 
     ['g360PermSave','g360PermAll','g360PermReadOnly','g360PermResetNative'].forEach(id=>{
       const b=document.getElementById(id);
@@ -12350,7 +12359,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
       }else if(personalizado){
         msg.textContent='Este usuário possui permissões personalizadas. Elas prevalecem sobre o perfil nativo '+perfil+'.';
       }else{
-        msg.textContent='Usando o padrão do perfil '+perfil+'. Altere as caixas e clique em “Salvar permissões” para personalizar somente este usuário.';
+        msg.textContent='Perfil '+perfil+' carregado como padrão. As caixas estão liberadas: altere o que precisar e clique em “Salvar permissões”.';
       }
     }
   }
