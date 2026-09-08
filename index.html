@@ -1819,28 +1819,16 @@ html.g360-ui-ready .content-col {
           <span class="pt-ic">🧑‍💼</span>
           <div style="flex:1;">
             <div class="pt-title">RH / DP — Admissão</div>
-            <div class="pt-sub">Base de admissões, 6 níveis de aprovação independentes e indicadores de triagem, aprovação e reprovação</div>
+            <div class="pt-sub">Base de admissões, triagem, trilha de assinaturas do Autentique e indicadores de aprovação e reprovação</div>
           </div>
           <button class="btn-primary" id="rhAdmNovaBtn" style="white-space:nowrap;">＋ Nova Solicitação de Admissão</button>
         </div>
 
         <div class="adm-kpis" id="rhAdmKpis"></div>
 
-        <section class="panel" style="margin-top:12px;">
-          <h2>Níveis de Aprovação <span class="tag">Independentes · sem ordem obrigatória</span></h2>
-          <div style="display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:8px;overflow-x:auto;">
-            <div class="adm-kpi"><div class="l">Nível 1</div><div style="font-weight:800;font-size:12px;">ENGENHARIA</div></div>
-            <div class="adm-kpi"><div class="l">Nível 2</div><div style="font-weight:800;font-size:12px;">JURÍDICO</div></div>
-            <div class="adm-kpi"><div class="l">Nível 3</div><div style="font-weight:800;font-size:12px;">DIRETORIA</div></div>
-            <div class="adm-kpi"><div class="l">Nível 4</div><div style="font-weight:800;font-size:12px;">RH</div></div>
-            <div class="adm-kpi"><div class="l">Nível 5</div><div style="font-weight:800;font-size:12px;">DP</div></div>
-            <div class="adm-kpi"><div class="l">Nível 6</div><div style="font-weight:800;font-size:12px;">DOCUMENTAÇÃO RECEBIDA</div></div>
-          </div>
-        </section>
-
         <div class="adm-grid2">
           <section class="panel" style="margin:0;">
-            <h2>Painel de Aprovações <span class="tag">6 níveis · sem ordem</span></h2>
+            <h2>Painel de Aprovações <span class="tag">Etapa atual</span></h2>
             <div id="rhAdmFunnel"></div>
           </section>
           <section class="panel" style="margin:0;">
@@ -1859,7 +1847,7 @@ html.g360-ui-ready .content-col {
             <select id="rhAdmStatusFilter">
               <option value="">Todas as etapas</option>
               <option>APROVAÇÕES PENDENTES</option>
-              <option>PRONTO PARA ADMISSÃO</option><option>ADMITIDO</option><option>REPROVADO</option><option>DESISTÊNCIA</option><option>CANCELADO</option>
+              <option>AGUARDANDO DOCUMENTAÇÃO CENTRAL RH</option><option>PRONTO PARA ADMISSÃO</option><option>ADMITIDO</option><option>REPROVADO</option><option>DESISTÊNCIA</option><option>CANCELADO</option>
             </select>
             <button class="clear-btn" id="rhAdmClearFilter">Limpar filtros</button>
             <span class="count-badge" id="rhAdmHistCountTag"></span>
@@ -1868,7 +1856,7 @@ html.g360-ui-ready .content-col {
           <div class="table-scroll">
             <table>
               <thead><tr>
-                <th>Candidato</th><th>Função</th><th>Solicitação</th><th>Engenharia</th><th>Jurídico</th><th>Diretoria</th><th>RH</th><th>DP</th><th>Documentação Recebida</th><th>Admissão</th><th>Etapa Atual</th><th>Ações</th>
+                <th>Candidato</th><th>Função</th><th>Solicitação</th><th>Engenharia</th><th>Jurídico</th><th>Diretoria</th><th>Docs. Obra</th><th>Admissão</th><th>Etapa Atual</th><th>Ações</th>
               </tr></thead>
               <tbody id="rhAdmHistBody"></tbody>
             </table>
@@ -2009,14 +1997,13 @@ html.g360-ui-ready .content-col {
 
           <div class="form-section">
             <div class="form-section-title">Trilha de Aprovações</div>
-            <div class="approval-trail" style="gap:8px;flex-wrap:wrap;">
-              <span class="step">1 · ENGENHARIA</span>
-              <span class="step">2 · JURÍDICO</span>
-              <span class="step">3 · DIRETORIA</span>
-              <span class="step">4 · RH</span>
-              <span class="step">5 · DP</span>
-              <span class="step">6 · DOCUMENTAÇÃO RECEBIDA</span>
-              <span class="tag">TODOS INDEPENDENTES</span>
+            <div class="approval-trail">
+              <span class="step">ADM</span><span class="arrow">→</span>
+              <span class="step">ENG. RESIDENTE</span><span class="arrow">→</span>
+              <span class="step">JURÍDICO</span><span class="arrow">→</span>
+              <span class="step">DIRETOR</span><span class="arrow">→</span>
+              <span class="step">DP</span><span class="arrow">→</span>
+              <span class="step">RH</span>
             </div>
           </div>
 
@@ -2036,15 +2023,12 @@ html.g360-ui-ready .content-col {
               <button class="clear-btn" id="rhAdmTriagemFechar">✕ Fechar</button>
             </div>
             <div class="form-section">
-              <div class="form-section-title">Controle de Aprovações — 6 níveis completos e independentes</div>
-              <div style="font-size:11px;color:var(--ink-soft);margin-bottom:10px;">As datas podem ser preenchidas em qualquer ordem. O processo fica pronto quando os 6 níveis estiverem concluídos.</div>
+              <div class="form-section-title">Trilha de Assinaturas — Autentique</div>
               <div class="adm-step-grid">
-                <div class="form-group"><label>1. Engenharia — Data</label><input type="date" id="rhAdmDtEng"></div>
-                <div class="form-group"><label>2. Jurídico — Data</label><input type="date" id="rhAdmDtJur"></div>
-                <div class="form-group"><label>3. Diretoria — Data</label><input type="date" id="rhAdmDtDir"></div>
-                <div class="form-group"><label>4. RH — Data</label><input type="date" id="rhAdmDtRH"></div>
-                <div class="form-group"><label>5. DP — Data</label><input type="date" id="rhAdmDtDP"></div>
-                <div class="form-group"><label>6. Documentação Recebida — Data</label><input type="date" id="rhAdmDtDocs"></div>
+                <div class="form-group"><label>Assinatura Engenharia</label><input type="date" id="rhAdmDtEng"></div>
+                <div class="form-group"><label>Assinatura Jurídico</label><input type="date" id="rhAdmDtJur"></div>
+                <div class="form-group"><label>Assinatura Diretoria</label><input type="date" id="rhAdmDtDir"></div>
+                <div class="form-group"><label>Documentação Central RH recebida na Obra</label><input type="date" id="rhAdmDtDocs"></div>
                 <div class="form-group"><label>Data de Admissão</label><input type="date" id="rhAdmDtAdmissao"></div>
               </div>
             </div>
@@ -2053,7 +2037,7 @@ html.g360-ui-ready .content-col {
               <div class="form-grid cols-2">
                 <div class="form-group"><label>Resultado</label><select id="rhAdmResultado"><option value="">Em andamento</option><option value="REPROVADO">Reprovado</option><option value="DESISTÊNCIA">Desistência</option><option value="CANCELADO">Cancelado</option></select></div>
                 <div class="form-group"><label>Data da ocorrência</label><input type="date" id="rhAdmDtResultado"></div>
-                <div class="form-group"><label>Reprovado por / etapa</label><select id="rhAdmReprovEtapaSel"><option value="">Selecione...</option><option>ENGENHARIA</option><option>JURÍDICO</option><option>DIRETORIA</option><option>RH</option><option>DP</option><option>DOCUMENTAÇÃO RECEBIDA</option></select></div>
+                <div class="form-group"><label>Reprovado por / etapa</label><select id="rhAdmReprovEtapaSel"><option value="">Selecione...</option><option>ENGENHARIA</option><option>JURÍDICO</option><option>DIRETORIA</option></select></div>
                 <div class="form-group"><label>Motivo</label><input type="text" id="rhAdmMotivo" placeholder="Motivo da reprovação / encerramento"></div>
                 <div class="form-group span-2"><label>Observação</label><textarea id="rhAdmObs" placeholder="Observação do processo..."></textarea></div>
               </div>
@@ -2265,14 +2249,13 @@ html.g360-ui-ready .content-col {
 
           <div class="form-section">
             <div class="form-section-title">Trilha de Aprovações</div>
-            <div class="approval-trail" style="gap:8px;flex-wrap:wrap;">
-              <span class="step">ENGENHARIA</span>
-              <span class="step">JURÍDICO</span>
-              <span class="step">DIRETORIA</span>
+            <div class="approval-trail">
+              <span class="step">ADM</span><span class="arrow">→</span>
+              <span class="step">ENG. RESIDENTE</span><span class="arrow">→</span>
+              <span class="step">JURÍDICO</span><span class="arrow">→</span>
+              <span class="step">DIRETOR</span><span class="arrow">→</span>
+              <span class="step">DP</span><span class="arrow">→</span>
               <span class="step">RH</span>
-              <span class="step">DP</span>
-              <span class="step">DOCUMENTAÇÃO RECEBIDA</span>
-              <span class="tag">SEM ORDEM OBRIGATÓRIA</span>
             </div>
           </div>
 
@@ -2401,14 +2384,13 @@ html.g360-ui-ready .content-col {
 
           <div class="form-section">
             <div class="form-section-title">Trilha de Aprovações</div>
-            <div class="approval-trail" style="gap:8px;flex-wrap:wrap;">
-              <span class="step">ENGENHARIA</span>
-              <span class="step">JURÍDICO</span>
-              <span class="step">DIRETORIA</span>
+            <div class="approval-trail">
+              <span class="step">ADM</span><span class="arrow">→</span>
+              <span class="step">ENG. RESIDENTE</span><span class="arrow">→</span>
+              <span class="step">JURÍDICO</span><span class="arrow">→</span>
+              <span class="step">DIRETOR</span><span class="arrow">→</span>
+              <span class="step">DP</span><span class="arrow">→</span>
               <span class="step">RH</span>
-              <span class="step">DP</span>
-              <span class="step">DOCUMENTAÇÃO RECEBIDA</span>
-              <span class="tag">SEM ORDEM OBRIGATÓRIA</span>
             </div>
           </div>
 
@@ -6292,12 +6274,12 @@ function rhAdmFmtISO(v){
   const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})/);
   return m ? `${m[3]}/${m[2]}/${m[1]}` : '—';
 }
-// V186 — Admissão: 6 níveis no controle; PDF original preservado sem alterações\nfunction rhAdmEtapa(d){
+function rhAdmEtapa(d){
   const term=String(d.resultado||'').toUpperCase();
   if(['REPROVADO','DESISTÊNCIA','CANCELADO'].includes(term)) return term;
   if(d.dataAdmissao) return 'ADMITIDO';
-  const todas = d.dataEngenharia && d.dataJuridico && d.dataDiretoria && d.dataRH && d.dataDP && d.dataDocsObra;
-  if(todas) return 'PRONTO PARA ADMISSÃO';
+  if(d.dataDocsObra) return 'PRONTO PARA ADMISSÃO';
+  if(d.dataEngenharia && d.dataJuridico && d.dataDiretoria) return 'AGUARDANDO DOCUMENTAÇÃO CENTRAL RH';
   return 'APROVAÇÕES PENDENTES';
 }
 function rhAdmPendenciasAprovacao(d){
@@ -6305,19 +6287,16 @@ function rhAdmPendenciasAprovacao(d){
   if(!d.dataEngenharia)p.push('Engenharia');
   if(!d.dataJuridico)p.push('Jurídico');
   if(!d.dataDiretoria)p.push('Diretoria');
-  if(!d.dataRH)p.push('RH');
-  if(!d.dataDP)p.push('DP');
-  if(!d.dataDocsObra)p.push('Documentação');
   return p;
 }
 function rhAdmEtapaLabel(d){
   const st=rhAdmEtapa(d);
   if(st!=='APROVAÇÕES PENDENTES') return st;
   const p=rhAdmPendenciasAprovacao(d);
-  return p.length ? `PENDENTE — ${p.join(' · ')}` : st;
+  return p.length ? `APROVAÇÕES PENDENTES — ${p.join(' + ')}` : st;
 }
 function rhAdmStatusClass(st){
-  if(st==='ADMITIDO'||st==='PRONTO PARA ADMISSÃO')return 'adm-ok';
+  if(st==='ADMITIDO')return 'adm-ok';
   if(st==='REPROVADO'||st==='CANCELADO')return 'adm-bad';
   if(st==='DESISTÊNCIA')return 'adm-muted';
   return 'adm-warn';
@@ -6326,27 +6305,17 @@ function rhAdmDateCell(v){return `<span class="adm-date ${v?'done':'empty'}">${v
 function rhAdmCalcDashboard(list){
   const counts={}; list.forEach(d=>{const st=rhAdmEtapa(d);counts[st]=(counts[st]||0)+1;});
   const ativos=list.filter(d=>!['ADMITIDO','REPROVADO','DESISTÊNCIA','CANCELADO'].includes(rhAdmEtapa(d)));
-  const niveis=[
-    ['Engenharia','dataEngenharia'],
-    ['Jurídico','dataJuridico'],
-    ['Diretoria','dataDiretoria'],
-    ['RH','dataRH'],
-    ['DP','dataDP'],
-    ['Documentação','dataDocsObra']
-  ];
-  const pend={};
-  niveis.forEach(([label,campo])=>pend[campo]=ativos.filter(d=>!d[campo]).length);
-  const concluidos=ativos.filter(d=>d.dataEngenharia&&d.dataJuridico&&d.dataDiretoria&&d.dataRH&&d.dataDP&&d.dataDocsObra).length;
-
+  const pendEng=ativos.filter(d=>!d.dataEngenharia).length;
+  const pendJur=ativos.filter(d=>!d.dataJuridico).length;
+  const pendDir=ativos.filter(d=>!d.dataDiretoria).length;
+  const todasAprov=ativos.filter(d=>d.dataEngenharia&&d.dataJuridico&&d.dataDiretoria&&!d.dataDocsObra).length;
   const kpis=[
     ['Em Processo',ativos.length,''],
-    ['Engenharia pendente',pend.dataEngenharia,'APROVAÇÕES PENDENTES'],
-    ['Jurídico pendente',pend.dataJuridico,'APROVAÇÕES PENDENTES'],
-    ['Diretoria pendente',pend.dataDiretoria,'APROVAÇÕES PENDENTES'],
-    ['RH pendente',pend.dataRH,'APROVAÇÕES PENDENTES'],
-    ['DP pendente',pend.dataDP,'APROVAÇÕES PENDENTES'],
-    ['Documentação pendente',pend.dataDocsObra,'APROVAÇÕES PENDENTES'],
-    ['6 níveis concluídos',concluidos,'PRONTO PARA ADMISSÃO'],
+    ['Engenharia pendente',pendEng,'APROVAÇÕES PENDENTES'],
+    ['Jurídico pendente',pendJur,'APROVAÇÕES PENDENTES'],
+    ['Diretoria pendente',pendDir,'APROVAÇÕES PENDENTES'],
+    ['Aprovações concluídas',todasAprov,'AGUARDANDO DOCUMENTAÇÃO CENTRAL RH'],
+    ['Prontos p/ admissão',counts['PRONTO PARA ADMISSÃO']||0,'PRONTO PARA ADMISSÃO'],
     ['Admitidos',counts['ADMITIDO']||0,'ADMITIDO'],
     ['Reprovados',counts['REPROVADO']||0,'REPROVADO'],
   ];
@@ -6354,24 +6323,19 @@ function rhAdmCalcDashboard(list){
   box?.querySelectorAll('[data-adm-filter]').forEach(el=>el.onclick=()=>{document.getElementById('rhAdmStatusFilter').value=el.dataset.admFilter||'';rhAdmRenderHistorico();});
 
   const aprovacoes=[
-    ['Engenharia concluída',ativos.filter(d=>!!d.dataEngenharia).length],
-    ['Jurídico concluído',ativos.filter(d=>!!d.dataJuridico).length],
-    ['Diretoria concluída',ativos.filter(d=>!!d.dataDiretoria).length],
-    ['RH concluído',ativos.filter(d=>!!d.dataRH).length],
-    ['DP concluído',ativos.filter(d=>!!d.dataDP).length],
-    ['Documentação recebida',ativos.filter(d=>!!d.dataDocsObra).length],
-    ['6 níveis concluídos',concluidos],
+    ['Engenharia assinada',ativos.filter(d=>!!d.dataEngenharia).length],
+    ['Jurídico assinado',ativos.filter(d=>!!d.dataJuridico).length],
+    ['Diretoria assinada',ativos.filter(d=>!!d.dataDiretoria).length],
+    ['Todas aprovadas',ativos.filter(d=>d.dataEngenharia&&d.dataJuridico&&d.dataDiretoria).length],
+    ['Docs. recebidos',ativos.filter(d=>!!d.dataDocsObra).length],
     ['Admitidos',counts['ADMITIDO']||0]
   ];
   const max=Math.max(1,...aprovacoes.map(x=>x[1]));
   const fun=document.getElementById('rhAdmFunnel'); if(fun) fun.innerHTML=aprovacoes.map(([l,n])=>`<div class="adm-bar-row"><span>${l}</span><div class="adm-bar-track"><div class="adm-bar-fill" style="width:${(n/max*100).toFixed(1)}%"></div></div><b>${n}</b></div>`).join('');
 
   const reprov=list.filter(d=>rhAdmEtapa(d)==='REPROVADO');
-  const by={ENGENHARIA:0,'JURÍDICO':0,DIRETORIA:0,RH:0,DP:0,'DOCUMENTAÇÃO RECEBIDA':0};
-  reprov.forEach(d=>{const k=String(d.reprovadoEtapa||'').toUpperCase();if(k in by)by[k]++;});
-  const total=Math.max(1,reprov.length);
-  const rep=document.getElementById('rhAdmReprovEtapa');
-  if(rep) rep.innerHTML=Object.entries(by).map(([l,n])=>`<div class="adm-bar-row"><span>${l}</span><div class="adm-bar-track"><div class="adm-bar-fill" style="width:${(n/total*100).toFixed(1)}%"></div></div><b>${n}</b></div>`).join('') + `<div style="font-size:11px;color:var(--ink-soft);margin-top:8px;">Taxa de reprovação: <b>${list.length?(reprov.length/list.length*100).toFixed(1):'0.0'}%</b></div>`;
+  const by={ENGENHARIA:0,'JURÍDICO':0,DIRETORIA:0}; reprov.forEach(d=>{const k=String(d.reprovadoEtapa||'').toUpperCase();if(k in by)by[k]++;});
+  const total=Math.max(1,reprov.length); const rep=document.getElementById('rhAdmReprovEtapa'); if(rep) rep.innerHTML=Object.entries(by).map(([l,n])=>`<div class="adm-bar-row"><span>${l}</span><div class="adm-bar-track"><div class="adm-bar-fill" style="width:${(n/total*100).toFixed(1)}%"></div></div><b>${n}</b></div>`).join('') + `<div style="font-size:11px;color:var(--ink-soft);margin-top:8px;">Taxa de reprovação: <b>${list.length?(reprov.length/list.length*100).toFixed(1):'0.0'}%</b></div>`;
   const motivos={}; reprov.forEach(d=>{const m=(d.motivoResultado||'Não informado').trim()||'Não informado';motivos[m]=(motivos[m]||0)+1;});
   const mot=document.getElementById('rhAdmReprovMotivos'); if(mot) mot.innerHTML=Object.entries(motivos).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([m,n])=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:4px 0;"><span>${m}</span><b>${n}</b></div>`).join('')||'<span>Nenhuma reprovação registrada.</span>';
 }
@@ -6383,17 +6347,11 @@ function rhAdmRenderHistorico(){
   const sf=document.getElementById('rhAdmStatusFilter')?.value||'';
   const rows=list.map((d,idx)=>({d,idx})).filter(({d})=>(!q||`${d.nome} ${d.cargo}`.toLowerCase().includes(q))&&(!sf||rhAdmEtapa(d)===sf));
   document.getElementById('rhAdmHistCountTag').textContent = `${rows.length} de ${list.length}`;
-  if(!rows.length){tbody.innerHTML=`<tr><td colspan="12"><div class="empty-state">Nenhum processo de admissão encontrado.</div></td></tr>`;return;}
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="10"><div class="empty-state">Nenhum processo de admissão encontrado.</div></td></tr>`;return;}
   tbody.innerHTML=[...rows].reverse().map(({d,idx})=>{const st=rhAdmEtapa(d);return `<tr>
     <td><b>${d.nome||'—'}</b><div style="font-size:10px;color:var(--ink-dim);">${d.nivel?'Nível '+d.nivel:''}</div></td>
     <td>${d.cargo||'—'}</td><td>${d.dataGeracao?new Date(d.dataGeracao).toLocaleDateString('pt-BR'):'—'}</td>
-    <td>${rhAdmDateCell(d.dataEngenharia)}</td>
-    <td>${rhAdmDateCell(d.dataJuridico)}</td>
-    <td>${rhAdmDateCell(d.dataDiretoria)}</td>
-    <td>${rhAdmDateCell(d.dataRH)}</td>
-    <td>${rhAdmDateCell(d.dataDP)}</td>
-    <td>${rhAdmDateCell(d.dataDocsObra)}</td>
-    <td>${rhAdmDateCell(d.dataAdmissao)}</td>
+    <td>${rhAdmDateCell(d.dataEngenharia)}</td><td>${rhAdmDateCell(d.dataJuridico)}</td><td>${rhAdmDateCell(d.dataDiretoria)}</td><td>${rhAdmDateCell(d.dataDocsObra)}</td><td>${rhAdmDateCell(d.dataAdmissao)}</td>
     <td><span class="adm-status ${rhAdmStatusClass(st)}">${rhAdmEtapaLabel(d)}</span>${st==='REPROVADO'&&d.reprovadoEtapa?`<div style="font-size:9px;color:var(--ink-soft);margin-top:4px;">por ${d.reprovadoEtapa}</div>`:''}</td>
     <td style="white-space:nowrap;"><button class="clear-btn" style="padding:5px 8px;font-size:10px;" onclick="rhAdmOpenTriagem(${idx})">🧭 Triagem</button> <button class="clear-btn" style="padding:5px 8px;font-size:10px;" onclick="rhAdmEditHistorico(${idx})">✏️ Form.</button> <button class="clear-btn" style="padding:5px 8px;font-size:10px;" onclick="rhAdmReprintPDF(${idx})">📄</button></td>
   </tr>`}).join('');
@@ -6402,7 +6360,7 @@ let rhAdmTriagemIndex=null;
 function rhAdmOpenTriagem(idx){
   const list=rhAdmLoadHistorico(),d=list[idx];if(!d)return;rhAdmTriagemIndex=idx;
   document.getElementById('rhAdmTriagemNome').textContent=`${d.nome||''} · ${d.cargo||''}`;
-  document.getElementById('rhAdmDtEng').value=d.dataEngenharia||'';document.getElementById('rhAdmDtJur').value=d.dataJuridico||'';document.getElementById('rhAdmDtDir').value=d.dataDiretoria||'';document.getElementById('rhAdmDtRH').value=d.dataRH||'';document.getElementById('rhAdmDtDP').value=d.dataDP||'';document.getElementById('rhAdmDtDocs').value=d.dataDocsObra||'';document.getElementById('rhAdmDtAdmissao').value=d.dataAdmissao||'';
+  document.getElementById('rhAdmDtEng').value=d.dataEngenharia||'';document.getElementById('rhAdmDtJur').value=d.dataJuridico||'';document.getElementById('rhAdmDtDir').value=d.dataDiretoria||'';document.getElementById('rhAdmDtDocs').value=d.dataDocsObra||'';document.getElementById('rhAdmDtAdmissao').value=d.dataAdmissao||'';
   document.getElementById('rhAdmResultado').value=d.resultado||'';document.getElementById('rhAdmDtResultado').value=d.dataResultado||'';document.getElementById('rhAdmReprovEtapaSel').value=d.reprovadoEtapa||'';document.getElementById('rhAdmMotivo').value=d.motivoResultado||'';document.getElementById('rhAdmObs').value=d.observacaoTriagem||'';
   document.getElementById('rhAdmTriagemBack').style.display='flex';
 }
@@ -6411,7 +6369,7 @@ function rhAdmSaveTriagem(){
   const d=list[rhAdmTriagemIndex],res=document.getElementById('rhAdmResultado').value;
   if(res==='REPROVADO'&&!document.getElementById('rhAdmReprovEtapaSel').value){alert('Informe por quem / em qual etapa ocorreu a reprovação.');return;}
   if(res&&!document.getElementById('rhAdmDtResultado').value){alert('Informe a data da ocorrência.');return;}
-  Object.assign(d,{dataEngenharia:document.getElementById('rhAdmDtEng').value,dataJuridico:document.getElementById('rhAdmDtJur').value,dataDiretoria:document.getElementById('rhAdmDtDir').value,dataRH:document.getElementById('rhAdmDtRH').value,dataDP:document.getElementById('rhAdmDtDP').value,dataDocsObra:document.getElementById('rhAdmDtDocs').value,dataAdmissao:document.getElementById('rhAdmDtAdmissao').value,resultado:res,dataResultado:document.getElementById('rhAdmDtResultado').value,reprovadoEtapa:document.getElementById('rhAdmReprovEtapaSel').value,motivoResultado:document.getElementById('rhAdmMotivo').value.trim(),observacaoTriagem:document.getElementById('rhAdmObs').value.trim()});
+  Object.assign(d,{dataEngenharia:document.getElementById('rhAdmDtEng').value,dataJuridico:document.getElementById('rhAdmDtJur').value,dataDiretoria:document.getElementById('rhAdmDtDir').value,dataDocsObra:document.getElementById('rhAdmDtDocs').value,dataAdmissao:document.getElementById('rhAdmDtAdmissao').value,resultado:res,dataResultado:document.getElementById('rhAdmDtResultado').value,reprovadoEtapa:document.getElementById('rhAdmReprovEtapaSel').value,motivoResultado:document.getElementById('rhAdmMotivo').value.trim(),observacaoTriagem:document.getElementById('rhAdmObs').value.trim()});
   rhAdmSaveHistorico(list);document.getElementById('rhAdmTriagemBack').style.display='none';rhAdmRenderHistorico();
   try{window.g360Audit?.('admissao','ATUALIZAR_TRIAGEM','admissao',String(rhAdmTriagemIndex),d.nome,{etapa:rhAdmEtapa(d),resultado:d.resultado||null});}catch(e){}
 }
