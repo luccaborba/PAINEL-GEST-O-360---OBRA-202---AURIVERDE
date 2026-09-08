@@ -2384,6 +2384,20 @@ html.g360-ui-ready .content-col {
             <div class="pt-sub">Construtora Centro Leste · Obra 202 — Implantação Auriverde · Formulários para assinatura, custo previsto por colaborador e projeção de gasto mensal</div>
           </div>
         </div>
+
+        <section class="panel" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:linear-gradient(135deg, rgba(245,197,24,.06), transparent);">
+          <div>
+            <h2 style="margin:0 0 5px;">Gestão das competências</h2>
+            <p style="margin:0;color:var(--ink-soft);font-size:12px;">
+              Abra uma nova competência com sugestões automáticas pela última baixada + periodicidade, ou lance uma folga extraordinária para reembolso.
+            </p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="clear-btn" id="baixadaAbrirNaoProgramadaBtn" style="white-space:nowrap;">＋ Folga não programada</button>
+            <button class="g360-btn" id="baixadaAbrirCompetenciaBtn" style="white-space:nowrap;">＋ Abrir nova competência</button>
+          </div>
+        </section>
+
         <section class="kpis-4" id="kpi-baixadas" style="grid-template-columns:repeat(3,1fr);"></section>
         <section class="panel">
           <h2>Previsão de Custo Mensal com Folga de Campo <span class="tag">Folgas com data programada</span></h2>
@@ -2809,10 +2823,13 @@ html.g360-ui-ready .content-col {
           <div class="g360-perm-top">
             <div>
               <h2 id="g360PermMatrixTitle">Permissões do usuário</h2>
-              <div class="g360-perm-help">As permissões abaixo são nativas do perfil selecionado. O Administrador Mestre permanece separado e mantém acesso técnico total.</div><div style="margin-top:10px;max-width:420px"><label style="font-size:11px;color:var(--ink-soft);font-weight:700">OBRA VINCULADA<select id="g360PermObra" style="width:100%;margin-top:5px;background:#0e0f11;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:9px"><option value="">Selecione a obra</option></select></label></div>
+              <div class="g360-perm-help">O perfil nativo funciona como configuração inicial, mas o Administrador Mestre pode personalizar as permissões deste usuário. A personalização prevalece sobre o padrão do perfil. O módulo Usuários & Permissões continua exclusivo do Mestre.</div><div style="margin-top:10px;max-width:420px"><label style="font-size:11px;color:var(--ink-soft);font-weight:700">OBRA VINCULADA<select id="g360PermObra" style="width:100%;margin-top:5px;background:#0e0f11;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:9px"><option value="">Selecione a obra</option></select></label></div>
             </div>
             <div class="g360-perm-actions">
-              <span class="g360-perm-badge master">PERMISSÕES NATIVAS</span>
+              <button type="button" class="crud-mini" id="g360PermReadOnly">👁 Somente leitura</button>
+              <button type="button" class="crud-mini" id="g360PermAll">✓ Marcar tudo</button>
+              <button type="button" class="crud-mini" id="g360PermResetNative">↺ Restaurar padrão do perfil</button>
+              <button type="button" class="crud-primary" id="g360PermSave">💾 Salvar permissões</button>
             </div>
           </div>
           <div class="table-scroll">
@@ -7628,6 +7645,28 @@ function fcAbrirView(view){
   window.scrollTo(0,0);
 }
 document.getElementById('goFormConcessaoBtn')?.addEventListener('click', ()=> fcAbrirView('formconcessao'));
+
+function fcAbrirAcaoDaFolga(acao){
+  fcAbrirView('formconcessao');
+
+  // Garante que a view já foi renderizada antes de acionar o modal interno.
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      const id=acao==='nao_programada'?'fcUnplannedBtn':'fcNewMonthBtn';
+      const btn=document.getElementById(id);
+      if(btn){
+        btn.click();
+      }else{
+        console.error('[G360] Ação de Folga de Campo não encontrada:',id);
+        alert('Não foi possível abrir a ação de Folga de Campo. Atualize a página e tente novamente.');
+      }
+    });
+  });
+}
+
+document.getElementById('baixadaAbrirNaoProgramadaBtn')?.addEventListener('click', ()=>fcAbrirAcaoDaFolga('nao_programada'));
+document.getElementById('baixadaAbrirCompetenciaBtn')?.addEventListener('click', ()=>fcAbrirAcaoDaFolga('competencia'));
+
 document.getElementById('goBaixadasBtn')?.addEventListener('click', ()=>{
   document.querySelector('.side-link[data-view="baixadas"]')?.click();
 });
@@ -12143,10 +12182,15 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
     const u=user(id);
     if(u?.master)return allPerm();
 
+    // V176: se houver uma matriz personalizada salva para o usuário,
+    // ela sempre prevalece, mesmo quando o perfil é nativo.
+    const custom=perms[id]?.[module];
+    if(custom)return {...blankPerm(false),...custom};
+
     const native=nativePerm(u?.perfil,module);
     if(native)return native;
 
-    return {...blankPerm(false),...(perms[id]?.[module]||{})};
+    return blankPerm(false);
   }
 
   window.g360Can=(module,action,id=currentId)=>{
@@ -12253,20 +12297,33 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
       if(msg)msg.textContent='Usuários carregados normalmente. A função de múltiplas obras aguarda o SQL V150 no Supabase.';
     }
   }
-  function renderUsers(){const body=document.getElementById('g360UsersBody');if(!body)return;if(!users.length){body.innerHTML='<tr><td colspan="6"><div class="empty-state">Nenhum perfil foi retornado pelo Supabase para esta sessão. Os registros podem existir no banco, mas estar bloqueados por política de acesso (RLS).</div></td></tr>';return}body.innerHTML=users.map(u=>`<tr><td><b>${u.nome||u.email||'Usuário'}</b><br><span style="font-size:11px;color:var(--ink-dim)">${u.email||''}</span></td><td>${u.perfil||'USUARIO'}${u.master?' <span class="g360-perm-badge master">MESTRE</span>':''}</td><td>${u.obraNome||'Sem obra definida'}</td><td><span class="g360-perm-badge ${u.ativo?'ok':'off'}">${u.ativo?'ATIVO':'INATIVO'}</span></td><td>${u.ativo?(u.master?'Total (Master)':(PERFIS_NATIVOS.has(normPerfil(u.perfil))?'Nativo — '+normPerfil(u.perfil):'Legado / Personalizado')):'Bloqueado'}</td><td class="crud-row-actions"><button type="button" class="crud-mini" data-perm-edit="${u.id}">✏️ Permissões</button><button type="button" class="crud-mini" data-user-edit="${u.id}">👤 Editar</button><button type="button" class="crud-mini" data-user-clone="${u.id}">📋 Duplicar acesso</button><button type="button" class="crud-mini danger" data-user-force-login="${u.id}">⛔ Forçar login</button>${u.master?'':`<button type="button" class="crud-mini toggle" data-user-toggle="${u.id}">${u.ativo?'⏸ Inativar':'▶ Ativar'}</button>`}${u.id===currentId?'':`<button type="button" class="crud-mini danger" data-user-delete="${u.id}">🗑 Excluir</button>`}</td></tr>`).join('');body.querySelectorAll('[data-perm-edit]').forEach(b=>b.onclick=()=>{editingId=b.dataset.permEdit;renderMatrix();document.getElementById('g360PermMatrixTitle')?.scrollIntoView({behavior:'smooth',block:'center'})});body.querySelectorAll('[data-user-edit]').forEach(b=>b.onclick=()=>openUser(b.dataset.userEdit));body.querySelectorAll('[data-user-clone]').forEach(b=>b.onclick=()=>openClone(b.dataset.userClone));body.querySelectorAll('[data-user-force-login]').forEach(b=>b.onclick=()=>window.g360SessionControlV148?.forceUser?.(b.dataset.userForceLogin));body.querySelectorAll('[data-user-toggle]').forEach(b=>b.onclick=()=>toggleUser(b.dataset.userToggle));body.querySelectorAll('[data-user-delete]').forEach(b=>b.onclick=()=>deleteUser(b.dataset.userDelete))}
+  function renderUsers(){const body=document.getElementById('g360UsersBody');if(!body)return;if(!users.length){body.innerHTML='<tr><td colspan="6"><div class="empty-state">Nenhum perfil foi retornado pelo Supabase para esta sessão. Os registros podem existir no banco, mas estar bloqueados por política de acesso (RLS).</div></td></tr>';return}body.innerHTML=users.map(u=>`<tr><td><b>${u.nome||u.email||'Usuário'}</b><br><span style="font-size:11px;color:var(--ink-dim)">${u.email||''}</span></td><td>${u.perfil||'USUARIO'}${u.master?' <span class="g360-perm-badge master">MESTRE</span>':''}</td><td>${u.obraNome||'Sem obra definida'}</td><td><span class="g360-perm-badge ${u.ativo?'ok':'off'}">${u.ativo?'ATIVO':'INATIVO'}</span></td><td>${u.ativo?(u.master?'Total (Master)':(perms[u.id]&&Object.keys(perms[u.id]).length?('Personalizado — '+normPerfil(u.perfil)):(PERFIS_NATIVOS.has(normPerfil(u.perfil))?'Nativo — '+normPerfil(u.perfil):'Legado / Personalizado'))):'Bloqueado'}</td><td class="crud-row-actions"><button type="button" class="crud-mini" data-perm-edit="${u.id}">✏️ Permissões</button><button type="button" class="crud-mini" data-user-edit="${u.id}">👤 Editar</button><button type="button" class="crud-mini" data-user-clone="${u.id}">📋 Duplicar acesso</button><button type="button" class="crud-mini danger" data-user-force-login="${u.id}">⛔ Forçar login</button>${u.master?'':`<button type="button" class="crud-mini toggle" data-user-toggle="${u.id}">${u.ativo?'⏸ Inativar':'▶ Ativar'}</button>`}${u.id===currentId?'':`<button type="button" class="crud-mini danger" data-user-delete="${u.id}">🗑 Excluir</button>`}</td></tr>`).join('');body.querySelectorAll('[data-perm-edit]').forEach(b=>b.onclick=()=>{editingId=b.dataset.permEdit;renderMatrix();document.getElementById('g360PermMatrixTitle')?.scrollIntoView({behavior:'smooth',block:'center'})});body.querySelectorAll('[data-user-edit]').forEach(b=>b.onclick=()=>openUser(b.dataset.userEdit));body.querySelectorAll('[data-user-clone]').forEach(b=>b.onclick=()=>openClone(b.dataset.userClone));body.querySelectorAll('[data-user-force-login]').forEach(b=>b.onclick=()=>window.g360SessionControlV148?.forceUser?.(b.dataset.userForceLogin));body.querySelectorAll('[data-user-toggle]').forEach(b=>b.onclick=()=>toggleUser(b.dataset.userToggle));body.querySelectorAll('[data-user-delete]').forEach(b=>b.onclick=()=>deleteUser(b.dataset.userDelete))}
   function renderMatrix(){
-    const body=document.getElementById('g360PermMatrixBody'),ttl=document.getElementById('g360PermMatrixTitle');
+    const body=document.getElementById('g360PermMatrixBody');
+    const ttl=document.getElementById('g360PermMatrixTitle');
     if(!body)return;
+
     const u=user(editingId);
-    if(!u){body.innerHTML='';if(ttl)ttl.textContent='Permissões';return}
+    if(!u){
+      body.innerHTML='';
+      if(ttl)ttl.textContent='Permissões';
+      return;
+    }
 
     const perfil=normPerfil(u.perfil);
-    if(ttl)ttl.textContent='Permissões nativas — '+(u.nome||u.email)+' · '+(u.master?'MASTER':perfil);
+    const personalizado=!!(perms[u.id] && Object.keys(perms[u.id]).length);
+
+    if(ttl){
+      ttl.textContent='Permissões — '+(u.nome||u.email)+' · '+(u.master?'MASTER':perfil)+(personalizado?' · PERSONALIZADO':'');
+    }
 
     const os=document.getElementById('g360PermObra');
     if(os){
       const ids=u.obraIds||[];
-      const labels=ids.map(id=>{const o=obras.find(x=>String(x.id)===String(id));return o?`${o.codigo} - ${o.nome}`:''}).filter(Boolean);
+      const labels=ids.map(id=>{
+        const o=obras.find(x=>String(x.id)===String(id));
+        return o?`${o.codigo} - ${o.nome}`:'';
+      }).filter(Boolean);
       os.innerHTML=`<option value="">${labels.length?labels.join(' • '):'Sem obra vinculada'}</option>`;
       os.value='';
       os.disabled=true;
@@ -12274,24 +12331,154 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
 
     body.innerHTML=MODULES.map(([k,label])=>{
       const p=perm(editingId,k);
-      return `<tr><td class="g360-perm-module">${label}</td>${ACTIONS.map(a=>`<td><input type="checkbox" class="g360-perm-check" data-module="${k}" data-action="${a}" ${p[a]?'checked':''} disabled></td>`).join('')}</tr>`;
+      const exclusivoMaster=(k==='usuarios' && !u.master);
+      return `<tr>
+        <td class="g360-perm-module">${label}${exclusivoMaster?' <span style="font-size:9px;color:#f5c518">MASTER</span>':''}</td>
+        ${ACTIONS.map(a=>`<td><input type="checkbox" class="g360-perm-check" data-module="${k}" data-action="${a}" ${p[a]?'checked':''} ${(u.master||exclusivoMaster)?'disabled':''}></td>`).join('')}
+      </tr>`;
     }).join('');
+
+    ['g360PermSave','g360PermAll','g360PermReadOnly','g360PermResetNative'].forEach(id=>{
+      const b=document.getElementById(id);
+      if(b)b.disabled=!!u.master;
+    });
 
     const msg=document.getElementById('g360PermMsg');
     if(msg){
-      msg.textContent=u.master
-        ? 'Administrador Mestre: acesso técnico total.'
-        : perfil==='ENGENHEIROS'
-          ? 'ENGENHEIROS: somente consulta/exportação nas obras vinculadas, inclusive quando houver acesso a várias obras.'
-          : perfil==='RH'
-            ? 'RH: acesso completo somente aos módulos de RH/DP.'
-            : perfil==='GESTOR'
-              ? 'GESTOR: acesso operacional completo. Administração técnica continua exclusiva do Mestre.'
-              : 'Perfil legado: permissões anteriores continuam válidas até o usuário ser migrado para um perfil nativo.';
+      if(u.master){
+        msg.textContent='Administrador Mestre: acesso técnico total e não pode ser restringido.';
+      }else if(personalizado){
+        msg.textContent='Este usuário possui permissões personalizadas. Elas prevalecem sobre o perfil nativo '+perfil+'.';
+      }else{
+        msg.textContent='Usando o padrão do perfil '+perfil+'. Altere as caixas e clique em “Salvar permissões” para personalizar somente este usuário.';
+      }
     }
   }
-  async function saveMatrix(){ toastPerm('As permissões agora são nativas do perfil. Edite o Perfil do usuário.'); }
-  function setMatrix(){ toastPerm('As permissões agora são nativas do perfil.'); }
+
+  async function saveMatrix(){
+    const u=user(editingId);
+    if(!u)return;
+    if(u.master)return toastPerm('Administrador Mestre mantém acesso total.');
+
+    const obraIds=(u.obraIds&&u.obraIds.length)
+      ? [...new Set(u.obraIds.map(String))]
+      : (u.obra_id?[String(u.obra_id)]:[]);
+
+    if(!obraIds.length)return toastPerm('O usuário precisa ter pelo menos uma obra vinculada.');
+
+    const btn=document.getElementById('g360PermSave');
+    const original=btn?.innerHTML||'💾 Salvar permissões';
+    if(btn){
+      btn.disabled=true;
+      btn.innerHTML='⏳ Salvando...';
+    }
+
+    try{
+      const matriz=MODULES.map(([k])=>{
+        const p=blankPerm(false);
+
+        document.querySelectorAll(`#g360PermMatrixBody input[data-module="${k}"]`).forEach(c=>{
+          p[c.dataset.action]=!!c.checked;
+        });
+
+        // Administração de usuários continua exclusivamente MASTER.
+        if(k==='usuarios'){
+          ACTIONS.forEach(a=>p[a]=false);
+        }
+
+        return {modulo:k,p};
+      });
+
+      // Salva a mesma matriz para todas as obras vinculadas.
+      // Assim "perfil define ações / obras definem escopo" continua consistente.
+      const rows=[];
+      obraIds.forEach(obraId=>{
+        matriz.forEach(({modulo,p})=>{
+          rows.push({
+            usuario_id:u.id,
+            obra_id:obraId,
+            modulo,
+            pode_visualizar:p.visualizar,
+            pode_criar:p.criar,
+            pode_editar:p.editar,
+            pode_aprovar:p.aprovar,
+            pode_ativar_inativar:p.ativar,
+            pode_excluir:p.excluir,
+            pode_exportar:p.exportar
+          });
+        });
+      });
+
+      const r=await sb.from('usuario_permissoes').upsert(rows,{onConflict:'usuario_id,obra_id,modulo'});
+      if(r.error)throw r.error;
+
+      if(btn)btn.innerHTML='✓ Salvo';
+      const msg=document.getElementById('g360PermMsg');
+      if(msg){
+        msg.style.color='#35d07f';
+        msg.textContent='Permissões personalizadas salvas no Supabase para '+obraIds.length+' obra(s).';
+      }
+
+      toastPerm('Permissões salvas com sucesso.');
+      await loadAll();
+      renderUsers();
+      renderMatrix();
+    }catch(err){
+      const msg=document.getElementById('g360PermMsg');
+      if(msg){
+        msg.style.color='#ff6b6b';
+        msg.textContent='Erro ao salvar permissões: '+(err?.message||err);
+      }
+      toastPerm(err?.message||'Falha ao salvar permissões.');
+    }finally{
+      if(btn){
+        btn.disabled=false;
+        btn.innerHTML=original;
+      }
+    }
+  }
+
+  function setMatrix(mode){
+    const u=user(editingId);
+    if(!u)return;
+    if(u.master)return toastPerm('Administrador Mestre não pode ser restringido.');
+
+    document.querySelectorAll('#g360PermMatrixBody .g360-perm-check:not(:disabled)').forEach(c=>{
+      if(mode==='all'){
+        c.checked=true;
+      }else if(mode==='read'){
+        c.checked=['visualizar','exportar'].includes(c.dataset.action);
+      }
+    });
+  }
+
+  async function resetMatrixToNative(){
+    const u=user(editingId);
+    if(!u)return;
+    if(u.master)return toastPerm('Administrador Mestre não pode ser alterado.');
+
+    const perfil=normPerfil(u.perfil);
+    if(!confirm(`Restaurar ${u.nome||u.email} para as permissões padrão do perfil ${perfil}?`))return;
+
+    const btn=document.getElementById('g360PermResetNative');
+    const original=btn?.innerHTML||'↺ Restaurar padrão do perfil';
+    if(btn){btn.disabled=true;btn.innerHTML='⏳ Restaurando...';}
+
+    try{
+      const del=await sb.from('usuario_permissoes').delete().eq('usuario_id',u.id);
+      if(del.error)throw del.error;
+
+      toastPerm('Padrão nativo restaurado.');
+      await loadAll();
+      renderUsers();
+      renderMatrix();
+    }catch(err){
+      toastPerm(err?.message||'Falha ao restaurar o perfil nativo.');
+    }finally{
+      if(btn){btn.disabled=false;btn.innerHTML=original;}
+    }
+  }
+
   const modal=document.getElementById('g360UserModal'),uf=document.getElementById('g360UserForm');
   function closeUser(){modal?.classList.remove('open')}
   function selectedObraIds(){
@@ -12484,7 +12671,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
     refreshObrasMultiLabel();
   });
 
-  document.getElementById('g360PermSave')?.addEventListener('click',saveMatrix);document.getElementById('g360PermAll')?.addEventListener('click',()=>setMatrix('all'));document.getElementById('g360PermReadOnly')?.addEventListener('click',()=>setMatrix('read'));document.getElementById('g360NewUserBtn')?.addEventListener('click',()=>openUser());document.getElementById('g360UserModalClose')?.addEventListener('click',closeUser);document.getElementById('g360UserCancel')?.addEventListener('click',closeUser);modal?.addEventListener('click',e=>{if(e.target===modal)closeUser()});uf?.addEventListener('submit',saveUser);document.getElementById('g360CloneClose')?.addEventListener('click',closeClone);document.getElementById('g360CloneCancel')?.addEventListener('click',closeClone);cloneModal?.addEventListener('click',e=>{if(e.target===cloneModal)closeClone()});cloneForm?.addEventListener('submit',duplicateAccess);
+  document.getElementById('g360PermSave')?.addEventListener('click',saveMatrix);document.getElementById('g360PermAll')?.addEventListener('click',()=>setMatrix('all'));document.getElementById('g360PermReadOnly')?.addEventListener('click',()=>setMatrix('read'));document.getElementById('g360PermResetNative')?.addEventListener('click',resetMatrixToNative);document.getElementById('g360NewUserBtn')?.addEventListener('click',()=>openUser());document.getElementById('g360UserModalClose')?.addEventListener('click',closeUser);document.getElementById('g360UserCancel')?.addEventListener('click',closeUser);modal?.addEventListener('click',e=>{if(e.target===modal)closeUser()});uf?.addEventListener('submit',saveUser);document.getElementById('g360CloneClose')?.addEventListener('click',closeClone);document.getElementById('g360CloneCancel')?.addEventListener('click',closeClone);cloneModal?.addEventListener('click',e=>{if(e.target===cloneModal)closeClone()});cloneForm?.addEventListener('submit',duplicateAccess);
   const permMenu=document.getElementById('g360PermMenu');permMenu?.addEventListener('click',()=>{if(!window.g360Can('usuarios','visualizar'))return toastPerm('Sem permissão para administrar usuários.');document.querySelectorAll('.side-link').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));permMenu.classList.add('active');document.getElementById('view-usuariosPermissoes').classList.add('active');renderUsers();renderMatrix();window.scrollTo(0,0)});
   document.addEventListener('click',e=>{const el=e.target.closest('button,a');if(!el||el.closest('#g360Auth')||el.matches('[data-g360-competencia="1"],[data-g360-fechamento-action="1"]')||el.closest('#g360FjCompetModal,#g360FjEditModal')||el.closest('#view-usuariosPermissoes')||el.closest('#g360UserModal')||!currentId)return;const view=el.closest('.view'),m=moduleByView(view?.id?.replace(/^view-/,'')||currentView());if(!m)return;const a=actionFromCrudButton(el);if(a&&!window.g360Can(m,a)){e.preventDefault();e.stopImmediatePropagation();toastPerm('Sem permissão para '+a+' neste módulo.')}},true);
   (async()=>{if(!PROD)return;try{await loadAll()}catch(e){console.error(e);toastPerm('Falha ao carregar usuários/permissões: '+e.message)}})();
