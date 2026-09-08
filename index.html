@@ -1241,6 +1241,7 @@ html.g360-ui-ready .content-col {
         <div class="sidebar-group-label">Administração</div>
         <div class="side-link" data-view="backupSeguranca" id="g360BackupMenu" style="display:none"><span class="ic">🛡️</span>Backup &amp; Segurança</div>
         <div class="side-link" data-view="usuariosPermissoes" id="g360PermMenu"><span class="ic">🔐</span>Usuários &amp; Permissões</div>
+        <div class="side-link" data-view="logAuditoria" id="g360AuditMenu"><span class="ic">🧾</span>Log de Auditoria</div>
       </div>
     </aside>
 
@@ -2782,6 +2783,31 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
+      <div class="view" id="view-logAuditoria">
+        <div class="page-title">
+          <span class="pt-ic">🧾</span>
+          <div><div class="pt-title">Log de Auditoria</div><div class="pt-sub">Histórico permanente das ações realizadas no sistema. Área exclusiva do Administrador Mestre.</div></div>
+        </div>
+        <section class="panel">
+          <div class="g360-perm-top">
+            <div><h2>Ações do sistema</h2><div class="g360-perm-help">Os registros são gravados no Supabase e não podem ser excluídos pela interface.</div></div>
+            <button type="button" class="crud-mini" id="g360AuditRefresh">↻ Atualizar</button>
+          </div>
+          <div class="filters" style="margin-top:14px">
+            <input id="g360AuditSearch" type="text" placeholder="Buscar usuário, ação ou registro...">
+            <select id="g360AuditModule"><option value="">Todos os módulos</option></select>
+            <select id="g360AuditAction"><option value="">Todas as ações</option></select>
+            <input id="g360AuditStart" type="date" title="Data inicial">
+            <input id="g360AuditEnd" type="date" title="Data final">
+          </div>
+          <div id="g360AuditStatus" class="g360-perm-help" style="margin:8px 0"></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Data/Hora</th><th>Usuário</th><th>Obra</th><th>Módulo</th><th>Ação</th><th>Registro</th><th>Detalhes</th></tr></thead>
+            <tbody id="g360AuditBody"><tr><td colspan="7">Carregando...</td></tr></tbody>
+          </table></div>
+        </section>
+      </div>
+
       <div class="view" id="view-usuariosPermissoes">
         <div class="page-title">
           <span class="pt-ic">🔐</span>
@@ -2826,7 +2852,6 @@ html.g360-ui-ready .content-col {
               <div class="g360-perm-help"><b>EDIÇÃO LIBERADA:</b> perfis RH, ENGENHEIROS e GESTOR podem ter permissões personalizadas por usuário. O perfil nativo é apenas o padrão inicial. Usuários & Permissões continua exclusivo do MASTER.</div><div style="margin-top:10px;max-width:420px"><label style="font-size:11px;color:var(--ink-soft);font-weight:700">OBRA VINCULADA<select id="g360PermObra" style="width:100%;margin-top:5px;background:#0e0f11;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:9px"><option value="">Selecione a obra</option></select></label></div>
             </div>
             <div class="g360-perm-actions">
-              <span style="padding:6px 9px;border:1px solid #35d07f;border-radius:999px;color:#35d07f;font-size:10px;font-weight:800;">V177 · EDITÁVEL</span>
               <button type="button" class="crud-mini" id="g360PermReadOnly">👁 Somente leitura</button>
               <button type="button" class="crud-mini" id="g360PermAll">✓ Marcar tudo</button>
               <button type="button" class="crud-mini" id="g360PermResetNative">↺ Restaurar padrão do perfil</button>
@@ -14934,23 +14959,62 @@ window.g360FechamentoV57={
     }
   }
 
+  function forceLoginFeedback(message,ok=true){
+    let e=document.getElementById('g360ForceLoginFeedback');
+    if(!e){
+      e=document.createElement('div');
+      e.id='g360ForceLoginFeedback';
+      e.style='position:fixed;right:18px;bottom:18px;z-index:101500;max-width:390px;padding:12px 16px;border-radius:9px;font:700 12px Arial;box-shadow:0 12px 35px #0008;transition:.2s';
+      document.body.appendChild(e);
+    }
+    e.style.background=ok?'#173a2a':'#3b1f22';
+    e.style.border=ok?'1px solid #35d07f':'1px solid #e5484d';
+    e.style.color=ok?'#9ff0c5':'#ffb4b8';
+    e.textContent=message;
+    clearTimeout(e._t); e._t=setTimeout(()=>e.remove(),4200);
+  }
+
   async function forceUser(userId){
     const c=client();
     if(!c||!userId)return;
-    const {error}=await c.rpc('g360_forcar_relogin',{p_usuario_id:userId});
-    if(error){console.error('[G360 V148] falha ao forçar login:',error);return}
+    const btn=document.querySelector('[data-user-force-login="'+CSS.escape(String(userId))+'"]');
+    const old=btn?.textContent;
+    if(btn){btn.disabled=true;btn.textContent='⏳ Processando...'}
     try{
-      const {data}=await c.auth.getUser();
-      if(String(data?.user?.id||'')===String(userId))await logoutSilent();
-    }catch(_){}
+      const {error}=await c.rpc('g360_forcar_relogin',{p_usuario_id:userId});
+      if(error)throw error;
+      forceLoginFeedback('✓ Novo login exigido. A solicitação foi processada com sucesso.');
+      try{window.g360Audit?.('FORCAR_NOVO_LOGIN','Usuários & Permissões','profiles',userId,'Novo login exigido para usuário',null,null,{origem:'ADMIN'})}catch(_){}
+      try{
+        const {data}=await c.auth.getUser();
+        if(String(data?.user?.id||'')===String(userId))await logoutSilent();
+      }catch(_){}
+    }catch(error){
+      console.error('[G360 V179] falha ao forçar login:',error);
+      forceLoginFeedback('Não foi possível processar o novo login: '+(error?.message||error),false);
+    }finally{
+      if(btn&&document.body.contains(btn)){btn.disabled=false;btn.textContent=old||'⛔ Forçar login'}
+    }
   }
 
   async function forceAll(){
     const c=client();
     if(!c)return;
-    const {error}=await c.rpc('g360_forcar_relogin',{p_usuario_id:null});
-    if(error){console.error('[G360 V148] falha ao forçar login de todos:',error);return}
-    await logoutSilent();
+    const btn=document.getElementById('g360ForceAllLoginBtn'),old=btn?.textContent;
+    if(btn){btn.disabled=true;btn.textContent='⏳ Processando...'}
+    try{
+      const {error}=await c.rpc('g360_forcar_relogin',{p_usuario_id:null});
+      if(error)throw error;
+      // O próprio MASTER também será desconectado; persiste o aviso para a tela seguinte.
+      try{sessionStorage.setItem('g360_force_all_feedback','✓ Novo login exigido para todos os usuários. Solicitação processada com sucesso.')}catch(_){}
+      try{window.g360Audit?.('FORCAR_NOVO_LOGIN_TODOS','Usuários & Permissões',null,null,'Novo login exigido para todos os usuários',null,null,{origem:'ADMIN'})}catch(_){}
+      forceLoginFeedback('✓ Novo login exigido para todos os usuários. Solicitação processada com sucesso.');
+      setTimeout(()=>logoutSilent(),900);
+    }catch(error){
+      console.error('[G360 V179] falha ao forçar login de todos:',error);
+      forceLoginFeedback('Não foi possível processar o novo login de todos: '+(error?.message||error),false);
+      if(btn){btn.disabled=false;btn.textContent=old||'⛔ Forçar novo login de todos'}
+    }
   }
 
   function wireAdminButton(){
@@ -14981,6 +15045,10 @@ window.g360FechamentoV57={
   }
 
   function boot(){
+    try{
+      const msg=sessionStorage.getItem('g360_force_all_feedback');
+      if(msg){sessionStorage.removeItem('g360_force_all_feedback');setTimeout(()=>forceLoginFeedback(msg),700)}
+    }catch(_){}
     bindActivity();
     wireAdminButton();
     wireAuth();
@@ -15344,6 +15412,132 @@ window.g360BackupV135={generate,history,authMaster};
 </script>
 
 <!-- GESTAO360 V161: remove aviso acesso controlado + resolve obra do usuario por profile/usuario_obras -->
+
+<script id="g360-auditoria-v178">
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const sb=()=>window.g360SupabaseClient;
+  let rows=[];
+
+  function activeModule(){
+    const v=document.querySelector('.view.active')?.id?.replace(/^view-/,'')||'sistema';
+    const map={rhdpDashboard:'RH/DP',colaboradores:'Colaboradores',cargosSalarios:'Cargos e Salários',
+      rhdpAdvertencia:'Advertências',baixadas:'Folga de Campo',contratos:'Contratos',
+      fechamentoPraca:'Fechamento de Praça',usuariosPermissoes:'Usuários & Permissões',
+      logAuditoria:'Log de Auditoria',projetosObras:'Projetos / Obras',alojamento:'Alojamentos',
+      sesmt:'SESMT',sesmtEstoque:'Estoque de EPIs',sesmtTermo:'Termos de EPI',
+      patrimonioInventario:'Patrimônio',patrimonioEstoque:'Estoque de Patrimônio'};
+    return map[v]||v;
+  }
+  function actionFor(el){
+    const t=String(el?.textContent||el?.value||'').trim().toLowerCase();
+    if(/deslig/.test(t))return'DESLIGAR';
+    if(/rescind/.test(t))return'RESCINDIR';
+    if(/permiss/.test(t)&&/salvar|alterar|editar/.test(t))return'ALTERAR_PERMISSOES';
+    if(/excluir|remover|apagar|delet/.test(t))return'EXCLUIR';
+    if(/inativ/.test(t))return'INATIVAR';
+    if(/ativar/.test(t))return'ATIVAR';
+    if(/aprovar/.test(t))return'APROVAR';
+    if(/export|pdf|excel|xls|csv/.test(t))return'EXPORTAR';
+    if(/novo|nova|criar|cadastrar|adicionar|incluir|abrir nova|não programada/.test(t))return'CRIAR';
+    if(/salvar|editar|alterar|atualizar|registrar|lançar|gerar título|titulo gerado/.test(t))return'EDITAR';
+    return null;
+  }
+  function obraId(){
+    return window.G360_ACTIVE_OBRA_ID || window.g360GetSelectedObra?.()?.id || null;
+  }
+  async function log(action,module,entity,recordId,description,before,after,details){
+    try{
+      if(window.g360PreviewMode!==false||!sb())return;
+      const {data:{session}}=await sb().auth.getSession(); if(!session)return;
+      const u=session.user;
+      const payload={
+        usuario_id:u.id,usuario_nome:u.user_metadata?.nome||u.user_metadata?.name||null,
+        usuario_email:u.email||null,obra_id:obraId(),modulo:module||activeModule(),
+        acao:String(action||'ACAO').toUpperCase(),entidade:entity||null,
+        registro_id:recordId?String(recordId):null,registro_descricao:description||null,
+        dados_antes:before||null,dados_depois:after||null,
+        detalhes:{...(details||{}),url:location.pathname,view:document.querySelector('.view.active')?.id||null}
+      };
+      const r=await sb().from('g360_auditoria').insert(payload);
+      if(r.error)console.warn('[AUDITORIA] Falha ao registrar:',r.error.message);
+    }catch(e){console.warn('[AUDITORIA]',e)}
+  }
+  window.g360Audit=log;
+
+  // Captura ações operacionais confirmadas pelo clique/submit. O log é complementar
+  // aos triggers do banco: não bloqueia a operação se a auditoria estiver indisponível.
+  document.addEventListener('click',e=>{
+    const el=e.target.closest('button,a'); if(!el||el.closest('#view-logAuditoria'))return;
+    const a=actionFor(el); if(!a)return;
+    const row=el.closest('tr');
+    const desc=row ? row.innerText.replace(/\s+/g,' ').trim().slice(0,300) :
+      String(el.textContent||'').replace(/\s+/g,' ').trim().slice(0,300);
+    setTimeout(()=>log(a,activeModule(),null,null,desc,null,null,{controle:el.id||null}),0);
+  },false);
+
+  document.addEventListener('submit',e=>{
+    if(e.target.closest('#view-logAuditoria'))return;
+    const view=activeModule();
+    const desc=(e.submitter?.textContent||'Salvar formulário').trim();
+    setTimeout(()=>log('SALVAR',view,null,null,desc,null,null,{form:e.target.id||null}),0);
+  },false);
+
+  async function load(){
+    const body=$('g360AuditBody'),status=$('g360AuditStatus'); if(!body)return;
+    body.innerHTML='<tr><td colspan="7">Carregando...</td></tr>';
+    try{
+      const q=await sb().from('g360_auditoria').select('*').order('created_at',{ascending:false}).limit(1000);
+      if(q.error)throw q.error; rows=q.data||[]; fillFilters(); render();
+      status.textContent=rows.length+' registro(s) carregado(s) — últimos 1.000.';
+    }catch(e){body.innerHTML='<tr><td colspan="7">Não foi possível carregar o log.</td></tr>';status.textContent=e.message||String(e)}
+  }
+  function fillFilters(){
+    const mod=$('g360AuditModule'),act=$('g360AuditAction');
+    const mv=mod.value,av=act.value;
+    mod.innerHTML='<option value="">Todos os módulos</option>'+[...new Set(rows.map(r=>r.modulo).filter(Boolean))].sort().map(x=>`<option>${esc(x)}</option>`).join('');
+    act.innerHTML='<option value="">Todas as ações</option>'+[...new Set(rows.map(r=>r.acao).filter(Boolean))].sort().map(x=>`<option>${esc(x)}</option>`).join('');
+    mod.value=mv;act.value=av;
+  }
+  function render(){
+    const q=($('g360AuditSearch')?.value||'').toLowerCase(),m=$('g360AuditModule')?.value||'',a=$('g360AuditAction')?.value||'';
+    const ini=$('g360AuditStart')?.value||'',fim=$('g360AuditEnd')?.value||'';
+    const data=rows.filter(r=>{
+      const d=String(r.created_at||'').slice(0,10);
+      const hay=[r.usuario_nome,r.usuario_email,r.modulo,r.acao,r.registro_descricao,r.entidade].join(' ').toLowerCase();
+      return(!q||hay.includes(q))&&(!m||r.modulo===m)&&(!a||r.acao===a)&&(!ini||d>=ini)&&(!fim||d<=fim);
+    });
+    $('g360AuditBody').innerHTML=data.length?data.map(r=>`<tr>
+      <td>${esc(new Date(r.created_at).toLocaleString('pt-BR'))}</td>
+      <td><b>${esc(r.usuario_nome||r.usuario_email||'—')}</b><br><small>${esc(r.usuario_email||'')}</small></td>
+      <td>${esc(r.obra_codigo||r.obra_id||'—')}</td><td>${esc(r.modulo||'—')}</td>
+      <td><span class="badge">${esc(r.acao||'—')}</span></td>
+      <td>${esc(r.registro_descricao||r.entidade||r.registro_id||'—')}</td>
+      <td><small>${esc(r.detalhes?JSON.stringify(r.detalhes):'—')}</small></td></tr>`).join(''):
+      '<tr><td colspan="7">Nenhum registro encontrado.</td></tr>';
+  }
+  function isMaster(){
+    try{
+      if(typeof window.g360Can==='function')return window.g360Can('usuarios','visualizar');
+    }catch(_){}
+    return false;
+  }
+  function protectMenu(){
+    const menu=$('g360AuditMenu'); if(menu)menu.style.display=isMaster()?'':'none';
+  }
+  $('g360AuditMenu')?.addEventListener('click',e=>{
+    if(!isMaster()){e.preventDefault();return}
+    setTimeout(load,0);
+  });
+  $('g360AuditRefresh')?.addEventListener('click',load);
+  ['g360AuditSearch','g360AuditModule','g360AuditAction','g360AuditStart','g360AuditEnd'].forEach(id=>$(id)?.addEventListener(id==='g360AuditSearch'?'input':'change',render));
+  document.addEventListener('DOMContentLoaded',protectMenu,{once:true});
+  setTimeout(protectMenu,1800);
+})();
+</script>
+
 </body>
 </html>
 
