@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- V203: cadastro mestre de itens separado, código sequencial, estoque máximo, giro automático e sugestão de compra -->
 <!-- V202: corrige criação do perfil Técnico de Segurança em usuario_permissoes -->
 <!-- V200: corrige identificação da obra no inventário e movimentações SESMT -->
 <!-- V199: exclusão de movimentação por GESTOR/MASTER + usuário comum somente operação -->
@@ -1507,6 +1508,17 @@ html.g360-ui-ready .content-col {
 #view-sesmtEstoque .sesmt-buy-suggestion{font-weight:900}
 
 #view-sesmtEstoque .sesmt-hist-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+#view-sesmtEstoque .sesmt-item-master-grid{display:grid;grid-template-columns:1fr 2fr 1fr .7fr .9fr .9fr .9fr .9fr 1fr;gap:10px;align-items:end}
+#view-sesmtEstoque .sesmt-item-master-grid input[readonly]{opacity:.82;background:rgba(255,255,255,.025);cursor:not-allowed}
+#view-sesmtEstoque .sesmt-item-master-note{margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:7px;color:var(--ink-soft);font-size:10px;line-height:1.45}
+#view-sesmtEstoque .sesmt-stock-table th,#view-sesmtEstoque .sesmt-stock-table td{font-size:10px}
+@media(max-width:1250px){
+  #view-sesmtEstoque .sesmt-item-master-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  #view-sesmtEstoque .sesmt-item-master-grid{grid-template-columns:1fr}
+}
 </style>
 
 </head>
@@ -3277,6 +3289,7 @@ html.g360-ui-ready .content-col {
         <div class="sesmt-stock-tabs">
           <button type="button" class="sesmt-stock-tab active" data-sesmt-stock-tab="mov">Movimentação diária</button>
           <button type="button" class="sesmt-stock-tab" data-sesmt-stock-tab="estoque">Estoque atual</button>
+          <button type="button" class="sesmt-stock-tab" data-sesmt-stock-tab="cadastro" data-gestor-only-v203="1">Cadastro de itens</button>
           <button type="button" class="sesmt-stock-tab" data-sesmt-stock-tab="inventario">Inventário</button>
           <button type="button" class="sesmt-stock-tab" data-sesmt-stock-tab="historico">Histórico</button>
         </div>
@@ -3328,19 +3341,9 @@ html.g360-ui-ready .content-col {
           <div class="sesmt-card-head">
             <div>
               <h2>Estoque atual</h2>
-              <div class="sesmt-stock-help">Cadastre EPIs, atualize saldo e estoque mínimo, acompanhe itens críticos e faça novas entradas.</div>
+              <div class="sesmt-stock-help">Consulta do saldo, limites de estoque, giro e necessidade de compra. Entradas e baixas são feitas somente em Movimentação diária.</div>
             </div>
-            <button type="button" class="btn-primary" id="sesmtNovoEpiBtn">＋ Novo EPI / Entrada</button>
-          </div>
-
-          <div class="epi-stock-toolbar sesmt-stock-cadastro" id="sesmtCadastroEpi">
-            <label><span>DESCRIÇÃO DO EPI</span><input id="epiStockDescricao" placeholder="Ex.: CAPACETE CLASSE B"></label>
-            <label><span>C.A.</span><input id="epiStockCa" placeholder="C.A."></label>
-            <label><span>CÓDIGO / SKU</span><input id="epiStockCodigo" placeholder="Ex.: EPI-001"></label>
-            <label><span>QUANTIDADE</span><input id="epiStockQtd" type="number" min="0.01" step="0.01" value="1"></label>
-            <label><span>ESTOQUE MÍNIMO</span><input id="epiStockMin" type="number" min="0" step="0.01" value="0"></label>
-            <label><span>SUGESTÃO DE COMPRA</span><input id="epiStockSugestaoCompra" type="number" min="0" step="0.01" value="0" placeholder="Qtd. sugerida"></label>
-            <button class="btn-primary" id="epiStockEntrada">＋ Cadastrar / Entrada</button>
+            <button type="button" class="btn-primary" id="sesmtNovoEpiBtn" data-gestor-only-v203="1">＋ Cadastrar item</button>
           </div>
 
           <div class="sesmt-stock-filterbar">
@@ -3355,7 +3358,7 @@ html.g360-ui-ready .content-col {
 
           <div class="table-scroll sesmt-stock-table-wrap">
             <table class="sesmt-stock-table">
-              <thead><tr><th>Código</th><th>EPI</th><th>C.A.</th><th>Saldo</th><th>Mínimo</th><th>Situação</th><th>Ações</th></tr></thead>
+              <thead><tr><th>Código</th><th>Descrição</th><th>UND</th><th>Saldo</th><th>Mín.</th><th>Máx.</th><th>Giro mês</th><th>Giro 12 meses</th><th>Sugestão compra</th><th>Situação</th><th>Ações</th></tr></thead>
               <tbody id="epiStockBody"></tbody>
             </table>
           </div>
@@ -3373,10 +3376,77 @@ html.g360-ui-ready .content-col {
             </div>
             <div class="table-scroll sesmt-minimo-table-wrap">
               <table class="sesmt-stock-table">
-                <thead><tr><th>Código</th><th>EPI</th><th>C.A.</th><th>Saldo</th><th>Estoque mínimo</th><th>Sugestão de compra</th><th>Situação</th></tr></thead>
+                <thead><tr><th>Código</th><th>Descrição</th><th>UND</th><th>Saldo</th><th>Mínimo</th><th>Máximo</th><th>Giro mês</th><th>Giro 12 meses</th><th>Sugestão de compra</th><th>Situação</th></tr></thead>
                 <tbody id="sesmtMinimoLista"></tbody>
               </table>
             </div>
+          </div>
+        </section>
+
+        <section class="panel sesmt-stock-card sesmt-stock-pane" data-sesmt-stock-pane="cadastro" data-gestor-only-v203="1">
+          <div class="sesmt-card-head">
+            <div>
+              <h2>Cadastro básico de itens</h2>
+              <div class="sesmt-stock-help">O código é sequencial e gerado automaticamente pelo sistema. Giro mensal, giro de 12 meses e sugestão de compra são calculados automaticamente e não são editáveis.</div>
+            </div>
+            <button type="button" class="clear-btn" id="epiCadNovo">＋ Novo cadastro</button>
+          </div>
+
+          <input type="hidden" id="epiCadId">
+
+          <div class="sesmt-item-master-grid">
+            <label class="sesmt-field">
+              <span>Código</span>
+              <input id="epiCadCodigo" value="GERADO AUTOMATICAMENTE" readonly>
+            </label>
+            <label class="sesmt-field sesmt-field-wide">
+              <span>Descrição</span>
+              <input id="epiCadDescricao" placeholder="Ex.: CAPACETE CLASSE B">
+            </label>
+            <label class="sesmt-field">
+              <span>C.A.</span>
+              <input id="epiCadCa" placeholder="C.A. do EPI">
+            </label>
+            <label class="sesmt-field">
+              <span>UND</span>
+              <select id="epiCadUnidade">
+                <option value="UN">UN</option>
+                <option value="PAR">PAR</option>
+                <option value="CJ">CJ</option>
+                <option value="PÇ">PÇ</option>
+                <option value="CX">CX</option>
+                <option value="KIT">KIT</option>
+              </select>
+            </label>
+            <label class="sesmt-field">
+              <span>Estoque mínimo</span>
+              <input id="epiCadMin" type="number" min="0" step="0.01" value="0">
+            </label>
+            <label class="sesmt-field">
+              <span>Estoque máximo</span>
+              <input id="epiCadMax" type="number" min="0" step="0.01" value="0">
+            </label>
+            <label class="sesmt-field">
+              <span>Giro mensal</span>
+              <input id="epiCadGiroMes" value="0" readonly>
+            </label>
+            <label class="sesmt-field">
+              <span>Giro 12 meses</span>
+              <input id="epiCadGiro12" value="0" readonly>
+            </label>
+            <label class="sesmt-field">
+              <span>Sugestão de compra</span>
+              <input id="epiCadSugestao" value="0" readonly>
+            </label>
+          </div>
+
+          <div class="sesmt-form-actions">
+            <button type="button" class="clear-btn" id="epiCadCancelar">Limpar</button>
+            <button type="button" class="btn-primary" id="epiStockEntrada">💾 Salvar item</button>
+          </div>
+
+          <div class="sesmt-item-master-note">
+            <b>Regra da sugestão de compra:</b> quando o saldo atingir ou ficar abaixo do estoque mínimo, o sistema sugere a reposição necessária para completar o estoque máximo.
           </div>
         </section>
 
@@ -8344,34 +8414,45 @@ async function epiLoadStock(){
 function epiStockSituation(x){const s=epiNum(x.saldo),m=epiNum(x.estoque_minimo);if(s<=0)return ['SEM ESTOQUE','epi-stock-zero'];if(m>0&&s<=m)return ['BAIXO','epi-stock-low'];return ['OK','']}
 function epiRenderStock(){
   const tb=document.getElementById('epiStockBody');if(!tb)return;
-  const rows=[...EPI.stock].sort((a,b)=>String(a.descricao).localeCompare(String(b.descricao),'pt-BR'));
-  const zero=rows.filter(x=>epiNum(x.saldo)<=0).length,
-        baixo=rows.filter(x=>epiNum(x.saldo)>0&&epiNum(x.estoque_minimo)>0&&epiNum(x.saldo)<=epiNum(x.estoque_minimo)).length;
-  document.getElementById('epiStockKpiItens').textContent=rows.length;
-  document.getElementById('epiStockKpiSaldo').textContent=rows.reduce((a,x)=>a+epiNum(x.saldo),0).toLocaleString('pt-BR',{maximumFractionDigits:2});
-  document.getElementById('epiStockKpiBaixo').textContent=baixo;
-  document.getElementById('epiStockKpiZero').textContent=zero;
+  const rows=[...EPI.stock].sort((a,b)=>String(a.codigo||'').localeCompare(String(b.codigo||''),'pt-BR',{numeric:true}));
+  const zero=rows.filter(x=>epiNum(x.saldo)<=0).length;
+  const low=rows.filter(x=>epiNum(x.saldo)>0&&epiNum(x.estoque_minimo)>0&&epiNum(x.saldo)<=epiNum(x.estoque_minimo)).length;
+  const total=rows.reduce((a,x)=>a+epiNum(x.saldo),0);
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+  set('epiStockKpiItens',rows.length);set('epiStockKpiSaldo',total.toLocaleString('pt-BR',{maximumFractionDigits:2}));set('epiStockKpiBaixo',low);set('epiStockKpiZero',zero);
 
   tb.innerHTML=rows.length?rows.map(x=>{
     const st=epiStockSituation(x);
-    return `<tr>
-      <td>${epiEsc(x.codigo||'—')}</td>
+    const saldo=epiNum(x.saldo),min=epiNum(x.estoque_minimo),max=epiNum(x.estoque_maximo);
+    const giroMes=epiNum(x.giro_mensal),giro12=epiNum(x.giro_12_meses);
+    const sug=saldo<=min?Math.max(max-saldo,0):0;
+    return `<tr data-epi-row="${epiEsc(x.id)}">
+      <td><b>${epiEsc(x.codigo||'—')}</b></td>
       <td>${epiEsc(x.descricao||'')}</td>
-      <td>${epiEsc(x.ca||'')}</td>
-      <td><strong>${epiNum(x.saldo).toLocaleString('pt-BR',{maximumFractionDigits:2})}</strong></td>
-      <td>${epiNum(x.estoque_minimo).toLocaleString('pt-BR',{maximumFractionDigits:2})}</td>
+      <td>${epiEsc(x.unidade||'UN')}</td>
+      <td><strong>${saldo.toLocaleString('pt-BR',{maximumFractionDigits:2})}</strong></td>
+      <td>${min.toLocaleString('pt-BR',{maximumFractionDigits:2})}</td>
+      <td>${max.toLocaleString('pt-BR',{maximumFractionDigits:2})}</td>
+      <td>${giroMes.toLocaleString('pt-BR',{maximumFractionDigits:2})}</td>
+      <td>${giro12.toLocaleString('pt-BR',{maximumFractionDigits:2})}</td>
+      <td><b>${sug.toLocaleString('pt-BR',{maximumFractionDigits:2})}</b></td>
       <td class="${st[1]}">${st[0]}</td>
       <td style="white-space:nowrap">
         <button class="clear-btn" data-epi-entry="${epiEsc(x.id)}">＋ Entrada</button>
-        <button class="clear-btn" data-epi-edit="${epiEsc(x.id)}">✏️ Editar</button>
+        <button class="clear-btn" data-epi-edit="${epiEsc(x.id)}">✏️ Cadastro</button>
         <button class="epi-stock-delete" data-epi-delete="${epiEsc(x.id)}">Excluir</button>
       </td>
     </tr>`
-  }).join(''):'<tr><td colspan="7"><div class="empty-state">Nenhum EPI cadastrado no estoque.</div></td></tr>';
+  }).join(''):'<tr><td colspan="11"><div class="empty-state">Nenhum item cadastrado.</div></td></tr>';
 
-  tb.querySelectorAll('[data-epi-entry]').forEach(b=>b.onclick=()=>epiStockQuickEntry(b.dataset.epiEntry));
-  tb.querySelectorAll('[data-epi-edit]').forEach(b=>b.onclick=()=>epiStockEdit(b.dataset.epiEdit));
+  tb.querySelectorAll('[data-epi-entry]').forEach(b=>b.onclick=()=>{
+    if(window.g360SesmtEstoqueV203?.abrirEntradaItem)window.g360SesmtEstoqueV203.abrirEntradaItem(b.dataset.epiEntry);
+  });
+  tb.querySelectorAll('[data-epi-edit]').forEach(b=>b.onclick=()=>{
+    if(window.g360SesmtEstoqueV203?.editarCadastro)window.g360SesmtEstoqueV203.editarCadastro(b.dataset.epiEdit);
+  });
   tb.querySelectorAll('[data-epi-delete]').forEach(b=>b.onclick=()=>epiStockDelete(b.dataset.epiDelete));
+  try{window.g360SesmtEstoqueV203?.aplicarAcesso?.()}catch(e){}
 }
 async function epiStockEdit(id){
   if(typeof window.g360IsGestor==='function'&&!window.g360IsGestor())return alert('Somente o perfil GESTOR ou MASTER pode editar o cadastro do estoque.');
@@ -17077,6 +17158,7 @@ function tabs(){
       document.querySelectorAll('#view-sesmtEstoque [data-sesmt-stock-pane]').forEach(p=>p.classList.toggle('active',p.dataset.sesmtStockPane===btn.dataset.sesmtStockTab));
       if(btn.dataset.sesmtStockTab==='historico')loadMovs();
       if(btn.dataset.sesmtStockTab==='inventario')renderInventario();
+      if(btn.dataset.sesmtStockTab==='cadastro'){loadGiroResumo();cadAtualizarAutomaticos();}
     };
   });
 }
@@ -17086,29 +17168,31 @@ function stockOptions(){
   const old=sel.value;
   sel.innerHTML='<option value="">Selecione um EPI...</option>'+
     [...(window.EPI?.stock||[])].sort((a,b)=>String(a.descricao).localeCompare(String(b.descricao),'pt-BR'))
-    .map(x=>`<option value="${esc(x.id)}">${esc(x.descricao)} · C.A. ${esc(x.ca||'—')} · saldo ${Number(x.saldo||0).toLocaleString('pt-BR',{maximumFractionDigits:2})}</option>`).join('');
+    .map(x=>`<option value="${esc(x.id)}">${esc(x.codigo||'')} · ${esc(x.descricao)} · saldo ${Number(x.saldo||0).toLocaleString('pt-BR',{maximumFractionDigits:2})}</option>`).join('');
   if([...sel.options].some(o=>o.value===old))sel.value=old;
 }
 
 function renderMinimo(){
   const stock=window.EPI?.stock||[];
-  const crit=stock.filter(x=>Number(x.saldo||0)<=0 || (Number(x.estoque_minimo||0)>0&&Number(x.saldo||0)<Number(x.estoque_minimo||0)))
+  const crit=stock.filter(x=>Number(x.saldo||0)<=0 || (Number(x.estoque_minimo||0)>0&&Number(x.saldo||0)<=Number(x.estoque_minimo||0)))
     .sort((a,b)=>Number(a.saldo||0)-Number(b.saldo||0));
   if($('sesmtMinimoCount'))$('sesmtMinimoCount').textContent=`${crit.length} item(ns)`;
   if($('sesmtMinimoLista'))$('sesmtMinimoLista').innerHTML=crit.length?crit.map(x=>{
-    const saldo=Number(x.saldo||0),min=Number(x.estoque_minimo||0);
-    const sugestao=Number(x.sugestao_compra||0)>0?Number(x.sugestao_compra):Math.max(min-saldo,0);
-    const zero=saldo<=0;
+    const saldo=Number(x.saldo||0),min=Number(x.estoque_minimo||0),max=Number(x.estoque_maximo||0);
+    const sugestao=Math.max(max-saldo,0),zero=saldo<=0;
     return `<tr>
       <td>${esc(x.codigo||'—')}</td>
       <td><strong>${esc(x.descricao)}</strong></td>
-      <td>${esc(x.ca||'—')}</td>
+      <td>${esc(x.unidade||'UN')}</td>
       <td><b>${saldo.toLocaleString('pt-BR',{maximumFractionDigits:2})}</b></td>
       <td>${min.toLocaleString('pt-BR',{maximumFractionDigits:2})}</td>
+      <td>${max.toLocaleString('pt-BR',{maximumFractionDigits:2})}</td>
+      <td>${Number(x.giro_mensal||0).toLocaleString('pt-BR',{maximumFractionDigits:2})}</td>
+      <td>${Number(x.giro_12_meses||0).toLocaleString('pt-BR',{maximumFractionDigits:2})}</td>
       <td class="sesmt-buy-suggestion">${sugestao.toLocaleString('pt-BR',{maximumFractionDigits:2})}</td>
       <td class="${zero?'epi-stock-zero':'epi-stock-low'}">${zero?'SEM ESTOQUE':'ABAIXO DO MÍNIMO'}</td>
     </tr>`
-  }).join(''):'<tr><td colspan="7"><div class="empty-state">Nenhum item abaixo do estoque mínimo.</div></td></tr>';
+  }).join(''):'<tr><td colspan="10"><div class="empty-state">Nenhum item abaixo do estoque mínimo.</div></td></tr>';
 }
 
 function renderEstoqueFiltrado(){
@@ -17210,7 +17294,7 @@ async function loadMovs(){
     const oid=obraId();if(oid)q=q.eq('obra_id',oid);
     const r=await q;if(r.error){console.warn(r.error);return}rows=r.data||[];
   }
-  S.movs=rows;renderMovs();
+  S.movs=rows;renderMovs();await loadGiroResumo();
 }
 
 function sesmtGestor(){
@@ -17219,8 +17303,14 @@ function sesmtGestor(){
 
 function aplicarAcessoEstoqueSesmt(){
   const gestor=sesmtGestor();
-  document.querySelectorAll('#view-sesmtEstoque [data-epi-edit],#view-sesmtEstoque [data-epi-delete]').forEach(el=>el.style.display=gestor?'':'none');
+  document.querySelectorAll('#view-sesmtEstoque [data-epi-edit],#view-sesmtEstoque [data-epi-delete],#view-sesmtEstoque [data-gestor-only-v203]').forEach(el=>el.style.display=gestor?'':'none');
   const inv=$('sesmtInventarioAplicar');if(inv)inv.style.display=gestor?'':'none';
+  if(!gestor){
+    const active=document.querySelector('#view-sesmtEstoque [data-sesmt-stock-tab].active');
+    if(active?.dataset?.sesmtStockTab==='cadastro'){
+      document.querySelector('#view-sesmtEstoque [data-sesmt-stock-tab="mov"]')?.click();
+    }
+  }
 }
 
 async function excluirMovimentacao(id){
@@ -17284,7 +17374,7 @@ function renderMovs(){
 
 function gerarPdfEstoqueMinimo(){
   const stock=window.EPI?.stock||[];
-  const crit=stock.filter(x=>Number(x.saldo||0)<=0 || (Number(x.estoque_minimo||0)>0&&Number(x.saldo||0)<Number(x.estoque_minimo||0)))
+  const crit=stock.filter(x=>Number(x.saldo||0)<=0 || (Number(x.estoque_minimo||0)>0&&Number(x.saldo||0)<=Number(x.estoque_minimo||0)))
     .sort((a,b)=>Number(a.saldo||0)-Number(b.saldo||0));
   if(!crit.length)return alert('Não há itens abaixo do estoque mínimo para gerar o PDF.');
   if(!window.jspdf?.jsPDF)return alert('Gerador de PDF não disponível.');
@@ -17299,21 +17389,24 @@ function gerarPdfEstoqueMinimo(){
   doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')} · ${crit.length} item(ns) para reposição`,pw/2,58,{align:'center'});
 
   doc.autoTable({
-    startY:78,margin:{left:34,right:34},
-    head:[['CÓDIGO','EPI','C.A.','SALDO','ESTOQUE MÍNIMO','SUGESTÃO DE COMPRA','SITUAÇÃO']],
+    startY:78,margin:{left:26,right:26},
+    head:[['CÓDIGO','DESCRIÇÃO','UND','SALDO','MÍN.','MÁX.','GIRO MÊS','GIRO 12 MESES','SUGESTÃO COMPRA','SITUAÇÃO']],
     body:crit.map(x=>{
-      const saldo=Number(x.saldo||0),min=Number(x.estoque_minimo||0);
-      const sug=Number(x.sugestao_compra||0)>0?Number(x.sugestao_compra):Math.max(min-saldo,0);
-      return [x.codigo||'—',x.descricao||'',x.ca||'—',
+      const saldo=Number(x.saldo||0),min=Number(x.estoque_minimo||0),max=Number(x.estoque_maximo||0);
+      const sug=Math.max(max-saldo,0);
+      return [x.codigo||'—',x.descricao||'',x.unidade||'UN',
         saldo.toLocaleString('pt-BR',{maximumFractionDigits:2}),
         min.toLocaleString('pt-BR',{maximumFractionDigits:2}),
+        max.toLocaleString('pt-BR',{maximumFractionDigits:2}),
+        Number(x.giro_mensal||0).toLocaleString('pt-BR',{maximumFractionDigits:2}),
+        Number(x.giro_12_meses||0).toLocaleString('pt-BR',{maximumFractionDigits:2}),
         sug.toLocaleString('pt-BR',{maximumFractionDigits:2}),
         saldo<=0?'SEM ESTOQUE':'ABAIXO DO MÍNIMO'];
     }),
     theme:'grid',
-    styles:{font:'helvetica',fontSize:8,textColor:[25,25,25],cellPadding:5,lineWidth:.35,lineColor:[70,70,70]},
+    styles:{font:'helvetica',fontSize:7.2,textColor:[25,25,25],cellPadding:4,lineWidth:.35,lineColor:[70,70,70]},
     headStyles:{fontStyle:'bold',fillColor:[255,255,255],textColor:[15,15,15]},
-    columnStyles:{3:{halign:'right'},4:{halign:'right'},5:{halign:'right',fontStyle:'bold'}}
+    columnStyles:{3:{halign:'right'},4:{halign:'right'},5:{halign:'right'},6:{halign:'right'},7:{halign:'right'},8:{halign:'right',fontStyle:'bold'}}
   });
   doc.save(`SESMT_ESTOQUE_MINIMO_${today()}.pdf`);
 }
@@ -17384,6 +17477,146 @@ function gerarRomaneioMovimentacoesDia(){
   doc.save(`ROMANEIO_EPI_${dataRef}.pdf`);
 }
 
+
+function cadItemAtual(){return (window.EPI?.stock||[]).find(x=>String(x.id)===String($('epiCadId')?.value||''))||null}
+
+function cadSugestao(item){
+  const saldo=Number(item?.saldo||0),min=Number(item?.estoque_minimo||0),max=Number(item?.estoque_maximo||0);
+  return saldo<=min?Math.max(max-saldo,0):0;
+}
+
+function cadAtualizarAutomaticos(){
+  const item=cadItemAtual();
+  if($('epiCadGiroMes'))$('epiCadGiroMes').value=Number(item?.giro_mensal||0).toLocaleString('pt-BR',{maximumFractionDigits:2});
+  if($('epiCadGiro12'))$('epiCadGiro12').value=Number(item?.giro_12_meses||0).toLocaleString('pt-BR',{maximumFractionDigits:2});
+  if($('epiCadSugestao'))$('epiCadSugestao').value=cadSugestao(item).toLocaleString('pt-BR',{maximumFractionDigits:2});
+}
+
+function limparCadastroItem(){
+  if($('epiCadId'))$('epiCadId').value='';
+  if($('epiCadCodigo'))$('epiCadCodigo').value='GERADO AUTOMATICAMENTE';
+  if($('epiCadDescricao'))$('epiCadDescricao').value='';
+  if($('epiCadCa'))$('epiCadCa').value='';
+  if($('epiCadUnidade'))$('epiCadUnidade').value='UN';
+  if($('epiCadMin'))$('epiCadMin').value='0';
+  if($('epiCadMax'))$('epiCadMax').value='0';
+  if($('epiCadGiroMes'))$('epiCadGiroMes').value='0';
+  if($('epiCadGiro12'))$('epiCadGiro12').value='0';
+  if($('epiCadSugestao'))$('epiCadSugestao').value='0';
+}
+
+function editarCadastro(id){
+  if(!sesmtGestor())return alert('Somente GESTOR ou MASTER pode editar o cadastro de itens.');
+  const item=(window.EPI?.stock||[]).find(x=>String(x.id)===String(id));if(!item)return;
+  document.querySelector('#view-sesmtEstoque [data-sesmt-stock-tab="cadastro"]')?.click();
+  $('epiCadId').value=item.id||'';
+  $('epiCadCodigo').value=item.codigo||'';
+  $('epiCadDescricao').value=item.descricao||'';
+  $('epiCadCa').value=item.ca||'';
+  $('epiCadUnidade').value=item.unidade||'UN';
+  $('epiCadMin').value=Number(item.estoque_minimo||0);
+  $('epiCadMax').value=Number(item.estoque_maximo||0);
+  cadAtualizarAutomaticos();
+  $('epiCadDescricao')?.focus();
+}
+
+function abrirEntradaItem(id){
+  const item=(window.EPI?.stock||[]).find(x=>String(x.id)===String(id));if(!item)return;
+  document.querySelector('#view-sesmtEstoque [data-sesmt-stock-tab="mov"]')?.click();
+  $('sesmtMovTipo').value='ENTRADA';
+  $('sesmtMovEpi').value=String(id);
+  $('sesmtMovQtd').value='1';
+  $('sesmtMovMotivo').value='Entrada / reposição de estoque';
+  $('sesmtMovQtd')?.focus();
+}
+
+async function salvarCadastroItem(){
+  if(!sesmtGestor())return alert('Somente GESTOR ou MASTER pode cadastrar ou editar itens.');
+  const id=$('epiCadId').value||null;
+  const descricao=$('epiCadDescricao').value.trim().toUpperCase();
+  const ca=$('epiCadCa').value.trim();
+  const unidade=$('epiCadUnidade').value||'UN';
+  const minimo=Number($('epiCadMin').value||0);
+  const maximo=Number($('epiCadMax').value||0);
+
+  if(!descricao)return alert('Informe a descrição do item.');
+  if(!unidade)return alert('Informe a unidade.');
+  if(!Number.isFinite(minimo)||minimo<0)return alert('Estoque mínimo inválido.');
+  if(!Number.isFinite(maximo)||maximo<0)return alert('Estoque máximo inválido.');
+  if(maximo<minimo)return alert('O estoque máximo não pode ser menor que o estoque mínimo.');
+
+  const btn=$('epiStockEntrada');if(btn){btn.disabled=true;btn.textContent='Salvando...'}
+  try{
+    if(window.g360PreviewMode){
+      if(id){
+        const item=(window.EPI?.stock||[]).find(x=>String(x.id)===String(id));
+        if(item)Object.assign(item,{descricao,ca,unidade,estoque_minimo:minimo,estoque_maximo:maximo});
+      }else{
+        const seq=(window.EPI?.stock||[]).length+1;
+        (window.EPI?.stock||[]).push({
+          id:'epi_'+Date.now(),obra_id:obraId(),codigo:'EPI-'+String(seq).padStart(6,'0'),
+          descricao,ca,unidade,saldo:0,estoque_minimo:minimo,estoque_maximo:maximo,ativo:true,
+          giro_mensal:0,giro_12_meses:0
+        });
+      }
+      window.epiSavePreviewStock?.();
+    }else{
+      const sb=window.g360SupabaseClient;if(!sb)throw new Error('Supabase não conectado.');
+      const oid=obraId();if(!oid)throw new Error('Selecione uma obra.');
+      const r=await sb.rpc('g360_salvar_item_epi_v203',{
+        p_item_id:id,p_obra_id:oid,p_descricao:descricao,p_ca:ca||null,p_unidade:unidade,
+        p_estoque_minimo:minimo,p_estoque_maximo:maximo
+      });
+      if(r.error)throw r.error;
+    }
+
+    await window.epiLoadStock?.();
+    await loadGiroResumo();
+    window.epiRenderStock?.();
+    renderMinimo();
+    limparCadastroItem();
+    alert(id?'Cadastro atualizado com sucesso.':'Item cadastrado. O código sequencial foi gerado automaticamente.');
+  }catch(e){alert('Não foi possível salvar o cadastro do item: '+(e?.message||e))}
+  finally{if(btn){btn.disabled=false;btn.textContent='💾 Salvar item'}}
+}
+
+function aplicarGiroLocal(){
+  const now=new Date(),mes=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const lim12=new Date(now);lim12.setMonth(lim12.getMonth()-12);
+  for(const item of (window.EPI?.stock||[])){
+    let gm=0,g12=0;
+    for(const r of (S.movs||[])){
+      if(String(r.epi_id)!==String(item.id)||String(r.tipo)!=='SAIDA')continue;
+      const d=String(r.data_movimento||r.created_at||'').slice(0,10);
+      const q=Number(r.quantidade||0);
+      if(d.slice(0,7)===mes)gm+=q;
+      if(new Date(d+'T12:00:00')>=lim12)g12+=q;
+    }
+    item.giro_mensal=gm;item.giro_12_meses=g12;
+  }
+}
+
+async function loadGiroResumo(){
+  if(window.g360PreviewMode){
+    aplicarGiroLocal();
+  }else{
+    const sb=window.g360SupabaseClient,oid=obraId();if(!sb||!oid)return;
+    const r=await sb.rpc('g360_resumo_estoque_epi_v203',{p_obra_id:oid});
+    if(!r.error){
+      const mp=new Map((r.data||[]).map(x=>[String(x.epi_id),x]));
+      for(const item of (window.EPI?.stock||[])){
+        const a=mp.get(String(item.id))||{};
+        item.giro_mensal=Number(a.giro_mensal||0);
+        item.giro_12_meses=Number(a.giro_12_meses||0);
+        item.sugestao_compra_calc=Number(a.sugestao_compra||0);
+      }
+    }else console.warn('[V203] giro',r.error);
+  }
+  try{window.epiRenderStock?.()}catch(e){}
+  renderMinimo();
+  cadAtualizarAutomaticos();
+}
+
 function renderInventario(){
   const stock=[...(window.EPI?.stock||[])].sort((a,b)=>String(a.descricao).localeCompare(String(b.descricao),'pt-BR'));
   S.inventario=stock.map(x=>({epi_id:x.id,codigo:x.codigo,descricao:x.descricao,ca:x.ca,sistema:Number(x.saldo||0),fisico:Number(x.saldo||0)}));
@@ -17445,7 +17678,7 @@ async function init(){
   await ensureColabs();
   if(typeof window.epiLoadStock==='function')await window.epiLoadStock();
   if(typeof window.epiRenderStock==='function')window.epiRenderStock();
-  stockOptions();renderMinimo();aplicarAcessoEstoqueSesmt();colabSearch();renderInventario();await loadMovs();
+  stockOptions();renderMinimo();aplicarAcessoEstoqueSesmt();colabSearch();renderInventario();await loadMovs();await loadGiroResumo();
 
   $('sesmtMovSalvar').onclick=registrarMov;$('sesmtMovLimpar').onclick=clearMov;
   if($('sesmtMinimoPdf'))$('sesmtMinimoPdf').onclick=gerarPdfEstoqueMinimo;
@@ -17454,7 +17687,11 @@ async function init(){
   $('sesmtInventarioAplicar').onclick=aplicarInventario;$('sesmtHistoricoAtualizar').onclick=loadMovs;
   ['sesmtHistDataIni','sesmtHistDataFim','sesmtHistTipo','sesmtHistBusca'].forEach(id=>$(id).addEventListener(id==='sesmtHistBusca'?'input':'change',renderMovs));
   $('sesmtStockBusca').addEventListener('input',renderEstoqueFiltrado);$('sesmtStockSituacao').addEventListener('change',renderEstoqueFiltrado);
-  $('sesmtNovoEpiBtn').onclick=()=>{$('sesmtCadastroEpi').scrollIntoView({behavior:'smooth',block:'center'});$('epiStockDescricao').focus()};
+  if($('sesmtNovoEpiBtn'))$('sesmtNovoEpiBtn').onclick=()=>{document.querySelector('#view-sesmtEstoque [data-sesmt-stock-tab="cadastro"]')?.click();limparCadastroItem();$('epiCadDescricao')?.focus();};
+  if($('epiCadNovo'))$('epiCadNovo').onclick=limparCadastroItem;
+  if($('epiCadCancelar'))$('epiCadCancelar').onclick=limparCadastroItem;
+  if($('epiStockEntrada'))$('epiStockEntrada').onclick=salvarCadastroItem;
+  ['epiCadMin','epiCadMax'].forEach(id=>$(id)?.addEventListener('input',cadAtualizarAutomaticos));
   $('sesmtMovTipo').onchange=()=>{
     const precisa=$('sesmtMovTipo').value==='SAIDA';$('sesmtMovColabBusca').placeholder=precisa?'Digite o nome ou matrícula...':'Colaborador opcional...';
   };
@@ -17462,6 +17699,7 @@ async function init(){
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,250),{once:true});else setTimeout(init,250);
 window.g360SesmtEstoqueV195={init,loadMovs,renderInventario,aplicarInventario};
+window.g360SesmtEstoqueV203={abrirEntradaItem,editarCadastro,loadGiroResumo,aplicarAcesso:aplicarAcessoEstoqueSesmt,limparCadastroItem};
 })();
 </script>
 
