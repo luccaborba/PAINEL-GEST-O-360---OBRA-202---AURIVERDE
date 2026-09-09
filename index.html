@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- V198: padronização das fontes da tela SESMT / Estoque de EPIs -->
 <!-- V197: PDF do romaneio diário de movimentações de EPI -->
 <!-- V196: itens abaixo do mínimo + PDF + sugestão de compra no cadastro do EPI -->
 <!-- V195: SESMT robusto com estoque, movimentação diária, colaborador, mínimo e inventário -->
@@ -17397,3 +17398,29 @@ window.g360SesmtEstoqueV195={init,loadMovs,renderInventario,aplicarInventario};
 </style>
 
 <!-- GESTAO360 V162: boot unico sem reload + dashboard somente apos dados Supabase -->
+
+<style id="g360-sesmt-fontes-v198">
+/* V198 — padronização tipográfica da tela Estoque de EPIs.
+   Referência: tamanho visual do cabeçalho da tabela destacado pelo usuário. */
+#view-sesmtEstoque{font-size:12px!important}
+#view-sesmtEstoque .pt-sub,
+#view-sesmtEstoque .sesmt-stock-help,
+#view-sesmtEstoque .kpi-label,
+#view-sesmtEstoque .kpi-sub,
+#view-sesmtEstoque .sesmt-field>span,
+#view-sesmtEstoque .epi-stock-toolbar label>span,
+#view-sesmtEstoque .sesmt-recentes-wrap>span,
+#view-sesmtEstoque .sesmt-muted,
+#view-sesmtEstoque .sesmt-stock-table th,
+#view-sesmtEstoque .sesmt-stock-table td,
+#view-sesmtEstoque input,
+#view-sesmtEstoque select,
+#view-sesmtEstoque button,
+#view-sesmtEstoque .tag,
+#view-sesmtEstoque .sesmt-colab-chip,
+#view-sesmtEstoque .sesmt-colab-sugestoes button{font-size:12px!important}
+#view-sesmtEstoque .sesmt-stock-table th{font-size:12px!important}
+#view-sesmtEstoque .pt-title,
+#view-sesmtEstoque .sesmt-card-head h2{font-size:16px!important}
+#view-sesmtEstoque .kpi-value{font-size:24px!important}
+</style>
