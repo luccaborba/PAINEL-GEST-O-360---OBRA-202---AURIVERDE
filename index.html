@@ -1,4 +1,9 @@
 <!DOCTYPE html>
+<!-- V194: editar/excluir termos de EPI e editar/excluir cadastro/entrada de estoque -->
+<!-- V193: perfil TÉCNICO DE SEGURANÇA = acesso completo somente ao SESMT -->
+<!-- V192: estoque de EPI com exclusão individual; V191 preservada -->
+<!-- V191: reformulação visual do Termo de Entrega de EPIs; lógica e PDF preservados -->
+<!-- V190: reformulação visual do Termo de Responsabilidade; lógica e PDF preservados -->
 <!-- V158: remove contratosBase quebrado e protege listeners legados do fechamento -->
 <html lang="pt-BR">
 <head>
@@ -1110,6 +1115,309 @@ html.g360-ui-ready .content-col {
   padding-top:7px;
 }
 .g360-status-check-actions button{flex:1}
+</style>
+
+
+<style id="g360-termo-responsabilidade-v190">
+#view-termoResponsabilidade{
+  --tr-gap:14px;
+}
+#view-termoResponsabilidade .tr-page-head{
+  margin-bottom:16px;
+}
+#view-termoResponsabilidade .tr-card{
+  padding:18px 20px;
+  margin-bottom:14px;
+}
+#view-termoResponsabilidade .tr-card-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:16px;
+  padding-bottom:12px;
+  border-bottom:1px solid var(--line);
+}
+#view-termoResponsabilidade .tr-card-head h2{
+  margin:0 0 4px;
+  font-size:15px;
+}
+#view-termoResponsabilidade .tr-help{
+  color:var(--ink-soft);
+  font-size:10.5px;
+  line-height:1.45;
+}
+#view-termoResponsabilidade .tr-form-grid{
+  display:grid;
+  grid-template-columns:minmax(260px,2fr) minmax(150px,.8fr) minmax(180px,1fr) minmax(150px,.8fr);
+  gap:var(--tr-gap);
+  align-items:end;
+}
+#view-termoResponsabilidade .tr-field{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-width:0;
+}
+#view-termoResponsabilidade .tr-field>span{
+  color:var(--ink-soft);
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.045em;
+  text-transform:uppercase;
+}
+#view-termoResponsabilidade .tr-wide{
+  grid-column:span 2;
+}
+#view-termoResponsabilidade .tr-colab-field{
+  grid-column:span 2;
+}
+#view-termoResponsabilidade .tr-field input,
+#view-termoResponsabilidade .tr-field select,
+#view-termoResponsabilidade .g360-colab-search-input{
+  box-sizing:border-box;
+  width:100%;
+  height:40px;
+  min-height:40px;
+  padding:9px 11px;
+  border:1px solid var(--line);
+  border-radius:7px;
+  background:var(--asphalt);
+  color:var(--ink);
+  font:inherit;
+  line-height:20px;
+}
+#view-termoResponsabilidade .tr-field input[readonly]{
+  background:rgba(255,255,255,.025);
+  color:var(--ink-soft);
+}
+#view-termoResponsabilidade .tr-colab-field .g360-colab-search-input{
+  text-transform:uppercase;
+  font-weight:700;
+}
+#view-termoResponsabilidade .tr-delivery-grid{
+  display:grid;
+  grid-template-columns:minmax(320px,1fr) minmax(180px,240px);
+  gap:var(--tr-gap);
+  align-items:end;
+}
+#view-termoResponsabilidade .tr-items-head{
+  align-items:center;
+}
+#view-termoResponsabilidade .tr-table-scroll{
+  max-height:none;
+  overflow-x:auto;
+  border:1px solid var(--line);
+  border-radius:8px;
+}
+#view-termoResponsabilidade .tr-table{
+  width:100%;
+  table-layout:fixed;
+  border-collapse:collapse;
+}
+#view-termoResponsabilidade .tr-table thead th{
+  padding:11px 10px;
+  font-size:9px;
+  white-space:nowrap;
+  vertical-align:middle;
+}
+#view-termoResponsabilidade .tr-table tbody td{
+  padding:10px;
+  vertical-align:middle;
+}
+#view-termoResponsabilidade .tr-table select,
+#view-termoResponsabilidade .tr-table input{
+  box-sizing:border-box;
+  width:100%;
+  min-width:0!important;
+  height:38px;
+  padding:8px 9px;
+  border-radius:6px;
+}
+#view-termoResponsabilidade .tr-table .tr-desc{
+  min-width:0!important;
+}
+#view-termoResponsabilidade .tr-c-equip{width:18%}
+#view-termoResponsabilidade .tr-c-tag{width:10%}
+#view-termoResponsabilidade .tr-c-patr{width:11%}
+#view-termoResponsabilidade .tr-c-desc{width:19%}
+#view-termoResponsabilidade .tr-c-qtd{width:8%}
+#view-termoResponsabilidade .tr-c-data{width:12%}
+#view-termoResponsabilidade .tr-c-action{width:8%}
+#view-termoResponsabilidade .tr-rm{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:72px;
+  height:34px;
+  padding:0 10px;
+}
+#view-termoResponsabilidade .tr-actions{
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:14px;
+  padding-top:14px;
+  border-top:1px solid var(--line);
+}
+#view-termoResponsabilidade .tr-history-scroll{
+  max-height:340px;
+  border:1px solid var(--line);
+  border-radius:8px;
+}
+#view-termoResponsabilidade .tr-history-table{
+  width:100%;
+}
+#view-termoResponsabilidade .tr-history-table th,
+#view-termoResponsabilidade .tr-history-table td{
+  padding:11px 12px;
+}
+@media(max-width:1100px){
+  #view-termoResponsabilidade .tr-form-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  #view-termoResponsabilidade .tr-colab-field,
+  #view-termoResponsabilidade .tr-wide{
+    grid-column:span 1;
+  }
+}
+@media(max-width:760px){
+  #view-termoResponsabilidade .tr-card{
+    padding:14px;
+  }
+  #view-termoResponsabilidade .tr-form-grid,
+  #view-termoResponsabilidade .tr-delivery-grid{
+    grid-template-columns:1fr;
+  }
+  #view-termoResponsabilidade .tr-card-head,
+  #view-termoResponsabilidade .tr-items-head{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  #view-termoResponsabilidade .tr-items-head .btn-primary{
+    width:100%;
+  }
+  #view-termoResponsabilidade .tr-table{
+    min-width:980px;
+  }
+  #view-termoResponsabilidade .tr-actions{
+    justify-content:stretch;
+  }
+  #view-termoResponsabilidade .tr-actions button{
+    flex:1 1 100%;
+  }
+}
+</style>
+
+
+<style id="g360-termo-epi-v191">
+#view-sesmtTermo .epi-term-page-head{margin-bottom:16px}
+#view-sesmtTermo .epi-term-card{padding:18px 20px;margin-bottom:14px}
+#view-sesmtTermo .epi-term-head,
+#view-sesmtTermo .epi-term-items-head,
+#view-sesmtTermo .epi-term-delivery{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+}
+#view-sesmtTermo .epi-term-head{
+  margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--line);
+}
+#view-sesmtTermo .epi-term-head h2,
+#view-sesmtTermo .epi-term-items-head h2,
+#view-sesmtTermo .epi-term-delivery h2{margin:0 0 4px;font-size:15px}
+#view-sesmtTermo .epi-term-help{color:var(--ink-soft);font-size:10.5px;line-height:1.45}
+#view-sesmtTermo .epi-term-grid{
+  display:grid;
+  grid-template-columns:minmax(260px,2fr) minmax(150px,.8fr) minmax(180px,1fr) minmax(150px,.8fr);
+  gap:14px;align-items:end;
+}
+#view-sesmtTermo .epi-term-field{display:flex;flex-direction:column;gap:6px;min-width:0}
+#view-sesmtTermo .epi-term-field>span{
+  color:var(--ink-soft);font-size:10px;font-weight:800;letter-spacing:.045em;text-transform:uppercase
+}
+#view-sesmtTermo .epi-term-colab{grid-column:span 2}
+#view-sesmtTermo .epi-term-wide{grid-column:span 2}
+#view-sesmtTermo .epi-term-field input,
+#view-sesmtTermo .epi-term-field select,
+#view-sesmtTermo .g360-colab-search-input{
+  box-sizing:border-box;width:100%;height:40px;min-height:40px;padding:9px 11px;
+  border:1px solid var(--line);border-radius:7px;background:var(--asphalt);color:var(--ink);
+  font:inherit;line-height:20px
+}
+#view-sesmtTermo .epi-term-field input[readonly]{background:rgba(255,255,255,.025);color:var(--ink-soft)}
+#view-sesmtTermo .epi-term-delivery{
+  align-items:end;margin-top:18px;padding:15px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)
+}
+#view-sesmtTermo .epi-term-date{width:min(240px,100%)}
+#view-sesmtTermo .epi-term-items-head{align-items:center;margin-top:16px;margin-bottom:12px}
+#view-sesmtTermo .epi-term-table-scroll{max-height:none;border:1px solid var(--line);border-radius:8px;overflow-x:auto}
+#view-sesmtTermo .epi-table{width:100%;table-layout:fixed;border-collapse:collapse}
+#view-sesmtTermo .epi-table thead th{padding:11px 10px;font-size:9px;white-space:nowrap;vertical-align:middle}
+#view-sesmtTermo .epi-table tbody td{padding:10px;vertical-align:middle}
+#view-sesmtTermo .epi-table select,
+#view-sesmtTermo .epi-table input{
+  box-sizing:border-box;width:100%;min-width:0!important;height:38px;padding:8px 9px;border-radius:6px
+}
+#view-sesmtTermo .epi-table .epi-desc{min-width:0!important}
+#view-sesmtTermo .epi-c-stock{width:24%}
+#view-sesmtTermo .epi-c-desc{width:20%}
+#view-sesmtTermo .epi-c-ca{width:12%}
+#view-sesmtTermo .epi-c-qtd{width:9%}
+#view-sesmtTermo .epi-c-date{width:14%}
+#view-sesmtTermo .epi-c-action{width:7%}
+#view-sesmtTermo .epi-actions{
+  display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;
+  margin-top:14px;padding-top:14px;border-top:1px solid var(--line)
+}
+#view-sesmtTermo .epi-term-history-scroll{max-height:340px;border:1px solid var(--line);border-radius:8px}
+#view-sesmtTermo #epiHistoricoPanel table{width:100%}
+#view-sesmtTermo #epiHistoricoPanel th,
+#view-sesmtTermo #epiHistoricoPanel td{padding:11px 12px}
+@media(max-width:1100px){
+  #view-sesmtTermo .epi-term-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #view-sesmtTermo .epi-term-colab,#view-sesmtTermo .epi-term-wide{grid-column:span 1}
+}
+@media(max-width:760px){
+  #view-sesmtTermo .epi-term-card{padding:14px}
+  #view-sesmtTermo .epi-term-grid{grid-template-columns:1fr}
+  #view-sesmtTermo .epi-term-head,#view-sesmtTermo .epi-term-items-head,#view-sesmtTermo .epi-term-delivery{
+    flex-direction:column;align-items:stretch
+  }
+  #view-sesmtTermo .epi-term-date{width:100%}
+  #view-sesmtTermo .epi-term-items-head .btn-primary{width:100%}
+  #view-sesmtTermo .epi-table{min-width:920px}
+  #view-sesmtTermo .epi-actions{justify-content:stretch}
+  #view-sesmtTermo .epi-actions button{flex:1 1 100%}
+}
+</style>
+
+
+<style id="g360-estoque-epi-delete-v192">
+#view-sesmtEstoque .epi-stock-delete{
+  margin-left:6px;
+  background:#762727;
+  color:#fff;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:6px;
+  padding:8px 10px;
+  font:inherit;
+  font-size:10px;
+  font-weight:800;
+  cursor:pointer;
+}
+#view-sesmtEstoque .epi-stock-delete:hover{background:#913333}
+</style>
+
+
+<style id="g360-epi-edit-delete-v194">
+#view-sesmtEstoque [data-epi-edit]{margin-left:6px}
+#view-sesmtTermo [data-epi-term-edit]{margin-right:6px}
+#view-sesmtTermo [data-epi-term-delete]{
+  background:#762727;color:#fff;border:1px solid rgba(255,255,255,.08);
+  border-radius:6px;padding:8px 10px;font:inherit;font-size:10px;font-weight:800;cursor:pointer
+}
+#view-sesmtTermo [data-epi-term-delete]:hover{background:#913333}
 </style>
 
 </head>
@@ -2724,26 +3032,138 @@ html.g360-ui-ready .content-col {
 
       <!-- ================= TERMO DE RESPONSABILIDADE ================= -->
       <div class="view" id="view-termoResponsabilidade">
-        <div class="page-title"><span class="pt-ic">🧾</span><div><div class="pt-title">Termo de Responsabilidade</div><div class="pt-sub">Entrega individual de itens/equipamentos vinculada ao colaborador e ao patrimônio.</div></div></div>
-        <section class="panel">
-          <div class="tr-grid">
-            <label class="tr-span3 tr-colab-label"><span>COLABORADOR</span><select id="trColaborador"></select></label>
-            <label class="tr-mat-label"><span>MATRÍCULA</span><input id="trMatricula" autocomplete="off" inputmode="numeric" placeholder="Digite a matrícula"></label>
-            <label>Data da entrega<input type="date" id="trDataEntrega"></label>
-            <label>Encarregado / responsável<input id="trEncarregado" placeholder="Nome do encarregado"></label>
-            <label>CPF<input id="trCpf" placeholder="CPF não cadastrado"></label>
-            <label>Admissão<input id="trAdmissao" readonly></label>
-            <label>Obra<input id="trObra" readonly></label>
-            <label class="tr-span2">Função<input id="trFuncao" readonly></label>
-            <label class="tr-span2">Setor / Equipe<input id="trSetor" readonly></label>
+        <div class="page-title tr-page-head">
+          <span class="pt-ic">🧾</span>
+          <div>
+            <div class="pt-title">Termo de Responsabilidade</div>
+            <div class="pt-sub">Entrega individual de itens e equipamentos vinculados ao colaborador e ao patrimônio.</div>
+          </div>
+        </div>
+
+        <section class="panel tr-card">
+          <div class="tr-card-head">
+            <div>
+              <h2>Dados do colaborador</h2>
+              <div class="tr-help">Selecione o colaborador para preencher automaticamente os dados cadastrais.</div>
+            </div>
+            <span class="tag">Identificação</span>
+          </div>
+
+          <div class="tr-form-grid">
+            <label class="tr-field tr-colab-field">
+              <span>Colaborador</span>
+              <select id="trColaborador"></select>
+            </label>
+
+            <label class="tr-field">
+              <span>Matrícula</span>
+              <input id="trMatricula" autocomplete="off" inputmode="numeric" placeholder="Digite a matrícula">
+            </label>
+
+            <label class="tr-field">
+              <span>CPF</span>
+              <input id="trCpf" placeholder="CPF não cadastrado">
+            </label>
+
+            <label class="tr-field">
+              <span>Admissão</span>
+              <input id="trAdmissao" readonly>
+            </label>
+
+            <label class="tr-field tr-wide">
+              <span>Função</span>
+              <input id="trFuncao" readonly>
+            </label>
+
+            <label class="tr-field tr-wide">
+              <span>Setor / Equipe</span>
+              <input id="trSetor" readonly>
+            </label>
+
+            <label class="tr-field tr-wide">
+              <span>Obra</span>
+              <input id="trObra" readonly>
+            </label>
           </div>
         </section>
-        <section class="panel">
-          <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><h2 style="margin:0">Itens do Termo <span class="tag" id="trItensCount">0 item</span></h2><button class="btn-primary" id="trAddItem">＋ Adicionar item/equipamento</button></div>
-          <div class="table-scroll" style="max-height:none;margin-top:12px"><table class="tr-table"><thead><tr><th>Equipamento / Patrimônio</th><th>Tag</th><th>Nº Patrimônio</th><th>Descrição</th><th>Qtd.</th><th>Retirada</th><th>Devolução</th><th>Ações</th></tr></thead><tbody id="trItensBody"></tbody></table></div>
-          <div class="tr-actions"><button class="clear-btn" id="trLimpar">Limpar</button><button class="clear-btn" id="trSalvar">💾 Salvar termo</button><button class="btn-primary" id="trGerarPdf">📄 Gerar PDF</button></div>
+
+        <section class="panel tr-card">
+          <div class="tr-card-head">
+            <div>
+              <h2>Responsável pela entrega</h2>
+              <div class="tr-help">Informe quem está realizando a entrega e a data do termo.</div>
+            </div>
+            <span class="tag">Entrega</span>
+          </div>
+
+          <div class="tr-delivery-grid">
+            <label class="tr-field tr-delivery-name">
+              <span>Encarregado / responsável</span>
+              <input id="trEncarregado" placeholder="Nome do encarregado / responsável">
+            </label>
+            <label class="tr-field tr-delivery-date">
+              <span>Data da entrega</span>
+              <input type="date" id="trDataEntrega">
+            </label>
+          </div>
         </section>
-        <section class="panel"><h2>Termos Emitidos <span class="tag" id="trHistCount">0</span></h2><div class="table-scroll" style="max-height:360px"><table><thead><tr><th>Data</th><th>Colaborador</th><th>Matrícula</th><th>Itens</th><th>Status</th></tr></thead><tbody id="trHistorico"></tbody></table></div></section>
+
+        <section class="panel tr-card tr-items-card">
+          <div class="tr-card-head tr-items-head">
+            <div>
+              <h2>Itens do termo <span class="tag" id="trItensCount">0 item</span></h2>
+              <div class="tr-help">Inclua os equipamentos ou patrimônios entregues ao colaborador.</div>
+            </div>
+            <button class="btn-primary" id="trAddItem">＋ Adicionar item / equipamento</button>
+          </div>
+
+          <div class="table-scroll tr-table-scroll">
+            <table class="tr-table">
+              <thead>
+                <tr>
+                  <th class="tr-c-equip">Equipamento / Patrimônio</th>
+                  <th class="tr-c-tag">Tag</th>
+                  <th class="tr-c-patr">Nº Patrimônio</th>
+                  <th class="tr-c-desc">Descrição</th>
+                  <th class="tr-c-qtd">Qtd.</th>
+                  <th class="tr-c-data">Retirada</th>
+                  <th class="tr-c-data">Devolução</th>
+                  <th class="tr-c-action">Ação</th>
+                </tr>
+              </thead>
+              <tbody id="trItensBody"></tbody>
+            </table>
+          </div>
+
+          <div class="tr-actions">
+            <button class="clear-btn" id="trLimpar">Limpar</button>
+            <button class="clear-btn" id="trSalvar">💾 Salvar termo</button>
+            <button class="btn-primary" id="trGerarPdf">📄 Gerar PDF</button>
+          </div>
+        </section>
+
+        <section class="panel tr-card">
+          <div class="tr-card-head">
+            <div>
+              <h2>Termos emitidos <span class="tag" id="trHistCount">0</span></h2>
+              <div class="tr-help">Histórico dos termos já registrados para consulta.</div>
+            </div>
+          </div>
+          <div class="table-scroll tr-history-scroll">
+            <table class="tr-history-table">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Colaborador</th>
+                  <th>Matrícula</th>
+                  <th>Itens</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="trHistorico"></tbody>
+            </table>
+          </div>
+        </section>
       </div>
 
       <!-- ================= SESMT / ESTOQUE DE EPIs ================= -->
@@ -2770,26 +3190,111 @@ html.g360-ui-ready .content-col {
 
       <!-- ================= SESMT / TERMO DE ENTREGA DE EPIs ================= -->
       <div class="view" id="view-sesmtTermo">
-        <div class="page-title"><span class="pt-ic">🧾</span><div><div class="pt-title">Termo de Entrega de EPIs</div><div class="pt-sub">Emissão individual com baixa automática no estoque de EPIs.</div></div></div>
-        <section class="panel" id="epiTermoPanel">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px">
-            <div><h2 style="margin-bottom:4px">🦺 Termo de Entrega de EPIs</h2><div style="font-size:11.5px;color:var(--ink-soft)">Emissão individual por colaborador. O EPI é selecionado do estoque e a emissão do termo dá baixa automática no saldo.</div></div>
+        <div class="page-title epi-term-page-head">
+          <span class="pt-ic">🦺</span>
+          <div>
+            <div class="pt-title">Termo de Entrega de EPIs</div>
+            <div class="pt-sub">Emissão individual por colaborador, com seleção do estoque e baixa automática no saldo.</div>
           </div>
-          <div class="epi-grid">
-            <label class="epi-span3"><span>COLABORADOR</span><select id="epiColaborador"></select></label>
-            <label class="epi-mat"><span>MATRÍCULA</span><input id="epiMatricula" autocomplete="off" placeholder="Digite a matrícula"></label>
-            <label>Data da entrega<input type="date" id="epiDataEntrega"></label>
-            <label>CPF<input id="epiCpf" readonly></label>
-            <label>Admissão<input id="epiAdmissao" readonly></label>
-            <label class="epi-span2">Obra<input id="epiObra" readonly></label>
-            <label class="epi-span2">Função<input id="epiFuncao" readonly></label>
-            <label class="epi-span2">Setor / Equipe<input id="epiSetor" readonly></label>
+        </div>
+
+        <section class="panel epi-term-card" id="epiTermoPanel">
+          <div class="epi-term-head">
+            <div>
+              <h2>Dados do colaborador</h2>
+              <div class="epi-term-help">Selecione o colaborador para carregar automaticamente os dados cadastrais.</div>
+            </div>
+            <span class="tag">Identificação</span>
           </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px"><h2 style="margin:0">EPIs Entregues <span class="tag" id="epiItensCount">0 item</span></h2><button class="btn-primary" id="epiAddItem">＋ Adicionar EPI</button></div>
-          <div class="table-scroll" style="max-height:none;margin-top:12px"><table class="epi-table"><thead><tr><th>EPI no estoque</th><th>Descrição</th><th>C.A.</th><th>Qtd.</th><th>Data entrega</th><th>Devolução / substituição</th><th>Ações</th></tr></thead><tbody id="epiItensBody"></tbody></table></div>
-          <div class="epi-actions"><button class="clear-btn" id="epiLimpar">Limpar</button><button class="clear-btn" id="epiSalvar">💾 Salvar termo e dar baixa</button><button class="btn-primary" id="epiGerarPdf">📄 Gerar PDF EPI</button></div>
+
+          <div class="epi-term-grid">
+            <label class="epi-term-field epi-term-colab">
+              <span>Colaborador</span>
+              <select id="epiColaborador"></select>
+            </label>
+            <label class="epi-term-field">
+              <span>Matrícula</span>
+              <input id="epiMatricula" autocomplete="off" placeholder="Digite a matrícula">
+            </label>
+            <label class="epi-term-field">
+              <span>CPF</span>
+              <input id="epiCpf" readonly>
+            </label>
+            <label class="epi-term-field">
+              <span>Admissão</span>
+              <input id="epiAdmissao" readonly>
+            </label>
+            <label class="epi-term-field epi-term-wide">
+              <span>Função</span>
+              <input id="epiFuncao" readonly>
+            </label>
+            <label class="epi-term-field epi-term-wide">
+              <span>Setor / Equipe</span>
+              <input id="epiSetor" readonly>
+            </label>
+            <label class="epi-term-field epi-term-wide">
+              <span>Obra</span>
+              <input id="epiObra" readonly>
+            </label>
+          </div>
+
+          <div class="epi-term-delivery">
+            <div>
+              <h2>Dados da entrega</h2>
+              <div class="epi-term-help">Data utilizada para registro da entrega e movimentação do estoque.</div>
+            </div>
+            <label class="epi-term-field epi-term-date">
+              <span>Data da entrega</span>
+              <input type="date" id="epiDataEntrega">
+            </label>
+          </div>
+
+          <div class="epi-term-items-head">
+            <div>
+              <h2>EPIs entregues <span class="tag" id="epiItensCount">0 item</span></h2>
+              <div class="epi-term-help">Selecione os EPIs disponíveis no estoque e informe a quantidade entregue.</div>
+            </div>
+            <button class="btn-primary" id="epiAddItem">＋ Adicionar EPI</button>
+          </div>
+
+          <div class="table-scroll epi-term-table-scroll">
+            <table class="epi-table">
+              <thead>
+                <tr>
+                  <th class="epi-c-stock">EPI no estoque</th>
+                  <th class="epi-c-desc">Descrição</th>
+                  <th class="epi-c-ca">C.A.</th>
+                  <th class="epi-c-qtd">Qtd.</th>
+                  <th class="epi-c-date">Data entrega</th>
+                  <th class="epi-c-date">Devolução / substituição</th>
+                  <th class="epi-c-action">Ação</th>
+                </tr>
+              </thead>
+              <tbody id="epiItensBody"></tbody>
+            </table>
+          </div>
+
+          <div class="epi-actions">
+            <button class="clear-btn" id="epiLimpar">Limpar</button>
+            <button class="clear-btn" id="epiSalvar">💾 Salvar termo e dar baixa</button>
+            <button class="btn-primary" id="epiGerarPdf">📄 Gerar PDF EPI</button>
+          </div>
         </section>
-        <section class="panel" id="epiHistoricoPanel"><h2>Termos de EPI Emitidos <span class="tag" id="epiHistCount">0</span></h2><div class="table-scroll" style="max-height:300px"><table><thead><tr><th>Data</th><th>Colaborador</th><th>Matrícula</th><th>EPIs</th><th>Status</th></tr></thead><tbody id="epiHistorico"></tbody></table></div></section>
+
+        <section class="panel epi-term-card" id="epiHistoricoPanel">
+          <div class="epi-term-head">
+            <div>
+              <h2>Termos de EPI emitidos <span class="tag" id="epiHistCount">0</span></h2>
+              <div class="epi-term-help">Histórico dos termos registrados para consulta.</div>
+            </div>
+          </div>
+          <div class="table-scroll epi-term-history-scroll">
+            <table>
+              <thead><tr><th>Data</th><th>Colaborador</th><th>Matrícula</th><th>EPIs</th><th>Status</th><th>Ações</th></tr></thead>
+              <tbody id="epiHistorico"></tbody>
+            </table>
+          </div>
+        </section>
       </div>
 
       <!-- ================= SESMT / ACIDENTES DE TRABALHO ================= -->
@@ -2888,7 +3393,7 @@ html.g360-ui-ready .content-col {
           <span class="pt-ic">🔐</span>
           <div>
             <div class="pt-title">Usuários &amp; Permissões</div>
-            <div class="pt-sub">Perfis nativos por obra. Ao criar o usuário, as permissões são aplicadas automaticamente conforme ENGENHEIROS, RH ou GESTOR.</div>
+            <div class="pt-sub">Perfis nativos por obra. Ao criar o usuário, as permissões são aplicadas automaticamente conforme ENGENHEIROS, RH, TÉCNICO DE SEGURANÇA ou GESTOR.</div>
           </div>
         </div>
         <section class="panel g360-perm-users-panel">
@@ -2917,6 +3422,7 @@ html.g360-ui-ready .content-col {
           <div class="kpis" style="margin-top:12px">
             <div class="kpi"><div class="kpi-label">ENGENHEIROS</div><div class="kpi-value" style="font-size:18px">CONSULTA</div><div class="kpi-sub">Visualiza e exporta nas obras vinculadas. Pode ter uma ou várias obras, sem alterar dados.</div></div>
             <div class="kpi"><div class="kpi-label">RH</div><div class="kpi-value" style="font-size:18px">RH / DP</div><div class="kpi-sub">Acesso completo somente aos módulos de RH.</div></div>
+            <div class="kpi"><div class="kpi-label">TÉCNICO DE SEGURANÇA</div><div class="kpi-value" style="font-size:18px">SESMT</div><div class="kpi-sub">Acesso completo somente a Segurança do Trabalho, Estoque de EPIs e Termo de Entrega de EPIs.</div></div>
             <div class="kpi"><div class="kpi-label">GESTOR</div><div class="kpi-value" style="font-size:18px">TOTAL</div><div class="kpi-sub">Acesso operacional completo. Funções Master permanecem exclusivas.</div></div>
           </div>
         </section>
@@ -2924,7 +3430,7 @@ html.g360-ui-ready .content-col {
           <div class="g360-perm-top">
             <div>
               <h2 id="g360PermMatrixTitle">Permissões personalizáveis do usuário</h2>
-              <div class="g360-perm-help"><b>EDIÇÃO LIBERADA:</b> perfis RH, ENGENHEIROS e GESTOR podem ter permissões personalizadas por usuário. O perfil nativo é apenas o padrão inicial. Usuários & Permissões continua exclusivo do MASTER.</div><div style="margin-top:10px;max-width:420px"><label style="font-size:11px;color:var(--ink-soft);font-weight:700">OBRA VINCULADA<select id="g360PermObra" style="width:100%;margin-top:5px;background:#0e0f11;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:9px"><option value="">Selecione a obra</option></select></label></div>
+              <div class="g360-perm-help"><b>EDIÇÃO LIBERADA:</b> perfis RH, ENGENHEIROS, TÉCNICO DE SEGURANÇA e GESTOR podem ter permissões personalizadas por usuário. O perfil nativo é apenas o padrão inicial. Usuários & Permissões continua exclusivo do MASTER.</div><div style="margin-top:10px;max-width:420px"><label style="font-size:11px;color:var(--ink-soft);font-weight:700">OBRA VINCULADA<select id="g360PermObra" style="width:100%;margin-top:5px;background:#0e0f11;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:9px"><option value="">Selecione a obra</option></select></label></div>
             </div>
             <div class="g360-perm-actions">
               <button type="button" class="crud-mini" id="g360PermReadOnly">👁 Somente leitura</button>
@@ -7580,7 +8086,7 @@ async function renderTermoResponsabilidade(){await trLoad();const sel=document.g
 
 
 /* g360TermoEpiScript */
-const EPI={colabs:[],items:[],selected:null,stock:[]};
+const EPI={colabs:[],items:[],selected:null,stock:[],editingTermId:null,editingOriginal:null};
 const epiEsc=s=>String(s??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m]));
 function epiDate(v){return trFmtDate(v)||''}
 const epiNum=v=>Number(v||0);
@@ -7595,7 +8101,122 @@ async function epiLoadStock(){
   const r=await q;EPI.stock=r.error?[]:(r.data||[]);
 }
 function epiStockSituation(x){const s=epiNum(x.saldo),m=epiNum(x.estoque_minimo);if(s<=0)return ['SEM ESTOQUE','epi-stock-zero'];if(m>0&&s<=m)return ['BAIXO','epi-stock-low'];return ['OK','']}
-function epiRenderStock(){const tb=document.getElementById('epiStockBody');if(!tb)return;const rows=[...EPI.stock].sort((a,b)=>String(a.descricao).localeCompare(String(b.descricao),'pt-BR'));const zero=rows.filter(x=>epiNum(x.saldo)<=0).length,baixo=rows.filter(x=>epiNum(x.saldo)>0&&epiNum(x.estoque_minimo)>0&&epiNum(x.saldo)<=epiNum(x.estoque_minimo)).length;document.getElementById('epiStockKpiItens').textContent=rows.length;document.getElementById('epiStockKpiSaldo').textContent=rows.reduce((a,x)=>a+epiNum(x.saldo),0).toLocaleString('pt-BR',{maximumFractionDigits:2});document.getElementById('epiStockKpiBaixo').textContent=baixo;document.getElementById('epiStockKpiZero').textContent=zero;tb.innerHTML=rows.length?rows.map(x=>{const st=epiStockSituation(x);return `<tr><td>${epiEsc(x.codigo||'—')}</td><td>${epiEsc(x.descricao||'')}</td><td>${epiEsc(x.ca||'')}</td><td><strong>${epiNum(x.saldo).toLocaleString('pt-BR',{maximumFractionDigits:2})}</strong></td><td>${epiNum(x.estoque_minimo).toLocaleString('pt-BR',{maximumFractionDigits:2})}</td><td class="${st[1]}">${st[0]}</td><td><button class="clear-btn" data-epi-entry="${epiEsc(x.id)}">＋ Entrada</button></td></tr>`}).join(''):'<tr><td colspan="7"><div class="empty-state">Nenhum EPI cadastrado no estoque.</div></td></tr>';tb.querySelectorAll('[data-epi-entry]').forEach(b=>b.onclick=()=>epiStockQuickEntry(b.dataset.epiEntry))}
+function epiRenderStock(){
+  const tb=document.getElementById('epiStockBody');if(!tb)return;
+  const rows=[...EPI.stock].sort((a,b)=>String(a.descricao).localeCompare(String(b.descricao),'pt-BR'));
+  const zero=rows.filter(x=>epiNum(x.saldo)<=0).length,
+        baixo=rows.filter(x=>epiNum(x.saldo)>0&&epiNum(x.estoque_minimo)>0&&epiNum(x.saldo)<=epiNum(x.estoque_minimo)).length;
+  document.getElementById('epiStockKpiItens').textContent=rows.length;
+  document.getElementById('epiStockKpiSaldo').textContent=rows.reduce((a,x)=>a+epiNum(x.saldo),0).toLocaleString('pt-BR',{maximumFractionDigits:2});
+  document.getElementById('epiStockKpiBaixo').textContent=baixo;
+  document.getElementById('epiStockKpiZero').textContent=zero;
+
+  tb.innerHTML=rows.length?rows.map(x=>{
+    const st=epiStockSituation(x);
+    return `<tr>
+      <td>${epiEsc(x.codigo||'—')}</td>
+      <td>${epiEsc(x.descricao||'')}</td>
+      <td>${epiEsc(x.ca||'')}</td>
+      <td><strong>${epiNum(x.saldo).toLocaleString('pt-BR',{maximumFractionDigits:2})}</strong></td>
+      <td>${epiNum(x.estoque_minimo).toLocaleString('pt-BR',{maximumFractionDigits:2})}</td>
+      <td class="${st[1]}">${st[0]}</td>
+      <td style="white-space:nowrap">
+        <button class="clear-btn" data-epi-entry="${epiEsc(x.id)}">＋ Entrada</button>
+        <button class="clear-btn" data-epi-edit="${epiEsc(x.id)}">✏️ Editar</button>
+        <button class="epi-stock-delete" data-epi-delete="${epiEsc(x.id)}">Excluir</button>
+      </td>
+    </tr>`
+  }).join(''):'<tr><td colspan="7"><div class="empty-state">Nenhum EPI cadastrado no estoque.</div></td></tr>';
+
+  tb.querySelectorAll('[data-epi-entry]').forEach(b=>b.onclick=()=>epiStockQuickEntry(b.dataset.epiEntry));
+  tb.querySelectorAll('[data-epi-edit]').forEach(b=>b.onclick=()=>epiStockEdit(b.dataset.epiEdit));
+  tb.querySelectorAll('[data-epi-delete]').forEach(b=>b.onclick=()=>epiStockDelete(b.dataset.epiDelete));
+}
+async function epiStockEdit(id){
+  const item=EPI.stock.find(x=>String(x.id)===String(id));if(!item)return;
+
+  const descricao=prompt('Descrição do EPI:',item.descricao||'');
+  if(descricao===null)return;
+  const ca=prompt('C.A.:',item.ca||'');
+  if(ca===null)return;
+  const codigo=prompt('Código / SKU:',item.codigo||'');
+  if(codigo===null)return;
+  const minimoRaw=prompt('Estoque mínimo:',String(epiNum(item.estoque_minimo)));
+  if(minimoRaw===null)return;
+  const saldoRaw=prompt('Saldo atual do estoque:',String(epiNum(item.saldo)));
+  if(saldoRaw===null)return;
+
+  const minimo=Number(String(minimoRaw).replace(',','.'));
+  const novoSaldo=Number(String(saldoRaw).replace(',','.'));
+  if(!String(descricao).trim()||!String(ca).trim())return alert('Descrição e C.A. são obrigatórios.');
+  if(!Number.isFinite(minimo)||minimo<0)return alert('Estoque mínimo inválido.');
+  if(!Number.isFinite(novoSaldo)||novoSaldo<0)return alert('Saldo inválido.');
+
+  const oldSaldo=epiNum(item.saldo);
+  const delta=novoSaldo-oldSaldo;
+
+  if(window.g360PreviewMode){
+    Object.assign(item,{descricao:String(descricao).trim().toUpperCase(),ca:String(ca).trim(),codigo:String(codigo).trim().toUpperCase(),estoque_minimo:minimo,saldo:novoSaldo,updated_at:new Date().toISOString()});
+    epiSavePreviewStock();epiRenderStock();epiRenderItems();
+    try{window.g360Audit?.('estoque_epi','EDITAR','epi_estoque',String(id),item.descricao,{saldo_anterior:oldSaldo,saldo_novo:novoSaldo});}catch(e){}
+    return;
+  }
+
+  const sb=window.g360SupabaseClient;if(!sb)return alert('Supabase não disponível.');
+  const up=await sb.from('epi_estoque').update({
+    descricao:String(descricao).trim().toUpperCase(),
+    ca:String(ca).trim(),
+    codigo:String(codigo).trim().toUpperCase()||null,
+    estoque_minimo:minimo
+  }).eq('id',id);
+  if(up.error)return alert('Erro ao editar EPI: '+up.error.message);
+
+  if(delta!==0){
+    const mov=await sb.rpc('g360_movimentar_estoque_epi',{
+      p_epi_id:id,
+      p_quantidade:Math.abs(delta),
+      p_tipo:delta>0?'ENTRADA':'SAIDA',
+      p_motivo:'Ajuste manual na edição do estoque'
+    });
+    if(mov.error)return alert('Cadastro editado, mas não foi possível ajustar o saldo: '+mov.error.message);
+  }
+
+  await epiLoadStock();epiRenderStock();epiRenderItems();
+  try{window.g360Audit?.('estoque_epi','EDITAR','epi_estoque',String(id),String(descricao).trim().toUpperCase(),{saldo_anterior:oldSaldo,saldo_novo:novoSaldo});}catch(e){}
+}
+async function epiStockDelete(id){
+  const item=EPI.stock.find(x=>String(x.id)===String(id));
+  if(!item)return;
+
+  const saldo=epiNum(item.saldo);
+  const msg=`Excluir definitivamente o EPI do estoque?\n\n${item.descricao||'EPI'}${item.ca?` · C.A. ${item.ca}`:''}\nSaldo atual: ${saldo.toLocaleString('pt-BR',{maximumFractionDigits:2})}\n\nEsta ação remove o cadastro do estoque e não pode ser desfeita.`;
+  if(!confirm(msg))return;
+
+  if(window.g360PreviewMode){
+    EPI.stock=EPI.stock.filter(x=>String(x.id)!==String(id));
+    EPI.items=EPI.items.map(it=>String(it.estoque_id)===String(id)?{...it,estoque_id:'',descricao:'',ca:''}:it);
+    epiSavePreviewStock();
+    epiRenderStock();
+    epiRenderItems();
+    try{window.g360Audit?.('estoque_epi','EXCLUIR','epi_estoque',String(id),item.descricao,{ca:item.ca||null,saldo});}catch(e){}
+    return;
+  }
+
+  const sb=window.g360SupabaseClient;
+  if(!sb)return alert('Supabase não disponível.');
+
+  const del=await sb.from('epi_estoque').delete().eq('id',id);
+  if(del.error){
+    alert('Não foi possível excluir este EPI do estoque.\n\n'+del.error.message+'\n\nSe o item já possuir movimentações ou termos vinculados, o banco pode impedir a exclusão para preservar o histórico.');
+    return;
+  }
+
+  EPI.items=EPI.items.map(it=>String(it.estoque_id)===String(id)?{...it,estoque_id:'',descricao:'',ca:''}:it);
+  await epiLoadStock();
+  epiRenderStock();
+  epiRenderItems();
+  try{window.g360Audit?.('estoque_epi','EXCLUIR','epi_estoque',String(id),item.descricao,{ca:item.ca||null,saldo});}catch(e){}
+}
 async function epiStockQuickEntry(id){const item=EPI.stock.find(x=>String(x.id)===String(id));if(!item)return;const raw=prompt(`Quantidade de entrada para ${item.descricao} (C.A. ${item.ca}):`,'1');if(raw===null)return;const qtd=Number(String(raw).replace(',','.'));if(!(qtd>0))return alert('Informe uma quantidade válida.');await epiStockMove(item,qtd,'ENTRADA','Entrada manual pelo painel')}
 async function epiStockMove(item,qtd,tipo='ENTRADA',motivo='Movimentação manual'){
   if(window.g360PreviewMode){const old=epiNum(item.saldo);item.saldo=tipo==='SAIDA'?old-qtd:old+qtd;item.updated_at=new Date().toISOString();epiSavePreviewStock();epiRenderStock();epiRenderItems();return true}
@@ -7612,8 +8233,257 @@ function epiRenderItems(){const tb=document.getElementById('epiItensBody');docum
 function epiAdd(){EPI.items.push({estoque_id:'',descricao:'',ca:'',quantidade:1,entrega:document.getElementById('epiDataEntrega')?.value||new Date().toISOString().slice(0,10),devolucao:''});epiRenderItems()}
 function epiDraft(){return{colaborador:EPI.selected,matricula:document.getElementById('epiMatricula').value,cpf:document.getElementById('epiCpf').value,admissao:EPI.selected?.admissao||'',obra:document.getElementById('epiObra').value,funcao:document.getElementById('epiFuncao').value,setor:document.getElementById('epiSetor').value,data_entrega:document.getElementById('epiDataEntrega').value,items:EPI.items.filter(x=>x.estoque_id&&String(x.descricao||'').trim()&&String(x.ca||'').trim())}}
 function epiValidateStock(d){if(!d.items.length)return 'Inclua pelo menos um EPI selecionado do estoque.';for(const it of d.items){const st=EPI.stock.find(x=>String(x.id)===String(it.estoque_id)),q=epiNum(it.quantidade);if(!st)return `EPI não encontrado no estoque: ${it.descricao}`;if(!(q>0))return `Quantidade inválida para ${st.descricao}.`;if(q>epiNum(st.saldo))return `Saldo insuficiente para ${st.descricao}. Disponível: ${epiNum(st.saldo).toLocaleString('pt-BR',{maximumFractionDigits:2})}.`;}return ''}
-async function epiHistory(){const body=document.getElementById('epiHistorico');if(!body)return;let rows=[];if(window.g360PreviewMode){try{rows=JSON.parse(localStorage.getItem('g360_termos_epi_v1')||'[]')}catch(e){}}else{const sb=window.g360SupabaseClient;if(sb){const r=await sb.from('termos_epi').select('id,data_entrega,matricula,colaborador_nome,status,termo_epi_itens(id)').order('data_entrega',{ascending:false}).limit(100);if(!r.error)rows=(r.data||[]).map(x=>({...x,itens:(x.termo_epi_itens||[]).length}))}}document.getElementById('epiHistCount').textContent=rows.length;body.innerHTML=rows.length?rows.map(r=>`<tr><td>${epiEsc(epiDate(r.data_entrega))}</td><td>${epiEsc(r.colaborador_nome||'')}</td><td>${epiEsc(r.matricula||'')}</td><td>${r.itens??0}</td><td>${epiEsc(r.status||'EMITIDO')}</td></tr>`).join(''):'<tr><td colspan="5"><div class="empty-state">Nenhum termo de EPI emitido.</div></td></tr>'}
-async function epiSave(){const d=epiDraft();if(!d.colaborador)return alert('Selecione o colaborador.');const err=epiValidateStock(d);if(err)return alert(err);if(!confirm('Salvar o termo e dar baixa automática destes EPIs no estoque?'))return;if(window.g360PreviewMode){for(const it of d.items){const st=EPI.stock.find(x=>String(x.id)===String(it.estoque_id));st.saldo=epiNum(st.saldo)-epiNum(it.quantidade)}epiSavePreviewStock();const rows=JSON.parse(localStorage.getItem('g360_termos_epi_v1')||'[]');rows.unshift({id:'epi_'+Date.now(),data_entrega:d.data_entrega,matricula:d.matricula,colaborador_nome:d.colaborador.nome,status:'EMITIDO',itens:d.items.length,itens_detalhe:d.items});localStorage.setItem('g360_termos_epi_v1',JSON.stringify(rows));await epiHistory();epiRenderStock();EPI.items=[];epiAdd();return alert('Termo salvo e estoque baixado na prévia.')}const sb=window.g360SupabaseClient;if(!sb)return alert('Supabase não conectado.');const obraId=window.g360GetSelectedObra?.()?.id||null;const payload=d.items.map(x=>({estoque_id:x.estoque_id,quantidade:epiNum(x.quantidade),data_entrega:x.entrega||d.data_entrega,data_devolucao:x.devolucao||null}));const r=await sb.rpc('g360_emitir_termo_epi',{p_obra_id:obraId,p_colaborador_id:d.colaborador.id||null,p_matricula:d.matricula,p_colaborador_nome:d.colaborador.nome,p_cpf:d.cpf||null,p_funcao:d.funcao||null,p_setor_equipe:d.setor||null,p_data_admissao:d.admissao||null,p_data_entrega:d.data_entrega,p_itens:payload});if(r.error)return alert('Erro ao emitir termo/dar baixa: '+r.error.message);await epiLoadStock();epiRenderStock();await epiHistory();EPI.items=[];epiAdd();alert('Termo salvo e baixa de estoque concluída.')}
+async function epiHistory(){
+  const body=document.getElementById('epiHistorico');if(!body)return;
+  let rows=[];
+  if(window.g360PreviewMode){
+    try{rows=JSON.parse(localStorage.getItem('g360_termos_epi_v1')||'[]')}catch(e){}
+  }else{
+    const sb=window.g360SupabaseClient;
+    if(sb){
+      const r=await sb.from('termos_epi').select('id,data_entrega,matricula,colaborador_nome,status,termo_epi_itens(id)').order('data_entrega',{ascending:false}).limit(100);
+      if(!r.error)rows=(r.data||[]).map(x=>({...x,itens:(x.termo_epi_itens||[]).length}));
+    }
+  }
+  document.getElementById('epiHistCount').textContent=rows.length;
+  body.innerHTML=rows.length?rows.map(r=>`<tr>
+    <td>${epiEsc(epiDate(r.data_entrega))}</td>
+    <td>${epiEsc(r.colaborador_nome||'')}</td>
+    <td>${epiEsc(r.matricula||'')}</td>
+    <td>${r.itens??0}</td>
+    <td>${epiEsc(r.status||'EMITIDO')}</td>
+    <td style="white-space:nowrap">
+      <button class="clear-btn" data-epi-term-edit="${epiEsc(r.id)}">✏️ Editar</button>
+      <button class="epi-stock-delete" data-epi-term-delete="${epiEsc(r.id)}">Excluir</button>
+    </td>
+  </tr>`).join(''):'<tr><td colspan="6"><div class="empty-state">Nenhum termo de EPI emitido.</div></td></tr>';
+
+  body.querySelectorAll('[data-epi-term-edit]').forEach(b=>b.onclick=()=>epiEditTerm(b.dataset.epiTermEdit));
+  body.querySelectorAll('[data-epi-term-delete]').forEach(b=>b.onclick=()=>epiDeleteTerm(b.dataset.epiTermDelete));
+}
+async function epiGetTermFull(id){
+  if(window.g360PreviewMode){
+    const rows=JSON.parse(localStorage.getItem('g360_termos_epi_v1')||'[]');
+    const row=rows.find(x=>String(x.id)===String(id));
+    if(!row)return null;
+    return {term:row,items:(row.itens_detalhe||[]).map(x=>({...x}))};
+  }
+  const sb=window.g360SupabaseClient;if(!sb)return null;
+  const [tr,it]=await Promise.all([
+    sb.from('termos_epi').select('*').eq('id',id).maybeSingle(),
+    sb.from('termo_epi_itens').select('*').eq('termo_id',id)
+  ]);
+  if(tr.error)throw tr.error;if(it.error)throw it.error;
+  return {term:tr.data,items:it.data||[]};
+}
+
+function epiFindColabFromTerm(term){
+  return EPI.colabs.find(c=>
+    (term.colaborador_id&&String(c.id)===String(term.colaborador_id))||
+    (term.matricula&&String(c.matricula??c.mat)===String(term.matricula))
+  )||{
+    id:term.colaborador_id||null,
+    matricula:term.matricula||'',
+    mat:term.matricula||'',
+    nome:term.colaborador_nome||'',
+    cpf:term.cpf||'',
+    admissao:term.data_admissao||'',
+    obra:term.obra||'',
+    funcao:term.funcao||'',
+    setor_equipe:term.setor_equipe||''
+  };
+}
+
+async function epiEditTerm(id){
+  try{
+    const full=await epiGetTermFull(id);if(!full)return alert('Termo não encontrado.');
+    const {term,items}=full;
+    EPI.editingTermId=id;
+    EPI.editingOriginal=full;
+
+    const c=epiFindColabFromTerm(term);
+    EPI.selected=c;epiFill(c);
+
+    const sel=document.getElementById('epiColaborador');
+    if(sel&&c?.id!=null)sel.value=String(c.id);
+    const nomeBusca=document.getElementById('epiNomeBusca');
+    if(nomeBusca)nomeBusca.value=String(c?.nome||term.colaborador_nome||'').toUpperCase();
+
+    document.getElementById('epiMatricula').value=term.matricula||c?.matricula||c?.mat||'';
+    document.getElementById('epiCpf').value=term.cpf||c?.cpf||'';
+    document.getElementById('epiAdmissao').value=epiDate(term.data_admissao||c?.admissao);
+    document.getElementById('epiFuncao').value=term.funcao||c?.funcao||'';
+    document.getElementById('epiSetor').value=term.setor_equipe||c?.setor_equipe||c?.setorEquipe||'';
+    document.getElementById('epiObra').value=term.obra||c?.obra||'';
+    document.getElementById('epiDataEntrega').value=String(term.data_entrega||'').slice(0,10);
+
+    EPI.items=items.map(x=>{
+      const st=EPI.stock.find(s=>String(s.id)===String(x.estoque_id));
+      return {
+        estoque_id:x.estoque_id||'',
+        descricao:x.descricao||st?.descricao||'',
+        ca:x.ca||st?.ca||'',
+        quantidade:epiNum(x.quantidade)||1,
+        entrega:String(x.data_entrega||term.data_entrega||'').slice(0,10),
+        devolucao:String(x.data_devolucao||'').slice(0,10)
+      };
+    });
+    if(!EPI.items.length)epiAdd();else epiRenderItems();
+
+    const btn=document.getElementById('epiSalvar');
+    if(btn)btn.textContent='💾 Atualizar termo e estoque';
+    document.getElementById('epiTermoPanel')?.scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){alert('Erro ao abrir termo para edição: '+(e?.message||e));}
+}
+
+async function epiDeleteTerm(id){
+  let full;
+  try{full=await epiGetTermFull(id);}catch(e){return alert('Erro ao carregar termo: '+(e?.message||e));}
+  if(!full)return alert('Termo não encontrado.');
+  const nome=full.term?.colaborador_nome||'colaborador';
+  if(!confirm(`Excluir o termo de EPI salvo para ${nome}?\n\nO estoque dos EPIs deste termo será devolvido automaticamente.`))return;
+
+  if(window.g360PreviewMode){
+    for(const it of full.items){
+      const st=EPI.stock.find(x=>String(x.id)===String(it.estoque_id));
+      if(st)st.saldo=epiNum(st.saldo)+epiNum(it.quantidade);
+    }
+    epiSavePreviewStock();
+    let rows=JSON.parse(localStorage.getItem('g360_termos_epi_v1')||'[]');
+    rows=rows.filter(x=>String(x.id)!==String(id));
+    localStorage.setItem('g360_termos_epi_v1',JSON.stringify(rows));
+    if(String(EPI.editingTermId)===String(id)){EPI.editingTermId=null;EPI.editingOriginal=null;}
+    await epiHistory();epiRenderStock();epiRenderItems();
+    return;
+  }
+
+  const sb=window.g360SupabaseClient;if(!sb)return alert('Supabase não conectado.');
+  const restored=[];
+  for(const it of full.items){
+    if(!it.estoque_id||!(epiNum(it.quantidade)>0))continue;
+    const r=await sb.rpc('g360_movimentar_estoque_epi',{p_epi_id:it.estoque_id,p_quantidade:epiNum(it.quantidade),p_tipo:'ENTRADA',p_motivo:'Estorno por exclusão de termo de EPI'});
+    if(r.error){
+      for(const rr of restored)await sb.rpc('g360_movimentar_estoque_epi',{p_epi_id:rr.estoque_id,p_quantidade:rr.quantidade,p_tipo:'SAIDA',p_motivo:'Reversão de estorno - falha ao excluir termo'});
+      return alert('Não foi possível devolver o estoque: '+r.error.message);
+    }
+    restored.push({estoque_id:it.estoque_id,quantidade:epiNum(it.quantidade)});
+  }
+
+  const di=await sb.from('termo_epi_itens').delete().eq('termo_id',id);
+  if(di.error){
+    for(const rr of restored)await sb.rpc('g360_movimentar_estoque_epi',{p_epi_id:rr.estoque_id,p_quantidade:rr.quantidade,p_tipo:'SAIDA',p_motivo:'Reversão de estorno - falha ao excluir itens'});
+    return alert('Erro ao excluir itens do termo: '+di.error.message);
+  }
+  const dt=await sb.from('termos_epi').delete().eq('id',id);
+  if(dt.error){
+    return alert('Os itens foram removidos, mas o termo não pôde ser excluído: '+dt.error.message);
+  }
+  if(String(EPI.editingTermId)===String(id)){EPI.editingTermId=null;EPI.editingOriginal=null;}
+  await epiLoadStock();epiRenderStock();await epiHistory();
+  try{window.g360Audit?.('sesmt_termo','EXCLUIR','termos_epi',String(id),nome,{itens:full.items.length});}catch(e){}
+}
+
+async function epiSave(){
+  const d=epiDraft();
+  if(!d.colaborador)return alert('Selecione o colaborador.');
+  const err=epiValidateStock(d);
+  if(err && !EPI.editingTermId)return alert(err);
+
+  // Edição de termo já salvo
+  if(EPI.editingTermId){
+    if(!confirm('Atualizar este termo de EPI? O estoque será reconciliado automaticamente.'))return;
+    const old=EPI.editingOriginal||await epiGetTermFull(EPI.editingTermId);
+    if(!old)return alert('Termo original não encontrado.');
+
+    if(window.g360PreviewMode){
+      for(const it of old.items){
+        const st=EPI.stock.find(x=>String(x.id)===String(it.estoque_id));
+        if(st)st.saldo=epiNum(st.saldo)+epiNum(it.quantidade);
+      }
+      for(const it of d.items){
+        const st=EPI.stock.find(x=>String(x.id)===String(it.estoque_id));
+        if(!st)return alert('EPI não encontrado no estoque: '+it.descricao);
+        if(epiNum(it.quantidade)>epiNum(st.saldo))return alert('Saldo insuficiente para '+st.descricao);
+        st.saldo=epiNum(st.saldo)-epiNum(it.quantidade);
+      }
+      epiSavePreviewStock();
+      const rows=JSON.parse(localStorage.getItem('g360_termos_epi_v1')||'[]');
+      const pos=rows.findIndex(x=>String(x.id)===String(EPI.editingTermId));
+      if(pos>=0)rows[pos]={...rows[pos],data_entrega:d.data_entrega,matricula:d.matricula,colaborador_nome:d.colaborador.nome,status:'EMITIDO',itens:d.items.length,itens_detalhe:d.items};
+      localStorage.setItem('g360_termos_epi_v1',JSON.stringify(rows));
+      EPI.editingTermId=null;EPI.editingOriginal=null;
+      document.getElementById('epiSalvar').textContent='💾 Salvar termo e dar baixa';
+      await epiHistory();epiRenderStock();EPI.items=[];epiAdd();
+      return alert('Termo atualizado e estoque reconciliado.');
+    }
+
+    const sb=window.g360SupabaseClient;if(!sb)return alert('Supabase não conectado.');
+
+    // 1) devolve temporariamente o estoque do termo antigo
+    const restored=[];
+    for(const it of old.items){
+      if(!it.estoque_id||!(epiNum(it.quantidade)>0))continue;
+      const r=await sb.rpc('g360_movimentar_estoque_epi',{p_epi_id:it.estoque_id,p_quantidade:epiNum(it.quantidade),p_tipo:'ENTRADA',p_motivo:'Estorno temporário para edição de termo de EPI'});
+      if(r.error)return alert('Erro ao preparar edição do estoque: '+r.error.message);
+      restored.push({estoque_id:it.estoque_id,quantidade:epiNum(it.quantidade)});
+    }
+
+    await epiLoadStock();
+    const stockErr=epiValidateStock(d);
+    if(stockErr){
+      for(const rr of restored)await sb.rpc('g360_movimentar_estoque_epi',{p_epi_id:rr.estoque_id,p_quantidade:rr.quantidade,p_tipo:'SAIDA',p_motivo:'Reversão do estorno da edição'});
+      await epiLoadStock();epiRenderStock();
+      return alert(stockErr);
+    }
+
+    // 2) emite o novo termo, já dando baixa dos novos itens
+    const obraId=window.g360GetSelectedObra?.()?.id||old.term?.obra_id||null;
+    const payload=d.items.map(x=>({estoque_id:x.estoque_id,quantidade:epiNum(x.quantidade),data_entrega:x.entrega||d.data_entrega,data_devolucao:x.devolucao||null}));
+    const nr=await sb.rpc('g360_emitir_termo_epi',{
+      p_obra_id:obraId,p_colaborador_id:d.colaborador.id||null,p_matricula:d.matricula,p_colaborador_nome:d.colaborador.nome,
+      p_cpf:d.cpf||null,p_funcao:d.funcao||null,p_setor_equipe:d.setor||null,p_data_admissao:d.admissao||null,
+      p_data_entrega:d.data_entrega,p_itens:payload
+    });
+    if(nr.error){
+      for(const rr of restored)await sb.rpc('g360_movimentar_estoque_epi',{p_epi_id:rr.estoque_id,p_quantidade:rr.quantidade,p_tipo:'SAIDA',p_motivo:'Reversão do estorno - falha ao atualizar termo'});
+      await epiLoadStock();epiRenderStock();
+      return alert('Erro ao atualizar termo: '+nr.error.message);
+    }
+
+    // 3) remove o termo antigo depois que o novo foi emitido com sucesso
+    const di=await sb.from('termo_epi_itens').delete().eq('termo_id',EPI.editingTermId);
+    if(di.error)return alert('Novo termo emitido, mas não foi possível remover os itens do termo antigo: '+di.error.message);
+    const dt=await sb.from('termos_epi').delete().eq('id',EPI.editingTermId);
+    if(dt.error)return alert('Novo termo emitido, mas não foi possível remover o termo antigo: '+dt.error.message);
+
+    const oldId=EPI.editingTermId;
+    EPI.editingTermId=null;EPI.editingOriginal=null;
+    document.getElementById('epiSalvar').textContent='💾 Salvar termo e dar baixa';
+    await epiLoadStock();epiRenderStock();await epiHistory();EPI.items=[];epiAdd();
+    try{window.g360Audit?.('sesmt_termo','EDITAR','termos_epi',String(oldId),d.colaborador.nome,{itens:d.items.length});}catch(e){}
+    return alert('Termo atualizado e estoque reconciliado.');
+  }
+
+  // Novo termo
+  if(err)return alert(err);
+  if(!confirm('Salvar o termo e dar baixa automática destes EPIs no estoque?'))return;
+  if(window.g360PreviewMode){
+    for(const it of d.items){const st=EPI.stock.find(x=>String(x.id)===String(it.estoque_id));st.saldo=epiNum(st.saldo)-epiNum(it.quantidade)}
+    epiSavePreviewStock();
+    const rows=JSON.parse(localStorage.getItem('g360_termos_epi_v1')||'[]');
+    rows.unshift({id:'epi_'+Date.now(),data_entrega:d.data_entrega,matricula:d.matricula,colaborador_nome:d.colaborador.nome,status:'EMITIDO',itens:d.items.length,itens_detalhe:d.items,colaborador_id:d.colaborador.id||null,cpf:d.cpf||null,funcao:d.funcao||null,setor_equipe:d.setor||null,data_admissao:d.admissao||null});
+    localStorage.setItem('g360_termos_epi_v1',JSON.stringify(rows));
+    await epiHistory();epiRenderStock();EPI.items=[];epiAdd();
+    return alert('Termo salvo e estoque baixado na prévia.');
+  }
+  const sb=window.g360SupabaseClient;if(!sb)return alert('Supabase não conectado.');
+  const obraId=window.g360GetSelectedObra?.()?.id||null;
+  const payload=d.items.map(x=>({estoque_id:x.estoque_id,quantidade:epiNum(x.quantidade),data_entrega:x.entrega||d.data_entrega,data_devolucao:x.devolucao||null}));
+  const r=await sb.rpc('g360_emitir_termo_epi',{p_obra_id:obraId,p_colaborador_id:d.colaborador.id||null,p_matricula:d.matricula,p_colaborador_nome:d.colaborador.nome,p_cpf:d.cpf||null,p_funcao:d.funcao||null,p_setor_equipe:d.setor||null,p_data_admissao:d.admissao||null,p_data_entrega:d.data_entrega,p_itens:payload});
+  if(r.error)return alert('Erro ao emitir termo/dar baixa: '+r.error.message);
+  await epiLoadStock();epiRenderStock();await epiHistory();EPI.items=[];epiAdd();
+  alert('Termo salvo e baixa de estoque concluída.');
+}
 async function epiPdf(){const d=epiDraft();if(!d.colaborador)return alert('Selecione o colaborador.');if(!d.items.length)return alert('Inclua pelo menos um EPI com C.A.');const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'pt',format:'a4',compress:true});const PW=doc.internal.pageSize.getWidth(),PH=doc.internal.pageSize.getHeight(),M=34,W=PW-M*2;const clean=v=>String(v??'').trim();function f(b=false,s=9.2){doc.setFont('helvetica',b?'bold':'normal');doc.setFontSize(s);doc.setTextColor(25,25,25)}function logo(x=M+4,y=12,w=96,h=48){try{doc.addImage(CCL_LOGO_B64,'PNG',x,y,w,h)}catch(e){}}function hdr(){logo();f(true,12.2);const tx=(M+112+PW-M)/2;doc.text('TERMO DE ENTREGA DE EPIs - EQUIPAMENTOS DE PROTEÇÃO INDIVIDUAL',tx,43,{align:'center'})}function rich(segs,x,y,w,size=9.4,lh=14){let cx=x,cy=y;for(const s of segs){for(const t of String(s.text??'').split(/(\s+)/).filter(Boolean)){f(!!s.bold,size);const tw=doc.getTextWidth(t);if(cx+tw>x+w&&t.trim()){cx=x;cy+=lh}doc.text(t,cx,cy);cx+=tw}}return cy+lh}function plain(t,x,y,w,size=9.1,lh=13){f(false,size);const ls=doc.splitTextToSize(t,w);doc.text(ls,x,y,{lineHeightFactor:lh/size});return y+ls.length*lh}hdr();let y=96;const nome=clean(d.colaborador.nome).toUpperCase(),ent=epiDate(d.data_entrega),adm=epiDate(d.admissao);y=rich([{text:'Pelo presente termo, eu, '},{text:nome,bold:true},{text:', CPF nº '},{text:d.cpf||'NÃO INFORMADO',bold:true},{text:', matrícula nº '},{text:d.matricula,bold:true},{text:', admitido (a) em '},{text:adm,bold:true},{text:', lotado na obra '},{text:d.obra,bold:true},{text:', declaro que recebi, na data de '},{text:ent,bold:true},{text:', os Equipamentos de Proteção Individual (EPIs) relacionados abaixo, com seus respectivos Certificados de Aprovação (C.A.), em condições adequadas de uso.'}],M,y,W,9.5,14.2)+8;f(true,11);doc.text('EPIs ENTREGUES',PW/2,y,{align:'center'});y+=8;doc.autoTable({startY:y,margin:{left:M,right:M,bottom:32},head:[['EPI / DESCRIÇÃO','C.A.','QUANTIDADE','DATA DE ENTREGA','DEVOLUÇÃO / SUBSTITUIÇÃO','ASSINATURA DO COLABORADOR']],body:d.items.map(x=>[clean(x.descricao),clean(x.ca),String(x.quantidade||1),epiDate(x.entrega)||ent,epiDate(x.devolucao),'']),theme:'grid',styles:{font:'helvetica',fontSize:8.2,textColor:[20,20,20],lineColor:[30,30,30],lineWidth:.45,cellPadding:5,valign:'middle'},headStyles:{fontStyle:'bold',halign:'center',fillColor:[255,255,255],textColor:[10,10,10]},columnStyles:{0:{cellWidth:220},1:{cellWidth:76,halign:'center'},2:{cellWidth:70,halign:'center'},3:{cellWidth:100,halign:'center'},4:{cellWidth:120,halign:'center'},5:{cellWidth:'auto'}},rowPageBreak:'avoid',showHead:'everyPage'});doc.addPage('a4','landscape');logo(PW/2-48,12,96,48);y=82;f(true,12);doc.text('COMPROMISSO E RESPONSABILIDADE - EPI',PW/2,y,{align:'center'});y+=25;const clauses=[['1.  Declaro que recebi os EPIs acima relacionados em perfeito estado de conservação e funcionamento, comprometendo-me a utilizá-los durante toda a execução das atividades para as quais forem exigidos.'],['2.  Comprometo-me a utilizar cada EPI corretamente, apenas para a finalidade a que se destina, seguindo as orientações de segurança, treinamentos e procedimentos da empresa.'],['3.  Sou responsável pela guarda, higienização e conservação dos EPIs sob minha responsabilidade, comunicando imediatamente ao SESMT ou responsável qualquer dano, perda, desgaste, inadequação ou necessidade de substituição.'],['4.  Comprometo-me a não emprestar, transferir ou modificar os EPIs recebidos sem autorização, bem como a devolvê-los quando solicitado, na substituição, mudança de atividade ou desligamento.'],['5.  Declaro ter recebido orientação quanto ao uso, ajuste, limitações, conservação e importância dos EPIs, inclusive quanto à obrigação de utilizá-los conforme as normas de segurança e saúde no trabalho aplicáveis.'],['6.  Declaro estar ciente de que o descumprimento das orientações de segurança e a recusa injustificada ao uso dos EPIs poderão ser tratados conforme as normas internas da empresa e a legislação aplicável.']];for(const c of clauses)y=rich([{text:c[0]}],M+10,y,W-20,9.1,13)+5;y=plain('Por meio deste, confirmo estar ciente das condições acima e comprometo-me a cumpri-las integralmente.',M+10,y,W-20,9.1,13)+14;const dt=d.data_entrega?new Date(d.data_entrega+'T12:00:00'):new Date(),meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];f(false,9.4);doc.text(`Senador Canedo/GO, ${dt.getDate()} de ${meses[dt.getMonth()]} de ${dt.getFullYear()}.`,PW-M,y,{align:'right'});y+=34;const lx=M+82,rx=PW/2+68,lw=210;doc.line(lx,y,lx+lw,y);doc.line(rx,y,rx+lw,y);f(true,9);doc.text('Assinatura do Colaborador',lx+lw/2,y+14,{align:'center'});doc.text('Assinatura do Responsável / SESMT',rx+lw/2,y+14,{align:'center'});const pages=doc.getNumberOfPages();for(let i=1;i<=pages;i++){doc.setPage(i);f(false,7.4);doc.setTextColor(95);doc.text(`Página ${i} de ${pages}`,PW-M,PH-16,{align:'right'})}doc.save(`TERMO_EPI_${String(d.matricula||nome).replace(/[^A-Za-z0-9_-]+/g,'_')}_${d.data_entrega||'SEM_DATA'}.pdf`)}
 async function epiInit(){const sel=document.getElementById('epiColaborador');if(!sel)return;await epiLoadColabs();await epiLoadStock();sel.innerHTML='<option value="">Selecione o colaborador...</option>'+EPI.colabs.map(c=>`<option value="${epiEsc(c.id??c.matricula??c.mat)}">${epiEsc(String(c.nome||'').toUpperCase())}</option>`).join('');sel.onchange=()=>epiPickById(sel.value);if(!document.getElementById('epiNomeBusca')){const inp=document.createElement('input');inp.id='epiNomeBusca';inp.placeholder='Digite parte do nome';inp.style.textTransform='uppercase';inp.style.fontWeight='700';sel.parentNode.insertBefore(inp,sel);sel.style.display='none'}epiTypeahead('epiColaborador','epiNomeBusca',false);epiTypeahead('epiColaborador','epiMatricula',true);document.getElementById('epiDataEntrega').value=document.getElementById('epiDataEntrega').value||new Date().toISOString().slice(0,10);document.getElementById('epiAddItem').onclick=epiAdd;document.getElementById('epiSalvar').onclick=epiSave;document.getElementById('epiGerarPdf').onclick=epiPdf;document.getElementById('epiStockEntrada').onclick=epiStockAdd;document.getElementById('epiLimpar').onclick=()=>{EPI.selected=null;EPI.items=[];sel.value='';['epiNomeBusca','epiMatricula','epiCpf','epiAdmissao','epiObra','epiFuncao','epiSetor'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});document.getElementById('epiDataEntrega').value=new Date().toISOString().slice(0,10);epiAdd()};epiRenderStock();if(!EPI.items.length)epiAdd();else epiRenderItems();await epiHistory()}
 window.g360EpiInit=epiInit;
@@ -12296,6 +13166,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
   <select name="perfil" required>
     <option value="ENGENHEIROS">ENGENHEIROS — somente consulta, inclusive multiobra</option>
     <option value="RH">RH — acesso completo ao RH/DP</option>
+    <option value="TECNICO_SEGURANCA">TÉCNICO DE SEGURANÇA — acesso completo somente ao SESMT</option>
     <option value="GESTOR">GESTOR — acesso operacional completo</option>
   </select>
 </label><label class="full">Obras permitidas
@@ -12310,7 +13181,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
     <div class="g360-obras-multi-panel" id="g360ObrasMultiPanel"></div>
     <div class="g360-obras-selected-count" id="g360ObrasSelectedCount">0 obras selecionadas</div>
   </div>
-  <span class="g360-obras-multi-help">O perfil define o que o usuário pode fazer; as obras definem onde ele pode acessar. ENGENHEIROS continua somente consulta, mesmo com várias obras vinculadas.</span>
+  <span class="g360-obras-multi-help">O perfil define o que o usuário pode fazer; as obras definem onde ele pode acessar. TÉCNICO DE SEGURANÇA acessa somente SESMT, Estoque de EPIs e Termo de Entrega de EPIs, com acesso completo.</span>
 </label><label>Status<select name="ativo"><option value="true">ATIVO</option><option value="false">INATIVO</option></select></label><div class="g360-user-foot"><button type="button" class="clear-btn" id="g360UserCancel">Cancelar</button><button type="submit" class="crud-primary" id="g360UserSave">💾 Salvar usuário</button></div></form></div></div>
 <div id="g360CloneModal" aria-hidden="true"><div class="g360-clone-box"><div class="crud-pro-head"><h2>Duplicar acesso</h2><button type="button" class="crud-mini" id="g360CloneClose">✕ Fechar</button></div><form id="g360CloneForm" class="g360-clone-form"><input type="hidden" name="source_id"><div class="g360-clone-note" id="g360CloneSourceLabel">Copiar acesso de:</div><label>Usuário destino<select name="target_id" required><option value="">Selecione o usuário</option></select></label><div class="g360-clone-checks"><label><input type="checkbox" name="copy_profile" checked> Copiar perfil</label><label><input type="checkbox" name="copy_obra" checked> Copiar obra</label><label><input type="checkbox" name="copy_permissions" checked> Copiar permissões</label><label><input type="checkbox" name="replace_permissions" checked> Substituir permissões atuais</label></div><div class="g360-clone-note">Não copia nome, e-mail, senha, UUID, status ativo/inativo nem privilégio de Administrador Mestre.</div><div class="g360-clone-foot"><button type="button" class="clear-btn" id="g360CloneCancel">Cancelar</button><button type="submit" class="crud-primary">📋 Duplicar acesso</button></div></form></div></div>
 <script>
@@ -12324,16 +13195,18 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
   const blankPerm=(v=false)=>Object.fromEntries(ACTIONS.map(a=>[a,v]));
   const allPerm=()=>blankPerm(true);
 
-  const PERFIS_NATIVOS=new Set(['ENGENHEIROS','RH','GESTOR']);
+  const PERFIS_NATIVOS=new Set(['ENGENHEIROS','RH','TECNICO_SEGURANCA','GESTOR']);
   const RH_MODULES=new Set([
     'colaboradores','cargos_salarios','organograma',
     'admissao','demissao','movimentacao','advertencia','folga'
   ]);
+  const SESMT_MODULES=new Set(['sesmt','sesmt_estoque','sesmt_termo']);
 
   function normPerfil(v){
     const p=String(v||'').trim().toUpperCase();
     if(p==='RH / DP'||p==='RH/DP')return 'RH';
     if(p==='GESTOR'||p==='ADMINISTRADOR')return 'GESTOR';
+    if(['TECNICO_SEGURANCA','TÉCNICO DE SEGURANÇA','TECNICO DE SEGURANCA','TÉCNICO SEGURANÇA','TECNICO SEGURANCA'].includes(p))return 'TECNICO_SEGURANCA';
     if(p==='CONSULTA'||p==='ENGENHEIRO'||p==='ENGENHEIROS')return 'ENGENHEIROS';
     return p;
   }
@@ -12373,6 +13246,13 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
       return out;
     }
 
+    if(p==='TECNICO_SEGURANCA'){
+      if(SESMT_MODULES.has(module)){
+        return allPerm();
+      }
+      return out;
+    }
+
     return null; // perfil legado: usa linhas antigas de usuario_permissoes
   }
 
@@ -12382,6 +13262,11 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
 
     // V176: se houver uma matriz personalizada salva para o usuário,
     // ela sempre prevalece, mesmo quando o perfil é nativo.
+    const perfilAtual=normPerfil(u?.perfil);
+    if(perfilAtual==='TECNICO_SEGURANCA'){
+      return nativePerm(perfilAtual,module) || blankPerm(false);
+    }
+
     const custom=perms[id]?.[module];
     if(custom)return {...blankPerm(false),...custom};
 
@@ -12744,6 +13629,52 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
     modal.classList.add('open');
   }
 
+  async function syncTecnicoSegurancaPermissoes(userId,obraIds,perfil){
+    if(!PROD || !sb)return;
+    const uid=String(userId||'').trim();
+    if(!uid)return;
+
+    const p=normPerfil(perfil);
+    const ids=[...new Set((obraIds||[]).map(String).filter(Boolean))];
+
+    // O perfil TÉCNICO DE SEGURANÇA é fechado: somente os três módulos SESMT.
+    if(p==='TECNICO_SEGURANCA'){
+      const del=await sb.from('usuario_permissoes').delete().eq('usuario_id',uid);
+      if(del.error)throw del.error;
+
+      const rows=[];
+      for(const obra_id of ids){
+        for(const modulo of ['sesmt','sesmt_estoque','sesmt_termo']){
+          rows.push({
+            usuario_id:uid,
+            obra_id,
+            modulo,
+            pode_visualizar:true,
+            pode_criar:true,
+            pode_editar:true,
+            pode_aprovar:true,
+            pode_ativar:true,
+            pode_excluir:true,
+            pode_exportar:true
+          });
+        }
+      }
+      if(rows.length){
+        const ins=await sb.from('usuario_permissoes').upsert(rows,{onConflict:'usuario_id,obra_id,modulo'});
+        if(ins.error)throw ins.error;
+      }
+      return;
+    }
+
+    // Se o usuário saiu do perfil Técnico de Segurança, remove somente
+    // as permissões automáticas do SESMT para que o novo perfil nativo prevaleça.
+    const tecnicoMods=['sesmt','sesmt_estoque','sesmt_termo'];
+    for(const modulo of tecnicoMods){
+      const del=await sb.from('usuario_permissoes').delete().eq('usuario_id',uid).eq('modulo',modulo);
+      if(del.error)throw del.error;
+    }
+  }
+
   async function syncUserObras(userId,obraIds){
     const uid=String(userId||'').trim();
     const ids=[...new Set((obraIds||[]).map(String).filter(Boolean))];
@@ -12821,7 +13752,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
 
       if(!payload.nome||!payload.email)return toastPerm('Informe nome e e-mail.');
       if(!obraIds.length)return toastPerm('Selecione pelo menos uma obra para o usuário.');
-      if(!PERFIS_NATIVOS.has(payload.perfil))return toastPerm('Selecione ENGENHEIROS, RH ou GESTOR.');
+      if(!PERFIS_NATIVOS.has(payload.perfil))return toastPerm('Selecione ENGENHEIROS, RH, TÉCNICO DE SEGURANÇA ou GESTOR.');
 
       let uid=id;
 
@@ -12841,6 +13772,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
       }
 
       await syncUserObras(uid,obraIds);
+      await syncTecnicoSegurancaPermissoes(uid,obraIds,payload.perfil);
 
       toastPerm(id
         ? `Usuário atualizado com ${obraIds.length} obra(s).`
