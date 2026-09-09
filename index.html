@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- V199: exclusão de movimentação por GESTOR/MASTER + usuário comum somente operação -->
 <!-- V198: padronização das fontes da tela SESMT / Estoque de EPIs -->
 <!-- V197: PDF do romaneio diário de movimentações de EPI -->
 <!-- V196: itens abaixo do mínimo + PDF + sugestão de compra no cadastro do EPI -->
@@ -3419,8 +3420,8 @@ html.g360-ui-ready .content-col {
           </div>
           <div class="table-scroll sesmt-stock-table-wrap">
             <table class="sesmt-stock-table">
-              <thead><tr><th>Data/Hora</th><th>Tipo</th><th>EPI</th><th>Qtd.</th><th>Colaborador</th><th>Motivo</th><th>Usuário</th></tr></thead>
-              <tbody id="sesmtMovHistorico"><tr><td colspan="7"><div class="empty-state">Carregando movimentações...</div></td></tr></tbody>
+              <thead><tr><th>Data/Hora</th><th>Tipo</th><th>EPI</th><th>Qtd.</th><th>Colaborador</th><th>Motivo</th><th>Usuário</th><th>Ações</th></tr></thead>
+              <tbody id="sesmtMovHistorico"><tr><td colspan="8"><div class="empty-state">Carregando movimentações...</div></td></tr></tbody>
             </table>
           </div>
         </section>
@@ -8371,6 +8372,7 @@ function epiRenderStock(){
   tb.querySelectorAll('[data-epi-delete]').forEach(b=>b.onclick=()=>epiStockDelete(b.dataset.epiDelete));
 }
 async function epiStockEdit(id){
+  if(typeof window.g360IsGestor==='function'&&!window.g360IsGestor())return alert('Somente o perfil GESTOR ou MASTER pode editar o cadastro do estoque.');
   const item=EPI.stock.find(x=>String(x.id)===String(id));if(!item)return;
 
   const descricao=prompt('Descrição do EPI:',item.descricao||'');
@@ -8428,6 +8430,7 @@ async function epiStockEdit(id){
   try{window.g360Audit?.('estoque_epi','EDITAR','epi_estoque',String(id),String(descricao).trim().toUpperCase(),{saldo_anterior:oldSaldo,saldo_novo:novoSaldo});}catch(e){}
 }
 async function epiStockDelete(id){
+  if(typeof window.g360IsGestor==='function'&&!window.g360IsGestor())return alert('Somente o perfil GESTOR ou MASTER pode excluir itens do estoque.');
   const item=EPI.stock.find(x=>String(x.id)===String(id));
   if(!item)return;
 
@@ -13530,6 +13533,10 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
   function classifyAction(el){const txt=(el.textContent||'').toLowerCase();if(el.classList.contains('danger')||/excluir|remover|apagar|delet/.test(txt))return'excluir';if(/aprovar|aprovação/.test(txt))return'aprovar';if(el.classList.contains('toggle')||/ativar|inativar/.test(txt))return'ativar';if(/editar|alterar|salvar|atualizar|preencher|registrar/.test(txt))return'editar';if(/novo|nova|cadastrar|adicionar|criar|incluir|solicitar/.test(txt))return'criar';if(/export|pdf|excel|xls|csv|baixar/.test(txt))return'exportar';return null}
   function actionFromCrudButton(el){if(el.matches('.crud-row-actions .danger'))return'excluir';if(el.matches('.crud-row-actions .toggle'))return'ativar';return classifyAction(el)}
   function ensureNote(v){let n=v.querySelector(':scope > .g360-access-note');if(!n){n=document.createElement('div');n.className='g360-access-note';v.insertBefore(n,v.firstChild)}return n}
+
+  window.g360CurrentUser=()=>user(currentId);
+  window.g360IsGestor=()=>{const u=user(currentId);return !!u?.master || normPerfil(u?.perfil)==='GESTOR';};
+
   function applyViewControls(view,module){const p=perm(currentId,module),note=ensureNote(view);note.classList.remove('show');note.textContent='';view.querySelectorAll('button,a.btn-primary,a.clear-btn').forEach(el=>{if(el.matches('[data-g360-competencia="1"],[data-g360-fechamento-action="1"]')||el.closest('.filters,.org-filters,#view-usuariosPermissoes,#g360FjCompetModal,#g360FjEditModal'))return;const a=actionFromCrudButton(el);if(a)el.classList.toggle('g360-perm-hidden',!p[a])})}
   function applyAccess(fallback=false){document.querySelectorAll('.side-link[data-view]').forEach(link=>{const m=moduleByView(link.dataset.view);if(m)link.classList.toggle('g360-perm-hidden',!window.g360Can(m,'visualizar'))});const adv=document.getElementById('g360AdvertenciaMenu');if(adv){adv.classList.remove('g360-perm-hidden');adv.style.setProperty('display','flex','important');}const adminGroup=document.querySelector('.g360-perm-admin-group');if(adminGroup)adminGroup.style.display=window.g360Can('usuarios','visualizar')?'':'none';const auditMenu=document.getElementById('g360AuditMenu');if(auditMenu){const ok=window.g360Can('usuarios','visualizar');auditMenu.classList.toggle('g360-perm-hidden',!ok);auditMenu.style.setProperty('display',ok?'flex':'none','important');}document.querySelectorAll('.view').forEach(v=>{const m=moduleByView(v.id.replace(/^view-/,''));if(m&&window.g360Can(m,'visualizar'))applyViewControls(v,m)});if(fallback){const m=moduleByView(currentView());if(m&&!window.g360Can(m,'visualizar'))document.querySelector('.side-link[data-view="executivo"]:not(.g360-perm-hidden)')?.click()}renderUsers();renderMatrix()}
   async function adminApi(method,body){const {data:{session}}=await sb.auth.getSession();if(!session)throw new Error('Sessão expirada');const r=await fetch('/api/admin-users',{method,headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:body?JSON.stringify(body):undefined});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||data.msg||data.message||'Falha na administração de usuários');return data}
@@ -17070,7 +17077,7 @@ function renderEstoqueFiltrado(){
     if(sit==='OK')show=show&&ok;
     tr.style.display=show?'':'none';
   });
-  stockOptions();renderMinimo();
+  stockOptions();renderMinimo();aplicarAcessoEstoqueSesmt();
 }
 
 async function ensureColabs(){
@@ -17157,6 +17164,47 @@ async function loadMovs(){
   S.movs=rows;renderMovs();
 }
 
+function sesmtGestor(){
+  try{return typeof window.g360IsGestor==='function'?window.g360IsGestor():false}catch(e){return false}
+}
+
+function aplicarAcessoEstoqueSesmt(){
+  const gestor=sesmtGestor();
+  document.querySelectorAll('#view-sesmtEstoque [data-epi-edit],#view-sesmtEstoque [data-epi-delete]').forEach(el=>el.style.display=gestor?'':'none');
+  const inv=$('sesmtInventarioAplicar');if(inv)inv.style.display=gestor?'':'none';
+}
+
+async function excluirMovimentacao(id){
+  if(!sesmtGestor())return alert('Somente o perfil GESTOR ou MASTER pode excluir movimentações de EPI.');
+  const mov=(S.movs||[]).find(x=>String(x.id)===String(id));
+  if(!mov)return alert('Movimentação não encontrada.');
+  const epi=mov.epi_descricao||'EPI';
+  const qtd=Number(mov.quantidade||0).toLocaleString('pt-BR',{maximumFractionDigits:2});
+  if(!confirm(`Excluir esta movimentação?\n\n${mov.tipo||''} · ${epi}\nQuantidade: ${qtd}\n${mov.colaborador_nome?`Colaborador: ${mov.colaborador_nome}\n`:''}\nO saldo do estoque será recalculado automaticamente.`))return;
+
+  try{
+    if(window.g360PreviewMode){
+      const rows=previewMovs();
+      const i=rows.findIndex(x=>String(x.id)===String(id));
+      if(i<0)return;
+      const r=rows[i], item=(window.EPI?.stock||[]).find(x=>String(x.id)===String(r.epi_id));
+      if(item){
+        const delta=Number(r.saldo_posterior||0)-Number(r.saldo_anterior||0);
+        item.saldo=Math.max(0,Number(item.saldo||0)-delta);
+        if(typeof window.epiSavePreviewStock==='function')window.epiSavePreviewStock();
+      }
+      rows.splice(i,1);savePreviewMovs(rows);
+    }else{
+      const sb=window.g360SupabaseClient;if(!sb)throw new Error('Supabase não conectado.');
+      const r=await sb.rpc('g360_excluir_movimento_epi_v199',{p_movimento_id:id});
+      if(r.error)throw r.error;
+      if(typeof window.epiLoadStock==='function')await window.epiLoadStock();
+    }
+    renderEstoqueFiltrado();await loadMovs();
+    try{window.g360Audit?.('estoque_epi','EXCLUIR','epi_movimentacoes',String(id),epi,{tipo:mov.tipo,quantidade:mov.quantidade,colaborador:mov.colaborador_nome||null});}catch(e){}
+  }catch(e){alert('Não foi possível excluir a movimentação.\n\n'+(e?.message||e));}
+}
+
 function renderMovs(){
   const ini=$('sesmtHistDataIni')?.value||'',fim=$('sesmtHistDataFim')?.value||'',tipo=$('sesmtHistTipo')?.value||'',q=norm($('sesmtHistBusca')?.value);
   let rows=S.movs.filter(r=>{
@@ -17171,7 +17219,9 @@ function renderMovs(){
     <td><b>${esc(r.tipo||'')}</b></td><td>${esc(r.epi_descricao||'')}</td><td>${Number(r.quantidade||0).toLocaleString('pt-BR')}</td>
     <td>${esc(r.colaborador_nome||'—')}${r.matricula?`<div class="sesmt-muted">${esc(r.matricula)}</div>`:''}</td>
     <td>${esc(r.motivo||'—')}</td><td>${esc(r.usuario_nome||r.created_by_nome||'—')}</td>
-  </tr>`).join(''):'<tr><td colspan="7"><div class="empty-state">Nenhuma movimentação encontrada.</div></td></tr>';
+    <td>${sesmtGestor()?`<button type="button" class="epi-stock-delete" data-mov-delete="${esc(r.id)}">Excluir</button>`:'—'}</td>
+  </tr>`).join(''):'<tr><td colspan="8"><div class="empty-state">Nenhuma movimentação encontrada.</div></td></tr>';
+  body?.querySelectorAll('[data-mov-delete]').forEach(b=>b.onclick=()=>excluirMovimentacao(b.dataset.movDelete));
 
   const hoje=today(),hojeRows=S.movs.filter(r=>String(r.data_movimento||r.created_at||'').slice(0,10)===hoje&&String(r.tipo)==='SAIDA');
   if($('sesmtMovHoje'))$('sesmtMovHoje').textContent=hojeRows.length;
@@ -17303,6 +17353,7 @@ function renderInventario(){
 }
 
 async function aplicarInventario(){
+  if(!sesmtGestor())return alert('Somente o perfil GESTOR ou MASTER pode aplicar ajustes de inventário.');
   const dif=S.inventario.filter(x=>Number(x.fisico)!==Number(x.sistema));
   if(!dif.length)return alert('Nenhuma diferença encontrada no inventário.');
   if(!confirm(`Aplicar o inventário e ajustar ${dif.length} item(ns) no estoque?`))return;
@@ -17343,7 +17394,7 @@ async function init(){
   await ensureColabs();
   if(typeof window.epiLoadStock==='function')await window.epiLoadStock();
   if(typeof window.epiRenderStock==='function')window.epiRenderStock();
-  stockOptions();renderMinimo();colabSearch();renderInventario();await loadMovs();
+  stockOptions();renderMinimo();aplicarAcessoEstoqueSesmt();colabSearch();renderInventario();await loadMovs();
 
   $('sesmtMovSalvar').onclick=registrarMov;$('sesmtMovLimpar').onclick=clearMov;
   if($('sesmtMinimoPdf'))$('sesmtMinimoPdf').onclick=gerarPdfEstoqueMinimo;
