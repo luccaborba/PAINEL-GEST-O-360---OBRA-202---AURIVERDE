@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- V200: corrige identificação da obra no inventário e movimentações SESMT -->
 <!-- V199: exclusão de movimentação por GESTOR/MASTER + usuário comum somente operação -->
 <!-- V198: padronização das fontes da tela SESMT / Estoque de EPIs -->
 <!-- V197: PDF do romaneio diário de movimentações de EPI -->
@@ -8468,8 +8469,53 @@ async function epiStockMove(item,qtd,tipo='ENTRADA',motivo='Movimentação manua
   if(window.g360PreviewMode){const old=epiNum(item.saldo);item.saldo=tipo==='SAIDA'?old-qtd:old+qtd;item.updated_at=new Date().toISOString();epiSavePreviewStock();epiRenderStock();epiRenderItems();return true}
   const sb=window.g360SupabaseClient;const r=await sb.rpc('g360_movimentar_estoque_epi',{p_epi_id:item.id,p_quantidade:qtd,p_tipo:tipo,p_motivo:motivo});if(r.error){alert('Erro ao movimentar estoque: '+r.error.message);return false}await epiLoadStock();epiRenderStock();epiRenderItems();return true
 }
-async function epiStockAdd(){const descricao=document.getElementById('epiStockDescricao').value.trim().toUpperCase(),ca=document.getElementById('epiStockCa').value.trim(),codigo=document.getElementById('epiStockCodigo').value.trim().toUpperCase(),qtd=Number(document.getElementById('epiStockQtd').value||0),min=Number(document.getElementById('epiStockMin').value||0);if(!descricao||!ca)return alert('Informe descrição e C.A.');if(!(qtd>0))return alert('Informe uma quantidade de entrada maior que zero.');const same=EPI.stock.find(x=>String(x.descricao).toUpperCase()===descricao&&String(x.ca)===ca);if(same){if(min>=0&&epiNum(same.estoque_minimo)!==min){if(window.g360PreviewMode){same.estoque_minimo=min}else{await window.g360SupabaseClient.from('epi_estoque').update({estoque_minimo:min}).eq('id',same.id)}}await epiStockMove(same,qtd,'ENTRADA','Entrada pelo cadastro de estoque');}else if(window.g360PreviewMode){const row={id:'epi_stock_'+Date.now(),obra_id:null,codigo:codigo||('EPI-'+String(Date.now()).slice(-6)),descricao,ca,unidade:'UN',saldo:qtd,estoque_minimo:min,sugestao_compra:sugestaoCompra,sugestao_compra:sugestaoCompra,ativo:true,created_at:new Date().toISOString()};EPI.stock.push(row);epiSavePreviewStock();epiRenderStock();epiRenderItems()}else{const sb=window.g360SupabaseClient,obraId=window.g360GetSelectedObra?.()?.id||null;const ins=await sb.from('epi_estoque').insert({obra_id:obraId,codigo:codigo||null,descricao,ca,unidade:'UN',saldo:0,estoque_minimo:min,ativo:true}).select('*').single();if(ins.error)return alert('Erro ao cadastrar EPI: '+ins.error.message);await epiStockMove(ins.data,qtd,'ENTRADA','Estoque inicial do EPI')}
-  ['epiStockDescricao','epiStockCa','epiStockCodigo'].forEach(id=>document.getElementById(id).value='');document.getElementById('epiStockQtd').value='1';
+async function epiStockAdd(){
+  const descricao=document.getElementById('epiStockDescricao').value.trim().toUpperCase();
+  const ca=document.getElementById('epiStockCa').value.trim();
+  const codigo=document.getElementById('epiStockCodigo').value.trim().toUpperCase();
+  const qtd=Number(document.getElementById('epiStockQtd').value||0);
+  const min=Number(document.getElementById('epiStockMin').value||0);
+  const sugestaoCompra=Number(document.getElementById('epiStockSugestaoCompra')?.value||0);
+  if(!descricao||!ca)return alert('Informe descrição e C.A.');
+  if(!(qtd>0))return alert('Informe uma quantidade de entrada maior que zero.');
+  if(sugestaoCompra<0)return alert('Sugestão de compra inválida.');
+
+  const same=EPI.stock.find(x=>String(x.descricao).toUpperCase()===descricao&&String(x.ca)===ca);
+  if(same){
+    if(window.g360PreviewMode){
+      same.estoque_minimo=min;
+      same.sugestao_compra=sugestaoCompra;
+      epiSavePreviewStock();
+    }else{
+      const up=await window.g360SupabaseClient.from('epi_estoque')
+        .update({estoque_minimo:min,sugestao_compra:sugestaoCompra})
+        .eq('id',same.id);
+      if(up.error)return alert('Erro ao atualizar o EPI: '+up.error.message);
+    }
+    await epiStockMove(same,qtd,'ENTRADA','Entrada pelo cadastro de estoque');
+  }else if(window.g360PreviewMode){
+    const row={
+      id:'epi_stock_'+Date.now(),obra_id:null,
+      codigo:codigo||('EPI-'+String(Date.now()).slice(-6)),
+      descricao,ca,unidade:'UN',saldo:qtd,estoque_minimo:min,
+      sugestao_compra:sugestaoCompra,ativo:true,created_at:new Date().toISOString()
+    };
+    EPI.stock.push(row);epiSavePreviewStock();epiRenderStock();epiRenderItems();
+  }else{
+    const sb=window.g360SupabaseClient,oid=window.g360GetSelectedObra?.()?.id||window.G360_ACTIVE_OBRA_ID||null;
+    if(!oid)return alert('Selecione uma obra antes de cadastrar o EPI.');
+    const ins=await sb.from('epi_estoque').insert({
+      obra_id:oid,codigo:codigo||null,descricao,ca,unidade:'UN',saldo:0,
+      estoque_minimo:min,sugestao_compra:sugestaoCompra,ativo:true
+    }).select('*').single();
+    if(ins.error)return alert('Erro ao cadastrar EPI: '+ins.error.message);
+    await epiStockMove(ins.data,qtd,'ENTRADA','Estoque inicial do EPI');
+  }
+
+  ['epiStockDescricao','epiStockCa','epiStockCodigo'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('epiStockQtd').value='1';
+  document.getElementById('epiStockMin').value='0';
+  if(document.getElementById('epiStockSugestaoCompra'))document.getElementById('epiStockSugestaoCompra').value='0';
 }
 function epiFill(c){EPI.selected=c||null;document.getElementById('epiMatricula').value=c?String(c.matricula??c.mat??''):'';document.getElementById('epiCpf').value=c?.cpf||'';document.getElementById('epiAdmissao').value=epiDate(c?.admissao);document.getElementById('epiObra').value=c?.obra||'';document.getElementById('epiFuncao').value=c?.funcao||'';document.getElementById('epiSetor').value=c?.setor_equipe||c?.setorEquipe||c?.equipe||''}
 function epiPickById(v){const c=EPI.colabs.find(x=>String(x.id??x.matricula??x.mat)===String(v));epiFill(c)}
@@ -17140,8 +17186,10 @@ async function registrarMov(){
       savePreviewMovs(rows);
     }else{
       const sb=window.g360SupabaseClient;if(!sb)throw new Error('Supabase não conectado.');
-      const r=await sb.rpc('g360_registrar_movimento_epi_v195',{
-        p_epi_id:epiId,p_tipo:tipo,p_quantidade:qtd,p_data_movimento:data,
+      const oid=obraId();
+      if(!oid)throw new Error('Selecione uma obra antes de registrar a movimentação.');
+      const r=await sb.rpc('g360_registrar_movimento_epi_v200',{
+        p_obra_id:oid,p_epi_id:epiId,p_tipo:tipo,p_quantidade:qtd,p_data_movimento:data,
         p_colaborador_id:S.colab?.id||null,p_matricula:S.colab?.matricula??S.colab?.mat??null,p_colaborador_nome:S.colab?.nome||null,p_motivo:motivo||null
       });
       if(r.error)throw r.error;
@@ -17371,7 +17419,9 @@ async function aplicarInventario(){
     }else{
       const sb=window.g360SupabaseClient;if(!sb)throw new Error('Supabase não conectado.');
       const payload=dif.map(x=>({epi_id:x.epi_id,saldo_sistema:x.sistema,saldo_fisico:x.fisico}));
-      const r=await sb.rpc('g360_aplicar_inventario_epi_v195',{p_data_inventario:data,p_observacao:obs||null,p_itens:payload});
+      const oid=obraId();
+      if(!oid)throw new Error('Selecione uma obra antes de aplicar o inventário.');
+      const r=await sb.rpc('g360_aplicar_inventario_epi_v200',{p_obra_id:oid,p_data_inventario:data,p_observacao:obs||null,p_itens:payload});
       if(r.error)throw r.error;
       if(typeof window.epiLoadStock==='function')await window.epiLoadStock();
     }
