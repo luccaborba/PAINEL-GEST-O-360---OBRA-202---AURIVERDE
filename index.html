@@ -1,4 +1,7 @@
 <!DOCTYPE html>
+<!-- V197: PDF do romaneio diário de movimentações de EPI -->
+<!-- V196: itens abaixo do mínimo + PDF + sugestão de compra no cadastro do EPI -->
+<!-- V195: SESMT robusto com estoque, movimentação diária, colaborador, mínimo e inventário -->
 <!-- V194: editar/excluir termos de EPI e editar/excluir cadastro/entrada de estoque -->
 <!-- V193: perfil TÉCNICO DE SEGURANÇA = acesso completo somente ao SESMT -->
 <!-- V192: estoque de EPI com exclusão individual; V191 preservada -->
@@ -1418,6 +1421,88 @@ html.g360-ui-ready .content-col {
   border-radius:6px;padding:8px 10px;font:inherit;font-size:10px;font-weight:800;cursor:pointer
 }
 #view-sesmtTermo [data-epi-term-delete]:hover{background:#913333}
+</style>
+
+
+<style id="g360-sesmt-estoque-robusto-v195">
+#view-sesmtEstoque .sesmt-stock-title{margin-bottom:14px}
+#view-sesmtEstoque .sesmt-stock-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:14px}
+#view-sesmtEstoque .sesmt-stock-kpis .kpi{min-width:0}
+#view-sesmtEstoque .sesmt-stock-kpis .kpi-value{font-size:24px}
+#view-sesmtEstoque .sesmt-stock-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 12px}
+#view-sesmtEstoque .sesmt-stock-tab{border:1px solid var(--line);background:var(--panel);color:var(--ink-soft);padding:10px 14px;border-radius:8px;font:inherit;font-size:11px;font-weight:800;cursor:pointer}
+#view-sesmtEstoque .sesmt-stock-tab.active{background:var(--yellow);border-color:var(--yellow);color:#121212}
+#view-sesmtEstoque .sesmt-stock-pane{display:none}
+#view-sesmtEstoque .sesmt-stock-pane.active{display:block}
+#view-sesmtEstoque .sesmt-stock-card{padding:18px 20px}
+#view-sesmtEstoque .sesmt-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:16px}
+#view-sesmtEstoque .sesmt-card-head.compact{margin-bottom:10px}
+#view-sesmtEstoque .sesmt-card-head h2{margin:0 0 4px;font-size:15px}
+#view-sesmtEstoque .sesmt-stock-help{font-size:10.5px;color:var(--ink-soft);line-height:1.45}
+#view-sesmtEstoque .sesmt-mov-grid{display:grid;grid-template-columns:1.1fr .8fr 2fr .65fr;gap:12px;align-items:end}
+#view-sesmtEstoque .sesmt-field{display:flex;flex-direction:column;gap:6px;min-width:0;position:relative}
+#view-sesmtEstoque .sesmt-field>span{font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft)}
+#view-sesmtEstoque .sesmt-field input,#view-sesmtEstoque .sesmt-field select,
+#view-sesmtEstoque .sesmt-stock-filterbar input,#view-sesmtEstoque .sesmt-stock-filterbar select{
+  box-sizing:border-box;width:100%;height:40px;border:1px solid var(--line);border-radius:7px;background:var(--asphalt);color:var(--ink);padding:8px 10px;font:inherit
+}
+#view-sesmtEstoque .sesmt-field-wide{grid-column:span 2}
+#view-sesmtEstoque .sesmt-field-colab{grid-column:span 2}
+#view-sesmtEstoque .sesmt-colab-sugestoes{display:none;position:absolute;left:0;right:0;top:100%;margin-top:4px;z-index:60;max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:8px;background:var(--panel);box-shadow:0 14px 32px rgba(0,0,0,.35)}
+#view-sesmtEstoque .sesmt-colab-sugestoes.show{display:block}
+#view-sesmtEstoque .sesmt-colab-sugestoes button{display:block;width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--ink);text-align:left;padding:9px 11px;font:inherit;font-size:11px;cursor:pointer}
+#view-sesmtEstoque .sesmt-colab-sugestoes button:hover{background:rgba(255,255,255,.04)}
+#view-sesmtEstoque .sesmt-recentes-wrap{display:flex;align-items:flex-start;gap:10px;padding:12px 0;margin-top:14px;border-top:1px solid var(--line)}
+#view-sesmtEstoque .sesmt-recentes-wrap>span{font-size:10px;color:var(--ink-soft);font-weight:800;white-space:nowrap;padding-top:5px}
+#view-sesmtEstoque .sesmt-colab-chips{display:flex;gap:6px;flex-wrap:wrap}
+#view-sesmtEstoque .sesmt-colab-chip{border:1px solid var(--line);background:rgba(255,255,255,.03);border-radius:999px;padding:5px 9px;color:var(--ink);font:inherit;font-size:9.5px;cursor:pointer}
+#view-sesmtEstoque .sesmt-muted{font-size:10px;color:var(--ink-soft)}
+#view-sesmtEstoque .sesmt-form-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+#view-sesmtEstoque .sesmt-stock-cadastro{display:grid;grid-template-columns:2fr .75fr .9fr .65fr .75fr .85fr auto;gap:9px;align-items:end;margin-bottom:14px}
+#view-sesmtEstoque .sesmt-stock-cadastro label{min-width:0}
+#view-sesmtEstoque .sesmt-stock-filterbar{display:grid;grid-template-columns:minmax(240px,1fr) 220px;gap:9px;margin-bottom:10px}
+#view-sesmtEstoque .sesmt-hist-filters{grid-template-columns:150px 150px 180px minmax(240px,1fr)}
+#view-sesmtEstoque .sesmt-stock-table-wrap{border:1px solid var(--line);border-radius:8px;overflow:auto;max-height:510px}
+#view-sesmtEstoque .sesmt-stock-table{width:100%;border-collapse:collapse}
+#view-sesmtEstoque .sesmt-stock-table th{position:sticky;top:0;z-index:2;background:var(--panel);white-space:nowrap}
+#view-sesmtEstoque .sesmt-stock-table th,#view-sesmtEstoque .sesmt-stock-table td{padding:10px 11px;vertical-align:middle}
+#view-sesmtEstoque .sesmt-minimo-panel{margin-top:15px;padding-top:14px;border-top:1px solid var(--line)}
+#view-sesmtEstoque .sesmt-minimo-lista{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#view-sesmtEstoque .sesmt-minimo-item{border:1px solid var(--line);border-radius:8px;padding:10px 11px;background:rgba(255,255,255,.025)}
+#view-sesmtEstoque .sesmt-minimo-item strong{display:block;font-size:11px;margin-bottom:4px}
+#view-sesmtEstoque .sesmt-minimo-item span{font-size:10px;color:var(--ink-soft)}
+#view-sesmtEstoque .sesmt-minimo-item.zero{border-color:rgba(225,75,75,.45)}
+#view-sesmtEstoque .sesmt-minimo-item.low{border-color:rgba(245,197,24,.42)}
+#view-sesmtEstoque .sesmt-inv-meta{display:grid;grid-template-columns:190px 1fr;gap:12px;margin-bottom:12px}
+#view-sesmtEstoque .sesmt-inv-actions-top{display:flex;gap:7px;flex-wrap:wrap}
+#view-sesmtEstoque .sesmt-inv-qtd{width:110px!important;height:34px!important}
+#view-sesmtEstoque .sesmt-diff-pos{color:#35d07f;font-weight:800}
+#view-sesmtEstoque .sesmt-diff-neg{color:#ef7777;font-weight:800}
+#view-sesmtEstoque .sesmt-diff-zero{color:var(--ink-soft)}
+#view-sesmtEstoque .epi-stock-delete{margin-left:6px;background:#762727;color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:8px 10px;font:inherit;font-size:10px;font-weight:800;cursor:pointer}
+#view-sesmtEstoque .epi-stock-delete:hover{background:#913333}
+@media(max-width:1250px){
+ #view-sesmtEstoque .sesmt-stock-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+ #view-sesmtEstoque .sesmt-stock-cadastro{grid-template-columns:repeat(3,minmax(0,1fr))}
+ #view-sesmtEstoque .sesmt-mov-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #view-sesmtEstoque .sesmt-field-wide,#view-sesmtEstoque .sesmt-field-colab{grid-column:span 1}
+}
+@media(max-width:760px){
+ #view-sesmtEstoque .sesmt-stock-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #view-sesmtEstoque .sesmt-stock-card{padding:14px}
+ #view-sesmtEstoque .sesmt-mov-grid,#view-sesmtEstoque .sesmt-stock-cadastro,#view-sesmtEstoque .sesmt-stock-filterbar,#view-sesmtEstoque .sesmt-hist-filters,#view-sesmtEstoque .sesmt-inv-meta{grid-template-columns:1fr}
+ #view-sesmtEstoque .sesmt-card-head{flex-direction:column;align-items:stretch}
+ #view-sesmtEstoque .sesmt-form-actions{justify-content:stretch}
+ #view-sesmtEstoque .sesmt-form-actions button{flex:1}
+ #view-sesmtEstoque .sesmt-minimo-lista{grid-template-columns:1fr}
+ #view-sesmtEstoque .sesmt-stock-table{min-width:860px}
+}
+
+#view-sesmtEstoque .sesmt-minimo-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#view-sesmtEstoque .sesmt-minimo-table-wrap{border:1px solid var(--line);border-radius:8px;overflow:auto;max-height:330px}
+#view-sesmtEstoque .sesmt-buy-suggestion{font-weight:900}
+
+#view-sesmtEstoque .sesmt-hist-actions{display:flex;gap:8px;flex-wrap:wrap}
 </style>
 
 </head>
@@ -3168,24 +3253,176 @@ html.g360-ui-ready .content-col {
 
       <!-- ================= SESMT / ESTOQUE DE EPIs ================= -->
       <div class="view" id="view-sesmtEstoque">
-        <div class="page-title"><span class="pt-ic">📦</span><div><div class="pt-title">Estoque de EPIs</div><div class="pt-sub">Controle de entradas, saldos, C.A. e estoque mínimo dos EPIs.</div></div></div>
-        <section class="panel" id="epiEstoquePanel">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px">
-            <div><h2 style="margin-bottom:4px">📦 Estoque de EPIs</h2><div style="font-size:11.5px;color:var(--ink-soft)">Cadastro e saldo por EPI/C.A. O Termo de Entrega seleciona daqui e a emissão do termo dá baixa automaticamente.</div></div>
+        <div class="page-title sesmt-stock-title">
+          <span class="pt-ic">📦</span>
+          <div>
+            <div class="pt-title">SESMT · Controle de Estoque de EPIs</div>
+            <div class="pt-sub">Movimentações diárias, retiradas por colaborador, estoque mínimo, inventário físico e histórico operacional.</div>
           </div>
-          <div class="epi-stock-toolbar">
+        </div>
+
+        <section class="sesmt-stock-kpis">
+          <div class="kpi"><div class="kpi-label">ITENS CADASTRADOS</div><div class="kpi-value" id="epiStockKpiItens">0</div><div class="kpi-sub">EPIs ativos no estoque</div></div>
+          <div class="kpi"><div class="kpi-label">SALDO TOTAL</div><div class="kpi-value" id="epiStockKpiSaldo">0</div><div class="kpi-sub">Unidades disponíveis</div></div>
+          <div class="kpi"><div class="kpi-label">ABAIXO DO MÍNIMO</div><div class="kpi-value" id="epiStockKpiBaixo">0</div><div class="kpi-sub">Reposição necessária</div></div>
+          <div class="kpi"><div class="kpi-label">SEM ESTOQUE</div><div class="kpi-value" id="epiStockKpiZero">0</div><div class="kpi-sub">Itens zerados</div></div>
+          <div class="kpi"><div class="kpi-label">RETIRADAS HOJE</div><div class="kpi-value" id="sesmtMovHoje">0</div><div class="kpi-sub">Baixas registradas hoje</div></div>
+          <div class="kpi"><div class="kpi-label">COLABORADORES HOJE</div><div class="kpi-value" id="sesmtColabHoje">0</div><div class="kpi-sub">Pessoas atendidas hoje</div></div>
+        </section>
+
+        <div class="sesmt-stock-tabs">
+          <button type="button" class="sesmt-stock-tab active" data-sesmt-stock-tab="mov">Movimentação diária</button>
+          <button type="button" class="sesmt-stock-tab" data-sesmt-stock-tab="estoque">Estoque atual</button>
+          <button type="button" class="sesmt-stock-tab" data-sesmt-stock-tab="inventario">Inventário</button>
+          <button type="button" class="sesmt-stock-tab" data-sesmt-stock-tab="historico">Histórico</button>
+        </div>
+
+        <section class="panel sesmt-stock-card sesmt-stock-pane active" data-sesmt-stock-pane="mov">
+          <div class="sesmt-card-head">
+            <div>
+              <h2>Movimentação diária de EPI</h2>
+              <div class="sesmt-stock-help">Registre retirada, devolução, entrada ou ajuste. Na retirada, digite o nome ou matrícula e o sistema sugere automaticamente o colaborador ativo.</div>
+            </div>
+            <span class="tag" id="sesmtMovStatus">HOJE</span>
+          </div>
+
+          <div class="sesmt-mov-grid">
+            <label class="sesmt-field"><span>Tipo de movimentação</span>
+              <select id="sesmtMovTipo">
+                <option value="SAIDA">RETIRADA / BAIXA</option>
+                <option value="ENTRADA">ENTRADA / REPOSIÇÃO</option>
+                <option value="DEVOLUCAO">DEVOLUÇÃO</option>
+                <option value="AJUSTE">AJUSTE MANUAL</option>
+              </select>
+            </label>
+            <label class="sesmt-field"><span>Data</span><input type="date" id="sesmtMovData"></label>
+            <label class="sesmt-field sesmt-field-wide"><span>EPI</span><select id="sesmtMovEpi"><option value="">Selecione um EPI...</option></select></label>
+            <label class="sesmt-field"><span>Quantidade</span><input id="sesmtMovQtd" type="number" min="0.01" step="0.01" value="1"></label>
+
+            <label class="sesmt-field sesmt-field-colab">
+              <span>Colaborador / matrícula</span>
+              <input id="sesmtMovColabBusca" autocomplete="off" placeholder="Digite o nome ou matrícula...">
+              <input type="hidden" id="sesmtMovColabId">
+              <div id="sesmtMovColabSugestoes" class="sesmt-colab-sugestoes"></div>
+            </label>
+
+            <label class="sesmt-field sesmt-field-wide"><span>Motivo / observação</span><input id="sesmtMovMotivo" placeholder="Ex.: entrega diária, substituição, reposição, devolução..."></label>
+          </div>
+
+          <div class="sesmt-recentes-wrap">
+            <span>Retiraram hoje:</span>
+            <div id="sesmtColabsHojeChips" class="sesmt-colab-chips"><span class="sesmt-muted">Nenhuma retirada registrada hoje.</span></div>
+          </div>
+
+          <div class="sesmt-form-actions">
+            <button type="button" class="clear-btn" id="sesmtMovLimpar">Limpar</button>
+            <button type="button" class="btn-primary" id="sesmtMovSalvar">Registrar movimentação</button>
+          </div>
+        </section>
+
+        <section class="panel sesmt-stock-card sesmt-stock-pane" data-sesmt-stock-pane="estoque">
+          <div class="sesmt-card-head">
+            <div>
+              <h2>Estoque atual</h2>
+              <div class="sesmt-stock-help">Cadastre EPIs, atualize saldo e estoque mínimo, acompanhe itens críticos e faça novas entradas.</div>
+            </div>
+            <button type="button" class="btn-primary" id="sesmtNovoEpiBtn">＋ Novo EPI / Entrada</button>
+          </div>
+
+          <div class="epi-stock-toolbar sesmt-stock-cadastro" id="sesmtCadastroEpi">
             <label><span>DESCRIÇÃO DO EPI</span><input id="epiStockDescricao" placeholder="Ex.: CAPACETE CLASSE B"></label>
             <label><span>C.A.</span><input id="epiStockCa" placeholder="C.A."></label>
             <label><span>CÓDIGO / SKU</span><input id="epiStockCodigo" placeholder="Ex.: EPI-001"></label>
             <label><span>QUANTIDADE</span><input id="epiStockQtd" type="number" min="0.01" step="0.01" value="1"></label>
             <label><span>ESTOQUE MÍNIMO</span><input id="epiStockMin" type="number" min="0" step="0.01" value="0"></label>
+            <label><span>SUGESTÃO DE COMPRA</span><input id="epiStockSugestaoCompra" type="number" min="0" step="0.01" value="0" placeholder="Qtd. sugerida"></label>
             <button class="btn-primary" id="epiStockEntrada">＋ Cadastrar / Entrada</button>
           </div>
-          <div class="epi-stock-kpis"><div class="epi-stock-kpi"><small>Itens cadastrados</small><strong id="epiStockKpiItens">0</strong></div><div class="epi-stock-kpi"><small>Saldo total</small><strong id="epiStockKpiSaldo">0</strong></div><div class="epi-stock-kpi"><small>Abaixo do mínimo</small><strong id="epiStockKpiBaixo">0</strong></div><div class="epi-stock-kpi"><small>Sem estoque</small><strong id="epiStockKpiZero">0</strong></div></div>
-          <div class="table-scroll" style="max-height:330px"><table><thead><tr><th>Código</th><th>EPI</th><th>C.A.</th><th>Saldo</th><th>Mínimo</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="epiStockBody"></tbody></table></div>
-          <div class="epi-stock-note">A baixa ocorre somente ao clicar em “Salvar termo e dar baixa”. Gerar o PDF não movimenta estoque.</div>
+
+          <div class="sesmt-stock-filterbar">
+            <input id="sesmtStockBusca" placeholder="Buscar EPI, C.A. ou código...">
+            <select id="sesmtStockSituacao">
+              <option value="">Todas as situações</option>
+              <option value="BAIXO">Abaixo do mínimo</option>
+              <option value="ZERO">Sem estoque</option>
+              <option value="OK">Estoque normal</option>
+            </select>
+          </div>
+
+          <div class="table-scroll sesmt-stock-table-wrap">
+            <table class="sesmt-stock-table">
+              <thead><tr><th>Código</th><th>EPI</th><th>C.A.</th><th>Saldo</th><th>Mínimo</th><th>Situação</th><th>Ações</th></tr></thead>
+              <tbody id="epiStockBody"></tbody>
+            </table>
+          </div>
+
+          <div class="sesmt-minimo-panel">
+            <div class="sesmt-card-head compact">
+              <div>
+                <h2>Itens abaixo do estoque mínimo</h2>
+                <div class="sesmt-stock-help">Relação objetiva dos EPIs que precisam de reposição, com quantidade sugerida para compra.</div>
+              </div>
+              <div class="sesmt-minimo-actions">
+                <span class="tag" id="sesmtMinimoCount">0 item(ns)</span>
+                <button type="button" class="clear-btn" id="sesmtMinimoPdf">📄 Gerar PDF</button>
+              </div>
+            </div>
+            <div class="table-scroll sesmt-minimo-table-wrap">
+              <table class="sesmt-stock-table">
+                <thead><tr><th>Código</th><th>EPI</th><th>C.A.</th><th>Saldo</th><th>Estoque mínimo</th><th>Sugestão de compra</th><th>Situação</th></tr></thead>
+                <tbody id="sesmtMinimoLista"></tbody>
+              </table>
+            </div>
+          </div>
         </section>
 
+        <section class="panel sesmt-stock-card sesmt-stock-pane" data-sesmt-stock-pane="inventario">
+          <div class="sesmt-card-head">
+            <div>
+              <h2>Atualização de inventário físico</h2>
+              <div class="sesmt-stock-help">Compare o saldo do sistema com a contagem física. Ao aplicar, o sistema registra as diferenças como ajuste de inventário.</div>
+            </div>
+            <div class="sesmt-inv-actions-top">
+              <button type="button" class="clear-btn" id="sesmtInventarioCarregar">↻ Recarregar estoque</button>
+              <button type="button" class="btn-primary" id="sesmtInventarioAplicar">✓ Aplicar inventário</button>
+            </div>
+          </div>
+          <div class="sesmt-inv-meta">
+            <label class="sesmt-field"><span>Data do inventário</span><input type="date" id="sesmtInventarioData"></label>
+            <label class="sesmt-field sesmt-field-wide"><span>Observação</span><input id="sesmtInventarioObs" placeholder="Ex.: contagem mensal, conferência de almoxarifado..."></label>
+          </div>
+          <div class="table-scroll sesmt-stock-table-wrap">
+            <table class="sesmt-stock-table">
+              <thead><tr><th>Código</th><th>EPI</th><th>C.A.</th><th>Saldo sistema</th><th>Contagem física</th><th>Diferença</th><th>Situação</th></tr></thead>
+              <tbody id="sesmtInventarioBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel sesmt-stock-card sesmt-stock-pane" data-sesmt-stock-pane="historico">
+          <div class="sesmt-card-head">
+            <div>
+              <h2>Histórico de movimentações</h2>
+              <div class="sesmt-stock-help">Rastreabilidade diária de entradas, baixas, devoluções e ajustes de inventário.</div>
+            </div>
+            <div class="sesmt-hist-actions">
+              <button type="button" class="clear-btn" id="sesmtRomaneioHojePdf">📄 Romaneio do dia</button>
+              <button type="button" class="clear-btn" id="sesmtHistoricoAtualizar">↻ Atualizar</button>
+            </div>
+          </div>
+          <div class="sesmt-stock-filterbar sesmt-hist-filters">
+            <input type="date" id="sesmtHistDataIni">
+            <input type="date" id="sesmtHistDataFim">
+            <select id="sesmtHistTipo"><option value="">Todos os tipos</option><option value="SAIDA">Retirada / baixa</option><option value="ENTRADA">Entrada</option><option value="DEVOLUCAO">Devolução</option><option value="AJUSTE">Ajuste</option><option value="INVENTARIO">Inventário</option></select>
+            <input id="sesmtHistBusca" placeholder="Buscar colaborador, EPI ou motivo...">
+          </div>
+          <div class="table-scroll sesmt-stock-table-wrap">
+            <table class="sesmt-stock-table">
+              <thead><tr><th>Data/Hora</th><th>Tipo</th><th>EPI</th><th>Qtd.</th><th>Colaborador</th><th>Motivo</th><th>Usuário</th></tr></thead>
+              <tbody id="sesmtMovHistorico"><tr><td colspan="7"><div class="empty-state">Carregando movimentações...</div></td></tr></tbody>
+            </table>
+          </div>
+        </section>
       </div>
 
       <!-- ================= SESMT / TERMO DE ENTREGA DE EPIs ================= -->
@@ -8086,7 +8323,7 @@ async function renderTermoResponsabilidade(){await trLoad();const sel=document.g
 
 
 /* g360TermoEpiScript */
-const EPI={colabs:[],items:[],selected:null,stock:[],editingTermId:null,editingOriginal:null};
+const EPI=window.EPI={colabs:[],items:[],selected:null,stock:[],editingTermId:null,editingOriginal:null};
 const epiEsc=s=>String(s??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m]));
 function epiDate(v){return trFmtDate(v)||''}
 const epiNum=v=>Number(v||0);
@@ -8143,20 +8380,24 @@ async function epiStockEdit(id){
   if(codigo===null)return;
   const minimoRaw=prompt('Estoque mínimo:',String(epiNum(item.estoque_minimo)));
   if(minimoRaw===null)return;
+  const sugestaoRaw=prompt('Sugestão de compra:',String(epiNum(item.sugestao_compra)));
+  if(sugestaoRaw===null)return;
   const saldoRaw=prompt('Saldo atual do estoque:',String(epiNum(item.saldo)));
   if(saldoRaw===null)return;
 
   const minimo=Number(String(minimoRaw).replace(',','.'));
+  const sugestaoCompra=Number(String(sugestaoRaw).replace(',','.'));
   const novoSaldo=Number(String(saldoRaw).replace(',','.'));
   if(!String(descricao).trim()||!String(ca).trim())return alert('Descrição e C.A. são obrigatórios.');
   if(!Number.isFinite(minimo)||minimo<0)return alert('Estoque mínimo inválido.');
+  if(!Number.isFinite(sugestaoCompra)||sugestaoCompra<0)return alert('Sugestão de compra inválida.');
   if(!Number.isFinite(novoSaldo)||novoSaldo<0)return alert('Saldo inválido.');
 
   const oldSaldo=epiNum(item.saldo);
   const delta=novoSaldo-oldSaldo;
 
   if(window.g360PreviewMode){
-    Object.assign(item,{descricao:String(descricao).trim().toUpperCase(),ca:String(ca).trim(),codigo:String(codigo).trim().toUpperCase(),estoque_minimo:minimo,saldo:novoSaldo,updated_at:new Date().toISOString()});
+    Object.assign(item,{descricao:String(descricao).trim().toUpperCase(),ca:String(ca).trim(),codigo:String(codigo).trim().toUpperCase(),estoque_minimo:minimo,sugestao_compra:sugestaoCompra,saldo:novoSaldo,updated_at:new Date().toISOString()});
     epiSavePreviewStock();epiRenderStock();epiRenderItems();
     try{window.g360Audit?.('estoque_epi','EDITAR','epi_estoque',String(id),item.descricao,{saldo_anterior:oldSaldo,saldo_novo:novoSaldo});}catch(e){}
     return;
@@ -8167,7 +8408,8 @@ async function epiStockEdit(id){
     descricao:String(descricao).trim().toUpperCase(),
     ca:String(ca).trim(),
     codigo:String(codigo).trim().toUpperCase()||null,
-    estoque_minimo:minimo
+    estoque_minimo:minimo,
+    sugestao_compra:sugestaoCompra
   }).eq('id',id);
   if(up.error)return alert('Erro ao editar EPI: '+up.error.message);
 
@@ -8222,7 +8464,7 @@ async function epiStockMove(item,qtd,tipo='ENTRADA',motivo='Movimentação manua
   if(window.g360PreviewMode){const old=epiNum(item.saldo);item.saldo=tipo==='SAIDA'?old-qtd:old+qtd;item.updated_at=new Date().toISOString();epiSavePreviewStock();epiRenderStock();epiRenderItems();return true}
   const sb=window.g360SupabaseClient;const r=await sb.rpc('g360_movimentar_estoque_epi',{p_epi_id:item.id,p_quantidade:qtd,p_tipo:tipo,p_motivo:motivo});if(r.error){alert('Erro ao movimentar estoque: '+r.error.message);return false}await epiLoadStock();epiRenderStock();epiRenderItems();return true
 }
-async function epiStockAdd(){const descricao=document.getElementById('epiStockDescricao').value.trim().toUpperCase(),ca=document.getElementById('epiStockCa').value.trim(),codigo=document.getElementById('epiStockCodigo').value.trim().toUpperCase(),qtd=Number(document.getElementById('epiStockQtd').value||0),min=Number(document.getElementById('epiStockMin').value||0);if(!descricao||!ca)return alert('Informe descrição e C.A.');if(!(qtd>0))return alert('Informe uma quantidade de entrada maior que zero.');const same=EPI.stock.find(x=>String(x.descricao).toUpperCase()===descricao&&String(x.ca)===ca);if(same){if(min>=0&&epiNum(same.estoque_minimo)!==min){if(window.g360PreviewMode){same.estoque_minimo=min}else{await window.g360SupabaseClient.from('epi_estoque').update({estoque_minimo:min}).eq('id',same.id)}}await epiStockMove(same,qtd,'ENTRADA','Entrada pelo cadastro de estoque');}else if(window.g360PreviewMode){const row={id:'epi_stock_'+Date.now(),obra_id:null,codigo:codigo||('EPI-'+String(Date.now()).slice(-6)),descricao,ca,unidade:'UN',saldo:qtd,estoque_minimo:min,ativo:true,created_at:new Date().toISOString()};EPI.stock.push(row);epiSavePreviewStock();epiRenderStock();epiRenderItems()}else{const sb=window.g360SupabaseClient,obraId=window.g360GetSelectedObra?.()?.id||null;const ins=await sb.from('epi_estoque').insert({obra_id:obraId,codigo:codigo||null,descricao,ca,unidade:'UN',saldo:0,estoque_minimo:min,ativo:true}).select('*').single();if(ins.error)return alert('Erro ao cadastrar EPI: '+ins.error.message);await epiStockMove(ins.data,qtd,'ENTRADA','Estoque inicial do EPI')}
+async function epiStockAdd(){const descricao=document.getElementById('epiStockDescricao').value.trim().toUpperCase(),ca=document.getElementById('epiStockCa').value.trim(),codigo=document.getElementById('epiStockCodigo').value.trim().toUpperCase(),qtd=Number(document.getElementById('epiStockQtd').value||0),min=Number(document.getElementById('epiStockMin').value||0);if(!descricao||!ca)return alert('Informe descrição e C.A.');if(!(qtd>0))return alert('Informe uma quantidade de entrada maior que zero.');const same=EPI.stock.find(x=>String(x.descricao).toUpperCase()===descricao&&String(x.ca)===ca);if(same){if(min>=0&&epiNum(same.estoque_minimo)!==min){if(window.g360PreviewMode){same.estoque_minimo=min}else{await window.g360SupabaseClient.from('epi_estoque').update({estoque_minimo:min}).eq('id',same.id)}}await epiStockMove(same,qtd,'ENTRADA','Entrada pelo cadastro de estoque');}else if(window.g360PreviewMode){const row={id:'epi_stock_'+Date.now(),obra_id:null,codigo:codigo||('EPI-'+String(Date.now()).slice(-6)),descricao,ca,unidade:'UN',saldo:qtd,estoque_minimo:min,sugestao_compra:sugestaoCompra,sugestao_compra:sugestaoCompra,ativo:true,created_at:new Date().toISOString()};EPI.stock.push(row);epiSavePreviewStock();epiRenderStock();epiRenderItems()}else{const sb=window.g360SupabaseClient,obraId=window.g360GetSelectedObra?.()?.id||null;const ins=await sb.from('epi_estoque').insert({obra_id:obraId,codigo:codigo||null,descricao,ca,unidade:'UN',saldo:0,estoque_minimo:min,ativo:true}).select('*').single();if(ins.error)return alert('Erro ao cadastrar EPI: '+ins.error.message);await epiStockMove(ins.data,qtd,'ENTRADA','Estoque inicial do EPI')}
   ['epiStockDescricao','epiStockCa','epiStockCodigo'].forEach(id=>document.getElementById(id).value='');document.getElementById('epiStockQtd').value='1';
 }
 function epiFill(c){EPI.selected=c||null;document.getElementById('epiMatricula').value=c?String(c.matricula??c.mat??''):'';document.getElementById('epiCpf').value=c?.cpf||'';document.getElementById('epiAdmissao').value=epiDate(c?.admissao);document.getElementById('epiObra').value=c?.obra||'';document.getElementById('epiFuncao').value=c?.funcao||'';document.getElementById('epiSetor').value=c?.setor_equipe||c?.setorEquipe||c?.equipe||''}
@@ -16745,6 +16987,378 @@ window.g360BackupV135={generate,history,authMaster};
   document.addEventListener('click',e=>{
     if(e.target?.closest?.('[data-view="rhdpAdmissao"]')) setTimeout(forceRender,120);
   },true);
+})();
+</script>
+
+
+
+<script id="g360-epi-expose-v195">
+(function(){
+  try{
+    window.epiLoadColabs = typeof epiLoadColabs==='function'?epiLoadColabs:window.epiLoadColabs;
+    window.epiLoadStock = typeof epiLoadStock==='function'?epiLoadStock:window.epiLoadStock;
+    window.epiRenderStock = typeof epiRenderStock==='function'?epiRenderStock:window.epiRenderStock;
+    window.epiSavePreviewStock = typeof epiSavePreviewStock==='function'?epiSavePreviewStock:window.epiSavePreviewStock;
+  }catch(e){console.warn('[V195] EPI expose',e)}
+})();
+</script>
+
+<script id="g360-sesmt-estoque-robusto-v195">
+(function(){
+'use strict';
+
+const S={movs:[],inventario:[],colab:null};
+const $=id=>document.getElementById(id);
+const today=()=>new Date().toISOString().slice(0,10);
+const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function obraId(){return window.g360GetSelectedObra?.()?.id||window.G360_ACTIVE_OBRA_ID||null}
+
+function tabs(){
+  document.querySelectorAll('#view-sesmtEstoque [data-sesmt-stock-tab]').forEach(btn=>{
+    btn.onclick=()=>{
+      document.querySelectorAll('#view-sesmtEstoque [data-sesmt-stock-tab]').forEach(x=>x.classList.toggle('active',x===btn));
+      document.querySelectorAll('#view-sesmtEstoque [data-sesmt-stock-pane]').forEach(p=>p.classList.toggle('active',p.dataset.sesmtStockPane===btn.dataset.sesmtStockTab));
+      if(btn.dataset.sesmtStockTab==='historico')loadMovs();
+      if(btn.dataset.sesmtStockTab==='inventario')renderInventario();
+    };
+  });
+}
+
+function stockOptions(){
+  const sel=$('sesmtMovEpi');if(!sel)return;
+  const old=sel.value;
+  sel.innerHTML='<option value="">Selecione um EPI...</option>'+
+    [...(window.EPI?.stock||[])].sort((a,b)=>String(a.descricao).localeCompare(String(b.descricao),'pt-BR'))
+    .map(x=>`<option value="${esc(x.id)}">${esc(x.descricao)} · C.A. ${esc(x.ca||'—')} · saldo ${Number(x.saldo||0).toLocaleString('pt-BR',{maximumFractionDigits:2})}</option>`).join('');
+  if([...sel.options].some(o=>o.value===old))sel.value=old;
+}
+
+function renderMinimo(){
+  const stock=window.EPI?.stock||[];
+  const crit=stock.filter(x=>Number(x.saldo||0)<=0 || (Number(x.estoque_minimo||0)>0&&Number(x.saldo||0)<Number(x.estoque_minimo||0)))
+    .sort((a,b)=>Number(a.saldo||0)-Number(b.saldo||0));
+  if($('sesmtMinimoCount'))$('sesmtMinimoCount').textContent=`${crit.length} item(ns)`;
+  if($('sesmtMinimoLista'))$('sesmtMinimoLista').innerHTML=crit.length?crit.map(x=>{
+    const saldo=Number(x.saldo||0),min=Number(x.estoque_minimo||0);
+    const sugestao=Number(x.sugestao_compra||0)>0?Number(x.sugestao_compra):Math.max(min-saldo,0);
+    const zero=saldo<=0;
+    return `<tr>
+      <td>${esc(x.codigo||'—')}</td>
+      <td><strong>${esc(x.descricao)}</strong></td>
+      <td>${esc(x.ca||'—')}</td>
+      <td><b>${saldo.toLocaleString('pt-BR',{maximumFractionDigits:2})}</b></td>
+      <td>${min.toLocaleString('pt-BR',{maximumFractionDigits:2})}</td>
+      <td class="sesmt-buy-suggestion">${sugestao.toLocaleString('pt-BR',{maximumFractionDigits:2})}</td>
+      <td class="${zero?'epi-stock-zero':'epi-stock-low'}">${zero?'SEM ESTOQUE':'ABAIXO DO MÍNIMO'}</td>
+    </tr>`
+  }).join(''):'<tr><td colspan="7"><div class="empty-state">Nenhum item abaixo do estoque mínimo.</div></td></tr>';
+}
+
+function renderEstoqueFiltrado(){
+  if(typeof window.epiRenderStock==='function')window.epiRenderStock();
+  const q=norm($('sesmtStockBusca')?.value);
+  const sit=$('sesmtStockSituacao')?.value||'';
+  document.querySelectorAll('#epiStockBody tr').forEach(tr=>{
+    const txt=norm(tr.textContent);
+    const low=/BAIXO/.test(txt),zero=/SEM ESTOQUE/.test(txt),ok=/\bOK\b/.test(txt);
+    let show=!q||txt.includes(q);
+    if(sit==='BAIXO')show=show&&low;
+    if(sit==='ZERO')show=show&&zero;
+    if(sit==='OK')show=show&&ok;
+    tr.style.display=show?'':'none';
+  });
+  stockOptions();renderMinimo();
+}
+
+async function ensureColabs(){
+  try{
+    if(typeof window.epiLoadColabs==='function')await window.epiLoadColabs();
+  }catch(e){console.warn(e)}
+}
+
+function colabSearch(){
+  const inp=$('sesmtMovColabBusca'), box=$('sesmtMovColabSugestoes');
+  if(!inp||!box)return;
+  const show=()=>{
+    const q=norm(inp.value);
+    const list=(window.EPI?.colabs||[]).filter(c=>{
+      const status=norm(c.status||'ATIVO');
+      if(status&&status!=='ATIVO')return false;
+      return !q||norm(`${c.matricula??c.mat??''} ${c.nome||''} ${c.funcao||''}`).includes(q);
+    }).slice(0,15);
+    box.innerHTML=list.length?list.map((c,i)=>`<button type="button" data-col="${i}"><b>${esc(String(c.nome||'').toUpperCase())}</b><br><span style="color:var(--ink-soft);font-size:9px">${esc(c.matricula??c.mat??'')} · ${esc(c.funcao||'')}</span></button>`).join(''):'<div class="sesmt-muted" style="padding:10px">Nenhum colaborador encontrado.</div>';
+    box.classList.add('show');
+    box.querySelectorAll('[data-col]').forEach((b,i)=>b.onmousedown=e=>{
+      e.preventDefault();pickColab(list[i]);box.classList.remove('show');
+    });
+  };
+  inp.onfocus=show;inp.oninput=()=>{S.colab=null;$('sesmtMovColabId').value='';show()};
+  inp.onblur=()=>setTimeout(()=>box.classList.remove('show'),180);
+}
+
+function pickColab(c){
+  S.colab=c||null;
+  $('sesmtMovColabId').value=c?.id||'';
+  $('sesmtMovColabBusca').value=c?`${String(c.nome||'').toUpperCase()} · ${c.matricula??c.mat??''}`:'';
+}
+
+function clearMov(){
+  $('sesmtMovTipo').value='SAIDA';$('sesmtMovData').value=today();$('sesmtMovEpi').value='';$('sesmtMovQtd').value='1';$('sesmtMovMotivo').value='';
+  S.colab=null;$('sesmtMovColabId').value='';$('sesmtMovColabBusca').value='';
+}
+
+function previewMovs(){try{return JSON.parse(localStorage.getItem('g360_epi_mov_v195')||'[]')}catch(e){return[]}}
+function savePreviewMovs(rows){localStorage.setItem('g360_epi_mov_v195',JSON.stringify(rows))}
+
+async function registrarMov(){
+  const tipo=$('sesmtMovTipo').value,data=$('sesmtMovData').value||today(),epiId=$('sesmtMovEpi').value,qtd=Number($('sesmtMovQtd').value||0),motivo=$('sesmtMovMotivo').value.trim();
+  if(!epiId)return alert('Selecione o EPI.');
+  if(!(qtd>0))return alert('Informe uma quantidade válida.');
+  if(tipo==='SAIDA'&&!S.colab)return alert('Selecione o colaborador que retirou o EPI.');
+  const item=(window.EPI?.stock||[]).find(x=>String(x.id)===String(epiId));if(!item)return alert('EPI não encontrado.');
+  if(tipo==='SAIDA'&&qtd>Number(item.saldo||0))return alert('Saldo insuficiente no estoque.');
+
+  const btn=$('sesmtMovSalvar');if(btn){btn.disabled=true;btn.textContent='Salvando...'}
+  try{
+    if(window.g360PreviewMode){
+      const old=Number(item.saldo||0);
+      const entrada=['ENTRADA','DEVOLUCAO'].includes(tipo);
+      item.saldo=entrada?old+qtd:old-qtd;
+      if(typeof window.epiSavePreviewStock==='function')window.epiSavePreviewStock();
+      const rows=previewMovs();
+      rows.unshift({id:'mov_'+Date.now(),created_at:new Date().toISOString(),data_movimento:data,tipo,epi_id:item.id,epi_descricao:item.descricao,ca:item.ca,quantidade:qtd,colaborador_id:S.colab?.id||null,matricula:S.colab?.matricula??S.colab?.mat??null,colaborador_nome:S.colab?.nome||null,motivo,saldo_anterior:old,saldo_posterior:item.saldo,usuario_nome:'PRÉVIA'});
+      savePreviewMovs(rows);
+    }else{
+      const sb=window.g360SupabaseClient;if(!sb)throw new Error('Supabase não conectado.');
+      const r=await sb.rpc('g360_registrar_movimento_epi_v195',{
+        p_epi_id:epiId,p_tipo:tipo,p_quantidade:qtd,p_data_movimento:data,
+        p_colaborador_id:S.colab?.id||null,p_matricula:S.colab?.matricula??S.colab?.mat??null,p_colaborador_nome:S.colab?.nome||null,p_motivo:motivo||null
+      });
+      if(r.error)throw r.error;
+      if(typeof window.epiLoadStock==='function')await window.epiLoadStock();
+    }
+    renderEstoqueFiltrado();await loadMovs();clearMov();
+  }catch(e){alert('Não foi possível registrar a movimentação: '+(e?.message||e))}
+  finally{if(btn){btn.disabled=false;btn.textContent='Registrar movimentação'}}
+}
+
+async function loadMovs(){
+  let rows=[];
+  if(window.g360PreviewMode) rows=previewMovs();
+  else{
+    const sb=window.g360SupabaseClient;if(!sb)return;
+    let q=sb.from('epi_movimentacoes').select('*').order('created_at',{ascending:false}).limit(1000);
+    const oid=obraId();if(oid)q=q.eq('obra_id',oid);
+    const r=await q;if(r.error){console.warn(r.error);return}rows=r.data||[];
+  }
+  S.movs=rows;renderMovs();
+}
+
+function renderMovs(){
+  const ini=$('sesmtHistDataIni')?.value||'',fim=$('sesmtHistDataFim')?.value||'',tipo=$('sesmtHistTipo')?.value||'',q=norm($('sesmtHistBusca')?.value);
+  let rows=S.movs.filter(r=>{
+    const d=String(r.data_movimento||r.created_at||'').slice(0,10);
+    if(ini&&d<ini)return false;if(fim&&d>fim)return false;if(tipo&&String(r.tipo)!==tipo)return false;
+    if(q&&!norm(`${r.colaborador_nome||''} ${r.matricula||''} ${r.epi_descricao||''} ${r.motivo||''}`).includes(q))return false;
+    return true;
+  });
+  const body=$('sesmtMovHistorico');
+  if(body)body.innerHTML=rows.length?rows.map(r=>`<tr>
+    <td>${esc(new Date(r.created_at||((r.data_movimento||today())+'T12:00:00')).toLocaleString('pt-BR'))}</td>
+    <td><b>${esc(r.tipo||'')}</b></td><td>${esc(r.epi_descricao||'')}</td><td>${Number(r.quantidade||0).toLocaleString('pt-BR')}</td>
+    <td>${esc(r.colaborador_nome||'—')}${r.matricula?`<div class="sesmt-muted">${esc(r.matricula)}</div>`:''}</td>
+    <td>${esc(r.motivo||'—')}</td><td>${esc(r.usuario_nome||r.created_by_nome||'—')}</td>
+  </tr>`).join(''):'<tr><td colspan="7"><div class="empty-state">Nenhuma movimentação encontrada.</div></td></tr>';
+
+  const hoje=today(),hojeRows=S.movs.filter(r=>String(r.data_movimento||r.created_at||'').slice(0,10)===hoje&&String(r.tipo)==='SAIDA');
+  if($('sesmtMovHoje'))$('sesmtMovHoje').textContent=hojeRows.length;
+  const names=[...new Set(hojeRows.map(r=>r.colaborador_nome).filter(Boolean))];
+  if($('sesmtColabHoje'))$('sesmtColabHoje').textContent=names.length;
+  if($('sesmtColabsHojeChips'))$('sesmtColabsHojeChips').innerHTML=names.length?names.map(n=>`<button type="button" class="sesmt-colab-chip" data-name="${esc(n)}">${esc(n)}</button>`).join(''):'<span class="sesmt-muted">Nenhuma retirada registrada hoje.</span>';
+  $('sesmtColabsHojeChips')?.querySelectorAll('[data-name]').forEach(b=>b.onclick=()=>{
+    const c=(window.EPI?.colabs||[]).find(x=>norm(x.nome)===norm(b.dataset.name));if(c)pickColab(c);
+  });
+}
+
+function gerarPdfEstoqueMinimo(){
+  const stock=window.EPI?.stock||[];
+  const crit=stock.filter(x=>Number(x.saldo||0)<=0 || (Number(x.estoque_minimo||0)>0&&Number(x.saldo||0)<Number(x.estoque_minimo||0)))
+    .sort((a,b)=>Number(a.saldo||0)-Number(b.saldo||0));
+  if(!crit.length)return alert('Não há itens abaixo do estoque mínimo para gerar o PDF.');
+  if(!window.jspdf?.jsPDF)return alert('Gerador de PDF não disponível.');
+
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
+  const pw=doc.internal.pageSize.getWidth();
+  try{if(window.CCL_LOGO_B64)doc.addImage(window.CCL_LOGO_B64,'PNG',34,18,88,44)}catch(e){}
+  doc.setFont('helvetica','bold');doc.setFontSize(14);
+  doc.text('ITENS ABAIXO DO ESTOQUE MÍNIMO - SESMT',pw/2,42,{align:'center'});
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);
+  doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')} · ${crit.length} item(ns) para reposição`,pw/2,58,{align:'center'});
+
+  doc.autoTable({
+    startY:78,margin:{left:34,right:34},
+    head:[['CÓDIGO','EPI','C.A.','SALDO','ESTOQUE MÍNIMO','SUGESTÃO DE COMPRA','SITUAÇÃO']],
+    body:crit.map(x=>{
+      const saldo=Number(x.saldo||0),min=Number(x.estoque_minimo||0);
+      const sug=Number(x.sugestao_compra||0)>0?Number(x.sugestao_compra):Math.max(min-saldo,0);
+      return [x.codigo||'—',x.descricao||'',x.ca||'—',
+        saldo.toLocaleString('pt-BR',{maximumFractionDigits:2}),
+        min.toLocaleString('pt-BR',{maximumFractionDigits:2}),
+        sug.toLocaleString('pt-BR',{maximumFractionDigits:2}),
+        saldo<=0?'SEM ESTOQUE':'ABAIXO DO MÍNIMO'];
+    }),
+    theme:'grid',
+    styles:{font:'helvetica',fontSize:8,textColor:[25,25,25],cellPadding:5,lineWidth:.35,lineColor:[70,70,70]},
+    headStyles:{fontStyle:'bold',fillColor:[255,255,255],textColor:[15,15,15]},
+    columnStyles:{3:{halign:'right'},4:{halign:'right'},5:{halign:'right',fontStyle:'bold'}}
+  });
+  doc.save(`SESMT_ESTOQUE_MINIMO_${today()}.pdf`);
+}
+
+function gerarRomaneioMovimentacoesDia(){
+  if(!window.jspdf?.jsPDF)return alert('Gerador de PDF não disponível.');
+
+  const dataRef=$('sesmtHistDataFim')?.value||$('sesmtHistDataIni')?.value||today();
+  const rows=(S.movs||[]).filter(r=>String(r.data_movimento||r.created_at||'').slice(0,10)===dataRef);
+  if(!rows.length)return alert('Não há movimentações registradas na data selecionada.');
+
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
+  const pw=doc.internal.pageSize.getWidth(),ph=doc.internal.pageSize.getHeight();
+  try{if(window.CCL_LOGO_B64)doc.addImage(window.CCL_LOGO_B64,'PNG',34,18,88,44)}catch(e){}
+
+  doc.setFont('helvetica','bold');doc.setFontSize(14);
+  doc.text('ROMANEIO DIÁRIO DE MOVIMENTAÇÕES DE EPIs - SESMT',pw/2,38,{align:'center'});
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);
+  const dt=new Date(dataRef+'T12:00:00');
+  doc.text(`Data do romaneio: ${dt.toLocaleDateString('pt-BR')} · ${rows.length} movimentação(ões)`,pw/2,54,{align:'center'});
+
+  const saidas=rows.filter(r=>String(r.tipo)==='SAIDA');
+  const entradas=rows.filter(r=>String(r.tipo)==='ENTRADA');
+  const devolucoes=rows.filter(r=>String(r.tipo)==='DEVOLUCAO');
+  const inventarios=rows.filter(r=>String(r.tipo)==='INVENTARIO');
+  const qtdSaidas=saidas.reduce((a,r)=>a+Number(r.quantidade||0),0);
+  const qtdEntradas=entradas.reduce((a,r)=>a+Number(r.quantidade||0),0);
+  const qtdDevolucoes=devolucoes.reduce((a,r)=>a+Number(r.quantidade||0),0);
+
+  doc.autoTable({
+    startY:70,margin:{left:34,right:34},
+    head:[['RETIRADAS','QTD. BAIXADA','ENTRADAS','QTD. ENTRADA','DEVOLUÇÕES','QTD. DEVOLVIDA','AJUSTES INVENTÁRIO']],
+    body:[[
+      saidas.length,qtdSaidas.toLocaleString('pt-BR',{maximumFractionDigits:2}),
+      entradas.length,qtdEntradas.toLocaleString('pt-BR',{maximumFractionDigits:2}),
+      devolucoes.length,qtdDevolucoes.toLocaleString('pt-BR',{maximumFractionDigits:2}),
+      inventarios.length
+    ]],
+    theme:'grid',
+    styles:{font:'helvetica',fontSize:8,halign:'center',cellPadding:5,textColor:[25,25,25],lineWidth:.35,lineColor:[70,70,70]},
+    headStyles:{fontStyle:'bold',fillColor:[255,255,255],textColor:[15,15,15]}
+  });
+
+  const bodyRows=rows.slice().sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||''))).map((r,i)=>[
+    String(i+1),
+    new Date(r.created_at||((r.data_movimento||dataRef)+'T12:00:00')).toLocaleString('pt-BR'),
+    r.tipo||'',r.epi_descricao||'',r.ca||'',Number(r.quantidade||0).toLocaleString('pt-BR',{maximumFractionDigits:2}),
+    r.colaborador_nome||'—',r.matricula||'—',r.motivo||'—',r.usuario_nome||r.created_by_nome||'—'
+  ]);
+
+  doc.autoTable({
+    startY:(doc.lastAutoTable?.finalY||105)+14,margin:{left:26,right:26,bottom:42},
+    head:[['#','DATA/HORA','TIPO','EPI','C.A.','QTD.','COLABORADOR','MATRÍCULA','MOTIVO / OBS.','RESPONSÁVEL']],
+    body:bodyRows,theme:'grid',
+    styles:{font:'helvetica',fontSize:7.2,textColor:[25,25,25],cellPadding:4,lineWidth:.3,lineColor:[80,80,80],valign:'middle'},
+    headStyles:{fontStyle:'bold',fillColor:[255,255,255],textColor:[15,15,15],halign:'center'},
+    columnStyles:{0:{cellWidth:24,halign:'center'},1:{cellWidth:78},2:{cellWidth:58,halign:'center'},3:{cellWidth:125},4:{cellWidth:52,halign:'center'},5:{cellWidth:42,halign:'right'},6:{cellWidth:120},7:{cellWidth:62},8:{cellWidth:125},9:{cellWidth:'auto'}},
+    showHead:'everyPage'
+  });
+
+  const pages=doc.getNumberOfPages();
+  for(let p=1;p<=pages;p++){
+    doc.setPage(p);doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(90);
+    doc.text(`ROMANEIO SESMT · ${dt.toLocaleDateString('pt-BR')}`,26,ph-18);
+    doc.text(`Página ${p} de ${pages}`,pw-26,ph-18,{align:'right'});
+  }
+  doc.save(`ROMANEIO_EPI_${dataRef}.pdf`);
+}
+
+function renderInventario(){
+  const stock=[...(window.EPI?.stock||[])].sort((a,b)=>String(a.descricao).localeCompare(String(b.descricao),'pt-BR'));
+  S.inventario=stock.map(x=>({epi_id:x.id,codigo:x.codigo,descricao:x.descricao,ca:x.ca,sistema:Number(x.saldo||0),fisico:Number(x.saldo||0)}));
+  const body=$('sesmtInventarioBody');if(!body)return;
+  body.innerHTML=S.inventario.length?S.inventario.map((x,i)=>`<tr>
+    <td>${esc(x.codigo||'—')}</td><td>${esc(x.descricao)}</td><td>${esc(x.ca||'—')}</td><td><b>${x.sistema.toLocaleString('pt-BR')}</b></td>
+    <td><input class="sesmt-inv-qtd" type="number" min="0" step="0.01" value="${x.fisico}" data-inv="${i}"></td>
+    <td data-diff="${i}" class="sesmt-diff-zero">0</td><td data-inv-status="${i}">OK</td>
+  </tr>`).join(''):'<tr><td colspan="7"><div class="empty-state">Nenhum EPI cadastrado.</div></td></tr>';
+  body.querySelectorAll('[data-inv]').forEach(inp=>inp.oninput=()=>{
+    const i=+inp.dataset.inv;S.inventario[i].fisico=Number(inp.value||0);const d=S.inventario[i].fisico-S.inventario[i].sistema;
+    const td=body.querySelector(`[data-diff="${i}"]`),st=body.querySelector(`[data-inv-status="${i}"]`);
+    td.textContent=(d>0?'+':'')+d.toLocaleString('pt-BR',{maximumFractionDigits:2});
+    td.className=d>0?'sesmt-diff-pos':d<0?'sesmt-diff-neg':'sesmt-diff-zero';st.textContent=d===0?'OK':'AJUSTAR';
+  });
+}
+
+async function aplicarInventario(){
+  const dif=S.inventario.filter(x=>Number(x.fisico)!==Number(x.sistema));
+  if(!dif.length)return alert('Nenhuma diferença encontrada no inventário.');
+  if(!confirm(`Aplicar o inventário e ajustar ${dif.length} item(ns) no estoque?`))return;
+  const data=$('sesmtInventarioData').value||today(),obs=$('sesmtInventarioObs').value.trim();
+  const btn=$('sesmtInventarioAplicar');btn.disabled=true;btn.textContent='Aplicando...';
+  try{
+    if(window.g360PreviewMode){
+      const rows=previewMovs();
+      for(const d of dif){
+        const st=(window.EPI?.stock||[]).find(x=>String(x.id)===String(d.epi_id));if(!st)continue;
+        const old=Number(st.saldo||0),delta=Number(d.fisico)-old;st.saldo=Number(d.fisico);
+        rows.unshift({id:'inv_'+Date.now()+'_'+d.epi_id,created_at:new Date().toISOString(),data_movimento:data,tipo:'INVENTARIO',epi_id:d.epi_id,epi_descricao:d.descricao,ca:d.ca,quantidade:Math.abs(delta),motivo:obs||'Ajuste de inventário',saldo_anterior:old,saldo_posterior:d.fisico,usuario_nome:'PRÉVIA'});
+      }
+      if(typeof window.epiSavePreviewStock==='function')window.epiSavePreviewStock();savePreviewMovs(rows);
+    }else{
+      const sb=window.g360SupabaseClient;if(!sb)throw new Error('Supabase não conectado.');
+      const payload=dif.map(x=>({epi_id:x.epi_id,saldo_sistema:x.sistema,saldo_fisico:x.fisico}));
+      const r=await sb.rpc('g360_aplicar_inventario_epi_v195',{p_data_inventario:data,p_observacao:obs||null,p_itens:payload});
+      if(r.error)throw r.error;
+      if(typeof window.epiLoadStock==='function')await window.epiLoadStock();
+    }
+    renderEstoqueFiltrado();renderInventario();await loadMovs();alert('Inventário aplicado com sucesso.');
+  }catch(e){alert('Falha ao aplicar inventário: '+(e?.message||e))}
+  finally{btn.disabled=false;btn.textContent='✓ Aplicar inventário'}
+}
+
+function patchStockRenderer(){
+  const old=window.epiRenderStock;
+  if(typeof old!=='function'||old.__v195)return;
+  const wrap=function(){old();setTimeout(()=>{stockOptions();renderMinimo();},0)};
+  wrap.__v195=true;window.epiRenderStock=wrap;
+}
+
+async function init(){
+  if(!$('view-sesmtEstoque'))return;
+  patchStockRenderer();tabs();
+  $('sesmtMovData').value=today();$('sesmtInventarioData').value=today();if($('sesmtHistDataIni'))$('sesmtHistDataIni').value=today();if($('sesmtHistDataFim'))$('sesmtHistDataFim').value=today();
+  await ensureColabs();
+  if(typeof window.epiLoadStock==='function')await window.epiLoadStock();
+  if(typeof window.epiRenderStock==='function')window.epiRenderStock();
+  stockOptions();renderMinimo();colabSearch();renderInventario();await loadMovs();
+
+  $('sesmtMovSalvar').onclick=registrarMov;$('sesmtMovLimpar').onclick=clearMov;
+  if($('sesmtMinimoPdf'))$('sesmtMinimoPdf').onclick=gerarPdfEstoqueMinimo;
+  if($('sesmtRomaneioHojePdf'))$('sesmtRomaneioHojePdf').onclick=gerarRomaneioMovimentacoesDia;
+  $('sesmtInventarioCarregar').onclick=async()=>{if(typeof window.epiLoadStock==='function')await window.epiLoadStock();renderEstoqueFiltrado();renderInventario()};
+  $('sesmtInventarioAplicar').onclick=aplicarInventario;$('sesmtHistoricoAtualizar').onclick=loadMovs;
+  ['sesmtHistDataIni','sesmtHistDataFim','sesmtHistTipo','sesmtHistBusca'].forEach(id=>$(id).addEventListener(id==='sesmtHistBusca'?'input':'change',renderMovs));
+  $('sesmtStockBusca').addEventListener('input',renderEstoqueFiltrado);$('sesmtStockSituacao').addEventListener('change',renderEstoqueFiltrado);
+  $('sesmtNovoEpiBtn').onclick=()=>{$('sesmtCadastroEpi').scrollIntoView({behavior:'smooth',block:'center'});$('epiStockDescricao').focus()};
+  $('sesmtMovTipo').onchange=()=>{
+    const precisa=$('sesmtMovTipo').value==='SAIDA';$('sesmtMovColabBusca').placeholder=precisa?'Digite o nome ou matrícula...':'Colaborador opcional...';
+  };
+}
+
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,250),{once:true});else setTimeout(init,250);
+window.g360SesmtEstoqueV195={init,loadMovs,renderInventario,aplicarInventario};
 })();
 </script>
 
