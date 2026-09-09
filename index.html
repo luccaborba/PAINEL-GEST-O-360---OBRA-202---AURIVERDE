@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- V202: corrige criação do perfil Técnico de Segurança em usuario_permissoes -->
 <!-- V200: corrige identificação da obra no inventário e movimentações SESMT -->
 <!-- V199: exclusão de movimentação por GESTOR/MASTER + usuário comum somente operação -->
 <!-- V198: padronização das fontes da tela SESMT / Estoque de EPIs -->
@@ -13949,7 +13950,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
             pode_criar:true,
             pode_editar:true,
             pode_aprovar:true,
-            pode_ativar:true,
+            pode_ativar_inativar:true,
             pode_excluir:true,
             pode_exportar:true
           });
