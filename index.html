@@ -1,4 +1,7 @@
 <!DOCTYPE html>
+<!-- V219: corrige Forçar Login individual/todos com RPC segura e verificação de sessão sem depender de RLS -->
+<!-- V218: remove RECONTRATÁVEL do PDF de admissão; permanece somente na demissão -->
+<!-- V217: remove telefone remanescente abaixo de RECONTRATÁVEL no PDF de demissão -->
 <!-- V216: remove rodapé/branding do PDF de admissão salvo/reimpresso -->
 <!-- V215: checkboxes do PDF/reimpressão com preenchimento branco real via jsPDF -->
 <!-- V214: quadrados/checkboxes sempre brancos, independente do fundo -->
@@ -7293,20 +7296,8 @@ function rhAdmGerarPDF(data){
 
   // ---- DADOS PARA ENVIO DE CONTRATO PARA ASSINATURA ----
   sectionBar('DADOS PARA ENVIO DE CONTRATO PARA ASSINATURA');
-  cell(marginX, y, labelW, 20, { text:'EMAIL:', bold:true, size:7.5, valign:'middle' });
-  cell(marginX+labelW, y, contentW-labelW, 20, { fill:PEACH, text:data.email||'', size:8, valign:'middle' });
-  y += 20;
-  cell(marginX, y, labelW, 20, { text:'TELEFONE (WHATSAPP):', bold:true, size:7.5, valign:'middle' });
-  cell(marginX+labelW, y, contentW-labelW, 20, { fill:PEACH, text:data.telefone||'', size:8, valign:'middle' });
-  y += 20;
 
   // ---- TRILHA DE APROVAÇÕES ----
-  sectionBar('RECONTRATÁVEL');
-  cell(marginX, y, halfW, 20, { fill:PEACH });
-  checkboxLabel(marginX+halfW/2-35, y, 20, data.recontratavel==='SIM', 'SIM', {bold:true});
-  cell(marginX+halfW, y, halfW, 20, { fill:PEACH });
-  checkboxLabel(marginX+halfW+halfW/2-35, y, 20, data.recontratavel!=='SIM', 'NÃO', {bold:true});
-  y += 20;
   cell(marginX, y, labelW, 20, { text:'TELEFONE (WHATSAPP):', bold:true, size:7.5, valign:'middle' });
   cell(marginX+labelW, y, contentW-labelW, 20, { fill:PEACH, text:data.telefone||'', size:8, valign:'middle' });
   y += 20;
@@ -16695,24 +16686,19 @@ window.g360FechamentoV57={
     try{
       const c=client();
       if(!c?.auth)return;
+
       const {data:sess}=await c.auth.getSession();
-      const session=sess?.session;
-      if(!session?.user?.id)return;
+      if(!sess?.session?.user?.id)return;
 
-      const uid=session.user.id;
-      const lastSignInMs=Date.parse(session.user.last_sign_in_at||session.user.created_at||0)||0;
-      const {data:prof,error}=await c.from('profiles').select('force_reauth_at').eq('id',uid).maybeSingle();
-
+      const {data:precisa,error}=await c.rpc('g360_precisa_relogin_v219');
       if(error){
-        if(String(error.message||'').toLowerCase().includes('force_reauth_at'))return;
-        console.warn('[G360 V148] verificação de sessão:',error.message||error);
+        console.warn('[G360 V219] verificação de sessão:',error.message||error);
         return;
       }
 
-      const forceMs=Date.parse(prof?.force_reauth_at||0)||0;
-      if(forceMs>lastSignInMs)await logoutSilent();
+      if(precisa===true)await logoutSilent();
     }catch(e){
-      console.warn('[G360 V148] sessão:',e);
+      console.warn('[G360 V219] sessão:',e);
     }finally{
       forcePolling=false;
     }
@@ -16736,11 +16722,12 @@ window.g360FechamentoV57={
   async function forceUser(userId){
     const c=client();
     if(!c||!userId)return;
+    if(!confirm('Forçar este usuário a fazer login novamente?'))return;
     const btn=document.querySelector('[data-user-force-login="'+CSS.escape(String(userId))+'"]');
     const old=btn?.textContent;
     if(btn){btn.disabled=true;btn.textContent='⏳ Processando...'}
     try{
-      const {error}=await c.rpc('g360_forcar_relogin',{p_usuario_id:userId});
+      const {error}=await c.rpc('g360_forcar_relogin_v219',{p_usuario_id:userId});
       if(error)throw error;
       forceLoginFeedback('✓ Novo login exigido. A solicitação foi processada com sucesso.');
       try{window.g360Audit?.('FORCAR_NOVO_LOGIN','Usuários & Permissões','profiles',userId,'Novo login exigido para usuário',null,null,{origem:'ADMIN'})}catch(_){}
@@ -16759,20 +16746,51 @@ window.g360FechamentoV57={
   async function forceAll(){
     const c=client();
     if(!c)return;
+
+    if(!confirm('Forçar um novo login de TODOS os usuários agora?\n\nTodas as sessões abertas, inclusive a sua, serão encerradas.'))return;
+
     const btn=document.getElementById('g360ForceAllLoginBtn'),old=btn?.textContent;
     if(btn){btn.disabled=true;btn.textContent='⏳ Processando...'}
+
     try{
-      const {error}=await c.rpc('g360_forcar_relogin',{p_usuario_id:null});
+      const {data,error}=await c.rpc('g360_forcar_relogin_todos_v219');
       if(error)throw error;
-      // O próprio MASTER também será desconectado; persiste o aviso para a tela seguinte.
-      try{sessionStorage.setItem('g360_force_all_feedback','✓ Novo login exigido para todos os usuários. Solicitação processada com sucesso.')}catch(_){}
-      try{window.g360Audit?.('FORCAR_NOVO_LOGIN_TODOS','Usuários & Permissões',null,null,'Novo login exigido para todos os usuários',null,null,{origem:'ADMIN'})}catch(_){}
-      forceLoginFeedback('✓ Novo login exigido para todos os usuários. Solicitação processada com sucesso.');
-      setTimeout(()=>logoutSilent(),900);
+
+      try{
+        sessionStorage.setItem(
+          'g360_force_all_feedback',
+          '✓ Novo login exigido para todos os usuários.'
+        );
+      }catch(_){}
+
+      try{
+        window.g360Audit?.(
+          'FORCAR_NOVO_LOGIN_TODOS',
+          'Usuários & Permissões',
+          'profiles',
+          null,
+          'Novo login exigido para todos os usuários',
+          null,null,
+          {origem:'ADMIN',usuarios_afetados:data??null}
+        );
+      }catch(_){}
+
+      forceLoginFeedback(
+        '✓ Sessões invalidadas. Todos deverão entrar novamente.'
+      );
+
+      // O MASTER que executou a ação também pertence ao grupo "todos".
+      setTimeout(()=>logoutSilent(),700);
     }catch(error){
-      console.error('[G360 V179] falha ao forçar login de todos:',error);
-      forceLoginFeedback('Não foi possível processar o novo login de todos: '+(error?.message||error),false);
-      if(btn){btn.disabled=false;btn.textContent=old||'⛔ Forçar novo login de todos'}
+      console.error('[G360 V219] falha ao forçar login de todos:',error);
+      forceLoginFeedback(
+        'Não foi possível forçar o novo login de todos: '+(error?.message||error),
+        false
+      );
+      if(btn){
+        btn.disabled=false;
+        btn.textContent=old||'⛔ Forçar novo login de todos';
+      }
     }
   }
 
