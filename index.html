@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+<!-- V216: remove rodapé/branding do PDF de admissão salvo/reimpresso -->
+<!-- V215: checkboxes do PDF/reimpressão com preenchimento branco real via jsPDF -->
 <!-- V214: quadrados/checkboxes sempre brancos, independente do fundo -->
 <!-- V213: PDFs RH limpos; demissão sem contato duplicado e sem rodapés/branding do sistema -->
 <!-- V212: UF fixa + cidades IBGE robustas e layout compacto de Cidade -->
@@ -4258,14 +4260,12 @@ function addPdfCredits(doc){
 
     // Esquerda — CCL / Gestão 360º
     doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(31,56,100);
-    doc.text('CCL — CONSTRUTORA CENTRO LESTE', 30, pageH-18);
+
     doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(130,130,130);
-    doc.text('Gestão 360º · Obra 202 · Auriverde', 30, pageH-9);
 
     // Direita — créditos de desenvolvimento
     doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(150,150,150);
-    doc.text('Projeto desenvolvido por', pageW-30, pageH-22, {align:'right'});
-    doc.text('Luciano Garcia Borba', pageW-30, pageH-13, {align:'right'});
+
     doc.setFont('helvetica','italic'); doc.setFontSize(6.5); doc.setTextColor(150,150,150);
 
   }
@@ -7133,10 +7133,15 @@ function rhAdmGerarPDF(data){
 
   function checkbox(x, y0, checked){
     const s = 8;
-    setDraw();
-    doc.rect(x, y0, s, s);
+    // Caixa sempre branca no PDF, mesmo sobre células amarelas/cinzas.
+    doc.setFillColor(255,255,255);
+    doc.setDrawColor(0,0,0);
+    doc.setLineWidth(0.75);
+    doc.rect(x, y0, s, s, 'FD');
     if(checked){
-      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(20,20,20);
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(8);
+      doc.setTextColor(0,0,0);
       doc.text('X', x+1.3, y0+7);
     }
     return s;
@@ -10294,13 +10299,11 @@ function addPdfCredits(doc){
     doc.line(30, pageH-28, pageW-30, pageH-28);
 
     doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(31,56,100);
-    doc.text('CCL — CONSTRUTORA CENTRO LESTE', 30, pageH-18);
+
     doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(130,130,130);
-    doc.text('Gestão 360º · Obra 202 · Auriverde', 30, pageH-9);
 
     doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(150,150,150);
-    doc.text('Projeto desenvolvido por', pageW-30, pageH-22, {align:'right'});
-    doc.text('Luciano Garcia Borba', pageW-30, pageH-13, {align:'right'});
+
     doc.setFont('helvetica','italic'); doc.setFontSize(6.5); doc.setTextColor(150,150,150);
 
   }
