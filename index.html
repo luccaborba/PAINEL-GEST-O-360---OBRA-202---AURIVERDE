@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+<!-- V214: quadrados/checkboxes sempre brancos, independente do fundo -->
+<!-- V213: PDFs RH limpos; demissão sem contato duplicado e sem rodapés/branding do sistema -->
 <!-- V212: UF fixa + cidades IBGE robustas e layout compacto de Cidade -->
 <!-- V210: layout Folga de Campo com UF antes da Cidade e KM/Período/Dias na mesma linha -->
 <!-- V209: Cidade/UF gerais do candidato, KM condicional à baixada e campos Email/Telefone uniformes -->
@@ -1681,6 +1683,34 @@ html.g360-ui-ready .content-col {
     width:auto!important;
     max-width:none!important;
   }
+}
+</style>
+
+
+<style id="g360-checkbox-branco-v214">
+#view-rhdpAdmissao input[type="checkbox"],
+#view-rhdpDemissao input[type="checkbox"]{
+  appearance:none!important;
+  -webkit-appearance:none!important;
+  width:14px!important;
+  height:14px!important;
+  min-width:14px!important;
+  min-height:14px!important;
+  padding:0!important;
+  border:1px solid #111!important;
+  border-radius:0!important;
+  background:#fff!important;
+  vertical-align:middle!important;
+  position:relative!important;
+}
+#view-rhdpAdmissao input[type="checkbox"]:checked::after,
+#view-rhdpDemissao input[type="checkbox"]:checked::after{
+  content:"✓";
+  position:absolute;
+  inset:-4px 0 0 1px;
+  color:#111!important;
+  font-size:14px;
+  font-weight:900;
 }
 </style>
 
@@ -4237,7 +4267,7 @@ function addPdfCredits(doc){
     doc.text('Projeto desenvolvido por', pageW-30, pageH-22, {align:'right'});
     doc.text('Luciano Garcia Borba', pageW-30, pageH-13, {align:'right'});
     doc.setFont('helvetica','italic'); doc.setFontSize(6.5); doc.setTextColor(150,150,150);
-    doc.text('Constru-X · Gestão Inteligente 360º', pageW-30, pageH-6, {align:'right'});
+
   }
 }
 function renderKpis(elId, items){
@@ -7272,11 +7302,6 @@ function rhAdmGerarPDF(data){
   cell(marginX+halfW, y, halfW, 20, { fill:PEACH });
   checkboxLabel(marginX+halfW+halfW/2-35, y, 20, data.recontratavel!=='SIM', 'NÃO', {bold:true});
   y += 20;
-
-  sectionBar('CONTATO PARA ENTREVISTA DE DESLIGAMENTO');
-  cell(marginX, y, labelW, 20, { text:'EMAIL:', bold:true, size:7.5, valign:'middle' });
-  cell(marginX+labelW, y, contentW-labelW, 20, { fill:PEACH, text:data.email||'', size:8, valign:'middle' });
-  y += 20;
   cell(marginX, y, labelW, 20, { text:'TELEFONE (WHATSAPP):', bold:true, size:7.5, valign:'middle' });
   cell(marginX+labelW, y, contentW-labelW, 20, { fill:PEACH, text:data.telefone||'', size:8, valign:'middle' });
   y += 20;
@@ -8639,7 +8664,6 @@ async function trPdf(){
   const dt=d.data_entrega?new Date(d.data_entrega+'T12:00:00'):new Date(),meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
   setFont(false,9.4);doc.text(`Senador Canedo/GO, ${dt.getDate()} de ${meses[dt.getMonth()]} de ${dt.getFullYear()}.`,PW-M,y,{align:'right'});y+=34;
   const lx=M+82,rx=PW/2+68,lw=210;doc.setDrawColor(50);doc.setLineWidth(.6);doc.line(lx,y,lx+lw,y);doc.line(rx,y,rx+lw,y);setFont(true,9);doc.text('Assinatura do Colaborador',lx+lw/2,y+14,{align:'center'});doc.text('Assinatura do Encarregado',rx+lw/2,y+14,{align:'center'});
-  const pages=doc.getNumberOfPages();for(let i=1;i<=pages;i++){doc.setPage(i);setFont(false,7.4);doc.setTextColor(95);doc.text(`Página ${i} de ${pages}`,PW-M,PH-16,{align:'right'})}
   doc.save(`TERMO_RESP_ITENS_${String(mat||nome).replace(/[^A-Za-z0-9_-]+/g,'_')}_${d.data_entrega||'SEM_DATA'}.pdf`);
 }
 
@@ -10278,7 +10302,7 @@ function addPdfCredits(doc){
     doc.text('Projeto desenvolvido por', pageW-30, pageH-22, {align:'right'});
     doc.text('Luciano Garcia Borba', pageW-30, pageH-13, {align:'right'});
     doc.setFont('helvetica','italic'); doc.setFontSize(6.5); doc.setTextColor(150,150,150);
-    doc.text('Constru-X · Gestão Inteligente 360º', pageW-30, pageH-6, {align:'right'});
+
   }
 }
 function badgeClass(sit){
@@ -16042,7 +16066,7 @@ window.g360FechamentoV57={
       didDrawPage:function(){
         const h=doc.internal.pageSize.getHeight();
         doc.setFontSize(7.5); doc.setTextColor(100);
-        doc.text('CONSTRU-X 360º · Fechamento de Praça',24,h-14);
+
         doc.text('Página '+doc.internal.getCurrentPageInfo().pageNumber,pageW-24,h-14,{align:'right'});
       }
     });
@@ -17717,13 +17741,6 @@ function gerarRomaneioMovimentacoesDia(){
     columnStyles:{0:{cellWidth:24,halign:'center'},1:{cellWidth:78},2:{cellWidth:58,halign:'center'},3:{cellWidth:125},4:{cellWidth:52,halign:'center'},5:{cellWidth:42,halign:'right'},6:{cellWidth:120},7:{cellWidth:62},8:{cellWidth:125},9:{cellWidth:'auto'}},
     showHead:'everyPage'
   });
-
-  const pages=doc.getNumberOfPages();
-  for(let p=1;p<=pages;p++){
-    doc.setPage(p);doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(90);
-    doc.text(`ROMANEIO SESMT · ${dt.toLocaleDateString('pt-BR')}`,26,ph-18);
-    doc.text(`Página ${p} de ${pages}`,pw-26,ph-18,{align:'right'});
-  }
   doc.save(`ROMANEIO_EPI_${dataRef}.pdf`);
 }
 
