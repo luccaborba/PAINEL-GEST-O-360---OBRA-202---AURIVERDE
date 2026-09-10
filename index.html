@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- V212: UF fixa + cidades IBGE robustas e layout compacto de Cidade -->
 <!-- V210: layout Folga de Campo com UF antes da Cidade e KM/Período/Dias na mesma linha -->
 <!-- V209: Cidade/UF gerais do candidato, KM condicional à baixada e campos Email/Telefone uniformes -->
 <!-- V208: Cidade e UF da Baixada ficam sempre visíveis no formulário de admissão -->
@@ -1631,6 +1632,58 @@ html.g360-ui-ready .content-col {
 }
 </style>
 
+
+<style id="g360-ibge-selects-v211">
+#view-rhdpAdmissao #rhAdmEstado,
+#view-rhdpAdmissao #rhAdmCidade{
+  width:100%!important;
+  height:38px!important;
+  min-height:38px!important;
+  border-radius:7px!important;
+  background:var(--asphalt)!important;
+  color:var(--ink)!important;
+  border:1px solid var(--line)!important;
+  padding:8px 10px!important;
+  box-sizing:border-box!important;
+}
+#view-rhdpAdmissao #rhAdmCidade:disabled{
+  opacity:.65!important;
+  cursor:not-allowed;
+}
+</style>
+
+
+<style id="g360-admissao-uf-cidade-v212">
+#view-rhdpAdmissao .adm-loc-row{
+  display:grid!important;
+  grid-template-columns:105px 430px!important;
+  gap:12px!important;
+  justify-content:start!important;
+  align-items:end!important;
+}
+#view-rhdpAdmissao .adm-city-field{
+  width:430px!important;
+  max-width:430px!important;
+}
+#view-rhdpAdmissao #rhAdmEstado,
+#view-rhdpAdmissao #rhAdmCidade{
+  width:100%!important;
+  height:38px!important;
+  min-height:38px!important;
+  border-radius:7px!important;
+  box-sizing:border-box!important;
+}
+@media(max-width:650px){
+  #view-rhdpAdmissao .adm-loc-row{
+    grid-template-columns:90px minmax(0,1fr)!important;
+  }
+  #view-rhdpAdmissao .adm-city-field{
+    width:auto!important;
+    max-width:none!important;
+  }
+}
+</style>
+
 </head>
 <body>
 <!-- V155: convite personalizado + primeiro acesso com criação de senha -->
@@ -2464,11 +2517,15 @@ html.g360-ui-ready .content-col {
             <div class="adm-loc-row">
               <div class="form-group adm-uf-field">
                 <label>UF *</label>
-                <input type="text" id="rhAdmEstado" maxlength="2" placeholder="UF">
+                <select id="rhAdmEstado">
+                  <option value="">Selecione a UF...</option>
+                </select>
               </div>
               <div class="form-group adm-city-field">
                 <label>Cidade *</label>
-                <input type="text" id="rhAdmCidade" placeholder="Informe a cidade do candidato">
+                <select id="rhAdmCidade" disabled>
+                  <option value="">Selecione primeiro a UF...</option>
+                </select>
               </div>
             </div>
 
@@ -7399,7 +7456,10 @@ function rhAdmDeleteHistorico(idx){
 }
 
 let rhAdmEditIndex = null;
-function rhAdmFillForm(data){
+async function rhAdmFillForm(data){
+  if(window.g360AdmSetCidadeUfV212){
+    try{await window.g360AdmSetCidadeUfV212(data.estado||'',data.cidade||'')}catch(e){}
+  }
   document.getElementById('rhAdmNome').value = data.nome || '';
   document.getElementById('rhAdmCargo').value = data.cargo || '';
   rhAdmOnCargoChange();
@@ -7414,8 +7474,6 @@ function rhAdmFillForm(data){
   document.getElementById('rhAdmHorario').value = data.horario || '';
   document.getElementById('rhAdmBeneficio').value = data.beneficio || '';
   document.querySelector(`input[name="rhAdmBaixada"][value="${data.baixadaAplicavel?'SIM':'NAO'}"]`).checked = true;
-  document.getElementById('rhAdmCidade').value = data.cidade || '';
-  document.getElementById('rhAdmEstado').value = data.estado || '';
   document.getElementById('rhAdmKm').value = data.km || '';
   const periodoOpts = ['60 DIAS','90 DIAS','180 DIAS'];
   if(data.periodo && !periodoOpts.includes(data.periodo)){
@@ -17993,6 +18051,107 @@ const oldDemRender=window.renderRhdpDemissao;
 if(typeof oldDemRender==='function'){
   window.renderRhdpDemissao=function(){oldDemRender();setTimeout(loadDemDbV205,50)}
 }
+})();
+</script>
+
+
+<script id="g360-ibge-uf-cidades-v212">
+(function(){
+'use strict';
+
+const UFS=[
+['AC','Acre'],['AL','Alagoas'],['AP','Amapá'],['AM','Amazonas'],['BA','Bahia'],
+['CE','Ceará'],['DF','Distrito Federal'],['ES','Espírito Santo'],['GO','Goiás'],
+['MA','Maranhão'],['MT','Mato Grosso'],['MS','Mato Grosso do Sul'],['MG','Minas Gerais'],
+['PA','Pará'],['PB','Paraíba'],['PR','Paraná'],['PE','Pernambuco'],['PI','Piauí'],
+['RJ','Rio de Janeiro'],['RN','Rio Grande do Norte'],['RS','Rio Grande do Sul'],
+['RO','Rondônia'],['RR','Roraima'],['SC','Santa Catarina'],['SP','São Paulo'],
+['SE','Sergipe'],['TO','Tocantins']
+];
+const CACHE='g360_ibge_municipios_v212_';
+
+function ufEl(){return document.getElementById('rhAdmEstado')}
+function cidadeEl(){return document.getElementById('rhAdmCidade')}
+
+function montarUFs(){
+  const uf=ufEl(); if(!uf)return;
+  const atual=uf.value;
+  uf.innerHTML='<option value="">UF...</option>'+UFS.map(([s,n])=>`<option value="${s}">${s}</option>`).join('');
+  if(atual && UFS.some(x=>x[0]===atual))uf.value=atual;
+  if(uf.dataset.ibgeBound!=='1'){
+    uf.addEventListener('change',()=>carregarCidades(uf.value,''));
+    uf.dataset.ibgeBound='1';
+  }
+}
+
+function cacheGet(key){
+  try{
+    const v=JSON.parse(localStorage.getItem(key)||'null');
+    return v && Array.isArray(v.data) ? v.data : null;
+  }catch(e){return null}
+}
+function cacheSet(key,data){
+  try{localStorage.setItem(key,JSON.stringify({data,ts:Date.now()}))}catch(e){}
+}
+
+async function carregarCidades(sigla,selecionada=''){
+  const cidade=cidadeEl(); if(!cidade)return;
+  if(!sigla){
+    cidade.disabled=true;
+    cidade.innerHTML='<option value="">Selecione a UF...</option>';
+    return;
+  }
+
+  cidade.disabled=true;
+  cidade.innerHTML='<option value="">Carregando...</option>';
+
+  try{
+    let nomes=cacheGet(CACHE+sigla);
+    if(!nomes){
+      const url='https://servicodados.ibge.gov.br/api/v1/localidades/estados/'+encodeURIComponent(sigla)+'/municipios?orderBy=nome';
+      const resp=await fetch(url,{method:'GET',mode:'cors',cache:'default'});
+      if(!resp.ok)throw new Error('HTTP '+resp.status);
+      const dados=await resp.json();
+      nomes=dados.map(x=>x.nome).filter(Boolean);
+      cacheSet(CACHE+sigla,nomes);
+    }
+    cidade.innerHTML='<option value="">Selecione a cidade...</option>'+
+      nomes.map(n=>`<option value="${n.replace(/"/g,'&quot;')}">${n}</option>`).join('');
+    cidade.disabled=false;
+    if(selecionada && nomes.includes(selecionada))cidade.value=selecionada;
+  }catch(err){
+    console.warn('[IBGE cidades V212]',err);
+    cidade.innerHTML='<option value="">Falha ao carregar cidades — selecione novamente a UF</option>';
+    cidade.disabled=false;
+  }
+}
+
+function iniciar(){
+  if(!ufEl()||!cidadeEl())return;
+  montarUFs();
+  const uf=ufEl().value;
+  if(uf && cidadeEl().options.length<=1)carregarCidades(uf,'');
+}
+
+window.g360AdmSetCidadeUfV212=async function(sigla,cidade){
+  iniciar();
+  const uf=ufEl(); if(!uf)return;
+  uf.value=String(sigla||'').toUpperCase();
+  await carregarCidades(uf.value,cidade||'');
+};
+
+/* Inicializa agora e também quando o usuário entrar na área de Admissão. */
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(iniciar,100),{once:true});
+}else{
+  setTimeout(iniciar,100);
+}
+document.addEventListener('click',function(e){
+  if(e.target.closest('[data-view="rhdpAdmissao"],[data-target="rhdpAdmissao"],#menu-rhdpAdmissao')){
+    setTimeout(iniciar,120);
+  }
+});
+setTimeout(iniciar,800);
 })();
 </script>
 
