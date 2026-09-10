@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- V220: restaura EMAIL acima do TELEFONE no PDF de admissão e mantém PDF sem créditos/rodapé -->
 <!-- V219: corrige Forçar Login individual/todos com RPC segura e verificação de sessão sem depender de RLS -->
 <!-- V218: remove RECONTRATÁVEL do PDF de admissão; permanece somente na demissão -->
 <!-- V217: remove telefone remanescente abaixo de RECONTRATÁVEL no PDF de demissão -->
@@ -7297,11 +7298,15 @@ function rhAdmGerarPDF(data){
   // ---- DADOS PARA ENVIO DE CONTRATO PARA ASSINATURA ----
   sectionBar('DADOS PARA ENVIO DE CONTRATO PARA ASSINATURA');
 
-  // ---- TRILHA DE APROVAÇÕES ----
+  cell(marginX, y, labelW, 20, { text:'EMAIL:', bold:true, size:7.5, valign:'middle' });
+  cell(marginX+labelW, y, contentW-labelW, 20, { fill:PEACH, text:data.email||'', size:8, valign:'middle' });
+  y += 20;
+
   cell(marginX, y, labelW, 20, { text:'TELEFONE (WHATSAPP):', bold:true, size:7.5, valign:'middle' });
   cell(marginX+labelW, y, contentW-labelW, 20, { fill:PEACH, text:data.telefone||'', size:8, valign:'middle' });
   y += 20;
 
+  // ---- TRILHA DE APROVAÇÕES ----
   sectionBar('TRILHA DE APROVAÇÕES');
   const trilhaH = 28;
   cell(marginX, y, contentW, trilhaH, {});
@@ -7327,7 +7332,6 @@ function rhAdmGerarPDF(data){
   });
   y += trilhaH;
 
-  addPdfCredits(doc);
   const fname = 'solicitacao_admissao_' + data.nome.replace(/[^a-zA-Z0-9]+/g,'_') + '.pdf';
   doc.save(fname);
 }
