@@ -1,4 +1,7 @@
 <!DOCTYPE html>
+<!-- V228: permissões SESMT reorganizadas e Técnico habilitado para operação de estoque -->
+<!-- V227: SESMT organizado em cascata, controle de estoque didático e histórico XLSX -->
+<!-- V226: força login individual direto e força-login de todos reparado pela RPC individual -->
 <!-- V225: Cidade/UF de baixada via IBGE, prefill da admissão e CPF com máscara/validação -->
 <!-- V224: feedback Gravando/Gravado ao salvar cadastro de Alojamentos -->
 <!-- V223: correção da validação de capacidade ao trocar colaborador de alojamento -->
@@ -1782,6 +1785,32 @@ html.g360-ui-ready .content-col {
 @media(max-width:1000px){.adm-tempo-grid-v222{grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style>
 
+
+<style id="g360-sesmt-menu-didatico-v227">
+#g360SesmtCascade .g360-sesmt-stock-cascade{margin:3px 5px 3px 10px;border-left:1px solid rgba(245,197,24,.22)}
+#g360SesmtCascade .g360-sesmt-stock-head{padding:9px 10px;font-size:11px;font-weight:900;color:var(--ink);background:rgba(255,255,255,.025);border-radius:6px}
+#g360SesmtCascade .g360-sesmt-stock-head:hover{background:rgba(245,197,24,.08)}
+#g360SesmtCascade .g360-sesmt-stock-children{padding-left:10px}
+#g360SesmtCascade .g360-sesmt-stock-children .side-link{font-size:10.5px;padding:8px 9px}
+#g360SesmtCascade .g360-sesmt-stock-children .ic{width:18px}
+#view-sesmtEstoque .sesmt-stock-tabs{display:none!important}
+#view-sesmtEstoque .sesmt-stock-title .pt-sub{max-width:900px}
+#view-sesmtEstoque .sesmt-hist-actions{display:flex;gap:7px;flex-wrap:wrap}
+</style>
+
+
+<style id="g360-permissoes-organizadas-v228">
+#g360PermMatrixBody .g360-perm-group-v228 td{
+  background:#15171a!important;color:#f5c518!important;font-size:10px!important;
+  font-weight:900!important;letter-spacing:.08em!important;padding:9px 12px!important;
+  border-top:2px solid rgba(245,197,24,.35)!important;
+}
+#g360PermMatrixBody tr[data-perm-module-row^="sesmt_"] .g360-perm-module,
+#g360PermMatrixBody tr[data-perm-module-row="sesmt"] .g360-perm-module{
+  padding-left:18px!important;
+}
+</style>
+
 </head>
 <body>
 <!-- V155: convite personalizado + primeiro acesso com criação de senha -->
@@ -1883,7 +1912,21 @@ html.g360-ui-ready .content-col {
           <div class="side-cascade-head" id="g360SesmtCascadeToggle" role="button" tabindex="0" aria-expanded="false"><span class="ic">🦺</span>SESMT / Segurança do Trabalho <span class="cascade-arrow">▼</span></div>
           <div class="side-cascade-children">
             <div class="side-link" data-view="sesmt"><span class="ic">🛡️</span>Segurança do Trabalho</div>
-            <div class="side-link" data-view="sesmtEstoque"><span class="ic">📦</span>Estoque de EPIs</div>
+
+            <div class="side-cascade g360-sesmt-stock-cascade" id="g360SesmtStockCascade">
+              <div class="side-cascade-head g360-sesmt-stock-head" id="g360SesmtStockToggle" role="button" tabindex="0" aria-expanded="false">
+                <span class="ic">📦</span>Controle de Estoque <span class="cascade-arrow">▼</span>
+              </div>
+              <div class="side-cascade-children g360-sesmt-stock-children">
+                <div class="side-link" data-view="sesmtEstoque" data-sesmt-menu-tab="estoque"><span class="ic">📊</span>Estoque Atual</div>
+                <div class="side-link" data-view="sesmtEstoque" data-sesmt-menu-tab="mov" data-sesmt-menu-tipo="ENTRADA"><span class="ic">➕</span>Entrada de Estoque</div>
+                <div class="side-link" data-view="sesmtEstoque" data-sesmt-menu-tab="mov" data-sesmt-menu-tipo="SAIDA"><span class="ic">↔️</span>Movimentação / Baixa</div>
+                <div class="side-link" data-view="sesmtEstoque" data-sesmt-menu-tab="inventario"><span class="ic">📋</span>Inventário</div>
+                <div class="side-link" data-view="sesmtEstoque" data-sesmt-menu-tab="historico"><span class="ic">🕘</span>Histórico</div>
+                <div class="side-link" data-view="sesmtEstoque" data-sesmt-menu-tab="cadastro" data-gestor-only-v227="1"><span class="ic">🏷️</span>Cadastro de Itens</div>
+              </div>
+            </div>
+
             <div class="side-link" data-view="sesmtTermo"><span class="ic">🧾</span>Termo de Entrega de EPIs</div>
           </div>
         </div>
@@ -3799,6 +3842,7 @@ html.g360-ui-ready .content-col {
             </div>
             <div class="sesmt-hist-actions">
               <button type="button" class="clear-btn" id="sesmtRomaneioHojePdf">📄 Romaneio do dia</button>
+              <button type="button" class="clear-btn" id="sesmtHistoricoExcel">📊 Exportar Excel</button>
               <button type="button" class="clear-btn" id="sesmtHistoricoAtualizar">↻ Atualizar</button>
             </div>
           </div>
@@ -14242,7 +14286,16 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
 <script>
 (function(){
   const MODULES=[
-    ['alertas','Central de Alertas','alertas'],['projetos','Projetos / Obras','projetosObras'],['executivo','Painel Gerencial','executivo'],['colaboradores','Colaboradores (RH / DP)','base'],['cargos_salarios','Cargos e Salários','cargosSalarios'],['termos','Termos de Responsabilidade','termoResponsabilidade'],['alojamentos','Alojamentos','alojamento'],['patrimonio_inventario','Inventário de Patrimônio','patrimonioInventario'],['patrimonio_estoque','Estoque de Patrimônio','patrimonioEstoque'],['patrimonio_alojamento','Patrimônio por Alojamento','patrimonio'],['organograma','Organograma Setor/Equipe','organograma'],['contratos','Contratos','contratos'],['aditivos','Aditivos de Contratos','aditivosContratos'],['fechamento','Fechamento de Praça','fechamentoPraca'],['admissao','Admissão','rhdpAdmissao'],['demissao','Solicitação de Demissão','rhdpDemissao'],['movimentacao','Movimentação Interna','rhdpMovimentacao'],['advertencia','Advertência Disciplinar','rhdpAdvertencia'],['folga','Folga de Campo','baixadas'],['sesmt','Segurança do Trabalho','sesmt'],['sesmt_estoque','Estoque de EPIs','sesmtEstoque'],['sesmt_termo','Termo de Entrega de EPIs','sesmtTermo'],['usuarios','Usuários & Permissões','usuariosPermissoes']
+    ['alertas','Central de Alertas','alertas'],['projetos','Projetos / Obras','projetosObras'],['executivo','Painel Gerencial','executivo'],['colaboradores','Colaboradores (RH / DP)','base'],['cargos_salarios','Cargos e Salários','cargosSalarios'],['termos','Termos de Responsabilidade','termoResponsabilidade'],['alojamentos','Alojamentos','alojamento'],['patrimonio_inventario','Inventário de Patrimônio','patrimonioInventario'],['patrimonio_estoque','Estoque de Patrimônio','patrimonioEstoque'],['patrimonio_alojamento','Patrimônio por Alojamento','patrimonio'],['organograma','Organograma Setor/Equipe','organograma'],['contratos','Contratos','contratos'],['aditivos','Aditivos de Contratos','aditivosContratos'],['fechamento','Fechamento de Praça','fechamentoPraca'],['admissao','Admissão','rhdpAdmissao'],['demissao','Solicitação de Demissão','rhdpDemissao'],['movimentacao','Movimentação Interna','rhdpMovimentacao'],['advertencia','Advertência Disciplinar','rhdpAdvertencia'],['folga','Folga de Campo','baixadas'],['sesmt','SESMT › Segurança do Trabalho','sesmt'],
+    ['sesmt_estoque','SESMT › Controle de Estoque — Acesso geral','sesmtEstoque'],
+    ['sesmt_estoque_consulta','SESMT › Estoque — Consulta / Estoque Atual',''],
+    ['sesmt_estoque_entrada','SESMT › Estoque — Entrada',''],
+    ['sesmt_estoque_baixa','SESMT › Estoque — Movimentação / Baixa',''],
+    ['sesmt_estoque_inventario','SESMT › Estoque — Inventário',''],
+    ['sesmt_estoque_historico','SESMT › Estoque — Histórico / Relatórios',''],
+    ['sesmt_estoque_cadastro','SESMT › Estoque — Cadastro de Itens',''],
+    ['sesmt_termo','SESMT › Termo de Entrega de EPIs','sesmtTermo'],
+    ['usuarios','Usuários & Permissões','usuariosPermissoes']
   ];
   const ACTIONS=['visualizar','criar','editar','aprovar','ativar','excluir','exportar'];
   const sb=window.g360SupabaseClient, PROD=window.g360PreviewMode===false && !!sb;
@@ -14255,7 +14308,16 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
     'colaboradores','cargos_salarios','organograma',
     'admissao','demissao','movimentacao','advertencia','folga'
   ]);
-  const SESMT_MODULES=new Set(['sesmt','sesmt_estoque','sesmt_termo']);
+  const SESMT_MODULES=new Set([
+    'sesmt','sesmt_estoque','sesmt_estoque_consulta','sesmt_estoque_entrada',
+    'sesmt_estoque_baixa','sesmt_estoque_inventario','sesmt_estoque_historico',
+    'sesmt_estoque_cadastro','sesmt_termo'
+  ]);
+  const SESMT_STOCK_MODULES=new Set([
+    'sesmt_estoque','sesmt_estoque_consulta','sesmt_estoque_entrada',
+    'sesmt_estoque_baixa','sesmt_estoque_inventario','sesmt_estoque_historico',
+    'sesmt_estoque_cadastro'
+  ]);
 
   function normPerfil(v){
     const p=String(v||'').trim().toUpperCase();
@@ -14303,7 +14365,12 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
 
     if(p==='TECNICO_SEGURANCA'){
       if(SESMT_MODULES.has(module)){
-        return allPerm();
+        const r=allPerm();
+        // Regra operacional já definida: exclusão de estoque/movimentações fica
+        // reservada ao GESTOR/MASTER. O Técnico pode operar, lançar, ajustar,
+        // inventariar, editar cadastros e exportar.
+        if(SESMT_STOCK_MODULES.has(module))r.excluir=false;
+        return r;
       }
       return out;
     }
@@ -14345,6 +14412,8 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
 
   window.g360CurrentUser=()=>user(currentId);
   window.g360IsGestor=()=>{const u=user(currentId);return !!u?.master || normPerfil(u?.perfil)==='GESTOR';};
+  window.g360IsTecnicoSeguranca=()=>{const u=user(currentId);return !!u&&normPerfil(u?.perfil)==='TECNICO_SEGURANCA';};
+  window.g360IsSesmtOperador=()=>window.g360IsGestor()||window.g360IsTecnicoSeguranca();
 
   function applyViewControls(view,module){const p=perm(currentId,module),note=ensureNote(view);note.classList.remove('show');note.textContent='';view.querySelectorAll('button,a.btn-primary,a.clear-btn').forEach(el=>{if(el.matches('[data-g360-competencia="1"],[data-g360-fechamento-action="1"]')||el.closest('.filters,.org-filters,#view-usuariosPermissoes,#g360FjCompetModal,#g360FjEditModal'))return;const a=actionFromCrudButton(el);if(a)el.classList.toggle('g360-perm-hidden',!p[a])})}
   function applyAccess(fallback=false){document.querySelectorAll('.side-link[data-view]').forEach(link=>{const m=moduleByView(link.dataset.view);if(m)link.classList.toggle('g360-perm-hidden',!window.g360Can(m,'visualizar'))});const adv=document.getElementById('g360AdvertenciaMenu');if(adv){adv.classList.remove('g360-perm-hidden');adv.style.setProperty('display','flex','important');}const adminGroup=document.querySelector('.g360-perm-admin-group');if(adminGroup)adminGroup.style.display=window.g360Can('usuarios','visualizar')?'':'none';const auditMenu=document.getElementById('g360AuditMenu');if(auditMenu){const ok=window.g360Can('usuarios','visualizar');auditMenu.classList.toggle('g360-perm-hidden',!ok);auditMenu.style.setProperty('display',ok?'flex':'none','important');}document.querySelectorAll('.view').forEach(v=>{const m=moduleByView(v.id.replace(/^view-/,''));if(m&&window.g360Can(m,'visualizar'))applyViewControls(v,m)});if(fallback){const m=moduleByView(currentView());if(m&&!window.g360Can(m,'visualizar'))document.querySelector('.side-link[data-view="executivo"]:not(.g360-perm-hidden)')?.click()}renderUsers();renderMatrix()}
@@ -14471,10 +14540,17 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
       os.disabled=true;
     }
 
+    let lastGrupo='';
     body.innerHTML=MODULES.map(([k,label])=>{
       const p=perm(editingId,k);
       const exclusivoMaster=(k==='usuarios' && !u.master);
-      return `<tr>
+      const grupo=k==='sesmt'||k.startsWith('sesmt_')?'SESMT':
+        RH_MODULES.has(k)?'RH / DP':
+        ['contratos','aditivos','fechamento'].includes(k)?'CONTRATOS':
+        k.startsWith('patrimonio_')?'PATRIMÔNIO':'GERAL';
+      const cab=grupo!==lastGrupo?`<tr class="g360-perm-group-v228"><td colspan="${ACTIONS.length+1}">${grupo}</td></tr>`:'';
+      lastGrupo=grupo;
+      return cab+`<tr data-perm-module-row="${k}">
         <td class="g360-perm-module">${label}${exclusivoMaster?' <span style="font-size:9px;color:#f5c518">MASTER</span>':''}</td>
         ${ACTIONS.map(a=>`<td><input type="checkbox" class="g360-perm-check" data-module="${k}" data-action="${a}" ${p[a]?'checked':''}></td>`).join('')}
       </tr>`;
@@ -14483,7 +14559,12 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
     // V177: força edição para qualquer perfil não-MASTER.
     body.querySelectorAll('.g360-perm-check').forEach(c=>{
       const exclusivoMaster=c.dataset.module==='usuarios';
-      c.disabled=!!u.master || exclusivoMaster;
+      const tecnicoStockDelete=perfil==='TECNICO_SEGURANCA' &&
+        (c.dataset.module==='sesmt_estoque'||c.dataset.module.startsWith('sesmt_estoque_')) &&
+        c.dataset.action==='excluir';
+      c.disabled=!!u.master || exclusivoMaster || tecnicoStockDelete;
+      if(tecnicoStockDelete)c.checked=false;
+      c.title=tecnicoStockDelete?'Exclusão de estoque/movimentações é exclusiva do GESTOR/MASTER.':'';
       c.style.cursor=c.disabled?'not-allowed':'pointer';
       c.style.opacity=c.disabled?'.45':'1';
     });
@@ -14703,7 +14784,12 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
 
       const rows=[];
       for(const obra_id of ids){
-        for(const modulo of ['sesmt','sesmt_estoque','sesmt_termo']){
+        for(const modulo of [
+          'sesmt','sesmt_estoque','sesmt_estoque_consulta','sesmt_estoque_entrada',
+          'sesmt_estoque_baixa','sesmt_estoque_inventario','sesmt_estoque_historico',
+          'sesmt_estoque_cadastro','sesmt_termo'
+        ]){
+          const stock=modulo==='sesmt_estoque'||modulo.startsWith('sesmt_estoque_');
           rows.push({
             usuario_id:uid,
             obra_id,
@@ -14713,7 +14799,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
             pode_editar:true,
             pode_aprovar:true,
             pode_ativar_inativar:true,
-            pode_excluir:true,
+            pode_excluir:!stock,
             pode_exportar:true
           });
         }
@@ -14727,7 +14813,11 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
 
     // Se o usuário saiu do perfil Técnico de Segurança, remove somente
     // as permissões automáticas do SESMT para que o novo perfil nativo prevaleça.
-    const tecnicoMods=['sesmt','sesmt_estoque','sesmt_termo'];
+    const tecnicoMods=[
+      'sesmt','sesmt_estoque','sesmt_estoque_consulta','sesmt_estoque_entrada',
+      'sesmt_estoque_baixa','sesmt_estoque_inventario','sesmt_estoque_historico',
+      'sesmt_estoque_cadastro','sesmt_termo'
+    ];
     for(const modulo of tecnicoMods){
       const del=await sb.from('usuario_permissoes').delete().eq('usuario_id',uid).eq('modulo',modulo);
       if(del.error)throw del.error;
@@ -17135,7 +17225,6 @@ window.g360FechamentoV57={
   async function forceUser(userId){
     const c=client();
     if(!c||!userId)return;
-    if(!confirm('Forçar este usuário a fazer login novamente?'))return;
     const btn=document.querySelector('[data-user-force-login="'+CSS.escape(String(userId))+'"]');
     const old=btn?.textContent;
     if(btn){btn.disabled=true;btn.textContent='⏳ Processando...'}
@@ -17160,21 +17249,41 @@ window.g360FechamentoV57={
     const c=client();
     if(!c)return;
 
-    if(!confirm('Forçar um novo login de TODOS os usuários agora?\n\nTodas as sessões abertas, inclusive a sua, serão encerradas.'))return;
-
     const btn=document.getElementById('g360ForceAllLoginBtn'),old=btn?.textContent;
     if(btn){btn.disabled=true;btn.textContent='⏳ Processando...'}
 
     try{
-      const {data,error}=await c.rpc('g360_forcar_relogin_todos_v219');
-      if(error)throw error;
-
+      // V226 — usa a mesma RPC individual que já funciona no botão de cada usuário.
+      // Assim o comando em lote não depende da RPC "todos", que estava falhando.
+      let currentId='';
       try{
-        sessionStorage.setItem(
-          'g360_force_all_feedback',
-          '✓ Novo login exigido para todos os usuários.'
-        );
+        const {data}=await c.auth.getUser();
+        currentId=String(data?.user?.id||'');
       }catch(_){}
+
+      const ids=[...new Set(
+        (users||[])
+          .filter(u=>u?.id && u.ativo!==false && String(u.id)!==currentId)
+          .map(u=>String(u.id))
+      )];
+
+      if(!ids.length){
+        forceLoginFeedback('Nenhum outro usuário ativo encontrado para forçar novo login.',false);
+        return;
+      }
+
+      let ok=0;
+      const falhas=[];
+      for(const uid of ids){
+        try{
+          const {error}=await c.rpc('g360_forcar_relogin_v219',{p_usuario_id:uid});
+          if(error)throw error;
+          ok++;
+        }catch(err){
+          falhas.push({id:uid,erro:err?.message||String(err)});
+          console.error('[G360 V226] falha ao forçar login do usuário '+uid+':',err);
+        }
+      }
 
       try{
         window.g360Audit?.(
@@ -17182,25 +17291,25 @@ window.g360FechamentoV57={
           'Usuários & Permissões',
           'profiles',
           null,
-          'Novo login exigido para todos os usuários',
+          'Novo login exigido em lote',
           null,null,
-          {origem:'ADMIN',usuarios_afetados:data??null}
+          {origem:'ADMIN',usuarios_afetados:ok,falhas:falhas.length}
         );
       }catch(_){}
 
-      forceLoginFeedback(
-        '✓ Sessões invalidadas. Todos deverão entrar novamente.'
-      );
-
-      // O MASTER que executou a ação também pertence ao grupo "todos".
-      setTimeout(()=>logoutSilent(),700);
+      if(falhas.length){
+        forceLoginFeedback(`Novo login exigido para ${ok} usuário(s). ${falhas.length} falha(s) no processamento.`,false);
+      }else{
+        forceLoginFeedback(`✓ Novo login exigido para ${ok} usuário(s).`);
+      }
     }catch(error){
-      console.error('[G360 V219] falha ao forçar login de todos:',error);
+      console.error('[G360 V226] falha ao forçar login de todos:',error);
       forceLoginFeedback(
         'Não foi possível forçar o novo login de todos: '+(error?.message||error),
         false
       );
-      if(btn){
+    }finally{
+      if(btn&&document.body.contains(btn)){
         btn.disabled=false;
         btn.textContent=old||'⛔ Forçar novo login de todos';
       }
@@ -17961,6 +18070,11 @@ function savePreviewMovs(rows){localStorage.setItem('g360_epi_mov_v195',JSON.str
 
 async function registrarMov(){
   const tipo=$('sesmtMovTipo').value,data=$('sesmtMovData').value||today(),epiId=$('sesmtMovEpi').value,qtd=Number($('sesmtMovQtd').value||0),motivo=$('sesmtMovMotivo').value.trim();
+  const mod=tipo==='SAIDA'?'sesmt_estoque_baixa':'sesmt_estoque_entrada';
+  if(!sesmtGestor() && typeof window.g360Can==='function' &&
+     !(window.g360Can(mod,'editar')||window.g360Can(mod,'criar'))){
+    return alert('Seu usuário não possui permissão para esta movimentação de estoque.');
+  }
   if(!epiId)return alert('Selecione o EPI.');
   if(!(qtd>0))return alert('Informe uma quantidade válida.');
   if(tipo==='SAIDA'&&!S.colab)return alert('Selecione o colaborador que retirou o EPI.');
@@ -18011,14 +18125,36 @@ function sesmtGestor(){
 
 function aplicarAcessoEstoqueSesmt(){
   const gestor=sesmtGestor();
-  document.querySelectorAll('#view-sesmtEstoque [data-epi-edit],#view-sesmtEstoque [data-epi-delete],#view-sesmtEstoque [data-gestor-only-v203]').forEach(el=>el.style.display=gestor?'':'none');
-  const inv=$('sesmtInventarioAplicar');if(inv)inv.style.display=gestor?'':'none';
-  if(!gestor){
-    const active=document.querySelector('#view-sesmtEstoque [data-sesmt-stock-tab].active');
-    if(active?.dataset?.sesmtStockTab==='cadastro'){
-      document.querySelector('#view-sesmtEstoque [data-sesmt-stock-tab="mov"]')?.click();
-    }
-  }
+  const can=(m,a='visualizar')=>{
+    try{
+      if(gestor)return true;
+      if(typeof window.g360Can==='function')return !!window.g360Can(m,a);
+      return !!window.g360IsTecnicoSeguranca?.();
+    }catch(e){return false}
+  };
+
+  const canConsulta=can('sesmt_estoque_consulta');
+  const canEntrada=can('sesmt_estoque_entrada','editar')||can('sesmt_estoque_entrada','criar');
+  const canBaixa=can('sesmt_estoque_baixa','editar')||can('sesmt_estoque_baixa','criar');
+  const canInventario=can('sesmt_estoque_inventario','editar');
+  const canHistorico=can('sesmt_estoque_historico');
+  const canCadastro=can('sesmt_estoque_cadastro','editar')||can('sesmt_estoque_cadastro','criar');
+
+  // Editar cadastro pode ser Técnico/Gestor; excluir permanece somente Gestor/Master.
+  document.querySelectorAll('#view-sesmtEstoque [data-epi-edit]').forEach(el=>el.style.display=canCadastro?'':'none');
+  document.querySelectorAll('#view-sesmtEstoque [data-epi-delete]').forEach(el=>el.style.display=gestor?'':'none');
+  document.querySelectorAll('#view-sesmtEstoque [data-gestor-only-v203]').forEach(el=>el.style.display=canCadastro?'':'none');
+
+  const inv=$('sesmtInventarioAplicar');if(inv)inv.style.display=canInventario?'':'none';
+  const mov=$('sesmtMovSalvar');if(mov)mov.style.display=(canEntrada||canBaixa)?'':'none';
+
+  // Menu/telas de estoque.
+  document.querySelectorAll('[data-sesmt-menu-tab="estoque"]').forEach(el=>el.style.display=canConsulta?'':'none');
+  document.querySelectorAll('[data-sesmt-menu-tipo="ENTRADA"]').forEach(el=>el.style.display=canEntrada?'':'none');
+  document.querySelectorAll('[data-sesmt-menu-tipo="SAIDA"]').forEach(el=>el.style.display=canBaixa?'':'none');
+  document.querySelectorAll('[data-sesmt-menu-tab="inventario"]').forEach(el=>el.style.display=canInventario?'':'none');
+  document.querySelectorAll('[data-sesmt-menu-tab="historico"]').forEach(el=>el.style.display=canHistorico?'':'none');
+  document.querySelectorAll('[data-sesmt-menu-tab="cadastro"]').forEach(el=>el.style.display=canCadastro?'':'none');
 }
 
 async function excluirMovimentacao(id){
@@ -18336,7 +18472,8 @@ function renderInventario(){
 }
 
 async function aplicarInventario(){
-  if(!sesmtGestor())return alert('Somente o perfil GESTOR ou MASTER pode aplicar ajustes de inventário.');
+  if(!sesmtGestor() && typeof window.g360Can==='function' && !window.g360Can('sesmt_estoque_inventario','editar'))
+    return alert('Seu usuário não possui permissão para aplicar o inventário de EPI.');
   const dif=S.inventario.filter(x=>Number(x.fisico)!==Number(x.sistema));
   if(!dif.length)return alert('Nenhuma diferença encontrada no inventário.');
   if(!confirm(`Aplicar o inventário e ajustar ${dif.length} item(ns) no estoque?`))return;
@@ -18399,7 +18536,7 @@ async function init(){
 }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,250),{once:true});else setTimeout(init,250);
-window.g360SesmtEstoqueV195={init,loadMovs,renderInventario,aplicarInventario};
+window.g360SesmtEstoqueV195={init,loadMovs,renderInventario,aplicarInventario,getMovs:()=>[...(S.movs||[])]};
 window.g360SesmtEstoqueV203={abrirEntradaItem,editarCadastro,loadGiroResumo,aplicarAcesso:aplicarAcessoEstoqueSesmt,limparCadastroItem};
 })();
 </script>
@@ -18783,6 +18920,122 @@ async function save(){
   }
 }
 window.g360ContratoFluxoV221={open,close,save};
+})();
+</script>
+
+
+<script id="g360-sesmt-menu-export-v227">
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
+
+function wireCascade(){
+  const head=$('g360SesmtStockToggle'), box=$('g360SesmtStockCascade');
+  if(head&&box&&!head.dataset.v227){
+    head.dataset.v227='1';
+    const toggle=()=>{
+      const open=box.classList.toggle('open');
+      head.setAttribute('aria-expanded',open?'true':'false');
+    };
+    head.addEventListener('click',e=>{e.stopPropagation();toggle()});
+    head.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}});
+  }
+
+  document.querySelectorAll('[data-sesmt-menu-tab]').forEach(link=>{
+    if(link.dataset.v227)return;
+    link.dataset.v227='1';
+    link.addEventListener('click',()=>{
+      const tab=link.dataset.sesmtMenuTab;
+      const tipo=link.dataset.sesmtMenuTipo||'';
+      setTimeout(()=>{
+        document.querySelector(`#view-sesmtEstoque [data-sesmt-stock-tab="${tab}"]`)?.click();
+        if(tipo&&$('sesmtMovTipo')){
+          $('sesmtMovTipo').value=tipo;
+          $('sesmtMovTipo').dispatchEvent(new Event('change',{bubbles:true}));
+          if(tipo==='ENTRADA'){
+            if($('sesmtMovColabBusca'))$('sesmtMovColabBusca').value='';
+            if($('sesmtMovColabId'))$('sesmtMovColabId').value='';
+            if($('sesmtMovMotivo')&&!$('sesmtMovMotivo').value)$('sesmtMovMotivo').value='Entrada / reposição de estoque';
+          }
+        }
+      },80);
+    });
+  });
+}
+
+function gestor(){
+  try{return typeof window.g360IsGestor==='function'&&window.g360IsGestor()}catch(_){return false}
+}
+function canStock(mod,act='visualizar'){
+  try{
+    if(gestor())return true;
+    if(typeof window.g360Can==='function')return !!window.g360Can(mod,act);
+    return !!window.g360IsTecnicoSeguranca?.();
+  }catch(_){return false}
+}
+function applyAccess(){
+  document.querySelectorAll('[data-gestor-only-v227]').forEach(el=>{
+    el.style.display=(canStock('sesmt_estoque_cadastro','editar')||canStock('sesmt_estoque_cadastro','criar'))?'':'none';
+  });
+  window.g360SesmtEstoqueV203?.aplicarAcesso?.();
+}
+
+function visibleHistoryRows(){
+  const ini=$('sesmtHistDataIni')?.value||'';
+  const fim=$('sesmtHistDataFim')?.value||'';
+  const tipo=$('sesmtHistTipo')?.value||'';
+  const busca=norm($('sesmtHistBusca')?.value);
+  const movs=window.g360SesmtEstoqueV195?.getMovs?.()||[];
+  return movs.filter(r=>{
+    const d=String(r.data_movimento||r.created_at||'').slice(0,10);
+    if(ini&&d<ini)return false;
+    if(fim&&d>fim)return false;
+    if(tipo&&String(r.tipo||'')!==tipo)return false;
+    if(busca&&!norm(`${r.colaborador_nome||''} ${r.matricula||''} ${r.epi_descricao||''} ${r.motivo||''} ${r.usuario_nome||r.created_by_nome||''}`).includes(busca))return false;
+    return true;
+  });
+}
+
+function exportHistoryExcel(){
+  if(!window.XLSX?.utils)return alert('Biblioteca Excel não carregada. Atualize a página e tente novamente.');
+  const rows=visibleHistoryRows();
+  if(!rows.length)return alert('Nenhuma movimentação encontrada com os filtros atuais.');
+
+  const aoa=[
+    ['GESTÃO 360 · SESMT · HISTÓRICO DE MOVIMENTAÇÕES DE EPI'],
+    ['Período',`${$('sesmtHistDataIni')?.value||'Início'} a ${$('sesmtHistDataFim')?.value||'Hoje'}`],
+    ['Gerado em',new Date().toLocaleString('pt-BR')],
+    [],
+    ['Data/Hora','Tipo','Código','EPI','C.A.','Quantidade','Matrícula','Colaborador','Motivo / Observação','Usuário'],
+    ...rows.map(r=>[
+      new Date(r.created_at||((r.data_movimento||new Date().toISOString().slice(0,10))+'T12:00:00')).toLocaleString('pt-BR'),
+      r.tipo||'',
+      r.epi_codigo||r.codigo||'',
+      r.epi_descricao||'',
+      r.ca||'',
+      Number(r.quantidade||0),
+      r.matricula||'',
+      r.colaborador_nome||'',
+      r.motivo||'',
+      r.usuario_nome||r.created_by_nome||''
+    ])
+  ];
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']=[{wch:20},{wch:18},{wch:14},{wch:34},{wch:13},{wch:12},{wch:14},{wch:34},{wch:42},{wch:28}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Movimentações');
+  const d=new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb,`sesmt-historico-epi-${d}.xlsx`);
+}
+
+function boot(){
+  wireCascade();applyAccess();
+  const b=$('sesmtHistoricoExcel');
+  if(b&&!b.dataset.v227){b.dataset.v227='1';b.addEventListener('click',exportHistoryExcel)}
+  new MutationObserver(()=>{wireCascade();applyAccess()}).observe(document.body,{childList:true,subtree:true});
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
 </script>
 
