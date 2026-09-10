@@ -1,4 +1,9 @@
 <!DOCTYPE html>
+<!-- V225: Cidade/UF de baixada via IBGE, prefill da admissão e CPF com máscara/validação -->
+<!-- V224: feedback Gravando/Gravado ao salvar cadastro de Alojamentos -->
+<!-- V223: correção da validação de capacidade ao trocar colaborador de alojamento -->
+<!-- V222: aprovações da admissão por botão com data/hora, usuário e indicadores de tempo -->
+<!-- V221: monitoramento completo da tramitação das solicitações de contrato -->
 <!-- V220: restaura EMAIL acima do TELEFONE no PDF de admissão e mantém PDF sem créditos/rodapé -->
 <!-- V219: corrige Forçar Login individual/todos com RPC segura e verificação de sessão sem depender de RLS -->
 <!-- V218: remove RECONTRATÁVEL do PDF de admissão; permanece somente na demissão -->
@@ -1720,6 +1725,63 @@ html.g360-ui-ready .content-col {
 }
 </style>
 
+
+<style id="g360-contrato-fluxo-v221-css">
+#g360ContratoFluxoBack{position:fixed;inset:0;z-index:100400;background:#000b;display:none;align-items:center;justify-content:center;padding:18px}
+#g360ContratoFluxoBack.open{display:flex}
+#g360ContratoFluxoModal{width:min(1420px,98vw);max-height:94vh;overflow:auto;background:#1b1d21;border:1px solid #3c3f45;border-radius:12px;color:#eee;box-shadow:0 24px 70px #0009}
+#g360ContratoFluxoModal .cf-head{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;padding:18px 20px;border-bottom:1px solid #34373d}
+#g360ContratoFluxoModal .cf-title{font-size:18px;font-weight:900;color:#f5c518}
+#g360ContratoFluxoModal .cf-sub{font-size:11px;color:#aaa;margin-top:4px}
+#g360ContratoFluxoModal .cf-body{padding:18px 20px}
+#g360ContratoFluxoModal .cf-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+#g360ContratoFluxoModal .cf-kpi{background:#202328;border:1px solid #373a40;border-radius:8px;padding:12px}
+#g360ContratoFluxoModal .cf-kpi span{display:block;font-size:9px;color:#999;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+#g360ContratoFluxoModal .cf-kpi b{display:block;font-size:20px;margin-top:5px}
+#g360ContratoFluxoModal .cf-current{border:1px solid #5f5221;background:#302b18;color:#f5c518;border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:12px;font-weight:800}
+#g360ContratoFluxoModal .cf-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#g360ContratoFluxoModal .cf-stage{border:1px solid #373a40;background:#202328;border-radius:8px;padding:12px;min-width:0}
+#g360ContratoFluxoModal .cf-stage.done{border-color:#285c41;background:#19281f}
+#g360ContratoFluxoModal .cf-stage.active{border-color:#80691b;background:#2b2718}
+#g360ContratoFluxoModal .cf-stage .num{display:inline-flex;width:24px;height:24px;border-radius:50%;align-items:center;justify-content:center;background:#30333a;color:#bbb;font-size:10px;font-weight:900;margin-right:7px}
+#g360ContratoFluxoModal .cf-stage.done .num{background:#23563c;color:#8bf0b8}
+#g360ContratoFluxoModal .cf-stage.active .num{background:#6a5716;color:#ffe67b}
+#g360ContratoFluxoModal .cf-stage h4{display:inline;font-size:11px;margin:0}
+#g360ContratoFluxoModal .cf-stage label{display:block;font-size:9px;color:#999;margin:10px 0 5px;text-transform:uppercase;font-weight:800}
+#g360ContratoFluxoModal .cf-stage input,#g360ContratoFluxoModal .cf-stage textarea{width:100%;box-sizing:border-box;background:#131518;color:#eee;border:1px solid #3b3e45;border-radius:6px;padding:8px;font:inherit}
+#g360ContratoFluxoModal .cf-stage textarea{min-height:54px;resize:vertical}
+#g360ContratoFluxoModal .cf-who{font-size:9px;color:#888;margin-top:5px;min-height:12px}
+#g360ContratoFluxoModal .cf-actions{display:flex;justify-content:flex-end;gap:8px;padding:15px 20px;border-top:1px solid #34373d}
+#g360ContratoFluxoModal button{border:1px solid #444;background:#25282e;color:#eee;border-radius:7px;padding:9px 12px;font-weight:800;cursor:pointer}
+#g360ContratoFluxoModal button.primary{background:#f5c518;border-color:#f5c518;color:#111}
+@media(max-width:1000px){#g360ContratoFluxoModal .cf-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#g360ContratoFluxoModal .cf-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){#g360ContratoFluxoModal .cf-grid,#g360ContratoFluxoModal .cf-kpis{grid-template-columns:1fr}}
+</style>
+
+
+<style id="g360-admissao-aprovacao-botoes-v222">
+#rhAdmApprovalGridV222{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.adm-approval-card-v222{border:1px solid var(--line);border-radius:8px;padding:11px;background:rgba(255,255,255,.025)}
+.adm-approval-card-v222.done{border-color:rgba(60,190,120,.55);background:rgba(30,105,66,.13)}
+.adm-approval-head-v222{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:11px}
+.adm-approval-head-v222 span{font-size:9px;font-weight:900;color:#f5c518}
+.adm-approval-card-v222.done .adm-approval-head-v222 span{color:#69df9f}
+.adm-approval-meta-v222{min-height:30px;margin:8px 0;color:var(--ink-soft);font-size:9.5px;line-height:1.45}
+.adm-approval-card-v222 button{width:100%;font-size:10px}
+.adm-approval-card-v222.done button{opacity:.75}
+@media(max-width:950px){#rhAdmApprovalGridV222{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){#rhAdmApprovalGridV222{grid-template-columns:1fr}}
+</style>
+
+
+<style id="g360-admissao-tempo-v222">
+.adm-tempo-grid-v222{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.adm-tempo-grid-v222>div{border:1px solid var(--line);border-radius:7px;padding:9px;background:rgba(255,255,255,.02)}
+.adm-tempo-grid-v222 span,.adm-tempo-grid-v222 small{display:block;color:var(--ink-soft);font-size:9px}
+.adm-tempo-grid-v222 b{display:block;font-size:15px;margin:4px 0}
+@media(max-width:1000px){.adm-tempo-grid-v222{grid-template-columns:repeat(3,minmax(0,1fr))}}
+</style>
+
 </head>
 <body>
 <!-- V155: convite personalizado + primeiro acesso com criação de senha -->
@@ -2656,13 +2718,39 @@ html.g360-ui-ready .content-col {
             <div class="form-section">
               <div class="form-section-title">Controle de Aprovações — 6 níveis independentes</div>
               <div style="font-size:11px;color:var(--ink-soft);margin-bottom:10px;">As seis aprovações podem ser registradas em qualquer ordem.</div>
-              <div class="adm-step-grid">
-                <div class="form-group"><label>Engenharia</label><input type="date" id="rhAdmDtEng"></div>
-                <div class="form-group"><label>Jurídico</label><input type="date" id="rhAdmDtJur"></div>
-                <div class="form-group"><label>Diretoria</label><input type="date" id="rhAdmDtDir"></div>
-                <div class="form-group"><label>RH</label><input type="date" id="rhAdmDtRH"></div>
-                <div class="form-group"><label>DP</label><input type="date" id="rhAdmDtDP"></div>
-                <div class="form-group"><label>Documentação Recebida</label><input type="date" id="rhAdmDtDocs"></div>
+              <div class="adm-approval-grid-v222" id="rhAdmApprovalGridV222">
+                <div class="adm-approval-card-v222" data-adm-stage-card="ENGENHARIA">
+                  <div class="adm-approval-head-v222"><b>Engenharia</b><span data-adm-stage-status="ENGENHARIA">PENDENTE</span></div>
+                  <div class="adm-approval-meta-v222" data-adm-stage-meta="ENGENHARIA">Aguardando confirmação.</div>
+                  <button type="button" class="clear-btn" data-adm-confirm="ENGENHARIA">✓ Confirmar Engenharia</button>
+                </div>
+                <div class="adm-approval-card-v222" data-adm-stage-card="JURIDICO">
+                  <div class="adm-approval-head-v222"><b>Jurídico</b><span data-adm-stage-status="JURIDICO">PENDENTE</span></div>
+                  <div class="adm-approval-meta-v222" data-adm-stage-meta="JURIDICO">Aguardando confirmação.</div>
+                  <button type="button" class="clear-btn" data-adm-confirm="JURIDICO">✓ Confirmar Jurídico</button>
+                </div>
+                <div class="adm-approval-card-v222" data-adm-stage-card="DIRETORIA">
+                  <div class="adm-approval-head-v222"><b>Diretoria</b><span data-adm-stage-status="DIRETORIA">PENDENTE</span></div>
+                  <div class="adm-approval-meta-v222" data-adm-stage-meta="DIRETORIA">Aguardando confirmação.</div>
+                  <button type="button" class="clear-btn" data-adm-confirm="DIRETORIA">✓ Confirmar Diretoria</button>
+                </div>
+                <div class="adm-approval-card-v222" data-adm-stage-card="RH">
+                  <div class="adm-approval-head-v222"><b>RH</b><span data-adm-stage-status="RH">PENDENTE</span></div>
+                  <div class="adm-approval-meta-v222" data-adm-stage-meta="RH">Aguardando confirmação.</div>
+                  <button type="button" class="clear-btn" data-adm-confirm="RH">✓ Confirmar RH</button>
+                </div>
+                <div class="adm-approval-card-v222" data-adm-stage-card="DP">
+                  <div class="adm-approval-head-v222"><b>DP</b><span data-adm-stage-status="DP">PENDENTE</span></div>
+                  <div class="adm-approval-meta-v222" data-adm-stage-meta="DP">Aguardando confirmação.</div>
+                  <button type="button" class="clear-btn" data-adm-confirm="DP">✓ Confirmar DP</button>
+                </div>
+                <div class="adm-approval-card-v222" data-adm-stage-card="DOCUMENTACAO">
+                  <div class="adm-approval-head-v222"><b>Documentação Recebida</b><span data-adm-stage-status="DOCUMENTACAO">PENDENTE</span></div>
+                  <div class="adm-approval-meta-v222" data-adm-stage-meta="DOCUMENTACAO">Aguardando confirmação.</div>
+                  <button type="button" class="clear-btn" data-adm-confirm="DOCUMENTACAO">✓ Confirmar Documentação</button>
+                </div>
+              </div>
+              <div class="form-grid cols-2" style="margin-top:12px;">
                 <div class="form-group"><label>Data de Admissão</label><input type="date" id="rhAdmDtAdmissao"></div>
               </div>
             </div>
@@ -7400,6 +7488,20 @@ function rhAdmCalcDashboard(list){
   const fun=document.getElementById('rhAdmFunnel');
   if(fun) fun.innerHTML=aprovacoes.map(([l,n])=>`<div class="adm-bar-row"><span>${l}</span><div class="adm-bar-track"><div class="adm-bar-fill" style="width:${(n/max*100).toFixed(1)}%"></div></div><b>${n}</b></div>`).join('');
 
+  // V222: indicadores de tempo real por etapa, usando data/hora das confirmações.
+  const tempoEtapas=defs.map(([l,c])=>{
+    const atField=c+'At';
+    const vals=list.map(d=>{
+      const ini=d.dataGeracao?new Date(d.dataGeracao):null;
+      const fim=d[atField]?new Date(d[atField]):null;
+      return ini&&fim&&!Number.isNaN(ini)&&!Number.isNaN(fim)?Math.max(0,(fim-ini)/3600000):null;
+    }).filter(v=>v!==null);
+    const media=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+    return [l,media,vals.length];
+  });
+  const tempoBox=document.getElementById('rhAdmTempoEtapasV222');
+  if(tempoBox)tempoBox.innerHTML=tempoEtapas.map(([l,h,n])=>`<div><span>${l}</span><b>${h==null?'—':(h<24?h.toFixed(1)+' h':(h/24).toFixed(1)+' d')}</b><small>${n} registro(s)</small></div>`).join('');
+
   const reprov=list.filter(d=>rhAdmEtapa(d)==='REPROVADO');
   const by={ENGENHARIA:0,'JURÍDICO':0,DIRETORIA:0,RH:0,DP:0,'DOCUMENTAÇÃO RECEBIDA':0};
   reprov.forEach(d=>{const k=String(d.reprovadoEtapa||'').toUpperCase();if(k in by)by[k]++;});
@@ -7428,15 +7530,110 @@ function rhAdmRenderHistorico(){
   </tr>`}).join('');
 }
 let rhAdmTriagemIndex=null;
+
+const RHADM_STAGES_V222={
+  ENGENHARIA:{date:'dataEngenharia',at:'dataEngenhariaAt',label:'Engenharia'},
+  JURIDICO:{date:'dataJuridico',at:'dataJuridicoAt',label:'Jurídico'},
+  DIRETORIA:{date:'dataDiretoria',at:'dataDiretoriaAt',label:'Diretoria'},
+  RH:{date:'dataRH',at:'dataRHAt',label:'RH'},
+  DP:{date:'dataDP',at:'dataDPAt',label:'DP'},
+  DOCUMENTACAO:{date:'dataDocsObra',at:'dataDocsObraAt',label:'Documentação Recebida'}
+};
+
+function rhAdmFmtDateTimeV222(v){
+  if(!v)return '—';
+  const d=new Date(v);
+  return Number.isNaN(d.getTime())?rhAdmFmtISO(v):d.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});
+}
+
+async function rhAdmCurrentUserV222(){
+  try{
+    const sb=window.g360SupabaseClient;
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session)return null;
+    const p=await sb.from('profiles').select('id,nome,email,perfil').eq('id',session.user.id).maybeSingle();
+    return p.data||{id:session.user.id,email:session.user.email};
+  }catch(e){return null}
+}
+
+function rhAdmRenderApprovalButtonsV222(d){
+  Object.entries(RHADM_STAGES_V222).forEach(([stage,cfg])=>{
+    const at=d[cfg.at]||d[cfg.date]||'';
+    const meta=d.aprovacoesMeta?.[stage]||{};
+    const card=document.querySelector(`[data-adm-stage-card="${stage}"]`);
+    const status=document.querySelector(`[data-adm-stage-status="${stage}"]`);
+    const info=document.querySelector(`[data-adm-stage-meta="${stage}"]`);
+    const btn=document.querySelector(`[data-adm-confirm="${stage}"]`);
+    const done=!!d[cfg.date];
+    card?.classList.toggle('done',done);
+    if(status)status.textContent=done?'CONFIRMADO':'PENDENTE';
+    if(info)info.textContent=done
+      ? `${rhAdmFmtDateTimeV222(at)}${meta.usuario_nome?` · ${meta.usuario_nome}`:''}`
+      : 'Aguardando confirmação.';
+    if(btn){
+      btn.textContent=done?'↺ Refazer confirmação':`✓ Confirmar ${cfg.label}`;
+      btn.onclick=()=>rhAdmConfirmStageV222(stage);
+    }
+  });
+}
+
+async function rhAdmConfirmStageV222(stage){
+  const cfg=RHADM_STAGES_V222[stage];
+  if(!cfg||rhAdmTriagemIndex==null)return;
+  const list=rhAdmLoadHistorico(),d=list[rhAdmTriagemIndex];
+  if(!d)return;
+
+  if(d[cfg.date] && !confirm(`${cfg.label} já foi confirmado. Deseja registrar uma nova confirmação com a data/hora atual?`))return;
+
+  const user=await rhAdmCurrentUserV222();
+  const now=new Date();
+  const iso=now.toISOString();
+  const date=iso.slice(0,10);
+
+  if(!confirm(`Confirmar a etapa "${cfg.label}" para ${d.nome||'este candidato'} agora?\n\nData/hora: ${now.toLocaleString('pt-BR')}`))return;
+
+  d[cfg.date]=date;
+  d[cfg.at]=iso;
+  d.aprovacoesMeta=d.aprovacoesMeta||{};
+  d.aprovacoesMeta[stage]={
+    usuario_id:user?.id||null,
+    usuario_nome:user?.nome||user?.email||'Usuário',
+    perfil:user?.perfil||null,
+    confirmado_em:iso
+  };
+
+  try{
+    const sb=window.g360SupabaseClient;
+    if(sb && !window.g360PreviewMode && /^[0-9a-f-]{36}$/i.test(String(d.id||''))){
+      const r=await sb.rpc('g360_confirmar_etapa_admissao_v222',{
+        p_admissao_id:d.id,
+        p_etapa:stage
+      });
+      if(r.error)throw r.error;
+      if(r.data?.confirmado_em){
+        d[cfg.at]=r.data.confirmado_em;
+        d[cfg.date]=String(r.data.confirmado_em).slice(0,10);
+        d.aprovacoesMeta[stage]={
+          usuario_id:r.data.usuario_id||user?.id||null,
+          usuario_nome:r.data.usuario_nome||user?.nome||user?.email||'Usuário',
+          perfil:r.data.perfil||user?.perfil||null,
+          confirmado_em:r.data.confirmado_em
+        };
+      }
+    }
+    rhAdmSaveHistorico(list);
+    rhAdmRenderApprovalButtonsV222(d);
+    rhAdmRenderHistorico();
+    try{window.g360Audit?.('admissao','CONFIRMAR_ETAPA','rh_admissoes_base',String(d.id||rhAdmTriagemIndex),d.nome,{etapa:stage,confirmado_em:d[cfg.at]});}catch(_){}
+  }catch(e){
+    alert('Não foi possível confirmar a etapa: '+(e?.message||e));
+  }
+}
+
 function rhAdmOpenTriagem(idx){
   const list=rhAdmLoadHistorico(),d=list[idx];if(!d)return;rhAdmTriagemIndex=idx;
   document.getElementById('rhAdmTriagemNome').textContent=`${d.nome||''} · ${d.cargo||''}`;
-  document.getElementById('rhAdmDtEng').value=d.dataEngenharia||'';
-  document.getElementById('rhAdmDtJur').value=d.dataJuridico||'';
-  document.getElementById('rhAdmDtDir').value=d.dataDiretoria||'';
-  document.getElementById('rhAdmDtRH').value=d.dataRH||'';
-  document.getElementById('rhAdmDtDP').value=d.dataDP||'';
-  document.getElementById('rhAdmDtDocs').value=d.dataDocsObra||'';
+  rhAdmRenderApprovalButtonsV222(d);
   document.getElementById('rhAdmDtAdmissao').value=d.dataAdmissao||'';
   document.getElementById('rhAdmResultado').value=d.resultado||'';
   document.getElementById('rhAdmDtResultado').value=d.dataResultado||'';
@@ -7451,12 +7648,6 @@ function rhAdmSaveTriagem(){
   if(res==='REPROVADO'&&!document.getElementById('rhAdmReprovEtapaSel').value){alert('Informe por quem / em qual etapa ocorreu a reprovação.');return;}
   if(res&&!document.getElementById('rhAdmDtResultado').value){alert('Informe a data da ocorrência.');return;}
   Object.assign(d,{
-    dataEngenharia:document.getElementById('rhAdmDtEng').value,
-    dataJuridico:document.getElementById('rhAdmDtJur').value,
-    dataDiretoria:document.getElementById('rhAdmDtDir').value,
-    dataRH:document.getElementById('rhAdmDtRH').value,
-    dataDP:document.getElementById('rhAdmDtDP').value,
-    dataDocsObra:document.getElementById('rhAdmDtDocs').value,
     dataAdmissao:document.getElementById('rhAdmDtAdmissao').value,
     resultado:res,dataResultado:document.getElementById('rhAdmDtResultado').value,
     reprovadoEtapa:document.getElementById('rhAdmReprovEtapaSel').value,
@@ -9194,7 +9385,13 @@ async function g360AdmToColabPrefill(adm){
     salario:g360AdmMoney(adm?.salario),
     gratificacao:0,
     beneficios:230,
-    cidade:adm?.cidade||'',
+    cidade:(adm?.cidade&&adm?.estado)?`${String(adm.cidade).toUpperCase()} - ${String(adm.estado).toUpperCase()}`:(adm?.cidade||''),
+    cidade_baixada:adm?.baixadaAplicavel?(adm?.cidade||''):'',
+    uf_baixada:adm?.baixadaAplicavel?(adm?.estado||''):'',
+    telefone:adm?.telefone||'',
+    email:adm?.email||'',
+    distancia_baixada_km:adm?.baixadaAplicavel?(Number(adm?.km||0)||null):null,
+    direito_baixada:!!adm?.baixadaAplicavel,
     status:'ATIVO',
     obra_id:await g360AdmResolveObraId(adm),
     jornada_tipo:jm||'',
@@ -11391,6 +11588,7 @@ function renderLista(){
         <span class="saved-tag" style="background:#202328;color:#f5c518;">${esc(it.status||'RASCUNHO')}</span>
         ${it.numeroContrato?`<span class="saved-tag" style="background:#163c2a;color:#5be39d;">${esc(it.numeroContrato)}</span>`:''}
         <button class="icon-btn" title="Ver / Imprimir" onclick="SolContratos.go('view',{type:'${it.type}', viewingId:'${it.id}'})">👁</button>
+        <button class="icon-btn" title="Acompanhamento da tramitação" onclick="g360ContratoFluxoV221.open('${it.id}')">🧭</button>
         <button class="icon-btn" title="Gerar PDF / preparar contratação" onclick="SolContratos.prepararContratacao('${it.id}')">📄</button>
         ${!it.numeroContrato?`<button class="icon-btn" title="Confirmar inclusão no Sienge e enviar para a base de contratos" onclick="SolContratos.efetivarContrato('${it.id}')">✅</button>`:''}
         <button class="icon-btn" title="Editar" onclick="SolContratos.editSaved('${it.type}','${it.id}')">✎</button>
@@ -12787,7 +12985,7 @@ window.GESTAO360_CONFIG = {
   }
   const defs={
     cargosSalarios:{title:'Cargos e Salários',table:'cargos_salarios',order:'funcao',fields:[['funcao','Função / Cargo','span2'],['nivel','Nível'],['salario','Salário','number'],['ativo','Ativo','','ativo-cargo']],cols:['funcao','nivel','salario','ativo']},
-    funcionarios:{title:'Funcionários',table:'funcionarios',order:'nome',fields:[['matricula','Matrícula'],['cpf','CPF'],['nome','Nome','span2'],['tipo_contrato','Tipo contrato','','tipo-contrato-func'],['admissao','Admissão','date'],['venc_aso','Venc. ASO (pode informar depois)','date'],['depto','Setor','','setor-cadastro'],['setor_equipe','Setor / Equipe','','setor-equipe-master-base'],['funcao','Função / Cargo','span2','funcao-cadastro'],['nivel','Nível','','nivel-cadastro'],['status','Status','','status-func'],['obra','Obra','span2','obra-cadastro'],['jornada_tipo','Jornada / Escala','','jornada-select'],['horario_entrada','Entrada','','time'],['horario_saida','Saída','','time'],['intervalo_inicio','Início do intervalo','','time'],['intervalo_fim','Fim do intervalo','','time'],['jornada_observacao','Detalhes da jornada','span2'],['cnh','CNH'],['cat_cnh','Cat. CNH'],['venc_cnh','Venc. CNH','date'],['salario','Salário','','salario-cadastro'],['gratificacao','Gratificação','number'],['cidade','Cidade / Estado','span2','cidade-ibge'],['cidade_baixada','Cidade de Baixada',''],['uf_baixada','UF da Baixada',''],['telefone','Telefone / WhatsApp',''],['email','Email','span2'],['distancia_baixada_km','Distância da obra (km)','number'],['direito_baixada','Tem direito de baixada?','','direito-baixada'],['ult_baixada','Últ. baixada','date'],['prox_baixada','Próx. baixada','date'],['periodicidade_baixada','Periodicidade de baixada','','periodicidade-baixada'],['custo_baixada','Custo baixada (opcional)','number'],['vt','VT (opcional)','number'],['beneficios','Benefícios','number'],['usa_aloj','Usa alojamento?','','usa-aloj'],['alojamento','Alojamento','span2','aloj-select']],cols:['matricula','nome','funcao','setor_equipe','status']},
+    funcionarios:{title:'Funcionários',table:'funcionarios',order:'nome',fields:[['matricula','Matrícula'],['cpf','CPF','','cpf-mask'],['nome','Nome','span2'],['tipo_contrato','Tipo contrato','','tipo-contrato-func'],['admissao','Admissão','date'],['venc_aso','Venc. ASO (pode informar depois)','date'],['depto','Setor','','setor-cadastro'],['setor_equipe','Setor / Equipe','','setor-equipe-master-base'],['funcao','Função / Cargo','span2','funcao-cadastro'],['nivel','Nível','','nivel-cadastro'],['status','Status','','status-func'],['obra','Obra','span2','obra-cadastro'],['jornada_tipo','Jornada / Escala','','jornada-select'],['horario_entrada','Entrada','','time'],['horario_saida','Saída','','time'],['intervalo_inicio','Início do intervalo','','time'],['intervalo_fim','Fim do intervalo','','time'],['jornada_observacao','Detalhes da jornada','span2'],['cnh','CNH'],['cat_cnh','Cat. CNH'],['venc_cnh','Venc. CNH','date'],['salario','Salário','','salario-cadastro'],['gratificacao','Gratificação','number'],['cidade','Cidade / Estado','span2','cidade-ibge'],['cidade_baixada','Cidade de Baixada','span2','cidade-baixada-ibge'],['telefone','Telefone / WhatsApp',''],['email','Email','span2'],['distancia_baixada_km','Distância da obra (km)','number'],['direito_baixada','Tem direito de baixada?','','direito-baixada'],['ult_baixada','Últ. baixada','date'],['prox_baixada','Próx. baixada','date'],['periodicidade_baixada','Periodicidade de baixada','','periodicidade-baixada'],['custo_baixada','Custo baixada (opcional)','number'],['vt','VT (opcional)','number'],['beneficios','Benefícios','number'],['usa_aloj','Usa alojamento?','','usa-aloj'],['alojamento','Alojamento','span2','aloj-select']],cols:['matricula','nome','funcao','setor_equipe','status']},
     contratos:{title:'Contratos',table:'contratos',order:'codigo',fields:[['codigo','Contrato'],['fornecedor','Fornecedor','span2'],['tipo','Tipo','span2'],['objeto','Objeto','span4','textarea'],['contrato_agua_vinculo','Contrato Água / Saneago','span2','contrato-servico-locacao:A'],['contrato_energia_vinculo','Contrato Energia / Equatorial','span2','contrato-servico-locacao:E'],['contrato_internet_vinculo','Contrato Internet','span2','contrato-servico-locacao:I'],['valor_contratado','Valor contratado','number'],['valor_medido_total','Valor medido','number'],['valor_mensal','Valor mensal','number'],['data_inicio','Início','date'],['data_fim','Fim','date'],['situacao','Situação']],cols:['codigo','fornecedor','tipo','situacao','valor_contratado']},
     alojamentos:{title:'Alojamentos',table:'alojamentos',order:'descricao',fields:[['contrato_codigo','Contrato de locação'],['descricao','Descrição','span2'],['fornecedor','Fornecedor / Locador','span2'],['endereco','Endereço completo','span4','textarea'],['contrato_agua','Contrato de Água','span2','contrato-servico:A'],['contrato_energia','Contrato de Energia','span2','contrato-servico:E'],['contrato_internet','Contrato de Internet','span2','contrato-servico:I'],['valor_mensal','Valor mensal','number'],['capacidade','Capacidade','number'],['ocupados','Ocupados','number'],['custo_rateado','Rateio por ocupante','number-readonly'],['status','Status']],cols:['contrato_codigo','descricao','endereco','contrato_agua','contrato_energia','contrato_internet','capacidade','status']},
     patrimonio:{title:'Inventário de Patrimônio',table:'patrimonio_itens',order:'descricao',fields:[['codigo_patrimonio','Nº Patrimônio'],['tag','Tag'],['descricao','Descrição','span2'],['categoria','Categoria'],['marca','Marca'],['modelo','Modelo'],['numero_serie','Nº de série'],['alojamento_codigo','Alojamento','span2','aloj-select'],['comodo','Cômodo'],['quantidade','Quantidade','number'],['valor_unitario','Valor unitário','number'],['data_aquisicao','Data aquisição','date'],['estado_conservacao','Estado conservação'],['status','Status'],['responsavel','Responsável','span2'],['origem','Origem / fornecedor','span2'],['observacao','Observação','span4','textarea']],cols:['codigo_patrimonio','descricao','categoria','alojamento_codigo','comodo','estado_conservacao','status']},
@@ -12850,6 +13048,22 @@ window.GESTAO360_CONFIG = {
         <label>Cidade *<select id="g360CidadeMunicipio" required disabled><option value="">Selecione primeiro o estado</option></select></label>
         <small style="grid-column:1/-1;display:block;color:#777;margin-top:0;text-transform:none">Estados e municípios carregados do cadastro nacional do IBGE. O colaborador é salvo como CIDADE - UF.</small>
       </div>`;
+    }
+    if(t==='cidade-baixada-ibge'){
+      const cidadeCur=String(v??'').trim();
+      const ufCur=String(ctx.current?.uf_baixada??'').trim().toUpperCase();
+      return `<div class="${c}" style="display:grid;grid-template-columns:115px minmax(260px,430px);gap:8px;align-items:end;justify-content:start">
+        <input type="hidden" name="${name}" value="${esc(cidadeCur)}" id="g360BaixadaCidadeValor">
+        <input type="hidden" name="uf_baixada" value="${esc(ufCur)}" id="g360BaixadaUfValor">
+        <label>UF da Baixada<select id="g360BaixadaUf" data-current-uf="${esc(ufCur)}"><option value="">UF...</option></select></label>
+        <label>Cidade de Baixada<select id="g360BaixadaMunicipio" disabled data-current-city="${esc(cidadeCur)}"><option value="">Selecione primeiro a UF</option></select></label>
+        <small style="grid-column:1/-1;display:block;color:#777;margin-top:0;text-transform:none">UF primeiro; a lista de cidades é carregada automaticamente pela base nacional do IBGE.</small>
+      </div>`;
+    }
+    if(t==='cpf-mask'){
+      const cur=String(v??'').replace(/\D/g,'').slice(0,11);
+      const fmtCpf=s=>s.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+      return `<label class="${c}">${label} *<input name="${name}" id="g360CpfColaborador" type="text" inputmode="numeric" maxlength="14" autocomplete="off" value="${esc(fmtCpf(cur))}" placeholder="000.000.000-00" required><small id="g360CpfStatus" style="display:block;margin-top:4px;text-transform:none;color:#777">Digite os 11 números do CPF.</small></label>`;
     }
     if(t==='tipo-contrato-func'){
       const cur=String(v??'CLT').trim().toUpperCase();
@@ -13040,7 +13254,7 @@ window.GESTAO360_CONFIG = {
       <div class="deslig-list">${desligItens.length?desligItens.map((x,i)=>`<label class="deslig-item"><input type="checkbox" class="deslig-check" data-idx="${i}"><span><b>${esc(x.fonte)} — ${esc(x.descricao)}</b><small>${esc(x.codigo||'Sem código')} · Qtd. ${esc(x.quantidade)}</small></span><input type="date" class="deslig-date" data-idx="${i}" aria-label="Data de devolução"><input type="text" class="deslig-obs" data-idx="${i}" placeholder="Observação (opcional)" value="${esc(x.obs||'')}"></label>`).join(''):'<div class="deslig-empty">Nenhum EPI ou equipamento pendente encontrado nos termos deste colaborador.</div>'}</div>
       ${desligItens.length?'<div class="deslig-alert">Para concluir o desligamento, todos os itens pendentes precisam ser conferidos e marcados como devolvidos.</div>':''}
     </section>`:'';
-    g360Content.innerHTML=`<form id="g360Form" class="g360-grid">${kind==='funcionarios'?'<div class="span4" style="padding:9px 11px;border-left:3px solid #f5c518;background:#202226;color:#bbb;font-size:11px"><b style="color:#eee">Campos obrigatórios:</b> dados cadastrais, Setor, Setor/Equipe, função e jornada. <b>Vencimento do ASO e datas de baixada podem ser informados depois.</b> A periodicidade de baixada é opcional no cadastro inicial e vem da base mestre do Supabase. Cidade e Estado são selecionados pelo cadastro nacional do IBGE. CNH é opcional quando o colaborador não possui. Demissão é preenchida somente no desligamento. Função e nível vêm do cadastro de Cargos e Salários. O salário-base é sugerido pelo Supabase, mas pode ser ajustado no colaborador. Gratificação inicia em R$ 0,00. Benefícios inicia em R$ 230,00 e pode ser alterado.</div>':''}${d.fields.map(f=>fieldHTML(f,current?.[f[0]],{alojamentos:alojamentosCadastro,contratos:contratosCadastro,contratosCadastro:contratosCadastro,cargos:cargosCadastro,setores:setoresCadastro,equipesMaster:equipesMasterCadastro,obrasPermitidas:obrasPermitidasCadastro,periodicidadesBaixada:periodicidadesBaixadaCadastro,current:current||{}})).join('')}${desligHtml}<div class="span4"><button class="g360-btn" ${kind==='contratos'?'id="g360ContratoSaveBtn"':''} type="submit">${edit?'Salvar alterações':'Incluir registro'}</button> ${edit?'<button type="button" class="g360-btn sec" id="g360CancelEdit">Cancelar edição</button>':''}${kind==='contratos'?'<div id="g360ContratoSaveStatus" style="margin-top:8px;font-size:12px;font-weight:700;color:#f5c518;min-height:16px"></div>':''}</div></form>`;
+    g360Content.innerHTML=`<form id="g360Form" class="g360-grid">${kind==='funcionarios'?'<div class="span4" style="padding:9px 11px;border-left:3px solid #f5c518;background:#202226;color:#bbb;font-size:11px"><b style="color:#eee">Campos obrigatórios:</b> dados cadastrais, Setor, Setor/Equipe, função e jornada. <b>Vencimento do ASO e datas de baixada podem ser informados depois.</b> A periodicidade de baixada é opcional no cadastro inicial e vem da base mestre do Supabase. Cidade e Estado são selecionados pelo cadastro nacional do IBGE. CNH é opcional quando o colaborador não possui. Demissão é preenchida somente no desligamento. Função e nível vêm do cadastro de Cargos e Salários. O salário-base é sugerido pelo Supabase, mas pode ser ajustado no colaborador. Gratificação inicia em R$ 0,00. Benefícios inicia em R$ 230,00 e pode ser alterado.</div>':''}${d.fields.map(f=>fieldHTML(f,current?.[f[0]],{alojamentos:alojamentosCadastro,contratos:contratosCadastro,contratosCadastro:contratosCadastro,cargos:cargosCadastro,setores:setoresCadastro,equipesMaster:equipesMasterCadastro,obrasPermitidas:obrasPermitidasCadastro,periodicidadesBaixada:periodicidadesBaixadaCadastro,current:current||{}})).join('')}${desligHtml}<div class="span4"><button class="g360-btn" ${kind==='contratos'?'id="g360ContratoSaveBtn"':kind==='alojamentos'?'id="g360AlojSaveBtn"':''} type="submit">${edit?'Salvar alterações':'Incluir registro'}</button> ${edit?'<button type="button" class="g360-btn sec" id="g360CancelEdit">Cancelar edição</button>':''}${kind==='contratos'?'<div id="g360ContratoSaveStatus" style="margin-top:8px;font-size:12px;font-weight:700;color:#f5c518;min-height:16px"></div>':kind==='alojamentos'?'<div id="g360AlojSaveStatus" style="margin-top:8px;font-size:12px;font-weight:700;color:#f5c518;min-height:16px"></div>':''}</div></form>`;
     if(kind==='contratos' && !edit){
       const form=document.getElementById('g360Form');
       if(form && !document.getElementById('g360ContratoManualInfo')){
@@ -13188,6 +13402,108 @@ window.GESTAO360_CONFIG = {
         loadEstados();
       }
 
+
+      // V225 — UF/Cidade da Baixada pela mesma base do IBGE.
+      const baixUf=document.getElementById('g360BaixadaUf');
+      const baixMun=document.getElementById('g360BaixadaMunicipio');
+      const baixCidadeHidden=document.getElementById('g360BaixadaCidadeValor');
+      const baixUfHidden=document.getElementById('g360BaixadaUfValor');
+      if(baixUf&&baixMun&&baixCidadeHidden&&baixUfHidden){
+        const ibgeBaseBaix='https://servicodados.ibge.gov.br/api/v1/localidades';
+        const normBaix=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();
+        const currentUfBaix=String(baixUf.dataset.currentUf||baixUfHidden.value||'').trim().toUpperCase();
+        const currentCityBaix=String(baixMun.dataset.currentCity||baixCidadeHidden.value||'').trim();
+
+        async function loadBaixMunicipios(uf,preselect=''){
+          baixMun.disabled=true;
+          baixMun.innerHTML='<option value="">Carregando cidades...</option>';
+          if(!uf){
+            baixMun.innerHTML='<option value="">Selecione primeiro a UF</option>';
+            baixCidadeHidden.value='';
+            return;
+          }
+          try{
+            const r=await fetch(`${ibgeBaseBaix}/estados/${encodeURIComponent(uf)}/municipios?orderBy=nome`,{cache:'force-cache'});
+            if(!r.ok)throw new Error('Falha ao consultar municípios');
+            const rows=await r.json();
+            baixMun.innerHTML='<option value="">Selecione a cidade</option>'+rows.map(x=>`<option value="${esc(x.nome)}">${esc(x.nome)}</option>`).join('');
+            baixMun.disabled=false;
+            if(preselect){
+              const opt=[...baixMun.options].find(o=>normBaix(o.value)===normBaix(preselect));
+              if(opt){baixMun.value=opt.value;baixCidadeHidden.value=opt.value;}
+            }
+          }catch(err){
+            console.error('IBGE municípios baixada:',err);
+            baixMun.innerHTML='<option value="">Não foi possível carregar as cidades</option>';
+            baixMun.disabled=true;
+          }
+        }
+
+        async function loadBaixEstados(){
+          try{
+            const r=await fetch(`${ibgeBaseBaix}/estados?orderBy=nome`,{cache:'force-cache'});
+            if(!r.ok)throw new Error('Falha ao consultar estados');
+            const rows=await r.json();
+            baixUf.innerHTML='<option value="">UF...</option>'+rows.map(x=>`<option value="${esc(x.sigla)}">${esc(x.sigla)}</option>`).join('');
+            if(currentUfBaix&&[...baixUf.options].some(o=>o.value===currentUfBaix)){
+              baixUf.value=currentUfBaix;
+              baixUfHidden.value=currentUfBaix;
+              await loadBaixMunicipios(currentUfBaix,currentCityBaix);
+            }
+          }catch(err){
+            console.error('IBGE estados baixada:',err);
+            baixUf.innerHTML='<option value="">Falha</option>';
+          }
+        }
+
+        baixUf.addEventListener('change',async()=>{
+          baixUfHidden.value=baixUf.value||'';
+          baixCidadeHidden.value='';
+          await loadBaixMunicipios(baixUf.value,'');
+        });
+        baixMun.addEventListener('change',()=>{
+          baixCidadeHidden.value=baixMun.value||'';
+        });
+        loadBaixEstados();
+      }
+
+      // V225 — máscara e validação real de CPF (dígitos verificadores).
+      const cpfEl=document.getElementById('g360CpfColaborador');
+      const cpfStatus=document.getElementById('g360CpfStatus');
+      const cpfDigits=v=>String(v||'').replace(/\D/g,'').slice(0,11);
+      const cpfMask=v=>{
+        const d=cpfDigits(v);
+        return d.replace(/(\d{3})(\d)/,'$1.$2')
+                .replace(/(\d{3})(\d)/,'$1.$2')
+                .replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+      };
+      const cpfValido=v=>{
+        const d=cpfDigits(v);
+        if(d.length!==11||/^(\d)\1{10}$/.test(d))return false;
+        let soma=0;
+        for(let i=0;i<9;i++)soma+=Number(d[i])*(10-i);
+        let dv=(soma*10)%11;if(dv===10)dv=0;
+        if(dv!==Number(d[9]))return false;
+        soma=0;
+        for(let i=0;i<10;i++)soma+=Number(d[i])*(11-i);
+        dv=(soma*10)%11;if(dv===10)dv=0;
+        return dv===Number(d[10]);
+      };
+      const refreshCpf=()=>{
+        if(!cpfEl)return;
+        cpfEl.value=cpfMask(cpfEl.value);
+        const d=cpfDigits(cpfEl.value);
+        const ok=cpfValido(d);
+        cpfEl.setCustomValidity(d.length===11&&!ok?'CPF inválido. Confira os números informados.':'');
+        if(cpfStatus){
+          cpfStatus.textContent=!d?'Digite os 11 números do CPF.':d.length<11?`CPF incompleto: ${d.length}/11 dígitos.`:ok?'✓ CPF válido':'CPF inválido.';
+          cpfStatus.style.color=ok?'#35d07f':d.length===11?'#ff6b6b':'#777';
+        }
+      };
+      cpfEl?.addEventListener('input',refreshCpf);
+      cpfEl?.addEventListener('blur',refreshCpf);
+      refreshCpf();
+
       const funcSel=g360Form.elements.funcao,nivelEl=g360Form.elements.nivel,salEl=g360Form.elements.salario;
       const cargoRows=cargosCadastro||[];
       const cargoVal=(r,keys)=>{for(const k of keys){if(r&&r[k]!=null&&String(r[k]).trim()!=='')return r[k]}return null};
@@ -13264,8 +13580,44 @@ window.GESTAO360_CONFIG = {
         }
         contratoResetSaving();
       };
+
+      const alojSaveBtn=kind==='alojamentos'?document.getElementById('g360AlojSaveBtn'):null;
+      const alojSaveStatus=kind==='alojamentos'?document.getElementById('g360AlojSaveStatus'):null;
+      const alojSaveOriginal=alojSaveBtn?.innerHTML||'Salvar alterações';
+      const alojSetSaving=(msg='Gravando alterações...')=>{
+        if(!alojSaveBtn)return;
+        alojSaveBtn.disabled=true;
+        alojSaveBtn.setAttribute('aria-busy','true');
+        alojSaveBtn.innerHTML='⏳ Gravando...';
+        alojSaveBtn.style.cursor='wait';
+        alojSaveBtn.style.opacity='.75';
+        if(alojSaveStatus){
+          alojSaveStatus.style.color='#f5c518';
+          alojSaveStatus.textContent=msg;
+        }
+      };
+      const alojResetSaving=()=>{
+        if(!alojSaveBtn)return;
+        alojSaveBtn.disabled=false;
+        alojSaveBtn.removeAttribute('aria-busy');
+        alojSaveBtn.innerHTML=alojSaveOriginal;
+        alojSaveBtn.style.cursor='';
+        alojSaveBtn.style.opacity='';
+      };
+      const alojFail=(msg)=>{
+        if(alojSaveStatus){
+          alojSaveStatus.style.color='#ff6b6b';
+          alojSaveStatus.textContent=msg||'Não foi possível salvar.';
+        }
+        alojResetSaving();
+      };
+
       if(kind==='contratos'){
         contratoSetSaving(edit?'Salvando alterações do contrato...':'Salvando contrato...');
+        await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      }
+      if(kind==='alojamentos'){
+        alojSetSaving(edit?'Gravando alterações do alojamento...':'Gravando alojamento...');
         await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       }
 
@@ -13374,6 +13726,21 @@ window.GESTAO360_CONFIG = {
         }
       }
       if(kind==='funcionarios'){
+        const cpfDigitsSave=String(obj.cpf||'').replace(/\D/g,'');
+        const cpfValidoSave=v=>{
+          if(v.length!==11||/^(\d)\1{10}$/.test(v))return false;
+          let s=0;for(let i=0;i<9;i++)s+=Number(v[i])*(10-i);
+          let x=(s*10)%11;if(x===10)x=0;if(x!==Number(v[9]))return false;
+          s=0;for(let i=0;i<10;i++)s+=Number(v[i])*(11-i);
+          x=(s*10)%11;if(x===10)x=0;return x===Number(v[10]);
+        };
+        if(!cpfValidoSave(cpfDigitsSave)){
+          alert('CPF inválido. Confira os 11 números informados.');
+          document.getElementById('g360CpfColaborador')?.focus();
+          return;
+        }
+        obj.cpf=cpfDigitsSave.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4');
+
         const labels=Object.fromEntries(d.fields.map(f=>[f[0],f[1]]));
         const opcionais=new Set(['venc_aso','cnh','cat_cnh','venc_cnh','ult_baixada','prox_baixada','periodicidade_baixada','custo_baixada','vt','cidade_baixada','uf_baixada','telefone','email','horario_entrada','horario_saida','intervalo_inicio','intervalo_fim','jornada_observacao','alojamento']);
         for(const f of d.fields){const k=f[0];if(opcionais.has(k))continue;const v=obj[k];if(v===null||v===undefined||String(v).trim()===''){alert('Preencha o campo obrigatório: '+labels[k]+'.');g360Form.elements[k]?.focus();return;}}
@@ -13400,20 +13767,46 @@ window.GESTAO360_CONFIG = {
         else {obj.cat_cnh=null;obj.venc_cnh=null;}
         if(['S','SIM','1','TRUE'].includes(String(obj.usa_aloj||'').trim().toUpperCase())&&!obj.alojamento){alert('Selecione o alojamento do colaborador.');g360Form.elements.alojamento?.focus();return;}
         if(['S','SIM','1','TRUE'].includes(String(obj.usa_aloj||'').trim().toUpperCase())&&obj.alojamento){
-          const [alojCap,ocupRes]=await Promise.all([
-            sb.from('alojamentos').select('id,contrato_codigo,descricao,capacidade').eq('contrato_codigo',obj.alojamento).maybeSingle(),
-            sb.from('funcionarios').select('id,status,usa_aloj,alojamento').eq('alojamento',obj.alojamento)
-          ]);
-          if(alojCap.error){alert('Não foi possível validar a capacidade do alojamento: '+alojCap.error.message);return;}
+          // V223 — validação robusta do alojamento.
+          // O select pode usar contrato_codigo, contrato ou descrição como valor.
+          // Antes a validação procurava SOMENTE contrato_codigo; quando o cadastro
+          // usava a descrição como chave, o registro não era encontrado e a capacidade
+          // virava 0, gerando o falso aviso de "capacidade inválida".
+          const alojSel=String(obj.alojamento||'').trim();
+          const alojListRes=await sb.from('alojamentos').select('id,contrato_codigo,descricao,capacidade,status');
+          if(alojListRes.error){alert('Não foi possível validar a capacidade do alojamento: '+alojListRes.error.message);return;}
+          const normAloj=v=>String(v??'').trim().toUpperCase();
+          const alojCapData=(alojListRes.data||[]).find(a=>
+            normAloj(a.contrato_codigo)===normAloj(alojSel) ||
+            normAloj(a.descricao)===normAloj(alojSel)
+          );
+          if(!alojCapData){
+            alert('Não foi possível localizar o alojamento selecionado no cadastro de Alojamentos. Atualize a tela e selecione-o novamente.');
+            g360Form.elements.alojamento?.focus();return;
+          }
+          const capacidade=Number(alojCapData.capacidade||0);
+          if(capacidade<=0){
+            alert('O alojamento selecionado foi localizado, mas a capacidade cadastrada está zerada ou inválida. Informe a capacidade no cadastro do alojamento.');
+            g360Form.elements.alojamento?.focus();return;
+          }
+
+          // Conta a ocupação usando todas as chaves válidas do mesmo alojamento,
+          // inclusive cadastros antigos que possam ter salvo descrição em vez do contrato.
+          const chavesAloj=[alojSel,alojCapData.contrato_codigo,alojCapData.descricao]
+            .filter(Boolean).map(normAloj);
+          const ocupRes=await sb.from('funcionarios').select('id,status,usa_aloj,alojamento');
           if(ocupRes.error){alert('Não foi possível validar a ocupação do alojamento: '+ocupRes.error.message);return;}
-          const capacidade=Number(alojCap.data?.capacidade||0);
-          if(capacidade<=0){alert('Este alojamento não possui capacidade válida cadastrada. Atualize a capacidade antes de incluir o colaborador.');g360Form.elements.alojamento?.focus();return;}
           const bloqueados=new Set(['DESLIGADO','INATIVO','ABANDONO']);
-          const ocupantes=(ocupRes.data||[]).filter(r=>String(r.usa_aloj||'').toUpperCase()==='S'&&!bloqueados.has(String(r.status||'').toUpperCase())&&(!edit||String(r.id)!==String(edit.id)));
+          const ocupantes=(ocupRes.data||[]).filter(r=>
+            chavesAloj.includes(normAloj(r.alojamento)) &&
+            ['S','SIM','1','TRUE'].includes(String(r.usa_aloj||'').trim().toUpperCase()) &&
+            !bloqueados.has(String(r.status||'').toUpperCase()) &&
+            (!edit||String(r.id)!==String(edit.id))
+          );
           const novoOcupa=!bloqueados.has(String(obj.status||'').toUpperCase());
           const projetado=ocupantes.length+(novoOcupa?1:0);
           if(projetado>capacidade){
-            const nomeAloj=alojCap.data?.descricao||obj.alojamento;
+            const nomeAloj=alojCapData.descricao||obj.alojamento;
             alert(`Alojamento lotado: ${nomeAloj}. Capacidade: ${capacidade} vaga(s). Ocupação atual: ${ocupantes.length}. Não é permitido ultrapassar a capacidade cadastrada.`);
             g360Form.elements.alojamento?.focus();return;
           }
@@ -13430,7 +13823,7 @@ window.GESTAO360_CONFIG = {
         // Dados de SESMT e custo de alojamento não são editados neste cadastro.
         delete obj.custo_aloj; delete obj.acidente; delete obj.data_acidente; delete obj.cat_emitida; delete obj.dias_afastado; delete obj.tipo_afastamento;
       }
-      if(kind==='funcionarios'&&edit&&String(obj.status||'').toUpperCase()==='DESLIGADO'){const dem=document.getElementById('g360Demissao')?.value||obj.demissao;if(!dem){alert('Informe a data de demissão para desligar o colaborador.');return;}obj.demissao=dem;obj.tipo_deslig=document.getElementById('g360TipoDeslig')?.value||null;obj.motivo_deslig=document.getElementById('g360MotivoDeslig')?.value||null;const checks=[...g360Content.querySelectorAll('.deslig-check')];if(checks.some(x=>!x.checked)){alert('Conclua o checklist de devolução de EPIs e equipamentos antes de desligar o colaborador.');return;}for(const ch of checks){const i=Number(ch.dataset.idx),it=desligItens[i],dt=g360Content.querySelector(`.deslig-date[data-idx="${i}"]`)?.value||dem,obs=g360Content.querySelector(`.deslig-obs[data-idx="${i}"]`)?.value||null;if(!dt){alert('Informe a data de devolução de todos os itens do checklist.');return;}const payload=it.tabela==='termo_epi_itens'?{data_devolucao:dt,observacoes:obs}:{data_devolucao:dt,observacao:obs};const ret=await sb.from(it.tabela).update(payload).eq('id',it.id);if(ret.error){alert('Falha ao registrar devolução de '+it.descricao+': '+ret.error.message);return;}}}else if(kind==='funcionarios'&&!edit&&String(obj.status||'').toUpperCase()!=='DESLIGADO'){obj.demissao=null;}if(kind==='alojamentos'){const val=Number(obj.valor_mensal||0), ocu=Number(obj.ocupados||0);obj.custo_rateado=ocu>0?val/ocu:0;}let q=edit?sb.from(d.table).update(obj).eq('id',edit.id).select('*').maybeSingle():sb.from(d.table).insert(obj).select('*').maybeSingle();const {data:saved,error}=await q;if(error){if(kind==='contratos')contratoFail('Erro do Supabase: '+error.message);alert(error.message);return}
+      if(kind==='funcionarios'&&edit&&String(obj.status||'').toUpperCase()==='DESLIGADO'){const dem=document.getElementById('g360Demissao')?.value||obj.demissao;if(!dem){alert('Informe a data de demissão para desligar o colaborador.');return;}obj.demissao=dem;obj.tipo_deslig=document.getElementById('g360TipoDeslig')?.value||null;obj.motivo_deslig=document.getElementById('g360MotivoDeslig')?.value||null;const checks=[...g360Content.querySelectorAll('.deslig-check')];if(checks.some(x=>!x.checked)){alert('Conclua o checklist de devolução de EPIs e equipamentos antes de desligar o colaborador.');return;}for(const ch of checks){const i=Number(ch.dataset.idx),it=desligItens[i],dt=g360Content.querySelector(`.deslig-date[data-idx="${i}"]`)?.value||dem,obs=g360Content.querySelector(`.deslig-obs[data-idx="${i}"]`)?.value||null;if(!dt){alert('Informe a data de devolução de todos os itens do checklist.');return;}const payload=it.tabela==='termo_epi_itens'?{data_devolucao:dt,observacoes:obs}:{data_devolucao:dt,observacao:obs};const ret=await sb.from(it.tabela).update(payload).eq('id',it.id);if(ret.error){alert('Falha ao registrar devolução de '+it.descricao+': '+ret.error.message);return;}}}else if(kind==='funcionarios'&&!edit&&String(obj.status||'').toUpperCase()!=='DESLIGADO'){obj.demissao=null;}if(kind==='alojamentos'){const val=Number(obj.valor_mensal||0), ocu=Number(obj.ocupados||0);obj.custo_rateado=ocu>0?val/ocu:0;}let q=edit?sb.from(d.table).update(obj).eq('id',edit.id).select('*').maybeSingle():sb.from(d.table).insert(obj).select('*').maybeSingle();const {data:saved,error}=await q;if(error){if(kind==='contratos')contratoFail('Erro do Supabase: '+error.message);if(kind==='alojamentos')alojFail('Erro do Supabase: '+error.message);alert(error.message);return}
       let contratoSaveWarning='';
       if(kind==='contratos'){
         const codigo=String(saved?.codigo||edit?.codigo||obj.codigo||'').trim();
@@ -13486,6 +13879,22 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
         }
 
         if(contratoSaveWarning) alert(contratoSaveWarning);
+        return;
+      }
+
+      if(kind==='alojamentos'){
+        if(alojSaveBtn)alojSaveBtn.innerHTML='✓ Gravado';
+        if(alojSaveStatus){
+          alojSaveStatus.style.color='#35d07f';
+          alojSaveStatus.textContent=edit?'Alterações do alojamento gravadas com sucesso.':'Alojamento gravado com sucesso.';
+        }
+        await new Promise(resolve=>setTimeout(resolve,500));
+        modal.classList.remove('open');
+        try{
+          await pullAll();
+        }catch(refreshErr){
+          console.error('[G360] Alojamento salvo; falha apenas ao atualizar a tela:',refreshErr);
+        }
         return;
       }
 
@@ -18194,6 +18603,186 @@ document.addEventListener('click',function(e){
   }
 });
 setTimeout(iniciar,800);
+})();
+</script>
+
+
+<div id="g360ContratoFluxoBack">
+  <div id="g360ContratoFluxoModal">
+    <div class="cf-head">
+      <div>
+        <div class="cf-title">🧭 Acompanhamento da Tramitação Contratual</div>
+        <div class="cf-sub" id="g360CfSub">Carregando solicitação...</div>
+      </div>
+      <button type="button" onclick="g360ContratoFluxoV221.close()">✕ Fechar</button>
+    </div>
+    <div class="cf-body">
+      <div class="cf-kpis">
+        <div class="cf-kpi"><span>Etapa atual</span><b id="g360CfKpiEtapa">—</b></div>
+        <div class="cf-kpi"><span>Aguardando há</span><b id="g360CfKpiEspera">—</b></div>
+        <div class="cf-kpi"><span>Contratos confirmou em</span><b id="g360CfKpiReceb">—</b></div>
+        <div class="cf-kpi"><span>Jurídico disponibilizou em</span><b id="g360CfKpiJuridico">—</b></div>
+      </div>
+      <div class="cf-current" id="g360CfCurrent">Aguardando carregamento...</div>
+      <div class="cf-grid" id="g360CfGrid"></div>
+    </div>
+    <div class="cf-actions">
+      <button type="button" onclick="g360ContratoFluxoV221.close()">Cancelar</button>
+      <button type="button" class="primary" id="g360CfSalvar" onclick="g360ContratoFluxoV221.save()">💾 Salvar acompanhamento</button>
+    </div>
+  </div>
+</div>
+
+
+<script id="g360-contrato-fluxo-v221">
+(function(){
+'use strict';
+
+const STAGES=[
+  ['assin_adm_obra','Assinatura ADM. de Obras'],
+  ['assin_eng_residente_inicial','Assinatura Eng. Residente'],
+  ['assin_diretoria_inicial','Assinatura Diretoria'],
+  ['envio_contratos','Envio dos formulários ao Depto. de Contratos'],
+  ['recebido_contratos','Recebido pelo Depto. de Contratos'],
+  ['retorno_assinaturas','Contrato retornou para assinaturas'],
+  ['assin_juridico','Assinatura Jurídico'],
+  ['assin_eng_obra_final','Assinatura Eng. da Obra'],
+  ['assin_contratada','Assinatura Contratada / Locador / Fornecedor'],
+  ['assin_diretoria_final','Assinatura Diretoria'],
+  ['assin_nilton','Assinatura NILTON / Proprietário'],
+  ['disponivel_sistema','Jurídico informou contrato disponível no sistema']
+];
+
+let currentId=null,currentRow=null,currentRequest=null,currentProfile=null;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=d=>d?new Date(d+'T12:00:00').toLocaleDateString('pt-BR'):'—';
+const days=(a,b)=>{
+  if(!a||!b)return null;
+  const x=new Date(a+'T12:00:00'),y=new Date(b+'T12:00:00');
+  return Math.max(0,Math.floor((y-x)/86400000));
+};
+const today=()=>new Date().toISOString().slice(0,10);
+
+async function profile(){
+  const sb=window.g360SupabaseClient;if(!sb)return null;
+  const {data:{session}}=await sb.auth.getSession();if(!session)return null;
+  const r=await sb.from('profiles').select('id,nome,email,perfil,master').eq('id',session.user.id).maybeSingle();
+  return r.data||{id:session.user.id,email:session.user.email};
+}
+function who(){return currentProfile?.nome||currentProfile?.email||'Usuário'}
+
+function currentStage(){
+  if(!currentRow)return {idx:0,label:STAGES[0][1]};
+  for(let i=0;i<STAGES.length;i++){
+    if(!currentRow[STAGES[i][0]])return {idx:i,label:STAGES[i][1]};
+  }
+  return {idx:STAGES.length,label:'CONCLUÍDO · CONTRATO DISPONÍVEL'};
+}
+function lastDate(){
+  if(!currentRow)return currentRequest?.created_at?.slice(0,10)||today();
+  for(let i=STAGES.length-1;i>=0;i--){
+    const v=currentRow[STAGES[i][0]];if(v)return v;
+  }
+  return currentRequest?.created_at?.slice(0,10)||today();
+}
+function kpis(){
+  const st=currentStage();
+  $('g360CfKpiEtapa').textContent=st.idx>=STAGES.length?'CONCLUÍDO':`${st.idx+1}/${STAGES.length}`;
+  const espera=st.idx>=STAGES.length?0:days(lastDate(),today());
+  $('g360CfKpiEspera').textContent=espera===null?'—':`${espera} dia(s)`;
+
+  const rec=days(currentRow?.envio_contratos,currentRow?.recebido_contratos);
+  $('g360CfKpiReceb').textContent=rec===null?'—':`${rec} dia(s)`;
+
+  const jur=days(currentRow?.assin_nilton,currentRow?.disponivel_sistema);
+  $('g360CfKpiJuridico').textContent=jur===null?'—':`${jur} dia(s)`;
+
+  $('g360CfCurrent').textContent=st.idx>=STAGES.length
+    ? `✓ Fluxo concluído. Contrato informado como disponível em ${fmt(currentRow?.disponivel_sistema)}.`
+    : `ETAPA ATUAL: ${st.label.toUpperCase()} · aguardando há ${espera??0} dia(s) corrido(s).`;
+}
+function render(){
+  const st=currentStage();
+  $('g360CfGrid').innerHTML=STAGES.map(([key,label],i)=>{
+    const val=currentRow?.[key]||'';
+    const done=!!val,active=!done&&i===st.idx;
+    const resp=currentRow?.responsaveis?.[key]||'';
+    return `<div class="cf-stage ${done?'done':active?'active':''}">
+      <div><span class="num">${done?'✓':i+1}</span><h4>${esc(label)}</h4></div>
+      <label>Data da etapa</label>
+      <input type="date" data-cf-date="${key}" value="${esc(val)}">
+      <div class="cf-who">${resp?`Registrado por: ${esc(resp)}`:''}</div>
+    </div>`;
+  }).join('');
+  kpis();
+}
+
+async function open(id){
+  currentId=id;currentRow=null;currentRequest=null;
+  $('g360ContratoFluxoBack').classList.add('open');
+  $('g360CfSub').textContent='Carregando solicitação...';
+  $('g360CfGrid').innerHTML='';
+  const sb=window.g360SupabaseClient;
+  if(!sb){$('g360CfCurrent').textContent='Supabase não conectado.';return}
+  try{
+    currentProfile=await profile();
+    const [rq,fl]=await Promise.all([
+      sb.from('solicitacoes_contrato').select('id,protocolo,titulo,fornecedor,objeto,created_at,status').eq('id',id).maybeSingle(),
+      sb.from('solicitacao_contrato_fluxo').select('*').eq('solicitacao_id',id).maybeSingle()
+    ]);
+    if(rq.error)throw rq.error;
+    if(!rq.data)throw new Error('Solicitação não encontrada.');
+    if(fl.error && fl.error.code!=='PGRST116')throw fl.error;
+    currentRequest=rq.data;
+    currentRow=fl.data||{
+      solicitacao_id:id,
+      obra_id:window.G360_ACTIVE_OBRA_ID||null,
+      responsaveis:{}
+    };
+    if(!currentRow.responsaveis)currentRow.responsaveis={};
+    $('g360CfSub').textContent=`${rq.data.protocolo||rq.data.id} · ${rq.data.fornecedor||'Fornecedor não informado'} · ${rq.data.objeto||rq.data.titulo||''}`;
+    render();
+  }catch(e){
+    $('g360CfCurrent').textContent='Falha ao carregar acompanhamento: '+(e?.message||e);
+  }
+}
+function close(){$('g360ContratoFluxoBack').classList.remove('open')}
+
+async function save(){
+  if(!currentId)return;
+  const sb=window.g360SupabaseClient;if(!sb)return;
+  const btn=$('g360CfSalvar');btn.disabled=true;btn.textContent='Salvando...';
+  try{
+    const obraId=currentRow?.obra_id||window.G360_ACTIVE_OBRA_ID||null;
+    if(!obraId)throw new Error('Obra não identificada.');
+    const next={...(currentRow||{}),solicitacao_id:currentId,obra_id:obraId};
+    delete next.created_at;delete next.updated_at;
+    const resp={...(next.responsaveis||{})};
+
+    document.querySelectorAll('#g360CfGrid [data-cf-date]').forEach(inp=>{
+      const key=inp.dataset.cfDate,old=currentRow?.[key]||'',val=inp.value||null;
+      next[key]=val;
+      if(val && val!==old)resp[key]=who();
+      if(!val)delete resp[key];
+    });
+    next.responsaveis=resp;
+    next.updated_by=currentProfile?.id||null;
+    next.updated_at=new Date().toISOString();
+
+    const r=await sb.from('solicitacao_contrato_fluxo').upsert(next,{onConflict:'solicitacao_id'}).select('*').single();
+    if(r.error)throw r.error;
+    currentRow=r.data;
+    render();
+    try{window.g360Audit?.('contratos','EDITAR','solicitacao_contrato_fluxo',currentId,'Atualização de tramitação contratual',null,null,{etapa_atual:currentStage().label})}catch(_){}
+    alert('Acompanhamento atualizado.');
+  }catch(e){
+    alert('Não foi possível salvar o acompanhamento: '+(e?.message||e));
+  }finally{
+    btn.disabled=false;btn.textContent='💾 Salvar acompanhamento';
+  }
+}
+window.g360ContratoFluxoV221={open,close,save};
 })();
 </script>
 
