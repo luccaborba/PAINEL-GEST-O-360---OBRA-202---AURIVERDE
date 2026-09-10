@@ -1,4 +1,11 @@
 <!DOCTYPE html>
+<!-- V210: layout Folga de Campo com UF antes da Cidade e KM/Período/Dias na mesma linha -->
+<!-- V209: Cidade/UF gerais do candidato, KM condicional à baixada e campos Email/Telefone uniformes -->
+<!-- V208: Cidade e UF da Baixada ficam sempre visíveis no formulário de admissão -->
+<!-- V207: remove indicação visual de contato cadastrado da demissão; contato permanece automático internamente -->
+<!-- V206: cidade/UF na admissão, contato da demissão puxado do colaborador e campos dark padronizados -->
+<!-- V205: admissão/demissão revisadas, contatos, baixada, metadata MP-01/MP-02 V-02 e base Supabase -->
+<!-- V204: corrige saldo contratual para considerar LANCADO e TITULO_GERADO no Fechamento de Praça -->
 <!-- V203: cadastro mestre de itens separado, código sequencial, estoque máximo, giro automático e sugestão de compra -->
 <!-- V202: corrige criação do perfil Técnico de Segurança em usuario_permissoes -->
 <!-- V200: corrige identificação da obra no inventário e movimentações SESMT -->
@@ -1521,6 +1528,109 @@ html.g360-ui-ready .content-col {
 }
 </style>
 
+
+<style id="g360-rh-fields-dark-v206">
+#view-rhdpAdmissao input,
+#view-rhdpAdmissao select,
+#view-rhdpAdmissao textarea,
+#view-rhdpDemissao input,
+#view-rhdpDemissao select,
+#view-rhdpDemissao textarea{
+  background:var(--asphalt)!important;
+  color:var(--ink)!important;
+  border:1px solid var(--line)!important;
+  box-shadow:none!important;
+}
+#view-rhdpAdmissao input:disabled,
+#view-rhdpDemissao input:disabled{
+  background:rgba(255,255,255,.025)!important;
+  color:var(--ink-soft)!important;
+  opacity:1!important;
+}
+#view-rhdpAdmissao input::placeholder,
+#view-rhdpAdmissao textarea::placeholder,
+#view-rhdpDemissao input::placeholder,
+#view-rhdpDemissao textarea::placeholder{
+  color:var(--ink-soft)!important;
+  opacity:1!important;
+}
+#view-rhdpAdmissao input:-webkit-autofill,
+#view-rhdpAdmissao input:-webkit-autofill:hover,
+#view-rhdpAdmissao input:-webkit-autofill:focus,
+#view-rhdpDemissao input:-webkit-autofill,
+#view-rhdpDemissao input:-webkit-autofill:hover,
+#view-rhdpDemissao input:-webkit-autofill:focus{
+  -webkit-text-fill-color:var(--ink)!important;
+  -webkit-box-shadow:0 0 0 1000px var(--asphalt) inset!important;
+  box-shadow:0 0 0 1000px var(--asphalt) inset!important;
+  caret-color:var(--ink)!important;
+}
+</style>
+
+
+<style id="g360-admissao-inputs-uniformes-v209">
+#view-rhdpAdmissao .form-group input[type="text"],
+#view-rhdpAdmissao .form-group input[type="email"],
+#view-rhdpAdmissao .form-group input[type="tel"],
+#view-rhdpAdmissao .form-group input[type="number"],
+#view-rhdpAdmissao .form-group input[type="date"],
+#view-rhdpAdmissao .form-group select{
+  width:100%!important;
+  box-sizing:border-box!important;
+  height:38px!important;
+  min-height:38px!important;
+  padding:8px 12px!important;
+  border-radius:7px!important;
+  border:1px solid var(--line)!important;
+  background:var(--asphalt)!important;
+  color:var(--ink)!important;
+  font:inherit!important;
+  line-height:20px!important;
+  appearance:auto;
+}
+#view-rhdpAdmissao #rhAdmEmail,
+#view-rhdpAdmissao #rhAdmTelefone{
+  height:38px!important;
+  min-height:38px!important;
+  border-radius:7px!important;
+  padding:8px 12px!important;
+  border:1px solid var(--line)!important;
+  background:var(--asphalt)!important;
+  color:var(--ink)!important;
+  box-sizing:border-box!important;
+}
+</style>
+
+
+<style id="g360-admissao-layout-baixada-v210">
+#view-rhdpAdmissao .adm-loc-row{
+  display:grid;
+  grid-template-columns:110px minmax(0,1fr);
+  gap:12px;
+  align-items:end;
+}
+#view-rhdpAdmissao .adm-baixada-row{
+  display:grid;
+  grid-template-columns:170px 180px 180px minmax(180px,1fr);
+  gap:12px;
+  align-items:end;
+}
+#view-rhdpAdmissao .adm-uf-field input{
+  text-transform:uppercase;
+}
+@media(max-width:900px){
+  #view-rhdpAdmissao .adm-baixada-row{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+@media(max-width:620px){
+  #view-rhdpAdmissao .adm-loc-row,
+  #view-rhdpAdmissao .adm-baixada-row{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+
 </head>
 <body>
 <!-- V155: convite personalizado + primeiro acesso com criação de senha -->
@@ -2275,8 +2385,8 @@ html.g360-ui-ready .content-col {
         <section class="panel" id="rhAdmFormPanel" style="display:none;">
           <div class="form-doc-meta">
             <span>IDENTIFIC.: <b>MP-01</b></span>
-            <span>VERSÃO: <b>01</b></span>
-            <span>FOLHA: <b>1/1</b></span>
+            <span>VERSÃO: <b>V-02</b></span>
+            <span>DATA ÚLTIMA VERSÃO: <b>21/08/2026</b></span>
             <span>DATA: <b id="rhAdmDataAtual"></b></span>
             <span style="color:var(--yellow);">* Campo obrigatório</span>
           </div>
@@ -2350,27 +2460,31 @@ html.g360-ui-ready .content-col {
 
           <div class="form-section">
             <div class="form-section-title">Folga de Campo (Baixada)</div>
-            <div class="radio-row">
+
+            <div class="adm-loc-row">
+              <div class="form-group adm-uf-field">
+                <label>UF *</label>
+                <input type="text" id="rhAdmEstado" maxlength="2" placeholder="UF">
+              </div>
+              <div class="form-group adm-city-field">
+                <label>Cidade *</label>
+                <input type="text" id="rhAdmCidade" placeholder="Informe a cidade do candidato">
+              </div>
+            </div>
+
+            <div class="radio-row" style="margin-top:12px;">
               <label class="radio-item"><input type="radio" name="rhAdmBaixada" value="NAO" checked> Não se aplica</label>
               <label class="radio-item"><input type="radio" name="rhAdmBaixada" value="SIM"> Aplicável</label>
             </div>
-            <div id="rhAdmBaixadaWrap" style="display:none;">
-              <div class="form-grid cols-3">
-                <div class="form-group">
-                  <label>Cidade Residência *</label>
-                  <input type="text" id="rhAdmCidade" placeholder="Cidade">
-                </div>
-                <div class="form-group">
-                  <label>Estado *</label>
-                  <input type="text" id="rhAdmEstado" placeholder="UF">
-                </div>
-                <div class="form-group">
+
+            <div id="rhAdmBaixadaWrap" style="display:none;margin-top:12px;">
+              <div class="adm-baixada-row">
+                <div class="form-group adm-km-field">
                   <label>KM Distância p/ Obra *</label>
-                  <input type="number" id="rhAdmKm" placeholder="0">
+                  <input type="number" id="rhAdmKm" min="0" step="0.1" placeholder="0">
                 </div>
-              </div>
-              <div class="form-grid cols-2" style="margin-top:12px;">
-                <div class="form-group">
+
+                <div class="form-group adm-periodo-field">
                   <label>Período *</label>
                   <select id="rhAdmPeriodo">
                     <option value="60 DIAS">60 dias</option>
@@ -2379,17 +2493,19 @@ html.g360-ui-ready .content-col {
                     <option value="OUTROS">Outros</option>
                   </select>
                 </div>
-                <div class="form-group" id="rhAdmPeriodoOutrosWrap" style="display:none;">
-                  <label>Especificar Período</label>
-                  <input type="text" id="rhAdmPeriodoOutros" placeholder="Ex.: 30 dias">
-                </div>
-                <div class="form-group">
+
+                <div class="form-group adm-dias-field">
                   <label>Dias de Folga *</label>
                   <select id="rhAdmDiasFolga">
                     <option value="3 A 5 DIAS">3 a 5 dias</option>
                     <option value="5 DIAS">5 dias</option>
                     <option value="7 DIAS">7 dias</option>
                   </select>
+                </div>
+
+                <div class="form-group adm-outros-field" id="rhAdmPeriodoOutrosWrap" style="display:none;">
+                  <label>Especificar Período</label>
+                  <input type="text" id="rhAdmPeriodoOutros" placeholder="Ex.: 30 dias">
                 </div>
               </div>
             </div>
@@ -2405,6 +2521,19 @@ html.g360-ui-ready .content-col {
           </div>
 
           <div class="form-section">
+            <div class="form-section-title">Dados para envio de contrato para assinatura</div>
+            <div class="form-grid cols-2">
+              <div class="form-group">
+                <label>Email *</label>
+                <input type="email" id="rhAdmEmail" placeholder="email@empresa.com.br">
+              </div>
+              <div class="form-group">
+                <label>Telefone (WhatsApp) *</label>
+                <input type="tel" id="rhAdmTelefone" placeholder="(00) 00000-0000">
+              </div>
+            </div>
+          </div>
+<div class="form-section">
             <div class="form-section-title">Trilha de Aprovações</div>
             <div class="approval-trail">
               <span class="step">ADM</span><span class="arrow">→</span>
@@ -2565,8 +2694,8 @@ html.g360-ui-ready .content-col {
         <section class="panel">
           <div class="form-doc-meta">
             <span>IDENTIFIC.: <b>MP-02</b></span>
-            <span>VERSÃO: <b>01</b></span>
-            <span>FOLHA: <b>1/1</b></span>
+            <span>VERSÃO: <b>V-02</b></span>
+            <span>DATA ÚLTIMA VERSÃO: <b>21/08/2026</b></span>
             <span>DATA: <b id="rhDemDataAtual"></b></span>
             <span style="color:var(--yellow);">* Campo obrigatório</span>
           </div>
@@ -2594,6 +2723,14 @@ html.g360-ui-ready .content-col {
                 <label>Setor / Equipe</label>
                 <input type="text" id="rhDemSetor" disabled>
               </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">Possui estabilidade?</div>
+            <div class="radio-row">
+              <label class="radio-item"><input type="radio" name="rhDemEstabilidade" value="SIM"> Sim</label>
+              <label class="radio-item"><input type="radio" name="rhDemEstabilidade" value="NAO" checked> Não</label>
             </div>
           </div>
 
@@ -6842,6 +6979,8 @@ function rhAdmCollectFormData(){
     periodo: document.getElementById('rhAdmPeriodo').value==='OUTROS' ? document.getElementById('rhAdmPeriodoOutros').value : document.getElementById('rhAdmPeriodo').value,
     diasFolga: document.getElementById('rhAdmDiasFolga').value,
     justificativa: document.getElementById('rhAdmJustificativa').value,
+    email: document.getElementById('rhAdmEmail').value.trim(),
+    telefone: document.getElementById('rhAdmTelefone').value.trim(),
     dataGeracao: new Date().toISOString(),
   };
 }
@@ -6853,13 +6992,15 @@ function rhAdmValidate(data){
   if(!data.nivel) faltando.push('Nível');
   if(!data.ccusto || !data.obra) faltando.push('Cód. / Obra');
   if(!data.horario) faltando.push('Horário de Trabalho');
+  if(!data.email) faltando.push('Email');
+  if(!data.telefone) faltando.push('Telefone (WhatsApp)');
   if(data.tipoContrato==='DETERMINADO' && !data.prazo) faltando.push('Prazo (contrato determinado)');
   if(data.baixadaAplicavel){
     if(!data.cidade) faltando.push('Cidade Residência');
     if(!data.estado) faltando.push('Estado');
-    if(!data.km) faltando.push('KM Distância p/ Obra');
+    if(data.baixadaAplicavel && !data.km) faltando.push('KM Distância p/ Obra');
     if(!data.periodo) faltando.push('Período (Folga de Campo)');
-    if(!data.diasFolga) faltando.push('Dias de Folga');
+    if(data.baixadaAplicavel && !data.diasFolga) faltando.push('Dias de Folga');
   }
   if(faltando.length){
     alert('Preencha os campos obrigatórios antes de continuar:\n\n• ' + faltando.join('\n• '));
@@ -6938,9 +7079,9 @@ function rhAdmGerarPDF(data){
 
   const rx = marginX + logoW;
   cell(rx, y, rightW, 26, { text:'FORMULÁRIO DE SOLICITAÇÃO DE ADMISSÃO', bold:true, size:11.5, align:'center', valign:'middle' });
-  const subColW = [rightW*0.34, rightW*0.22, rightW*0.22, rightW*0.22];
-  const subLabels = ['DATA','IDENTIFIC.','VERSÃO','FOLHA'];
-  const subValues = [new Date(data.dataGeracao).toLocaleDateString('pt-BR'), 'MP-01', '01', '1/1'];
+  const subColW = [rightW*0.25, rightW*0.20, rightW*0.18, rightW*0.37];
+  const subLabels = ['DATA','IDENTIFIC.','VERSÃO','DATA ULTIMA VERSÃO'];
+  const subValues = [new Date(data.dataGeracao).toLocaleDateString('pt-BR'), 'MP-01', 'V-02', '21/08/2026'];
   let cx = rx;
   subColW.forEach((w,i)=>{ cell(cx, y+26, w, 16, { text:subLabels[i], bold:true, size:7.5, align:'center', valign:'middle' }); cx += w; });
   cx = rx;
@@ -7058,7 +7199,31 @@ function rhAdmGerarPDF(data){
   cell(marginX, y, contentW, justH, { fill:PEACH, text:data.justificativa||'', size:8.5 });
   y += justH;
 
+  // ---- DADOS PARA ENVIO DE CONTRATO PARA ASSINATURA ----
+  sectionBar('DADOS PARA ENVIO DE CONTRATO PARA ASSINATURA');
+  cell(marginX, y, labelW, 20, { text:'EMAIL:', bold:true, size:7.5, valign:'middle' });
+  cell(marginX+labelW, y, contentW-labelW, 20, { fill:PEACH, text:data.email||'', size:8, valign:'middle' });
+  y += 20;
+  cell(marginX, y, labelW, 20, { text:'TELEFONE (WHATSAPP):', bold:true, size:7.5, valign:'middle' });
+  cell(marginX+labelW, y, contentW-labelW, 20, { fill:PEACH, text:data.telefone||'', size:8, valign:'middle' });
+  y += 20;
+
   // ---- TRILHA DE APROVAÇÕES ----
+  sectionBar('RECONTRATÁVEL');
+  cell(marginX, y, halfW, 20, { fill:PEACH });
+  checkboxLabel(marginX+halfW/2-35, y, 20, data.recontratavel==='SIM', 'SIM', {bold:true});
+  cell(marginX+halfW, y, halfW, 20, { fill:PEACH });
+  checkboxLabel(marginX+halfW+halfW/2-35, y, 20, data.recontratavel!=='SIM', 'NÃO', {bold:true});
+  y += 20;
+
+  sectionBar('CONTATO PARA ENTREVISTA DE DESLIGAMENTO');
+  cell(marginX, y, labelW, 20, { text:'EMAIL:', bold:true, size:7.5, valign:'middle' });
+  cell(marginX+labelW, y, contentW-labelW, 20, { fill:PEACH, text:data.email||'', size:8, valign:'middle' });
+  y += 20;
+  cell(marginX, y, labelW, 20, { text:'TELEFONE (WHATSAPP):', bold:true, size:7.5, valign:'middle' });
+  cell(marginX+labelW, y, contentW-labelW, 20, { fill:PEACH, text:data.telefone||'', size:8, valign:'middle' });
+  y += 20;
+
   sectionBar('TRILHA DE APROVAÇÕES');
   const trilhaH = 28;
   cell(marginX, y, contentW, trilhaH, {});
@@ -7177,7 +7342,7 @@ function rhAdmRenderHistorico(){
     <td>${rhAdmDateCell(d.dataEngenharia)}</td><td>${rhAdmDateCell(d.dataJuridico)}</td><td>${rhAdmDateCell(d.dataDiretoria)}</td>
     <td>${rhAdmDateCell(d.dataRH)}</td><td>${rhAdmDateCell(d.dataDP)}</td><td>${rhAdmDateCell(d.dataDocsObra)}</td><td>${rhAdmDateCell(d.dataAdmissao)}</td>
     <td><span class="adm-status ${rhAdmStatusClass(st)}">${rhAdmEtapaLabel(d)}</span>${st==='REPROVADO'&&d.reprovadoEtapa?`<div style="font-size:9px;color:var(--ink-soft);margin-top:4px;">por ${d.reprovadoEtapa}</div>`:''}</td>
-    <td style="white-space:nowrap;"><button class="clear-btn" style="padding:5px 8px;font-size:10px;" onclick="rhAdmOpenTriagem(${idx})">🧭 Triagem</button> <button class="clear-btn" style="padding:5px 8px;font-size:10px;" onclick="rhAdmEditHistorico(${idx})">✏️ Form.</button> <button class="clear-btn" style="padding:5px 8px;font-size:10px;" onclick="rhAdmReprintPDF(${idx})">📄</button></td>
+    <td style="white-space:nowrap;"><button class="clear-btn" style="padding:5px 8px;font-size:10px;" onclick="rhAdmOpenTriagem(${idx})">🧭 Triagem</button> <button class="clear-btn" style="padding:5px 8px;font-size:10px;" onclick="rhAdmEditHistorico(${idx})">✏️ Form.</button> <button class="clear-btn" style="padding:5px 8px;font-size:10px;" onclick="rhAdmReprintPDF(${idx})">📄</button> <button class="clear-btn" style="padding:5px 8px;font-size:10px;background:#762727;color:#fff;" onclick="rhAdmDeleteHistorico(${idx})">🗑 Excluir</button></td>
   </tr>`}).join('');
 }
 let rhAdmTriagemIndex=null;
@@ -7225,6 +7390,8 @@ function rhAdmReprintPDF(idx){
 }
 function rhAdmDeleteHistorico(idx){
   const list = rhAdmLoadHistorico();
+  if(!list[idx]) return;
+  if(!confirm(`Excluir da Base de Admissão o processo de ${list[idx].nome||'candidato'}?`)) return;
   list.splice(idx,1);
   rhAdmSaveHistorico(list);
   if(rhAdmEditIndex===idx){ rhAdmLimparFormulario(); }
@@ -7260,6 +7427,8 @@ function rhAdmFillForm(data){
   }
   document.getElementById('rhAdmDiasFolga').value = data.diasFolga || '3 A 5 DIAS';
   document.getElementById('rhAdmJustificativa').value = data.justificativa || '';
+  document.getElementById('rhAdmEmail').value = data.email || '';
+  document.getElementById('rhAdmTelefone').value = data.telefone || '';
   rhAdmToggleConditionals();
 }
 function rhAdmEditHistorico(idx){
@@ -7279,7 +7448,7 @@ function rhAdmDuplicarHistorico(idx){
   rhAdmEditIndex = null;
   rhAdmFillForm(data);
   const btn = document.getElementById('rhAdmSalvarBtn');
-  if(btn) btn.textContent = '💾 Salvar na Base de Admissão';
+  if(btn) btn.textContent = '💾 Salvar Solicitação';
   document.getElementById('rhAdmFormPanel').style.display='';
   const nomeInput = document.getElementById('rhAdmNome');
   nomeInput.scrollIntoView({behavior:'smooth', block:'start'});
@@ -7305,6 +7474,8 @@ function rhAdmLimparFormulario(){
   document.getElementById('rhAdmPeriodoOutros').value = '';
   document.getElementById('rhAdmDiasFolga').value = '3 A 5 DIAS';
   document.getElementById('rhAdmJustificativa').value = '';
+  document.getElementById('rhAdmEmail').value = '';
+  document.getElementById('rhAdmTelefone').value = '';
   rhAdmToggleConditionals();
   rhAdmEditIndex = null;
   const btn = document.getElementById('rhAdmSalvarBtn');
@@ -7398,12 +7569,17 @@ function rhDemOnColabChange(){
 }
 
 function rhDemCollectFormData(){
+  const sel=document.getElementById('rhDemColab');
+  const colabId=sel.value;
+  const c=(window.COLABS||window.colaboradores||[]).find(x=>String(x.id)===String(colabId)) || null;
   return {
-    nome: document.getElementById('rhDemColab').selectedOptions[0] ? document.getElementById('rhDemColab').selectedOptions[0].textContent.split(' — Mat.')[0] : '',
+    colaborador_id: colabId || null,
+    nome: sel.selectedOptions[0] ? sel.selectedOptions[0].textContent.split(' — Mat.')[0] : '',
     mat: document.getElementById('rhDemMat').value,
     admissao: document.getElementById('rhDemAdmissao').value,
     cargo: document.getElementById('rhDemCargo').value,
     setor: document.getElementById('rhDemSetor').value,
+    estabilidade: document.querySelector('input[name="rhDemEstabilidade"]:checked')?.value || 'NAO',
     dataDeslig: document.getElementById('rhDemData').value,
     tipo: document.getElementById('rhDemTipo').value,
     avisoPrevio: document.querySelector('input[name="rhDemAviso"]:checked').value,
@@ -7415,6 +7591,11 @@ function rhDemCollectFormData(){
     chkAcessos: document.getElementById('rhDemChkAcessos').checked,
     chkAlojVeiculo: document.getElementById('rhDemChkAlojVeiculo').checked,
     observacoes: document.getElementById('rhDemObservacoes').value,
+    recontratavel: document.querySelector('input[name="rhDemRecontratavel"]:checked')?.value || 'NAO',
+    email: c?.email || '',
+    telefone: c?.telefone || '',
+    cidade_baixada: c?.cidade_baixada || c?.cidade || '',
+    uf_baixada: c?.uf_baixada || '',
     dataGeracao: new Date().toISOString(),
   };
 }
@@ -7483,10 +7664,10 @@ function rhDemGerarPDF(data){
   const logoImgW = 100, logoImgH = 50;
   doc.addImage(CCL_LOGO_B64, 'PNG', marginX + (logoW-logoImgW)/2, y + (headerH-logoImgH)/2, logoImgW, logoImgH);
   const rx = marginX + logoW;
-  cell(rx, y, rightW, 26, { text:'FORMULÁRIO DE SOLICITAÇÃO DE DESLIGAMENTO', bold:true, size:11, align:'center', valign:'middle' });
-  const subColW = [rightW*0.34, rightW*0.22, rightW*0.22, rightW*0.22];
-  const subLabels = ['DATA','IDENTIFIC.','VERSÃO','FOLHA'];
-  const subValues = [new Date(data.dataGeracao).toLocaleDateString('pt-BR'), 'MP-02', '01', '1/1'];
+  cell(rx, y, rightW, 26, { text:'FORMULÁRIO DE SOLICITAÇÃO DE DEMISSÃO', bold:true, size:11, align:'center', valign:'middle' });
+  const subColW = [rightW*0.25, rightW*0.20, rightW*0.18, rightW*0.37];
+  const subLabels = ['DATA','IDENTIFIC.','VERSÃO','DATA ULTIMA VERSÃO'];
+  const subValues = [new Date(data.dataGeracao).toLocaleDateString('pt-BR'), 'MP-02', 'V-02', '21/08/2026'];
   let cx = rx;
   subColW.forEach((w,i)=>{ cell(cx, y+26, w, 16, { text:subLabels[i], bold:true, size:7.5, align:'center', valign:'middle' }); cx += w; });
   cx = rx;
@@ -7508,8 +7689,15 @@ function rhDemGerarPDF(data){
   dcW.forEach((w,i)=>{ cell(cx, y, w, 20, { fill:PEACH, text:dcValues[i], bold:true, size:8, align:'center', valign:'middle' }); cx += w; });
   y += 20;
 
-  sectionBar('DADOS DO DESLIGAMENTO');
   const halfW = contentW/2;
+  sectionBar('POSSUI ESTABILIDADE?');
+  cell(marginX, y, halfW, 20, { fill:PEACH });
+  checkboxLabel(marginX+halfW/2-35, y, 20, data.estabilidade==='SIM', 'SIM', {bold:true});
+  cell(marginX+halfW, y, halfW, 20, { fill:PEACH });
+  checkboxLabel(marginX+halfW+halfW/2-35, y, 20, data.estabilidade!=='SIM', 'NÃO', {bold:true});
+  y += 20;
+
+  sectionBar('DADOS DO DESLIGAMENTO');
   cell(marginX, y, halfW, 20, { text:'DATA DO DESLIGAMENTO:', bold:true, size:7.5, valign:'middle' });
   cell(marginX+halfW, y, halfW, 20, { fill:PEACH, text: data.dataDeslig?new Date(data.dataDeslig+'T00:00:00').toLocaleDateString('pt-BR'):'', bold:true, size:8, valign:'middle', align:'center' });
   y += 20;
@@ -7634,6 +7822,8 @@ function rhDemFillForm(data){
   document.getElementById('rhDemChkAcessos').checked = !!data.chkAcessos;
   document.getElementById('rhDemChkAlojVeiculo').checked = !!data.chkAlojVeiculo;
   document.getElementById('rhDemObservacoes').value = data.observacoes || '';
+  const est=document.querySelector(`input[name="rhDemEstabilidade"][value="${data.estabilidade||'NAO'}"]`);if(est)est.checked=true;
+  const rec=document.querySelector(`input[name="rhDemRecontratavel"][value="${data.recontratavel||'NAO'}"]`);if(rec)rec.checked=true;
 }
 function rhDemEditHistorico(idx){
   const list = rhDemLoadHistorico();
@@ -7667,6 +7857,8 @@ function rhDemLimparFormulario(){
     document.getElementById(id).checked = false;
   });
   document.getElementById('rhDemObservacoes').value = '';
+  const est=document.querySelector('input[name="rhDemEstabilidade"][value="NAO"]');if(est)est.checked=true;
+  const rec=document.querySelector('input[name="rhDemRecontratavel"][value="NAO"]');if(rec)rec.checked=true;
   rhDemEditIndex = null;
   const btn = document.getElementById('rhDemSalvarBtn');
   if(btn) btn.textContent = '💾 Salvar na Base de Admissão';
@@ -12515,7 +12707,7 @@ window.GESTAO360_CONFIG = {
   }
   const defs={
     cargosSalarios:{title:'Cargos e Salários',table:'cargos_salarios',order:'funcao',fields:[['funcao','Função / Cargo','span2'],['nivel','Nível'],['salario','Salário','number'],['ativo','Ativo','','ativo-cargo']],cols:['funcao','nivel','salario','ativo']},
-    funcionarios:{title:'Funcionários',table:'funcionarios',order:'nome',fields:[['matricula','Matrícula'],['cpf','CPF'],['nome','Nome','span2'],['tipo_contrato','Tipo contrato','','tipo-contrato-func'],['admissao','Admissão','date'],['venc_aso','Venc. ASO (pode informar depois)','date'],['depto','Setor','','setor-cadastro'],['setor_equipe','Setor / Equipe','','setor-equipe-master-base'],['funcao','Função / Cargo','span2','funcao-cadastro'],['nivel','Nível','','nivel-cadastro'],['status','Status','','status-func'],['obra','Obra','span2','obra-cadastro'],['jornada_tipo','Jornada / Escala','','jornada-select'],['horario_entrada','Entrada','','time'],['horario_saida','Saída','','time'],['intervalo_inicio','Início do intervalo','','time'],['intervalo_fim','Fim do intervalo','','time'],['jornada_observacao','Detalhes da jornada','span2'],['cnh','CNH'],['cat_cnh','Cat. CNH'],['venc_cnh','Venc. CNH','date'],['salario','Salário','','salario-cadastro'],['gratificacao','Gratificação','number'],['cidade','Cidade / Estado','span2','cidade-ibge'],['distancia_baixada_km','Distância da obra (km)','number'],['direito_baixada','Tem direito de baixada?','','direito-baixada'],['ult_baixada','Últ. baixada','date'],['prox_baixada','Próx. baixada','date'],['periodicidade_baixada','Periodicidade de baixada','','periodicidade-baixada'],['custo_baixada','Custo baixada (opcional)','number'],['vt','VT (opcional)','number'],['beneficios','Benefícios','number'],['usa_aloj','Usa alojamento?','','usa-aloj'],['alojamento','Alojamento','span2','aloj-select']],cols:['matricula','nome','funcao','setor_equipe','status']},
+    funcionarios:{title:'Funcionários',table:'funcionarios',order:'nome',fields:[['matricula','Matrícula'],['cpf','CPF'],['nome','Nome','span2'],['tipo_contrato','Tipo contrato','','tipo-contrato-func'],['admissao','Admissão','date'],['venc_aso','Venc. ASO (pode informar depois)','date'],['depto','Setor','','setor-cadastro'],['setor_equipe','Setor / Equipe','','setor-equipe-master-base'],['funcao','Função / Cargo','span2','funcao-cadastro'],['nivel','Nível','','nivel-cadastro'],['status','Status','','status-func'],['obra','Obra','span2','obra-cadastro'],['jornada_tipo','Jornada / Escala','','jornada-select'],['horario_entrada','Entrada','','time'],['horario_saida','Saída','','time'],['intervalo_inicio','Início do intervalo','','time'],['intervalo_fim','Fim do intervalo','','time'],['jornada_observacao','Detalhes da jornada','span2'],['cnh','CNH'],['cat_cnh','Cat. CNH'],['venc_cnh','Venc. CNH','date'],['salario','Salário','','salario-cadastro'],['gratificacao','Gratificação','number'],['cidade','Cidade / Estado','span2','cidade-ibge'],['cidade_baixada','Cidade de Baixada',''],['uf_baixada','UF da Baixada',''],['telefone','Telefone / WhatsApp',''],['email','Email','span2'],['distancia_baixada_km','Distância da obra (km)','number'],['direito_baixada','Tem direito de baixada?','','direito-baixada'],['ult_baixada','Últ. baixada','date'],['prox_baixada','Próx. baixada','date'],['periodicidade_baixada','Periodicidade de baixada','','periodicidade-baixada'],['custo_baixada','Custo baixada (opcional)','number'],['vt','VT (opcional)','number'],['beneficios','Benefícios','number'],['usa_aloj','Usa alojamento?','','usa-aloj'],['alojamento','Alojamento','span2','aloj-select']],cols:['matricula','nome','funcao','setor_equipe','status']},
     contratos:{title:'Contratos',table:'contratos',order:'codigo',fields:[['codigo','Contrato'],['fornecedor','Fornecedor','span2'],['tipo','Tipo','span2'],['objeto','Objeto','span4','textarea'],['contrato_agua_vinculo','Contrato Água / Saneago','span2','contrato-servico-locacao:A'],['contrato_energia_vinculo','Contrato Energia / Equatorial','span2','contrato-servico-locacao:E'],['contrato_internet_vinculo','Contrato Internet','span2','contrato-servico-locacao:I'],['valor_contratado','Valor contratado','number'],['valor_medido_total','Valor medido','number'],['valor_mensal','Valor mensal','number'],['data_inicio','Início','date'],['data_fim','Fim','date'],['situacao','Situação']],cols:['codigo','fornecedor','tipo','situacao','valor_contratado']},
     alojamentos:{title:'Alojamentos',table:'alojamentos',order:'descricao',fields:[['contrato_codigo','Contrato de locação'],['descricao','Descrição','span2'],['fornecedor','Fornecedor / Locador','span2'],['endereco','Endereço completo','span4','textarea'],['contrato_agua','Contrato de Água','span2','contrato-servico:A'],['contrato_energia','Contrato de Energia','span2','contrato-servico:E'],['contrato_internet','Contrato de Internet','span2','contrato-servico:I'],['valor_mensal','Valor mensal','number'],['capacidade','Capacidade','number'],['ocupados','Ocupados','number'],['custo_rateado','Rateio por ocupante','number-readonly'],['status','Status']],cols:['contrato_codigo','descricao','endereco','contrato_agua','contrato_energia','contrato_internet','capacidade','status']},
     patrimonio:{title:'Inventário de Patrimônio',table:'patrimonio_itens',order:'descricao',fields:[['codigo_patrimonio','Nº Patrimônio'],['tag','Tag'],['descricao','Descrição','span2'],['categoria','Categoria'],['marca','Marca'],['modelo','Modelo'],['numero_serie','Nº de série'],['alojamento_codigo','Alojamento','span2','aloj-select'],['comodo','Cômodo'],['quantidade','Quantidade','number'],['valor_unitario','Valor unitário','number'],['data_aquisicao','Data aquisição','date'],['estado_conservacao','Estado conservação'],['status','Status'],['responsavel','Responsável','span2'],['origem','Origem / fornecedor','span2'],['observacao','Observação','span4','textarea']],cols:['codigo_patrimonio','descricao','categoria','alojamento_codigo','comodo','estado_conservacao','status']},
@@ -12812,7 +13004,7 @@ window.GESTAO360_CONFIG = {
     if(kind==='funcionarios'){
       const st=g360Form.elements.status, box=document.getElementById('g360DesligamentoBox'), dem=document.getElementById('g360Demissao');
       // V23 — Cadastro de colaboradores: campos obrigatórios + regras condicionais.
-      const optionalAlways=new Set(['venc_aso','cnh','cat_cnh','venc_cnh','ult_baixada','prox_baixada','periodicidade_baixada','custo_baixada','vt','horario_entrada','horario_saida','intervalo_inicio','intervalo_fim','jornada_observacao','alojamento']);
+      const optionalAlways=new Set(['venc_aso','cnh','cat_cnh','venc_cnh','ult_baixada','prox_baixada','periodicidade_baixada','custo_baixada','vt','cidade_baixada','uf_baixada','telefone','email','horario_entrada','horario_saida','intervalo_inicio','intervalo_fim','jornada_observacao','alojamento']);
       d.fields.forEach(f=>{const el=g360Form.elements[f[0]];if(el&&!optionalAlways.has(f[0]))el.required=true;});
       const obraEl=g360Form.elements.obra,setorEl=g360Form.elements.depto,setorEquipeEl=g360Form.elements.setor_equipe;
       const allSetorOpts=setorEl?[...setorEl.options].map(o=>({value:o.value,text:o.textContent,id:o.dataset.id||'',obraId:o.dataset.obraId||''})):[];
@@ -13103,7 +13295,7 @@ window.GESTAO360_CONFIG = {
       }
       if(kind==='funcionarios'){
         const labels=Object.fromEntries(d.fields.map(f=>[f[0],f[1]]));
-        const opcionais=new Set(['venc_aso','cnh','cat_cnh','venc_cnh','ult_baixada','prox_baixada','periodicidade_baixada','custo_baixada','vt','horario_entrada','horario_saida','intervalo_inicio','intervalo_fim','jornada_observacao','alojamento']);
+        const opcionais=new Set(['venc_aso','cnh','cat_cnh','venc_cnh','ult_baixada','prox_baixada','periodicidade_baixada','custo_baixada','vt','cidade_baixada','uf_baixada','telefone','email','horario_entrada','horario_saida','intervalo_inicio','intervalo_fim','jornada_observacao','alojamento']);
         for(const f of d.fields){const k=f[0];if(opcionais.has(k))continue;const v=obj[k];if(v===null||v===undefined||String(v).trim()===''){alert('Preencha o campo obrigatório: '+labels[k]+'.');g360Form.elements[k]?.focus();return;}}
         if(obj.tipo_contrato){
           obj.tipo_contrato=String(obj.tipo_contrato).trim().toUpperCase();
@@ -15145,7 +15337,7 @@ async function processar(id){
 
       const operacionais=[...(opQ.data||[]),...(legacyOpQ.data||[])];
       const totalOperacional=operacionais.reduce((s,m)=>{
-        const lancada=String(m.status||'').toUpperCase()==='LANCADO';
+        const lancada=['LANCADO','TITULO_GERADO'].includes(String(m.status||'').toUpperCase());
         const impacta=m.impacta_saldo!==false;
         return s+(lancada&&impacta?Number(m.valor_medido||0):0);
       },0);
@@ -17700,6 +17892,107 @@ async function init(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,250),{once:true});else setTimeout(init,250);
 window.g360SesmtEstoqueV195={init,loadMovs,renderInventario,aplicarInventario};
 window.g360SesmtEstoqueV203={abrirEntradaItem,editarCadastro,loadGiroResumo,aplicarAcesso:aplicarAcessoEstoqueSesmt,limparCadastroItem};
+})();
+</script>
+
+
+<script id="g360-rh-adm-dem-db-v205">
+(function(){
+'use strict';
+let ADM_DB_READY=false, DEM_DB_READY=false;
+const admOrigLoad=window.rhAdmLoadHistorico, admOrigSave=window.rhAdmSaveHistorico;
+const demOrigLoad=window.rhDemLoadHistorico, demOrigSave=window.rhDemSaveHistorico;
+
+function obraAtivaV205(){
+  return window.g360GetSelectedObra?.()?.id || window.G360_ACTIVE_OBRA_ID || null;
+}
+function uidV205(){try{return crypto.randomUUID()}catch(e){return 'v205_'+Date.now()+'_'+Math.random().toString(36).slice(2)}}
+
+async function syncAdmDbV205(list){
+  if(!ADM_DB_READY || window.g360PreviewMode)return;
+  const sb=window.g360SupabaseClient;if(!sb)return;
+  const oid=obraAtivaV205();if(!oid)return;
+  const rows=(list||[]).map(d=>{
+    if(!d.id)d.id=uidV205();
+    return {id:d.id,obra_id:oid,nome:d.nome||'',cargo:d.cargo||'',dados:d,updated_at:new Date().toISOString()};
+  });
+  if(rows.length){
+    const u=await sb.from('rh_admissoes_base').upsert(rows,{onConflict:'id'});
+    if(u.error){console.warn('[V205 adm upsert]',u.error);return}
+  }
+  const ids=rows.map(r=>r.id);
+  let q=sb.from('rh_admissoes_base').delete().eq('obra_id',oid);
+  if(ids.length)q=q.not('id','in','('+ids.join(',')+')');
+  const d=await q;if(d.error)console.warn('[V205 adm delete sync]',d.error);
+}
+async function syncDemDbV205(list){
+  if(!DEM_DB_READY || window.g360PreviewMode)return;
+  const sb=window.g360SupabaseClient;if(!sb)return;
+  const oid=obraAtivaV205();if(!oid)return;
+  const rows=(list||[]).map(d=>{
+    if(!d.id)d.id=uidV205();
+    return {id:d.id,obra_id:oid,nome:d.nome||'',tipo:d.tipo||'',dados:d,updated_at:new Date().toISOString()};
+  });
+  if(rows.length){
+    const u=await sb.from('rh_demissoes_base').upsert(rows,{onConflict:'id'});
+    if(u.error){console.warn('[V205 dem upsert]',u.error);return}
+  }
+  const ids=rows.map(r=>r.id);
+  let q=sb.from('rh_demissoes_base').delete().eq('obra_id',oid);
+  if(ids.length)q=q.not('id','in','('+ids.join(',')+')');
+  const d=await q;if(d.error)console.warn('[V205 dem delete sync]',d.error);
+}
+
+window.rhAdmSaveHistorico=function(list){
+  (list||[]).forEach(d=>{if(!d.id)d.id=uidV205()});
+  try{localStorage.setItem(RHADM_STORAGE_KEY,JSON.stringify(list||[]))}catch(e){}
+  syncAdmDbV205(list||[]);
+};
+window.rhDemSaveHistorico=function(list){
+  (list||[]).forEach(d=>{if(!d.id)d.id=uidV205()});
+  try{localStorage.setItem(RHDEM_STORAGE_KEY,JSON.stringify(list||[]))}catch(e){}
+  syncDemDbV205(list||[]);
+};
+
+async function loadAdmDbV205(){
+  if(window.g360PreviewMode)return;
+  const sb=window.g360SupabaseClient,oid=obraAtivaV205();if(!sb||!oid)return;
+  const r=await sb.from('rh_admissoes_base').select('id,dados,created_at').eq('obra_id',oid).order('created_at');
+  if(r.error){console.warn('[V205 adm load]',r.error);return}
+  const local=admOrigLoad?admOrigLoad():[];
+  ADM_DB_READY=true;
+  if((r.data||[]).length){
+    const list=r.data.map(x=>({...x.dados,id:x.id,dataGeracao:x.dados?.dataGeracao||x.created_at}));
+    try{localStorage.setItem(RHADM_STORAGE_KEY,JSON.stringify(list))}catch(e){}
+    window.rhAdmRenderHistorico?.();
+  }else if(local.length){
+    window.rhAdmSaveHistorico(local);
+  }
+}
+async function loadDemDbV205(){
+  if(window.g360PreviewMode)return;
+  const sb=window.g360SupabaseClient,oid=obraAtivaV205();if(!sb||!oid)return;
+  const r=await sb.from('rh_demissoes_base').select('id,dados,created_at').eq('obra_id',oid).order('created_at');
+  if(r.error){console.warn('[V205 dem load]',r.error);return}
+  const local=demOrigLoad?demOrigLoad():[];
+  DEM_DB_READY=true;
+  if((r.data||[]).length){
+    const list=r.data.map(x=>({...x.dados,id:x.id,dataGeracao:x.dados?.dataGeracao||x.created_at}));
+    try{localStorage.setItem(RHDEM_STORAGE_KEY,JSON.stringify(list))}catch(e){}
+    window.rhDemRenderHistorico?.();
+  }else if(local.length){
+    window.rhDemSaveHistorico(local);
+  }
+}
+
+const oldAdmRender=window.renderRhdpAdmissao;
+if(typeof oldAdmRender==='function'){
+  window.renderRhdpAdmissao=function(){oldAdmRender();setTimeout(loadAdmDbV205,50)}
+}
+const oldDemRender=window.renderRhdpDemissao;
+if(typeof oldDemRender==='function'){
+  window.renderRhdpDemissao=function(){oldDemRender();setTimeout(loadDemDbV205,50)}
+}
 })();
 </script>
 
