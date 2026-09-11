@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- V230: corrige navegação do submenu Relatórios do Controle de Estoque -->
 <!-- V229: Relatórios no Controle de Estoque — Estoque Atual e Movimentações por Período -->
 <!-- V228: permissões SESMT reorganizadas e Técnico habilitado para operação de estoque -->
 <!-- V227: SESMT organizado em cascata, controle de estoque didático e histórico XLSX -->
@@ -3668,6 +3669,7 @@ html.g360-ui-ready .content-col {
           <button type="button" class="sesmt-stock-tab" data-sesmt-stock-tab="cadastro" data-gestor-only-v203="1">Cadastro de itens</button>
           <button type="button" class="sesmt-stock-tab" data-sesmt-stock-tab="inventario">Inventário</button>
           <button type="button" class="sesmt-stock-tab" data-sesmt-stock-tab="historico">Histórico</button>
+          <button type="button" class="sesmt-stock-tab" data-sesmt-stock-tab="relatorios">Relatórios</button>
         </div>
 
         <section class="panel sesmt-stock-card sesmt-stock-pane active" data-sesmt-stock-pane="mov">
@@ -19005,7 +19007,12 @@ function wireCascade(){
       const tab=link.dataset.sesmtMenuTab;
       const tipo=link.dataset.sesmtMenuTipo||'';
       setTimeout(()=>{
-        document.querySelector(`#view-sesmtEstoque [data-sesmt-stock-tab="${tab}"]`)?.click();
+        const internalTab=document.querySelector(`#view-sesmtEstoque [data-sesmt-stock-tab="${tab}"]`);
+        if(internalTab){
+          internalTab.click();
+        }else{
+          document.querySelectorAll('#view-sesmtEstoque [data-sesmt-stock-pane]').forEach(p=>p.classList.toggle('active',p.dataset.sesmtStockPane===tab));
+        }
         if(tipo&&$('sesmtMovTipo')){
           $('sesmtMovTipo').value=tipo;
           $('sesmtMovTipo').dispatchEvent(new Event('change',{bubbles:true}));
