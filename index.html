@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- V229: Relatórios no Controle de Estoque — Estoque Atual e Movimentações por Período -->
 <!-- V228: permissões SESMT reorganizadas e Técnico habilitado para operação de estoque -->
 <!-- V227: SESMT organizado em cascata, controle de estoque didático e histórico XLSX -->
 <!-- V226: força login individual direto e força-login de todos reparado pela RPC individual -->
@@ -1811,6 +1812,19 @@ html.g360-ui-ready .content-col {
 }
 </style>
 
+
+<style id="g360-sesmt-relatorios-v229">
+.g360-sesmt-reports-v229{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}
+.g360-sesmt-report-card-v229{display:grid;grid-template-columns:auto 1fr;gap:12px;background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:10px;padding:18px;align-content:start}
+.g360-sesmt-report-icon-v229{width:44px;height:44px;border-radius:9px;display:grid;place-items:center;background:rgba(245,197,24,.1);font-size:22px}
+.g360-sesmt-report-card-v229 h3{margin:2px 0 7px;font-size:15px;color:var(--ink)}
+.g360-sesmt-report-card-v229 p{margin:0;color:var(--ink-soft);font-size:11px;line-height:1.55}
+.g360-sesmt-report-period-v229{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-top:5px}
+.g360-sesmt-report-actions-v229{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+@media(max-width:900px){.g360-sesmt-reports-v229{grid-template-columns:1fr}}
+@media(max-width:560px){.g360-sesmt-report-period-v229{grid-template-columns:1fr}}
+</style>
+
 </head>
 <body>
 <!-- V155: convite personalizado + primeiro acesso com criação de senha -->
@@ -1923,6 +1937,7 @@ html.g360-ui-ready .content-col {
                 <div class="side-link" data-view="sesmtEstoque" data-sesmt-menu-tab="mov" data-sesmt-menu-tipo="SAIDA"><span class="ic">↔️</span>Movimentação / Baixa</div>
                 <div class="side-link" data-view="sesmtEstoque" data-sesmt-menu-tab="inventario"><span class="ic">📋</span>Inventário</div>
                 <div class="side-link" data-view="sesmtEstoque" data-sesmt-menu-tab="historico"><span class="ic">🕘</span>Histórico</div>
+                <div class="side-link" data-view="sesmtEstoque" data-sesmt-menu-tab="relatorios"><span class="ic">📑</span>Relatórios</div>
                 <div class="side-link" data-view="sesmtEstoque" data-sesmt-menu-tab="cadastro" data-gestor-only-v227="1"><span class="ic">🏷️</span>Cadastro de Itens</div>
               </div>
             </div>
@@ -3857,6 +3872,46 @@ html.g360-ui-ready .content-col {
               <thead><tr><th>Data/Hora</th><th>Tipo</th><th>EPI</th><th>Qtd.</th><th>Colaborador</th><th>Motivo</th><th>Usuário</th><th>Ações</th></tr></thead>
               <tbody id="sesmtMovHistorico"><tr><td colspan="8"><div class="empty-state">Carregando movimentações...</div></td></tr></tbody>
             </table>
+          </div>
+        </section>
+
+        <section class="panel sesmt-stock-card sesmt-stock-pane" data-sesmt-stock-pane="relatorios">
+          <div class="sesmt-card-head">
+            <div>
+              <h2>Relatórios do Controle de Estoque</h2>
+              <div class="sesmt-stock-help">Extraia a posição atual do estoque ou todas as movimentações realizadas em um período.</div>
+            </div>
+            <span class="tag">SESMT · EPI</span>
+          </div>
+
+          <div class="g360-sesmt-reports-v229">
+            <article class="g360-sesmt-report-card-v229">
+              <div class="g360-sesmt-report-icon-v229">📦</div>
+              <div>
+                <h3>Controle de Estoque Atual</h3>
+                <p>Posição atual de todos os EPIs cadastrados, com código, descrição, C.A., unidade, saldo, estoque mínimo, máximo, giro e situação.</p>
+              </div>
+              <div class="g360-sesmt-report-actions-v229">
+                <button type="button" class="btn-primary" id="sesmtRelEstoqueExcel">📊 Baixar Excel</button>
+                <button type="button" class="clear-btn" id="sesmtRelEstoquePdf">📄 Baixar PDF</button>
+              </div>
+            </article>
+
+            <article class="g360-sesmt-report-card-v229">
+              <div class="g360-sesmt-report-icon-v229">↔️</div>
+              <div>
+                <h3>Movimentações por Período</h3>
+                <p>Entradas, retiradas/baixas, devoluções e ajustes registrados dentro do intervalo informado.</p>
+              </div>
+              <div class="g360-sesmt-report-period-v229">
+                <label class="sesmt-field"><span>Data inicial</span><input type="date" id="sesmtRelMovIni"></label>
+                <label class="sesmt-field"><span>Data final</span><input type="date" id="sesmtRelMovFim"></label>
+              </div>
+              <div class="g360-sesmt-report-actions-v229">
+                <button type="button" class="btn-primary" id="sesmtRelMovExcel">📊 Baixar Excel</button>
+                <button type="button" class="clear-btn" id="sesmtRelMovPdf">📄 Baixar PDF</button>
+              </div>
+            </article>
           </div>
         </section>
       </div>
@@ -18154,6 +18209,7 @@ function aplicarAcessoEstoqueSesmt(){
   document.querySelectorAll('[data-sesmt-menu-tipo="SAIDA"]').forEach(el=>el.style.display=canBaixa?'':'none');
   document.querySelectorAll('[data-sesmt-menu-tab="inventario"]').forEach(el=>el.style.display=canInventario?'':'none');
   document.querySelectorAll('[data-sesmt-menu-tab="historico"]').forEach(el=>el.style.display=canHistorico?'':'none');
+  document.querySelectorAll('[data-sesmt-menu-tab="relatorios"]').forEach(el=>el.style.display=canHistorico?'':'none');
   document.querySelectorAll('[data-sesmt-menu-tab="cadastro"]').forEach(el=>el.style.display=canCadastro?'':'none');
 }
 
@@ -19029,11 +19085,114 @@ function exportHistoryExcel(){
   XLSX.writeFile(wb,`sesmt-historico-epi-${d}.xlsx`);
 }
 
+
+function reportStockRowsV229(){
+  return [...(window.EPI?.stock||[])].sort((a,b)=>String(a.codigo||'').localeCompare(String(b.codigo||''),'pt-BR',{numeric:true})).map(x=>{
+    const saldo=Number(x.saldo||0),min=Number(x.estoque_minimo??x.minimo??0),max=Number(x.estoque_maximo??x.maximo??0);
+    const giroMes=Number(x.giro_mes??x.giro_mensal??0),giro12=Number(x.giro_12_meses??x.giro12??0);
+    return {
+      codigo:x.codigo||'',descricao:x.descricao||'',ca:x.ca||'',unidade:x.unidade||x.und||'UN',
+      saldo,min,max,giroMes,giro12,sugestao:Math.max(0,max-saldo),
+      situacao:saldo<=0?'SEM ESTOQUE':(min>0&&saldo<min?'ABAIXO DO MÍNIMO':'NORMAL')
+    };
+  });
+}
+function reportMovRowsV229(){
+  const ini=$('sesmtRelMovIni')?.value||'',fim=$('sesmtRelMovFim')?.value||'';
+  if(!ini||!fim){alert('Informe a data inicial e a data final.');return null}
+  if(ini>fim){alert('A data inicial não pode ser maior que a data final.');return null}
+  const movs=window.g360SesmtEstoqueV195?.getMovs?.()||[];
+  return movs.filter(r=>{
+    const d=String(r.data_movimento||r.created_at||'').slice(0,10);
+    return d>=ini&&d<=fim;
+  }).sort((a,b)=>String(a.created_at||a.data_movimento||'').localeCompare(String(b.created_at||b.data_movimento||'')));
+}
+function reportObraV229(){
+  try{
+    const o=window.g360GetSelectedObra?.();
+    return o?`${o.codigo||''}${o.codigo&&o.nome?' - ':''}${o.nome||''}`:'Obra selecionada';
+  }catch(_){return 'Obra selecionada'}
+}
+function reportExcelV229(kind){
+  if(!window.XLSX?.utils)return alert('Biblioteca Excel não carregada. Atualize a página e tente novamente.');
+  let aoa=[],nome='';
+  if(kind==='estoque'){
+    const rows=reportStockRowsV229();if(!rows.length)return alert('Não há itens cadastrados no estoque.');
+    aoa=[
+      ['GESTÃO 360 · SESMT · CONTROLE DE ESTOQUE ATUAL'],
+      ['Obra',reportObraV229()],['Gerado em',new Date().toLocaleString('pt-BR')],[],
+      ['Código','Descrição','C.A.','UND','Saldo Atual','Estoque Mínimo','Estoque Máximo','Giro Mês','Giro 12 Meses','Sugestão Compra','Situação'],
+      ...rows.map(r=>[r.codigo,r.descricao,r.ca,r.unidade,r.saldo,r.min,r.max,r.giroMes,r.giro12,r.sugestao,r.situacao])
+    ];nome=`sesmt-estoque-atual-${new Date().toISOString().slice(0,10)}.xlsx`;
+  }else{
+    const rows=reportMovRowsV229();if(rows===null)return;if(!rows.length)return alert('Nenhuma movimentação encontrada no período informado.');
+    const ini=$('sesmtRelMovIni').value,fim=$('sesmtRelMovFim').value;
+    aoa=[
+      ['GESTÃO 360 · SESMT · MOVIMENTAÇÕES DE ESTOQUE'],
+      ['Obra',reportObraV229()],['Período',`${ini} a ${fim}`],['Gerado em',new Date().toLocaleString('pt-BR')],[],
+      ['Data/Hora','Tipo','Código','EPI','C.A.','Quantidade','Matrícula','Colaborador','Motivo / Observação','Usuário'],
+      ...rows.map(r=>[
+        new Date(r.created_at||((r.data_movimento||ini)+'T12:00:00')).toLocaleString('pt-BR'),
+        r.tipo||'',r.epi_codigo||r.codigo||'',r.epi_descricao||'',r.ca||'',Number(r.quantidade||0),
+        r.matricula||'',r.colaborador_nome||'',r.motivo||'',r.usuario_nome||r.created_by_nome||''
+      ])
+    ];nome=`sesmt-movimentacoes-${ini}-a-${fim}.xlsx`;
+  }
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']=kind==='estoque'
+    ?[{wch:14},{wch:36},{wch:14},{wch:8},{wch:12},{wch:14},{wch:14},{wch:12},{wch:14},{wch:16},{wch:20}]
+    :[{wch:20},{wch:18},{wch:14},{wch:34},{wch:13},{wch:12},{wch:14},{wch:34},{wch:42},{wch:28}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,kind==='estoque'?'Estoque Atual':'Movimentações');XLSX.writeFile(wb,nome);
+}
+function pdfEscV229(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function reportPdfV229(kind){
+  let title='',sub='',headers=[],rows=[];
+  if(kind==='estoque'){
+    const data=reportStockRowsV229();if(!data.length)return alert('Não há itens cadastrados no estoque.');
+    title='CONTROLE DE ESTOQUE ATUAL';sub=`Posição em ${new Date().toLocaleString('pt-BR')}`;
+    headers=['Código','Descrição','C.A.','UND','Saldo','Mín.','Máx.','Sug. compra','Situação'];
+    rows=data.map(r=>[r.codigo,r.descricao,r.ca,r.unidade,r.saldo,r.min,r.max,r.sugestao,r.situacao]);
+  }else{
+    const data=reportMovRowsV229();if(data===null)return;if(!data.length)return alert('Nenhuma movimentação encontrada no período informado.');
+    const ini=$('sesmtRelMovIni').value,fim=$('sesmtRelMovFim').value;
+    title='MOVIMENTAÇÕES DE ESTOQUE';sub=`Período: ${ini.split('-').reverse().join('/')} a ${fim.split('-').reverse().join('/')}`;
+    headers=['Data','Tipo','EPI','Qtd.','Colaborador','Motivo','Usuário'];
+    rows=data.map(r=>[
+      new Date(r.created_at||((r.data_movimento||ini)+'T12:00:00')).toLocaleString('pt-BR'),
+      r.tipo||'',r.epi_descricao||'',Number(r.quantidade||0).toLocaleString('pt-BR'),
+      r.colaborador_nome||'—',r.motivo||'—',r.usuario_nome||r.created_by_nome||'—'
+    ]);
+  }
+  const w=window.open('','_blank');if(!w)return alert('O navegador bloqueou a janela do relatório. Libere pop-ups e tente novamente.');
+  const th=headers.map(h=>`<th>${pdfEscV229(h)}</th>`).join('');
+  const trs=rows.map(r=>`<tr>${r.map(c=>`<td>${pdfEscV229(c)}</td>`).join('')}</tr>`).join('');
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${title}</title><style>
+    @page{size:A4 landscape;margin:10mm}body{font-family:Arial,sans-serif;color:#111;margin:0}
+    h1{font-size:18px;margin:0 0 4px}.meta{font-size:10px;color:#555;margin-bottom:12px}
+    table{width:100%;border-collapse:collapse;font-size:8.5px}th{background:#222;color:#fff;text-align:left}
+    th,td{border:1px solid #bbb;padding:5px;vertical-align:top}tr:nth-child(even) td{background:#f5f5f5}
+    .brand{font-weight:800;font-size:11px;margin-bottom:4px}
+  </style></head><body><div class="brand">GESTÃO 360 · SESMT · ${pdfEscV229(reportObraV229())}</div><h1>${title}</h1><div class="meta">${pdfEscV229(sub)} · ${rows.length} registro(s)</div><table><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table><script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script></body></html>`);
+  w.document.close();
+}
+function wireReportsV229(){
+  const now=new Date(),fim=now.toISOString().slice(0,10),ini=new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10);
+  if($('sesmtRelMovIni')&&!$('sesmtRelMovIni').value)$('sesmtRelMovIni').value=ini;
+  if($('sesmtRelMovFim')&&!$('sesmtRelMovFim').value)$('sesmtRelMovFim').value=fim;
+  const map=[
+    ['sesmtRelEstoqueExcel',()=>reportExcelV229('estoque')],
+    ['sesmtRelEstoquePdf',()=>reportPdfV229('estoque')],
+    ['sesmtRelMovExcel',()=>reportExcelV229('mov')],
+    ['sesmtRelMovPdf',()=>reportPdfV229('mov')]
+  ];
+  map.forEach(([id,fn])=>{const b=$(id);if(b&&!b.dataset.v229){b.dataset.v229='1';b.addEventListener('click',fn)}});
+}
+
 function boot(){
-  wireCascade();applyAccess();
+  wireCascade();applyAccess();wireReportsV229();
   const b=$('sesmtHistoricoExcel');
   if(b&&!b.dataset.v227){b.dataset.v227='1';b.addEventListener('click',exportHistoryExcel)}
-  new MutationObserver(()=>{wireCascade();applyAccess()}).observe(document.body,{childList:true,subtree:true});
+  new MutationObserver(()=>{wireCascade();applyAccess();wireReportsV229()}).observe(document.body,{childList:true,subtree:true});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
