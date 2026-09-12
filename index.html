@@ -1,3 +1,4 @@
+<!-- V247: MAIÚSCULAS automáticas em campos textuais; preserva e-mail, senha, URL/link e campos técnicos -->
 <!-- V245: Corrige Forçar novo login de todos — elimina referência fora de escopo a users -->
 <!DOCTYPE html>
 <!-- V244: Reembolsos — PDF fiel ao modelo enviado; Excel com consolidado + abas individuais -->
@@ -9882,87 +9883,118 @@ function exportPdfPessoa(targetKey){
   const H=doc.internal.pageSize.getHeight();
   const peach=[252,211,174];
   const black=[10,10,10];
-  const left=11,right=11;
+  const left=10,right=10;
   const fullW=W-left-right;
+  const sx=v=>left+(v/998)*fullW; // proporções extraídas do PDF-modelo
 
-  // Cabeçalho — proporções do PDF-modelo enviado.
-  doc.setDrawColor(...black); doc.setLineWidth(2.5);
+  // TÍTULO
+  doc.setDrawColor(...black);
+  doc.setLineWidth(2.4);
   doc.setFillColor(...peach);
-  doc.rect(left,31,fullW,62,'FD');
+  doc.rect(left,30,fullW,48,'FD');
   doc.setTextColor(...black);
   doc.setFont('helvetica','bold');
-  doc.setFontSize(17);
-  doc.text('RELAÇÃO DESPESAS DE VIAGEM / REEMBOLSO',W/2,69,{align:'center'});
+  doc.setFontSize(15.5);
+  doc.text('RELAÇÃO DESPESAS DE VIAGEM / REEMBOLSO',W/2,60,{align:'center'});
 
-  // Faixa NOME / FUNÇÃO.
-  const infoY=132, infoH=42;
-  const nomeLabelW=48, funcX=466, funcLabelW=58;
-  doc.setLineWidth(2.5);
-  doc.rect(left,infoY,fullW,infoH);
-  doc.line(left+nomeLabelW,infoY,left+nomeLabelW,infoY+infoH);
-  doc.line(funcX,infoY,funcX,infoY+infoH);
-  doc.line(funcX+funcLabelW,infoY,funcX+funcLabelW,infoY+infoH);
-  doc.setFont('helvetica','bold'); doc.setFontSize(10);
-  doc.text('NOME:',left+5,158);
-  doc.text('FUNÇÃO',funcX+6,158);
+  // NOME / FUNÇÃO — mesmas proporções do modelo original
+  const infoY=107, infoH=34;
+  const x0=left;
+  const x1=sx(48);
+  const x2=sx(554);   // fim do campo NOME
+  const x3=sx(613);   // fim do rótulo FUNÇÃO
+  const x4=left+fullW;
+  doc.setLineWidth(2.4);
+  doc.rect(x0,infoY,fullW,infoH);
+  [x1,x2,x3].forEach(x=>doc.line(x,infoY,x,infoY+infoH));
+  doc.setFontSize(9.2);
+  doc.setFont('helvetica','bold');
+  doc.text('NOME:',x0+4,infoY+22);
+  doc.text('FUNÇÃO',x2+5,infoY+22);
   doc.setFont('helvetica','normal');
-  doc.text(String(c.nome||'').toUpperCase(),left+nomeLabelW+6,158);
-  doc.text(String(c.funcao||'').toUpperCase(),funcX+funcLabelW+6,158);
+  doc.text(String(c.nome||'').toUpperCase(),x1+5,infoY+22);
+  doc.text(String(c.funcao||'').toUpperCase(),x3+5,infoY+22);
 
-  // Tabela principal — mesma estrutura visual do modelo.
-  const tableX=left, tableY=211;
-  const widths=[48,416,62,255,49];
-  const xs=[tableX]; widths.forEach(w=>xs.push(xs[xs.length-1]+w));
-  const headH=39;
-  const maxBodyH=H-tableY-headH-52;
-  const rowH=Math.max(14,Math.min(39,maxBodyH/Math.max(pr.length+1,4)));
-  const bodyCount=Math.max(pr.length+1,3); // preserva linha vazia como no modelo.
-  const bodyH=rowH*bodyCount;
+  // TABELA — colunas idênticas às proporções do PDF-modelo
+  const tableY=170;
+  const headH=32;
+  const xs=[left,sx(48),sx(554),sx(613),sx(923),left+fullW];
+  const widths=xs.slice(1).map((x,i)=>x-xs[i]);
 
-  doc.setFillColor(...peach); doc.setLineWidth(2.5);
-  doc.rect(tableX,tableY,fullW,headH,'FD');
+  // Altura compacta para manter tudo em UMA página, preservando ao menos uma linha vazia.
+  const minBlankRows=1;
+  const totalVisualRows=pr.length+minBlankRows;
+  const availableForBody=Math.max(80,H-tableY-headH-62);
+  const rowH=Math.max(17,Math.min(31,availableForBody/Math.max(totalVisualRows,3)));
+  const bodyRows=Math.max(totalVisualRows,3);
+  const bodyH=rowH*bodyRows;
+
+  doc.setFillColor(...peach);
+  doc.setLineWidth(2.4);
+  doc.rect(left,tableY,fullW,headH,'FD');
+  doc.rect(left,tableY+headH,fullW,bodyH);
   for(let i=1;i<xs.length-1;i++) doc.line(xs[i],tableY,xs[i],tableY+headH+bodyH);
-  doc.rect(tableX,tableY+headH,fullW,bodyH);
 
   const headers=['ITEM','DESCRIÇÃO','DATA','FORNECEDOR','VALOR'];
-  doc.setFont('helvetica','bold'); doc.setFontSize(10.5);
-  headers.forEach((h,i)=>doc.text(h,(xs[i]+xs[i+1])/2,tableY+25,{align:'center'}));
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(9.5);
+  headers.forEach((h,i)=>doc.text(h,(xs[i]+xs[i+1])/2,tableY+20,{align:'center'}));
 
-  doc.setFont('helvetica','normal');
-  doc.setFontSize(Math.max(7,Math.min(10,rowH*0.34)));
   const bodyTop=tableY+headH;
   const fmtMoney=v=>Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const date2=v=>{
+    if(!v)return '';
+    const d=new Date(v+'T12:00:00');
+    if(Number.isNaN(d.getTime()))return '';
+    const dd=String(d.getDate()).padStart(2,'0');
+    const mm=String(d.getMonth()+1).padStart(2,'0');
+    const yy=String(d.getFullYear()).slice(-2);
+    return `${dd}/${mm}/${yy}`;
+  };
+
+  // Fonte ajustada ao número de linhas, mas sem ultrapassar as colunas.
+  const bodyFont=Math.max(6.2,Math.min(9.0,rowH*0.31));
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(bodyFont);
 
   pr.forEach((r,i)=>{
     const y0=bodyTop+i*rowH;
-    const cy=y0+rowH*0.64;
+    const cy=y0+rowH*0.62;
     if(i>0){
-      doc.setLineWidth(0.55); doc.setLineDashPattern([1.5,1.5],0);
-      doc.line(tableX,y0,tableX+fullW,y0);
+      doc.setDrawColor(120,120,120);
+      doc.setLineWidth(0.5);
+      doc.setLineDashPattern([1.2,1.2],0);
+      doc.line(left,y0,left+fullW,y0);
       doc.setLineDashPattern([],0);
+      doc.setDrawColor(...black);
     }
+
     const desc=String(r.descricao||'').toUpperCase();
     const forn=String(r.fornecedor||'').toUpperCase();
-    const data=r.data_despesa?new Date(r.data_despesa+'T12:00:00').toLocaleDateString('pt-BR').replace(/\//g,'/'):'';
+    const dLines=doc.splitTextToSize(desc,widths[1]-10).slice(0,2);
+    const fLines=doc.splitTextToSize(forn,widths[3]-10).slice(0,2);
+
     doc.text(String(i+1).padStart(2,'0'),(xs[0]+xs[1])/2,cy,{align:'center'});
-    const dLines=doc.splitTextToSize(desc,widths[1]-8).slice(0,2);
-    const fLines=doc.splitTextToSize(forn,widths[3]-8).slice(0,2);
-    doc.text(dLines,xs[1]+5,cy-(dLines.length-1)*4);
-    doc.text(data,(xs[2]+xs[3])/2,cy,{align:'center'});
-    doc.text(fLines,xs[3]+5,cy-(fLines.length-1)*4);
-    doc.text('R$',xs[4]+4,cy);
+    doc.text(dLines,xs[1]+5,cy-(dLines.length-1)*3.6);
+    doc.text(date2(r.data_despesa),(xs[2]+xs[3])/2,cy,{align:'center'});
+    doc.text(fLines,xs[3]+5,cy-(fLines.length-1)*3.6);
+
+    // Valor fica inteiro dentro da última coluna, sem sobreposição/corte.
+    doc.text('R$',xs[4]+5,cy);
     doc.text(fmtMoney(r.valor),xs[5]-5,cy,{align:'right'});
   });
 
-  // Total exatamente abaixo da última coluna de valor.
-  const total=pr.reduce((s,r)=>s+Number(r.valor||0),0);
+  // TOTAL — caixa somente abaixo da coluna VALOR, exatamente como no modelo.
+  const total=pr.reduce((sum,r)=>sum+Number(r.valor||0),0);
   const totalY=bodyTop+bodyH;
-  const totalH=Math.min(40,H-totalY-8);
-  doc.setLineWidth(2.5);
+  const totalH=Math.max(28,Math.min(34,H-totalY-8));
+  doc.setDrawColor(...black);
+  doc.setLineWidth(2.4);
   doc.rect(xs[4],totalY,widths[4],totalH);
-  doc.setFont('helvetica','bold'); doc.setFontSize(10.5);
-  doc.text('R$',xs[4]+4,totalY+totalH*0.65);
-  doc.text(fmtMoney(total),xs[5]-5,totalY+totalH*0.65,{align:'right'});
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(9.5);
+  doc.text('R$',xs[4]+5,totalY+totalH*0.64);
+  doc.text(fmtMoney(total),xs[5]-5,totalY+totalH*0.64,{align:'right'});
 
   doc.save(`reembolso_${String(c.nome).replace(/[^A-Za-z0-9À-ÿ]+/g,'_')}_${monthKey(currentComp.competencia)}.pdf`);
 }
@@ -19984,6 +20016,84 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   else syncCascadeArrows();
 })();
 </script>
+
+<!-- V246: padronização global de digitação em MAIÚSCULAS, preservando e-mail, senha, URL/link e campos técnicos -->
+<style id="g360-uppercase-v246-style">
+/* Exibição em maiúsculas para campos textuais do sistema. Exceções sensíveis/técnicas permanecem inalteradas. */
+input:not([type="email"]):not([type="password"]):not([type="url"]):not([data-preserve-case="true"]),
+textarea:not([data-preserve-case="true"]),
+[contenteditable="true"]:not([data-preserve-case="true"]) {
+  text-transform: uppercase;
+}
+</style>
+<script id="g360-uppercase-v246">
+(function(){
+  'use strict';
+
+  const TECH_RX = /(email|e-mail|mail|senha|password|pass|url|link|site|website|token|secret|api[_-]?key|chave[_-]?api|jwt|oauth|callback|endpoint|webhook|uuid)/i;
+
+  function preserveCase(el){
+    if(!el || el.nodeType !== 1) return true;
+    if(el.matches && el.matches('[data-preserve-case="true"]')) return true;
+
+    const tag=(el.tagName||'').toLowerCase();
+    if(tag==='input'){
+      const type=(el.type||'text').toLowerCase();
+      if(['email','password','url','file','number','date','datetime-local','time','month','week','color','range','checkbox','radio','hidden','button','submit','reset'].includes(type)) return true;
+    }
+
+    const marker=[el.id, el.getAttribute && el.getAttribute('name'), el.getAttribute && el.getAttribute('autocomplete'), el.getAttribute && el.getAttribute('placeholder')].filter(Boolean).join(' ');
+    return TECH_RX.test(marker);
+  }
+
+  function upperInput(el){
+    if(!el || preserveCase(el) || el.disabled || el.readOnly) return;
+    const tag=(el.tagName||'').toLowerCase();
+
+    if(tag==='input' || tag==='textarea'){
+      const v=el.value;
+      if(typeof v!=='string') return;
+      const up=v.toLocaleUpperCase('pt-BR');
+      if(v===up) return;
+      let s=null,e=null;
+      try { s=el.selectionStart; e=el.selectionEnd; } catch(_){ }
+      el.value=up;
+      try { if(s!==null && e!==null) el.setSelectionRange(s,e); } catch(_){ }
+      return;
+    }
+
+    if(el.isContentEditable){
+      // Para contenteditable, converte ao sair do campo para não deslocar o cursor durante a digitação.
+      const v=el.textContent||'';
+      const up=v.toLocaleUpperCase('pt-BR');
+      if(v!==up) el.textContent=up;
+    }
+  }
+
+  document.addEventListener('input', function(ev){
+    const el=ev.target;
+    if(!el) return;
+    const tag=(el.tagName||'').toLowerCase();
+    if(tag==='input' || tag==='textarea') upperInput(el);
+  }, true);
+
+  document.addEventListener('change', function(ev){ upperInput(ev.target); }, true);
+  document.addEventListener('blur', function(ev){ upperInput(ev.target); }, true);
+
+  // Garante a padronização também em colagens/autopreenchimentos antes de ações de salvar.
+  document.addEventListener('click', function(ev){
+    const btn=ev.target && ev.target.closest ? ev.target.closest('button,input[type="submit"]') : null;
+    if(!btn) return;
+    const txt=((btn.textContent||btn.value||'')+' '+(btn.id||'')+' '+(btn.className||'')).toLowerCase();
+    if(!/(salvar|gravar|incluir|adicionar|cadastrar|confirmar|atualizar|save|submit)/.test(txt)) return;
+    document.querySelectorAll('input,textarea,[contenteditable="true"]').forEach(upperInput);
+  }, true);
+
+  // Campos que precisarem manter caixa original podem usar data-preserve-case="true".
+  window.g360UppercaseField = upperInput;
+})();
+</script>
+
 </body>
 </html>
 
