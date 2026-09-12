@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- V239: RH Formulários em re-cascata alfabética; preserva V238 e Excel consolidado + individuais -->
+<!-- V242: Reembolsos — PDF individual no Resumo da Competência; Excel consolidado permanece no topo; preserva V241 -->
 <!-- V235: RH separa quadro próprio de terceiros; inativação de terceiro não conta como demissão -->
 <!-- V234: Controle de Reembolsos RH + Dashboard de despesas RH -->
 <!-- V233: Alojamentos com ciclo mensal de medição e período calculado automaticamente -->
@@ -1854,6 +1854,56 @@ html.g360-ui-ready .content-col {
 #g360RhFormsGroupV239.open #g360RhFormsSubmenuV239{display:block}
 #g360RhFormsSubmenuV239 .side-link{padding-left:14px}
 </style>
+
+<style id="g360-patrimonio-v240-css">
+.g360-pat-v240-grid{display:grid;grid-template-columns:minmax(260px,2fr) minmax(120px,.7fr) auto;gap:10px;align-items:end}
+.g360-pat-v240-grid4{grid-template-columns:minmax(260px,2fr) minmax(260px,2fr) minmax(110px,.6fr) auto}
+.g360-pat-v240-grid5{grid-template-columns:minmax(340px,2.2fr) minmax(280px,1.7fr) minmax(110px,.6fr) auto}
+.g360-pat-v240-grid label{display:flex;flex-direction:column;gap:5px}
+.g360-pat-v240-grid label>span{font-size:10.5px;font-weight:800;color:var(--ink-soft);letter-spacing:.25px}
+.g360-pat-v240-grid input,.g360-pat-v240-grid select{width:100%}
+.g360-pat-v240-action{display:flex;align-items:end;padding-bottom:1px}
+.g360-pat-v240-note{margin-top:9px;font-size:10.8px;color:var(--ink-soft)}
+@media(max-width:900px){.g360-pat-v240-grid,.g360-pat-v240-grid4,.g360-pat-v240-grid5{grid-template-columns:1fr}.g360-pat-v240-action button{width:100%}}
+</style>
+
+<style id="g360-cascade-arrow-padronizado-v241">
+/* Todas as cascatas usam o mesmo padrão visual do menu "Formulários" */
+.side-cascade-head{
+  display:flex;
+  align-items:center;
+}
+.side-cascade-head .cascade-arrow,
+#g360RhFormsToggleV239 .g360-rh-forms-arrow{
+  margin-left:auto !important;
+  font-size:18px !important;
+  line-height:1 !important;
+  font-weight:400 !important;
+  display:inline-block !important;
+  transform:rotate(0deg);
+  transition:transform .18s ease !important;
+}
+/* Aberto = seta apontando para baixo, como em Formulários */
+.side-cascade.open > .side-cascade-head .cascade-arrow,
+.side-cascade.expanded > .side-cascade-head .cascade-arrow,
+.side-cascade-head[aria-expanded="true"] .cascade-arrow,
+#g360RhFormsGroupV239.open .g360-rh-forms-arrow{
+  transform:rotate(90deg) !important;
+}
+</style>
+
+<style id="g360-reembolso-resumo-pdf-v242">
+.g360-reemb-resumo-nome{display:flex;align-items:center;gap:8px}
+.g360-reemb-pdf-mini{
+  width:27px;height:27px;min-width:27px;
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:0;border:1px solid var(--line);
+  border-radius:6px;background:transparent;color:inherit;
+  cursor:pointer;font-size:13px;line-height:1;
+  transition:.15s ease;
+}
+.g360-reemb-pdf-mini:hover{border-color:var(--gold);transform:translateY(-1px)}
+</style>
 </head>
 <body>
 <!-- V155: convite personalizado + primeiro acesso com criação de senha -->
@@ -1932,15 +1982,14 @@ html.g360-ui-ready .content-col {
         <div class="side-link" data-view="projetosObras"><span class="ic">🏗️</span>Projetos / Obras</div>
         <div class="side-link" data-view="alojamento"><span class="ic">🏘</span>Alojamentos</div>
         <div class="side-cascade" id="g360PatrimonioCascade">
-          <div class="side-cascade-head" id="g360PatrimonioCascadeToggle" role="button" tabindex="0" aria-expanded="false"><span class="ic">🛋️</span>Patrimônio <span class="cascade-arrow">▼</span></div>
+          <div class="side-cascade-head" id="g360PatrimonioCascadeToggle" role="button" tabindex="0" aria-expanded="false"><span class="ic">🛋️</span>Patrimônio <span class="cascade-arrow">›</span></div>
           <div class="side-cascade-children">
-            <div class="side-link" data-view="patrimonioInventario"><span class="ic">📦</span>Inventário de Patrimônio</div>
-            <div class="side-link" data-view="patrimonioEstoque"><span class="ic">🏷️</span>Estoque de Patrimônio</div>
-            <div class="side-link" data-view="patrimonio"><span class="ic">🏘️</span>Patrimônio por Alojamento</div>
+            <div class="side-link" data-view="patrimonioInventario"><span class="ic">📦</span>Cadastro de Itens</div>
+            <div class="side-link" data-view="patrimonio"><span class="ic">🏘️</span>Patrimônio dos Alojamentos</div>
           </div>
         </div>
         <div class="side-cascade" id="g360ContratosCascade">
-          <div class="side-cascade-head" id="g360ContratosCascadeToggle" role="button" tabindex="0" aria-expanded="false"><span class="ic">📄</span>Contratos <span class="cascade-arrow">▼</span></div>
+          <div class="side-cascade-head" id="g360ContratosCascadeToggle" role="button" tabindex="0" aria-expanded="false"><span class="ic">📄</span>Contratos <span class="cascade-arrow">›</span></div>
           <div class="side-cascade-children">
             <div class="side-link" data-view="contratos" data-contract-subview="dashboard"><span class="ic">📊</span>Dashboard de Contratos</div>
             <div class="side-link" data-view="contratos" data-contract-subview="base"><span class="ic">📑</span>Base de Contratos</div>
@@ -1952,13 +2001,13 @@ html.g360-ui-ready .content-col {
           </div>
         </div>
         <div class="side-cascade" id="g360SesmtCascade">
-          <div class="side-cascade-head" id="g360SesmtCascadeToggle" role="button" tabindex="0" aria-expanded="false"><span class="ic">🦺</span>SESMT / Segurança do Trabalho <span class="cascade-arrow">▼</span></div>
+          <div class="side-cascade-head" id="g360SesmtCascadeToggle" role="button" tabindex="0" aria-expanded="false"><span class="ic">🦺</span>SESMT / Segurança do Trabalho <span class="cascade-arrow">›</span></div>
           <div class="side-cascade-children">
             <div class="side-link" data-view="sesmt"><span class="ic">🛡️</span>Segurança do Trabalho</div>
 
             <div class="side-cascade g360-sesmt-stock-cascade" id="g360SesmtStockCascade">
               <div class="side-cascade-head g360-sesmt-stock-head" id="g360SesmtStockToggle" role="button" tabindex="0" aria-expanded="false">
-                <span class="ic">📦</span>Controle de Estoque <span class="cascade-arrow">▼</span>
+                <span class="ic">📦</span>Controle de Estoque <span class="cascade-arrow">›</span>
               </div>
               <div class="side-cascade-children g360-sesmt-stock-children">
                 <div class="side-link" data-view="sesmtEstoque" data-sesmt-menu-tab="estoque"><span class="ic">📊</span>Estoque Atual</div>
@@ -1976,7 +2025,7 @@ html.g360-ui-ready .content-col {
       </div>
       <div class="sidebar-group sidebar-group-dev">
         <div class="side-cascade" id="g360RhDpCascade">
-          <div class="side-cascade-head" id="g360RhDpCascadeToggle" role="button" tabindex="0" aria-expanded="false"><span class="ic">👥</span>RH / DP <span class="cascade-arrow">▼</span></div>
+          <div class="side-cascade-head" id="g360RhDpCascadeToggle" role="button" tabindex="0" aria-expanded="false"><span class="ic">👥</span>RH / DP <span class="cascade-arrow">›</span></div>
           <div class="side-cascade-children">
             <div class="side-link" data-view="rhdpDashboard"><span class="ic">📊</span>Dashboard RH/DP</div>
             <div class="side-link" data-view="base"><span class="ic">🗂</span>Colaboradores</div>
@@ -2120,7 +2169,7 @@ html.g360-ui-ready .content-col {
           <div class="g360-reemb-toolbar-grid">
             <label>Competência<select id="g360ReembCompSelect"><option value="">Carregando...</option></select></label>
             <label>Colaborador<select id="g360ReembColab"><option value="">Selecione...</option></select></label>
-            <div class="g360-reemb-export-actions"><button type="button" class="clear-btn" id="g360ReembPdfPessoa">📄 PDF do colaborador</button><button type="button" class="clear-btn" id="g360ReembExcelComp">📊 Excel consolidado + individuais</button></div>
+            <div class="g360-reemb-export-actions"><button type="button" class="clear-btn" id="g360ReembExcelComp">📊 Excel consolidado + individuais</button></div>
           </div>
           <div class="g360-reemb-person" id="g360ReembPessoaResumo">Selecione um colaborador para lançar ou consultar despesas.</div>
         </section>
@@ -2250,103 +2299,99 @@ html.g360-ui-ready .content-col {
       </div>
 
       <!-- ================= INVENTÁRIO GERAL DE PATRIMÔNIO ================= -->
+      
+      <!-- ================= PATRIMÔNIO SIMPLIFICADO V240 ================= -->
       <div class="view" id="view-patrimonioInventario">
         <div class="page-title">
           <span class="pt-ic">📦</span>
           <div>
-            <div class="pt-title">Inventário de Patrimônio</div>
-            <div class="pt-sub">Base geral de bens e equipamentos da obra. O alojamento é opcional e representa apenas a alocação atual do item.</div>
+            <div class="pt-title">Cadastro de Itens de Patrimônio</div>
+            <div class="pt-sub">Base única de itens para utilização nos alojamentos e nos demais cadastros do sistema.</div>
           </div>
         </div>
-        <section class="panel">
-          <div class="crud-mainbar"><button class="crud-primary" id="g360PatInvNovo">＋ Incluir item no inventário</button></div>
-          <div class="filters">
-            <input id="patInvBusca" type="text" placeholder="Buscar patrimônio, tag, descrição, marca, modelo ou responsável...">
-            <select id="patInvCategoria"><option value="">Todas as categorias</option></select>
-            <select id="patInvStatus"><option value="">Todos os status</option></select>
-            <button class="clear-btn" id="patInvLimpar">Limpar filtros</button>
-            <span class="count-badge" id="patInvCount"></span>
-          </div>
-        </section>
-        <section class="kpis-6" id="kpi-patrimonio-inventario"></section>
-        <section class="panel">
-          <h2>Base de Patrimônio <span class="tag">Inventário Geral</span><span style="margin-left:auto"><button class="clear-btn" id="patInvExportCsv">📊 Exportar CSV</button></span></h2>
-          <div class="table-scroll"><table><thead><tr><th>Nº Patrimônio</th><th>Tag</th><th>Descrição</th><th>Categoria</th><th>Marca / Modelo</th><th>Qtd.</th><th>Alojamento atual</th><th>Estado</th><th>Status</th><th>Responsável</th><th class="num">Valor Total</th><th>Ações</th></tr></thead><tbody id="tablePatrimonioInventario"></tbody></table></div>
-        </section>
-      </div>
 
-      <!-- ================= ESTOQUE DE PATRIMÔNIO ================= -->
-      <div class="view" id="view-patrimonioEstoque">
-        <div class="page-title"><span class="pt-ic">🏷️</span><div><div class="pt-title">Estoque de Patrimônio</div><div class="pt-sub">Controle de entradas, saídas, saldo e estoque mínimo de itens patrimoniais.</div></div></div>
-        <section class="panel" id="patEstoquePanel">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px">
-            <div><h2 style="margin-bottom:4px">🏷️ Estoque de Patrimônio</h2><div style="font-size:11.5px;color:var(--ink-soft)">Cadastro e saldo por item patrimonial. Funciona no mesmo padrão do Estoque de EPIs, mantendo o Inventário Geral como cadastro patrimonial e o estoque como controle quantitativo.</div></div>
+        <section class="panel">
+          <h2>Novo item</h2>
+          <div class="g360-pat-v240-grid">
+            <label><span>ITEM</span><input id="g360PatItemDescricaoV240" type="text" placeholder="Ex.: CAMA SOLTEIRO"></label>
+            <label><span>UNIDADE</span>
+              <select id="g360PatItemUnidadeV240">
+                <option value="UN">UN</option>
+                <option value="PC">PC</option>
+                <option value="CJ">CJ</option>
+                <option value="KIT">KIT</option>
+                <option value="JG">JG</option>
+              </select>
+            </label>
+            <div class="g360-pat-v240-action">
+              <button class="crud-primary" id="g360PatItemSalvarV240">＋ Cadastrar item</button>
+            </div>
           </div>
-          <div class="epi-stock-toolbar">
-            <label><span>DESCRIÇÃO DO ITEM</span><input id="patStockDescricao" placeholder="Ex.: CADEIRA PLÁSTICA BRANCA"></label>
-            <label><span>CATEGORIA</span><input id="patStockCategoria" placeholder="Ex.: MOBILIÁRIO"></label>
-            <label><span>CÓDIGO / SKU</span><input id="patStockCodigo" placeholder="Ex.: PAT-EST-001"></label>
-            <label><span>QUANTIDADE</span><input id="patStockQtd" type="number" min="0.01" step="0.01" value="1"></label>
-            <label><span>ESTOQUE MÍNIMO</span><input id="patStockMin" type="number" min="0" step="0.01" value="0"></label>
-            <button class="btn-primary" id="patStockEntrada">＋ Cadastrar / Entrada</button>
-            <button class="clear-btn" type="button" id="patStockLimpar">🗑 Limpar campos</button>
-          </div>
-          <div class="epi-stock-kpis">
-            <div class="epi-stock-kpi"><small>Itens cadastrados</small><strong id="patStockKpiItens">0</strong></div>
-            <div class="epi-stock-kpi"><small>Saldo total</small><strong id="patStockKpiSaldo">0</strong></div>
-            <div class="epi-stock-kpi"><small>Abaixo do mínimo</small><strong id="patStockKpiBaixo">0</strong></div>
-            <div class="epi-stock-kpi"><small>Sem estoque</small><strong id="patStockKpiZero">0</strong></div>
-          </div>
-          <div class="table-scroll" style="max-height:380px"><table><thead><tr><th>Código</th><th>Item patrimonial</th><th>Categoria</th><th>Saldo</th><th>Mínimo</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="patStockBody"></tbody></table></div>
-          <div class="epi-stock-note">As entradas e saídas ficam registradas neste controle. A alocação em alojamento continua sendo feita pelo módulo “Patrimônio por Alojamento”.</div>
+          <div class="g360-pat-v240-note">O <b>COD ITEM</b> é gerado automaticamente pelo sistema. Não é necessário preencher código manualmente.</div>
         </section>
-        <section class="panel"><h2>Movimentações do Estoque <span class="tag" id="patStockMovCount">0</span></h2><div class="table-scroll" style="max-height:280px"><table><thead><tr><th>Data</th><th>Código</th><th>Item</th><th>Tipo</th><th>Quantidade</th><th>Saldo após</th><th>Observação</th></tr></thead><tbody id="patStockMovBody"></tbody></table></div></section>
-      </div>
 
-      <!-- ================= PATRIMÔNIO / INVENTÁRIO ================= -->
-      <div class="view" id="view-patrimonio">
-        <div class="page-title">
-          <span class="pt-ic">🛋️</span>
-          <div>
-            <div class="pt-title">Patrimônio por Alojamento</div>
-            <div class="pt-sub">Visão da alocação dos bens do inventário geral em alojamentos, cômodos e responsáveis.</div>
-          </div>
-        </div>
-        <section class="kpis-6" id="kpi-patrimonio"></section>
         <section class="panel">
           <div class="filters">
-            <input id="patBusca" type="text" placeholder="Buscar patrimônio, descrição, marca ou responsável...">
-            <select id="patAlojFiltro"><option value="">Todos os alojamentos</option></select>
-            <select id="patCategoriaFiltro"><option value="">Todas as categorias</option></select>
-            <select id="patEstadoFiltro"><option value="">Todos os estados</option></select>
-            <button class="clear-btn" id="patLimparFiltro">Limpar filtros</button>
-            <span class="count-badge" id="patCount"></span>
+            <input id="g360PatItemBuscaV240" type="text" placeholder="Buscar por código ou item...">
+            <span class="count-badge" id="g360PatItemCountV240">0 item(ns)</span>
           </div>
-        </section>
-        <div class="grid-2">
-          <section class="panel"><h2>Patrimônio por Alojamento</h2><div style="height:300px;position:relative"><canvas id="chPatAloj"></canvas></div></section>
-          <section class="panel"><h2>Estado de Conservação</h2><div style="height:300px;position:relative"><canvas id="chPatEstado"></canvas></div></section>
-        </div>
-        <section class="panel">
-          <h2>Inventário de Bens <span class="tag">Móveis e eletros</span>
-            <span style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
-              <button class="clear-btn" id="patExportCsv">📊 Exportar CSV</button>
-            </span>
-          </h2>
           <div class="table-scroll">
             <table>
-              <thead><tr><th>Patrimônio</th><th>Item</th><th>Categoria</th><th>Alojamento</th><th>Cômodo</th><th>Qtd.</th><th>Estado</th><th>Status</th><th>Responsável</th><th class="num">Valor Total</th><th>Ações</th></tr></thead>
-              <tbody id="tablePatrimonio"><tr><td colspan="10">Configure o Supabase para carregar o inventário.</td></tr></tbody>
+              <thead><tr><th>COD ITEM</th><th>ITEM</th><th>UNIDADE</th><th>AÇÕES</th></tr></thead>
+              <tbody id="g360PatItemBodyV240"></tbody>
             </table>
           </div>
         </section>
+      </div>
+
+      <div class="view" id="view-patrimonioEstoque"></div>
+
+      <div class="view" id="view-patrimonio">
+        <div class="page-title">
+          <span class="pt-ic">🏘️</span>
+          <div>
+            <div class="pt-title">Patrimônio dos Alojamentos</div>
+            <div class="pt-sub">Controle simples por item, alojamento e quantidade.</div>
+          </div>
+        </div>
+
         <section class="panel">
-          <h2>Últimas Movimentações <span class="tag">Rastreabilidade</span></h2>
-          <div class="table-scroll"><table><thead><tr><th>Data</th><th>Patrimônio</th><th>Tipo</th><th>Origem</th><th>Destino</th><th>Responsável</th><th>Observação</th></tr></thead><tbody id="tablePatMov"><tr><td colspan="7">Nenhuma movimentação carregada.</td></tr></tbody></table></div>
+          <h2>Incluir no alojamento</h2>
+          <div class="g360-pat-v240-grid g360-pat-v240-grid4">
+            <label><span>ITEM</span><select id="g360PatAlocItemV240"><option value="">Selecione...</option></select></label>
+            <label><span>ALOJAMENTO</span><select id="g360PatAlocAlojV240"><option value="">Selecione...</option></select></label>
+            <label><span>QUANTIDADE</span><input id="g360PatAlocQtdV240" type="number" min="0.01" step="0.01" value="1"></label>
+            <div class="g360-pat-v240-action"><button class="crud-primary" id="g360PatAlocSalvarV240">＋ Incluir</button></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Transferência entre alojamentos</h2>
+          <div class="g360-pat-v240-grid g360-pat-v240-grid5">
+            <label><span>ITEM / ORIGEM</span><select id="g360PatTransOrigemV240"><option value="">Selecione...</option></select></label>
+            <label><span>ALOJAMENTO DESTINO</span><select id="g360PatTransDestinoV240"><option value="">Selecione...</option></select></label>
+            <label><span>QUANTIDADE</span><input id="g360PatTransQtdV240" type="number" min="0.01" step="0.01" value="1"></label>
+            <div class="g360-pat-v240-action"><button class="crud-primary" id="g360PatTransferirV240">↔ Transferir</button></div>
+          </div>
+          <div class="g360-pat-v240-note">A transferência reduz a quantidade no alojamento de origem e soma automaticamente no alojamento de destino.</div>
+        </section>
+
+        <section class="panel">
+          <div class="filters">
+            <input id="g360PatAlocBuscaV240" type="text" placeholder="Buscar item ou alojamento...">
+            <select id="g360PatAlocFiltroAlojV240"><option value="">Todos os alojamentos</option></select>
+            <span class="count-badge" id="g360PatAlocCountV240">0 registro(s)</span>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>COD ITEM</th><th>ITEM</th><th>UNIDADE</th><th>ALOJAMENTO</th><th>QUANTIDADE</th><th>AÇÕES</th></tr></thead>
+              <tbody id="g360PatAlocBodyV240"></tbody>
+            </table>
+          </div>
         </section>
       </div>
 
-      <!-- ================= ORGANOGRAMA DE SETORES ================= -->
+<!-- ================= ORGANOGRAMA DE SETORES ================= -->
       <div class="view" id="view-organograma">
         <div class="page-title">
           <span class="pt-ic">🗺️</span>
@@ -9024,7 +9069,7 @@ const TR={colabs:[],pats:[],items:[],selected:null};
 const trEsc=s=>String(s??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m]));
 function trFmtDate(v){if(!v)return '';const d=new Date(String(v).slice(0,10)+'T12:00:00');return isNaN(d)?'':d.toLocaleDateString('pt-BR')}
 function trPreviewColabs(){try{const seed=JSON.parse(document.getElementById('seedColabsData').textContent)||[];const cpfByMat=new Map(seed.map(c=>[String(c.matricula??c.mat??''),c.cpf||'']));const x=localStorage.getItem('painel202_colabs_override');const base=x?JSON.parse(x):seed;return (base||[]).map(c=>({...c,cpf:c.cpf||cpfByMat.get(String(c.matricula??c.mat??''))||''}));}catch(e){return []}}
-async function trLoad(){const sb=window.g360SupabaseClient; if(window.g360PreviewMode){TR.colabs=trPreviewColabs().filter(c=>String(c.status||'').toUpperCase()==='ATIVO').map(c=>({...c,matricula:c.matricula??c.mat,nome:c.nome,admissao:c.admissao,funcao:c.funcao,setor_equipe:c.setor_equipe??c.setorEquipe,cpf:c.cpf||'',obra:c.obra||''}));}else{const r=await sb.from('funcionarios').select('*').eq('status','ATIVO').order('nome');TR.colabs=r.data||[]} const p=await sb.from('patrimonio_itens').select('*').order('descricao');TR.pats=(p.data||[]).filter(x=>String(x.status||'ATIVO').toUpperCase()!=='INATIVO');}
+async function trLoad(){const sb=window.g360SupabaseClient; if(window.g360PreviewMode){TR.colabs=trPreviewColabs().filter(c=>String(c.status||'').toUpperCase()==='ATIVO').map(c=>({...c,matricula:c.matricula??c.mat,nome:c.nome,admissao:c.admissao,funcao:c.funcao,setor_equipe:c.setor_equipe??c.setorEquipe,cpf:c.cpf||'',obra:c.obra||''}));}else{const r=await sb.from('funcionarios').select('*').eq('status','ATIVO').order('nome');TR.colabs=r.data||[]} const p=await sb.from('patrimonio_catalogo').select('*').eq('ativo',true).order('descricao');TR.pats=(p.data||[]).map(x=>({...x,codigo_patrimonio:x.codigo_item,tag:'',status:'ATIVO'}));}
 function trCurrent(){return TR.colabs.find(c=>String(c.id??c.matricula??c.mat)===String(document.getElementById('trColaborador')?.value))||null}
 function trFillColab(){const c=trCurrent();TR.selected=c;if(!c){['trCpf','trAdmissao','trObra','trFuncao','trSetor'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});return;}trMatricula.value=c.matricula??c.mat??'';trCpf.value=c.cpf||'';trAdmissao.value=trFmtDate(c.admissao);trObra.value=c.obra||((c.obra_codigo||'')+' - '+(window.GESTAO360_CONFIG?.OBRA_NOME||''));trFuncao.value=c.funcao||'';trSetor.value=c.setor_equipe??c.setorEquipe??c.equipe??''}
 function trPatOptions(sel=''){return '<option value="">Selecione...</option>'+TR.pats.map(p=>{const id=p.id||p.codigo_patrimonio;const txt=[p.codigo_patrimonio,p.tag,p.descricao].filter(Boolean).join(' · ');return `<option value="${trEsc(id)}" ${String(id)===String(sel)?'selected':''}>${trEsc(txt)}</option>`}).join('')}
@@ -9671,7 +9716,7 @@ function personRows(){const c=selectedColab();return c?rows.filter(r=>String(r.c
 function render(){const key=currentComp?monthKey(currentComp.competencia):'';$('g360ReembKpiComp')&&($('g360ReembKpiComp').textContent=key?compLabel(key):'—');const total=rows.reduce((s,r)=>s+Number(r.valor||0),0);const pids=new Set(rows.map(r=>r.colaborador_id||r.colaborador_nome).filter(Boolean));$('g360ReembKpiTotal')&&($('g360ReembKpiTotal').textContent=brl(total));$('g360ReembKpiPessoas')&&($('g360ReembKpiPessoas').textContent=pids.size);$('g360ReembKpiItens')&&($('g360ReembKpiItens').textContent=rows.length);
  const c=selectedColab();currentColab=c;const pr=personRows(),pt=pr.reduce((s,r)=>s+Number(r.valor||0),0);$('g360ReembPessoaTotal')&&($('g360ReembPessoaTotal').textContent=brl(pt));$('g360ReembTabelaTitulo')&&($('g360ReembTabelaTitulo').textContent=c?`Despesas — ${c.nome}`:'Despesas do colaborador');$('g360ReembTabelaSub')&&($('g360ReembTabelaSub').textContent=c?(c.funcao||'Função não informada'):'—');$('g360ReembPessoaResumo')&&($('g360ReembPessoaResumo').innerHTML=c?`<b>${esc(c.nome)}</b> · ${esc(c.funcao||'')} · ${pr.length} despesa(s) · Total <b>${brl(pt)}</b>`:'Selecione um colaborador para lançar ou consultar despesas.');
  const body=$('g360ReembBody');if(body)body.innerHTML=!c?'<tr><td colspan="7"><div class="empty-state">Selecione um colaborador.</div></td></tr>':(!pr.length?'<tr><td colspan="7"><div class="empty-state">Nenhuma despesa lançada para este colaborador.</div></td></tr>':pr.map((r,i)=>`<tr><td>${String(i+1).padStart(2,'0')}</td><td>${esc(r.descricao)}</td><td>${r.data_despesa?new Date(r.data_despesa+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</td><td>${esc(r.fornecedor||'—')}</td><td>${esc(r.categoria||'—')}</td><td><b>${brl(r.valor)}</b></td><td><button type="button" class="crud-mini danger" data-reemb-del="${r.id}">🗑 Excluir</button></td></tr>`).join(''));body?.querySelectorAll('[data-reemb-del]').forEach(b=>b.onclick=()=>delRow(b.dataset.reembDel));
- const groups={};rows.forEach(r=>{const k=String(r.colaborador_id||r.colaborador_nome);if(!groups[k])groups[k]={nome:r.colaborador_nome,funcao:r.funcao,qtd:0,total:0};groups[k].qtd++;groups[k].total+=Number(r.valor||0)});const rb=$('g360ReembResumoBody');if(rb)rb.innerHTML=Object.values(groups).length?Object.values(groups).sort((a,b)=>a.nome.localeCompare(b.nome)).map(g=>`<tr><td><b>${esc(g.nome)}</b></td><td>${esc(g.funcao||'')}</td><td>${g.qtd}</td><td><b>${brl(g.total)}</b></td></tr>`).join(''):'<tr><td colspan="4"><div class="empty-state">Nenhum lançamento nesta competência.</div></td></tr>';}
+ const groups={};rows.forEach(r=>{const k=String(r.colaborador_id||r.colaborador_nome);if(!groups[k])groups[k]={key:k,nome:r.colaborador_nome,funcao:r.funcao,qtd:0,total:0};groups[k].qtd++;groups[k].total+=Number(r.valor||0)});const rb=$('g360ReembResumoBody');if(rb){rb.innerHTML=Object.values(groups).length?Object.values(groups).sort((a,b)=>a.nome.localeCompare(b.nome)).map(g=>`<tr><td><div class="g360-reemb-resumo-nome"><button type="button" class="g360-reemb-pdf-mini" data-reemb-pdf="${esc(g.key)}" title="Gerar PDF individual de ${esc(g.nome)}" aria-label="Gerar PDF individual de ${esc(g.nome)}">📄</button><b>${esc(g.nome)}</b></div></td><td>${esc(g.funcao||'')}</td><td>${g.qtd}</td><td><b>${brl(g.total)}</b></td></tr>`).join(''):'<tr><td colspan="4"><div class="empty-state">Nenhum lançamento nesta competência.</div></td></tr>';rb.querySelectorAll('[data-reemb-pdf]').forEach(b=>b.onclick=()=>exportPdfPessoa(b.dataset.reembPdf));}}
 async function openComp(){const k=$('g360ReembCompNova')?.value||'';if(!k)return alert('Selecione a competência.');const oid=obraId();if(!oid)return alert('Selecione uma obra.');const exists=comps.find(c=>monthKey(c.competencia)===k);if(exists){currentComp=exists;$('g360ReembCompSelect').value=exists.id;await loadRows();return alert('Esta competência já está aberta.');}const uid=await currentUserId();const r=await sb().from('rh_reembolso_competencias').insert({obra_id:oid,competencia:compDate(k),status:'ABERTA',created_by:uid}).select('*').single();if(r.error)return alert('Não foi possível abrir a competência: '+r.error.message);await loadComps(k);await loadRows()}
 function clearForm(){$('g360ReembDescricao').value='';$('g360ReembData').value=new Date().toISOString().slice(0,10);$('g360ReembFornecedor').value='';$('g360ReembCategoria').value='PASSAGEM';$('g360ReembValor').value='';$('g360ReembObs').value=''}
 async function addRow(){const c=selectedColab();if(!currentComp)return alert('Abra ou selecione uma competência.');if(!c)return alert('Selecione o colaborador.');const desc=$('g360ReembDescricao').value.trim(),data=$('g360ReembData').value,forn=$('g360ReembFornecedor').value.trim(),cat=$('g360ReembCategoria').value,val=Number($('g360ReembValor').value||0),obs=$('g360ReembObs').value.trim();if(!desc)return alert('Informe a descrição da despesa.');if(!data)return alert('Informe a data da despesa.');if(!(val>0))return alert('Informe um valor válido.');const uid=await currentUserId();const payload={competencia_id:currentComp.id,obra_id:obraId(),colaborador_id:c.id,matricula:c.matricula||null,colaborador_nome:c.nome,funcao:c.funcao||null,descricao:desc,data_despesa:data,fornecedor:forn||null,categoria:cat||null,valor:val,observacao:obs||null,created_by:uid};const r=await sb().from('rh_reembolso_lancamentos').insert(payload);if(r.error)return alert('Erro ao adicionar despesa: '+r.error.message);await loadRows();clearForm()}
@@ -9807,8 +9852,80 @@ function exportExcel(){
 
   XLSX.writeFile(wb,`RELATORIO_REEMBOLSOS_${monthKey(currentComp.competencia)}.xlsx`);
 }
-function exportPdfPessoa(){const c=selectedColab(),pr=personRows();if(!c)return alert('Selecione o colaborador.');if(!pr.length)return alert('Não há despesas para este colaborador.');if(!window.jspdf?.jsPDF)return alert('Biblioteca PDF não carregada.');const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape',unit:'pt',format:'a4'}),W=doc.internal.pageSize.getWidth();doc.setFillColor(252,211,174);doc.rect(28,28,W-56,48,'F');doc.setDrawColor(20);doc.rect(28,28,W-56,48);doc.setTextColor(20);doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text('RELAÇÃO DESPESAS DE VIAGEM / REEMBOLSO',W/2,58,{align:'center'});doc.setFontSize(10);doc.rect(28,98,W-56,34);doc.text('NOME:',34,119);doc.setFont('helvetica','normal');doc.text(String(c.nome||''),74,119);doc.setFont('helvetica','bold');doc.text('FUNÇÃO:',W*0.58,119);doc.setFont('helvetica','normal');doc.text(String(c.funcao||''),W*0.64,119);doc.autoTable({startY:154,head:[['ITEM','DESCRIÇÃO','DATA','FORNECEDOR','VALOR']],body:pr.map((r,i)=>[String(i+1).padStart(2,'0'),r.descricao,r.data_despesa?new Date(r.data_despesa+'T12:00:00').toLocaleDateString('pt-BR'):'',r.fornecedor||'',brl(r.valor)]),theme:'grid',styles:{fontSize:9,cellPadding:6,textColor:[20,20,20]},headStyles:{fillColor:[252,211,174],textColor:[20,20,20],fontStyle:'bold'},columnStyles:{0:{cellWidth:45},1:{cellWidth:360},2:{cellWidth:80},3:{cellWidth:190},4:{cellWidth:90,halign:'right'}}});const y=(doc.lastAutoTable?.finalY||200)+10,total=pr.reduce((s,r)=>s+Number(r.valor||0),0);doc.setFont('helvetica','bold');doc.setFontSize(11);doc.text(`TOTAL: ${brl(total)}`,W-34,y,{align:'right'});doc.save(`reembolso_${String(c.nome).replace(/[^A-Za-z0-9À-ÿ]+/g,'_')}_${monthKey(currentComp.competencia)}.pdf`)}
-async function init(){if(!$('view-rhdpReembolsos')||!sb())return;const now=new Date().toISOString().slice(0,7);$('g360ReembCompNova').value=now;$('g360ReembData').value=new Date().toISOString().slice(0,10);try{await Promise.all([loadColabs(),loadComps(now)]);await loadRows()}catch(e){console.error(e);alert('Falha ao carregar reembolsos: '+(e?.message||e))}if(!$('g360ReembAbrirComp').dataset.bound){$('g360ReembAbrirComp').dataset.bound='1';$('g360ReembAbrirComp').onclick=openComp;$('g360ReembCompSelect').onchange=async()=>{currentComp=comps.find(c=>String(c.id)===String($('g360ReembCompSelect').value))||null;await loadRows()};$('g360ReembColab').onchange=render;$('g360ReembAdicionar').onclick=addRow;$('g360ReembLimpar').onclick=clearForm;$('g360ReembExcelComp').onclick=exportExcel;$('g360ReembPdfPessoa').onclick=exportPdfPessoa}}
+function exportPdfPessoa(targetKey){
+  const key=String(targetKey||'').trim();
+  let c=null,pr=[];
+  if(key){
+    c=colabs.find(x=>String(x.id)===key)||null;
+    pr=rows.filter(r=>String(r.colaborador_id||r.colaborador_nome)===key);
+    if(!c&&pr.length){
+      c={
+        id:pr[0].colaborador_id||null,
+        nome:pr[0].colaborador_nome||'COLABORADOR',
+        funcao:pr[0].funcao||''
+      };
+    }
+  }else{
+    c=selectedColab();
+    pr=personRows();
+  }
+  if(!c)return alert('Colaborador não localizado.');
+  if(!pr.length)return alert('Não há despesas para este colaborador.');
+  if(!window.jspdf?.jsPDF)return alert('Biblioteca PDF não carregada.');
+
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
+  const W=doc.internal.pageSize.getWidth();
+
+  doc.setFillColor(252,211,174);
+  doc.rect(28,28,W-56,48,'F');
+  doc.setDrawColor(20);
+  doc.rect(28,28,W-56,48);
+  doc.setTextColor(20);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(16);
+  doc.text('RELAÇÃO DESPESAS DE VIAGEM / REEMBOLSO',W/2,58,{align:'center'});
+
+  doc.setFontSize(10);
+  doc.rect(28,98,W-56,34);
+  doc.text('NOME:',34,119);
+  doc.setFont('helvetica','normal');
+  doc.text(String(c.nome||''),74,119);
+  doc.setFont('helvetica','bold');
+  doc.text('FUNÇÃO:',W*0.58,119);
+  doc.setFont('helvetica','normal');
+  doc.text(String(c.funcao||''),W*0.64,119);
+
+  doc.autoTable({
+    startY:154,
+    head:[['ITEM','DESCRIÇÃO','DATA','FORNECEDOR','VALOR']],
+    body:pr.map((r,i)=>[
+      String(i+1).padStart(2,'0'),
+      r.descricao,
+      r.data_despesa?new Date(r.data_despesa+'T12:00:00').toLocaleDateString('pt-BR'):'',
+      r.fornecedor||'',
+      brl(r.valor)
+    ]),
+    theme:'grid',
+    styles:{fontSize:9,cellPadding:6,textColor:[20,20,20]},
+    headStyles:{fillColor:[252,211,174],textColor:[20,20,20],fontStyle:'bold'},
+    columnStyles:{
+      0:{cellWidth:45},
+      1:{cellWidth:360},
+      2:{cellWidth:80},
+      3:{cellWidth:190},
+      4:{cellWidth:90,halign:'right'}
+    }
+  });
+
+  const y=(doc.lastAutoTable?.finalY||200)+10;
+  const total=pr.reduce((s,r)=>s+Number(r.valor||0),0);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(11);
+  doc.text(`TOTAL: ${brl(total)}`,W-34,y,{align:'right'});
+  doc.save(`reembolso_${String(c.nome).replace(/[^A-Za-z0-9À-ÿ]+/g,'_')}_${monthKey(currentComp.competencia)}.pdf`);
+}
+async function init(){if(!$('view-rhdpReembolsos')||!sb())return;const now=new Date().toISOString().slice(0,7);$('g360ReembCompNova').value=now;$('g360ReembData').value=new Date().toISOString().slice(0,10);try{await Promise.all([loadColabs(),loadComps(now)]);await loadRows()}catch(e){console.error(e);alert('Falha ao carregar reembolsos: '+(e?.message||e))}if(!$('g360ReembAbrirComp').dataset.bound){$('g360ReembAbrirComp').dataset.bound='1';$('g360ReembAbrirComp').onclick=openComp;$('g360ReembCompSelect').onchange=async()=>{currentComp=comps.find(c=>String(c.id)===String($('g360ReembCompSelect').value))||null;await loadRows()};$('g360ReembColab').onchange=render;$('g360ReembAdicionar').onclick=addRow;$('g360ReembLimpar').onclick=clearForm;$('g360ReembExcelComp').onclick=exportExcel}}
 window.g360ReembolsosV234={init,refresh:loadRows};
 
 async function loadExpenseDashboard(){if(!sb())return;const oid=obraId(),today=new Date(),keys=[];for(let i=5;i>=0;i--){const d=new Date(today.getFullYear(),today.getMonth()-i,1);keys.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`)}const start=keys[0]+'-01',end=new Date(today.getFullYear(),today.getMonth()+1,1).toISOString().slice(0,10);let rq=sb().from('rh_reembolso_lancamentos').select('valor,data_despesa,colaborador_id,obra_id').gte('data_despesa',start).lt('data_despesa',end),fq=sb().from('folga_campo').select('competencia,valor_reembolso,custo,colaborador_id,obra_id,incluido').gte('competencia',start).lt('competencia',end);if(oid){rq=rq.eq('obra_id',oid);fq=fq.eq('obra_id',oid)}const [rr,fr]=await Promise.all([rq,fq]);if(rr.error||fr.error){console.warn('Despesas RH:',rr.error||fr.error);return}const rrows=rr.data||[],frows=(fr.data||[]).filter(x=>x.incluido!==false),cur=keys[keys.length-1],rv=rrows.filter(x=>monthKey(x.data_despesa)===cur),fv=frows.filter(x=>monthKey(x.competencia)===cur),rTotal=rv.reduce((s,x)=>s+Number(x.valor||0),0),fTotal=fv.reduce((s,x)=>s+Number(x.valor_reembolso??x.custo??0),0);$('g360RhDespesasCompetencia')&&($('g360RhDespesasCompetencia').textContent=compLabel(cur));$('g360RhKpiReemb')&&($('g360RhKpiReemb').textContent=brl(rTotal));$('g360RhKpiFolga')&&($('g360RhKpiFolga').textContent=brl(fTotal));$('g360RhKpiDespTotal')&&($('g360RhKpiDespTotal').textContent=brl(rTotal+fTotal));$('g360RhKpiReembPessoas')&&($('g360RhKpiReembPessoas').textContent=new Set(rv.map(x=>x.colaborador_id).filter(Boolean)).size);const ctx=$('chRhDespesas');if(!ctx||!window.Chart)return;const rSerie=keys.map(k=>rrows.filter(x=>monthKey(x.data_despesa)===k).reduce((s,x)=>s+Number(x.valor||0),0)),fSerie=keys.map(k=>frows.filter(x=>monthKey(x.competencia)===k).reduce((s,x)=>s+Number(x.valor_reembolso??x.custo??0),0));chart?.destroy();chart=new Chart(ctx,{type:'bar',data:{labels:keys.map(compLabel),datasets:[{label:'Reembolsos',data:rSerie},{label:'Folga de Campo',data:fSerie}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#ddd'}}},scales:{x:{ticks:{color:'#aaa'}},y:{ticks:{color:'#aaa',callback:v=>'R$ '+Number(v).toLocaleString('pt-BR')}}}}})}
@@ -19629,6 +19746,185 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);
   else init();
+})();
+</script>
+
+<script id="g360-patrimonio-v240-js">
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const sb=()=>window.g360SupabaseClient;
+const obraId=()=>window.g360GetSelectedObra?.()?.id||window.G360_ACTIVE_OBRA_ID||null;
+let itens=[],alocs=[],alojs=[];
+
+function alojNome(a){return [a.descricao,a.contrato_codigo].filter(Boolean).join(' · ')||'ALOJAMENTO';}
+function fmtQtd(v){const n=Number(v||0);return Number.isInteger(n)?String(n):n.toLocaleString('pt-BR',{maximumFractionDigits:2});}
+
+async function loadBase(){
+  const oid=obraId();
+  if(!sb())throw new Error('Supabase não inicializado.');
+  let qi=sb().from('patrimonio_catalogo').select('*').order('descricao');
+  let qa=sb().from('patrimonio_alocacoes').select('id,obra_id,item_id,alojamento_id,quantidade,patrimonio_catalogo(id,codigo_item,descricao,unidade),alojamentos(id,descricao,contrato_codigo)').order('created_at');
+  let ql=sb().from('alojamentos').select('id,descricao,contrato_codigo,status').order('descricao');
+  if(oid){qi=qi.eq('obra_id',oid);qa=qa.eq('obra_id',oid);ql=ql.eq('obra_id',oid)}
+  const [ri,ra,rl]=await Promise.all([qi,qa,ql]);
+  if(ri.error)throw ri.error;if(ra.error)throw ra.error;if(rl.error)throw rl.error;
+  itens=(ri.data||[]).filter(x=>x.ativo!==false);
+  alocs=(ra.data||[]).filter(x=>Number(x.quantidade||0)>0);
+  alojs=(rl.data||[]).filter(x=>!['INATIVO','RESCINDIDO','ENCERRADO'].includes(String(x.status||'').toUpperCase()));
+  renderAll();
+}
+
+function renderAll(){
+  const itemOpts='<option value="">Selecione...</option>'+itens.map(x=>`<option value="${esc(x.id)}">${esc(x.codigo_item)} · ${esc(x.descricao)} · ${esc(x.unidade)}</option>`).join('');
+  if($('g360PatAlocItemV240'))$('g360PatAlocItemV240').innerHTML=itemOpts;
+  const alojOpts='<option value="">Selecione...</option>'+alojs.map(a=>`<option value="${esc(a.id)}">${esc(alojNome(a))}</option>`).join('');
+  if($('g360PatAlocAlojV240'))$('g360PatAlocAlojV240').innerHTML=alojOpts;
+  if($('g360PatTransDestinoV240'))$('g360PatTransDestinoV240').innerHTML=alojOpts;
+  if($('g360PatAlocFiltroAlojV240')){
+    const cur=$('g360PatAlocFiltroAlojV240').value;
+    $('g360PatAlocFiltroAlojV240').innerHTML='<option value="">Todos os alojamentos</option>'+alojs.map(a=>`<option value="${esc(a.id)}">${esc(alojNome(a))}</option>`).join('');
+    $('g360PatAlocFiltroAlojV240').value=cur;
+  }
+  if($('g360PatTransOrigemV240'))$('g360PatTransOrigemV240').innerHTML='<option value="">Selecione...</option>'+alocs.map(a=>{
+    const i=a.patrimonio_catalogo||{}, al=a.alojamentos||{};
+    return `<option value="${esc(a.id)}">${esc(i.codigo_item)} · ${esc(i.descricao)} · ${esc(alojNome(al))} · saldo ${esc(fmtQtd(a.quantidade))} ${esc(i.unidade||'UN')}</option>`;
+  }).join('');
+  renderItens();renderAlocs();
+}
+
+function renderItens(){
+  const q=($('g360PatItemBuscaV240')?.value||'').trim().toLowerCase();
+  const rows=itens.filter(x=>!q||[x.codigo_item,x.descricao,x.unidade].some(v=>String(v||'').toLowerCase().includes(q)));
+  if($('g360PatItemCountV240'))$('g360PatItemCountV240').textContent=rows.length+' item(ns)';
+  if($('g360PatItemBodyV240'))$('g360PatItemBodyV240').innerHTML=rows.length?rows.map(x=>`<tr>
+    <td><b>${esc(x.codigo_item)}</b></td><td>${esc(x.descricao)}</td><td>${esc(x.unidade)}</td>
+    <td><button class="crud-mini" type="button" data-pat-edit-item="${esc(x.id)}">✏️ Editar</button></td>
+  </tr>`).join(''):'<tr><td colspan="4">Nenhum item cadastrado.</td></tr>';
+  document.querySelectorAll('[data-pat-edit-item]').forEach(b=>b.onclick=()=>editarItem(b.dataset.patEditItem));
+}
+
+function renderAlocs(){
+  const q=($('g360PatAlocBuscaV240')?.value||'').trim().toLowerCase();
+  const af=$('g360PatAlocFiltroAlojV240')?.value||'';
+  const rows=alocs.filter(a=>{
+    const i=a.patrimonio_catalogo||{}, al=a.alojamentos||{};
+    return (!af||String(a.alojamento_id)===String(af))&&(!q||[i.codigo_item,i.descricao,i.unidade,al.descricao,al.contrato_codigo].some(v=>String(v||'').toLowerCase().includes(q)));
+  });
+  if($('g360PatAlocCountV240'))$('g360PatAlocCountV240').textContent=rows.length+' registro(s)';
+  if($('g360PatAlocBodyV240'))$('g360PatAlocBodyV240').innerHTML=rows.length?rows.map(a=>{
+    const i=a.patrimonio_catalogo||{},al=a.alojamentos||{};
+    return `<tr><td><b>${esc(i.codigo_item)}</b></td><td>${esc(i.descricao)}</td><td>${esc(i.unidade)}</td><td>${esc(alojNome(al))}</td><td><b>${esc(fmtQtd(a.quantidade))}</b></td><td><button class="crud-mini" type="button" data-pat-trans="${esc(a.id)}">↔ Transferir</button></td></tr>`;
+  }).join(''):'<tr><td colspan="6">Nenhum item alocado em alojamento.</td></tr>';
+  document.querySelectorAll('[data-pat-trans]').forEach(b=>b.onclick=()=>{$('g360PatTransOrigemV240').value=b.dataset.patTrans;$('g360PatTransQtdV240').focus();});
+}
+
+async function salvarItem(){
+  const descricao=($('g360PatItemDescricaoV240')?.value||'').trim().toUpperCase();
+  const unidade=($('g360PatItemUnidadeV240')?.value||'UN').trim().toUpperCase();
+  const oid=obraId();
+  if(!oid)return alert('Selecione uma obra.');
+  if(!descricao)return alert('Informe o ITEM.');
+  const btn=$('g360PatItemSalvarV240');if(btn){btn.disabled=true;btn.textContent='Gravando...'}
+  try{
+    const r=await sb().from('patrimonio_catalogo').insert({obra_id:oid,descricao,unidade}).select('codigo_item').single();
+    if(r.error)throw r.error;
+    $('g360PatItemDescricaoV240').value='';
+    await loadBase();
+    alert('Item cadastrado com sucesso. COD ITEM: '+r.data.codigo_item);
+  }catch(e){alert(e.message||String(e))}
+  finally{if(btn){btn.disabled=false;btn.textContent='＋ Cadastrar item'}}
+}
+
+async function editarItem(id){
+  const row=itens.find(x=>String(x.id)===String(id));if(!row)return;
+  const desc=prompt('ITEM:',row.descricao||'');if(desc===null)return;
+  const un=prompt('UNIDADE:',row.unidade||'UN');if(un===null)return;
+  if(!String(desc).trim()||!String(un).trim())return alert('ITEM e UNIDADE são obrigatórios.');
+  const r=await sb().from('patrimonio_catalogo').update({descricao:String(desc).trim().toUpperCase(),unidade:String(un).trim().toUpperCase()}).eq('id',id);
+  if(r.error)return alert(r.error.message);
+  await loadBase();
+}
+
+async function incluir(){
+  const oid=obraId(),item=$('g360PatAlocItemV240')?.value,aloj=$('g360PatAlocAlojV240')?.value,qtd=Number($('g360PatAlocQtdV240')?.value||0);
+  if(!oid)return alert('Selecione uma obra.');
+  if(!item)return alert('Selecione o ITEM.');
+  if(!aloj)return alert('Selecione o ALOJAMENTO.');
+  if(!(qtd>0))return alert('Informe uma QUANTIDADE válida.');
+  const btn=$('g360PatAlocSalvarV240');if(btn){btn.disabled=true;btn.textContent='Gravando...'}
+  try{
+    const r=await sb().rpc('g360_patrimonio_incluir_v240',{p_obra_id:oid,p_item_id:item,p_alojamento_id:aloj,p_quantidade:qtd});
+    if(r.error)throw r.error;
+    $('g360PatAlocQtdV240').value='1';
+    await loadBase();
+  }catch(e){alert(e.message||String(e))}
+  finally{if(btn){btn.disabled=false;btn.textContent='＋ Incluir'}}
+}
+
+async function transferir(){
+  const origemId=$('g360PatTransOrigemV240')?.value,destino=$('g360PatTransDestinoV240')?.value,qtd=Number($('g360PatTransQtdV240')?.value||0);
+  const origem=alocs.find(x=>String(x.id)===String(origemId));
+  if(!origem)return alert('Selecione o ITEM / ORIGEM.');
+  if(!destino)return alert('Selecione o ALOJAMENTO DESTINO.');
+  if(String(origem.alojamento_id)===String(destino))return alert('O alojamento de destino deve ser diferente da origem.');
+  if(!(qtd>0))return alert('Informe uma QUANTIDADE válida.');
+  if(qtd>Number(origem.quantidade||0))return alert('Quantidade maior que o saldo disponível na origem.');
+  const btn=$('g360PatTransferirV240');if(btn){btn.disabled=true;btn.textContent='Transferindo...'}
+  try{
+    const r=await sb().rpc('g360_patrimonio_transferir_v240',{p_alocacao_origem_id:origemId,p_alojamento_destino_id:destino,p_quantidade:qtd});
+    if(r.error)throw r.error;
+    $('g360PatTransQtdV240').value='1';
+    await loadBase();
+  }catch(e){alert(e.message||String(e))}
+  finally{if(btn){btn.disabled=false;btn.textContent='↔ Transferir'}}
+}
+
+function bind(){
+  if($('g360PatItemSalvarV240'))$('g360PatItemSalvarV240').onclick=salvarItem;
+  if($('g360PatAlocSalvarV240'))$('g360PatAlocSalvarV240').onclick=incluir;
+  if($('g360PatTransferirV240'))$('g360PatTransferirV240').onclick=transferir;
+  if($('g360PatItemBuscaV240'))$('g360PatItemBuscaV240').oninput=renderItens;
+  if($('g360PatAlocBuscaV240'))$('g360PatAlocBuscaV240').oninput=renderAlocs;
+  if($('g360PatAlocFiltroAlojV240'))$('g360PatAlocFiltroAlojV240').onchange=renderAlocs;
+}
+
+window.g360RenderPatrimonioV240=async function(){try{await loadBase()}catch(e){console.error(e);alert('Patrimônio: '+(e.message||e)+'\n\nExecute o SQL V240 no Supabase.')}};
+window.g360RenderPatrimonioItensV240=window.g360RenderPatrimonioV240;
+
+function init(){
+  bind();
+  try{
+    if(typeof RENDERERS==='object'){
+      RENDERERS.patrimonioInventario=window.g360RenderPatrimonioItensV240;
+      RENDERERS.patrimonio=window.g360RenderPatrimonioV240;
+    }
+  }catch(_){}
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+
+<script id="g360-cascade-arrow-padronizado-v241-js">
+(function(){
+  function syncCascadeArrows(){
+    document.querySelectorAll('.side-cascade-head').forEach(head=>{
+      const arrow=head.querySelector('.cascade-arrow');
+      if(!arrow)return;
+      arrow.textContent='›';
+      const sync=()=>{
+        arrow.style.transform=head.getAttribute('aria-expanded')==='true'?'rotate(90deg)':'rotate(0deg)';
+      };
+      sync();
+      try{
+        new MutationObserver(sync).observe(head,{attributes:true,attributeFilter:['aria-expanded']});
+      }catch(_){}
+      head.addEventListener('click',()=>setTimeout(sync,0));
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',syncCascadeArrows);
+  else syncCascadeArrows();
 })();
 </script>
 </body>
