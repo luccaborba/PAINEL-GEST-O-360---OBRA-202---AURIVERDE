@@ -11,6 +11,7 @@
 <!-- V247: MAIÚSCULAS automáticas em campos textuais; preserva e-mail, senha, URL/link e campos técnicos -->
 <!-- V245: Corrige Forçar novo login de todos — elimina referência fora de escopo a users -->
 <!DOCTYPE html>
+<!-- V279: Folga DEV — competências em caixa de seleção e tipografia dos rótulos padronizada -->
 <!-- V275: Folga Campo DEV simplificada sem Data/Fornecedor no lançamento e relatórios -->
 <!-- V274: Folga de Campo EM DEV — reconstruído do zero com fluxo espelhado em Reembolsos; antigo projeto ocultado; Termo de Concessão preservado -->
 <!-- V273: Folga de Campo — despesas persistidas em tabela própria no Supabase; dashboard por competência; programação preservada -->
@@ -1969,6 +1970,13 @@ html.g360-ui-ready .content-col {
 .fc-dev-comp-btn{border:1px solid rgba(245,197,24,.42);background:rgba(245,197,24,.08);color:rgba(245,197,24,.72);border-radius:4px;padding:7px 12px;font:800 11px/1.1 inherit;cursor:pointer;letter-spacing:.15px;text-transform:uppercase;opacity:1;transition:background .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s}
 .fc-dev-comp-btn:hover{background:rgba(245,197,24,.15);border-color:rgba(245,197,24,.75);color:#f5c518}
 .fc-dev-comp-btn.active{background:#f5c518;border-color:#f5c518;color:#111;box-shadow:inset 0 -2px 0 rgba(0,0,0,.22),0 2px 7px rgba(0,0,0,.24);transform:translateY(-1px)}
+/* V279 — Folga DEV: competência em caixa de seleção + tipografia uniforme */
+.fc-dev-comp-buttons,.fc-dev-comp-btn{display:none!important}
+.fc-dev-comp-select-box{margin-top:12px;max-width:260px}
+.fc-dev-comp-select-box label,.fc-dev-panel .g360-reemb-toolbar-grid label,.fc-dev-panel .g360-reemb-form-grid label{font-family:var(--font-display);font-size:14px!important;line-height:1.15;font-weight:500!important;letter-spacing:.08em;text-transform:uppercase;color:var(--white-line)!important}
+.fc-dev-comp-select-box select{width:100%;margin-top:6px;background:#111316;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:9px 11px;font-family:var(--font-body);font-size:13px;font-weight:700;text-transform:uppercase}
+.fc-dev-panel .g360-reemb-toolbar-grid select,.fc-dev-panel .g360-reemb-form-grid input,.fc-dev-panel .g360-reemb-form-grid select{font-family:var(--font-body);font-size:13px;font-weight:600;letter-spacing:0;text-transform:none}
+
 .fc-dev-row-actions{display:inline-flex;align-items:center;gap:5px;margin-right:7px}
 .fc-dev-mini-action{height:24px;padding:0 8px;border:1px solid #454a52;border-radius:4px;background:#23262b;color:#eee;font:800 9px/1 inherit;letter-spacing:.25px;text-transform:uppercase;cursor:pointer}
 .fc-dev-mini-action:hover{border-color:#f5c518;color:#f5c518;background:#272a2f}
@@ -3483,7 +3491,7 @@ html.g360-ui-ready .content-col {
 
                 <!-- V274 — NOVO PROJETO FOLGA DE CAMPO EM DEV -->
         <section class="panel g360-reemb-head fc-dev-panel">
-          <div class="fc-dev-head-main"><h2>Folga de Campo <span class="tag">EM DEV</span></h2><div class="g360-reemb-sub">Projeto reconstruído do zero com o mesmo fluxo de Reembolsos: abra a competência, selecione o colaborador e lance cada despesa individualmente.</div><div id="g360FcDevCompButtons" class="fc-dev-comp-buttons"></div></div>
+          <div class="fc-dev-head-main"><h2>Folga de Campo <span class="tag">EM DEV</span></h2><div class="g360-reemb-sub">Projeto reconstruído do zero com o mesmo fluxo de Reembolsos: abra a competência, selecione o colaborador e lance cada despesa individualmente.</div><div id="g360FcDevCompButtons" class="fc-dev-comp-select-box"><label>Competência<select id="g360FcDevCompSelect"><option value="">Carregando...</option></select></label></div></div>
           <div class="g360-reemb-head-actions"><button type="button" class="btn-primary" id="g360FcDevAbrirComp">＋ Abrir competência</button></div>
         </section>
         <section class="kpis-4 g360-reemb-kpis fc-dev-panel">
@@ -20726,7 +20734,7 @@ const monthKey=v=>String(v||'').slice(0,7),compDate=k=>/^\d{4}-\d{2}$/.test(k)?k
 const storeKey=()=>`g360_fc_dev_competencias_${obraId()||'sem_obra'}`;function currentUserId(){return sb()?.auth?.getUser?.().then(r=>r.data?.user?.id||null)}
 function readLocalComps(){try{return JSON.parse(localStorage.getItem(storeKey())||'[]').filter(x=>/^\d{4}-\d{2}$/.test(x))}catch(_){return[]}}function saveLocalComps(list){try{localStorage.setItem(storeKey(),JSON.stringify([...new Set(list)].sort()))}catch(_){}}
 async function loadColabs(){const oid=obraId();let q=sb().from('funcionarios').select('id,matricula,nome,funcao,status,obra_id').order('nome');if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error)throw r.error;colabs=(r.data||[]).filter(c=>!['DESLIGADO','INATIVO','ABANDONO'].includes(String(c.status||'').toUpperCase()));const sel=$('g360FcDevColab');if(sel)sel.innerHTML='<option value="">Selecione...</option>'+colabs.map(c=>`<option value="${esc(c.id)}">${esc(c.nome)}${c.matricula?' · '+esc(c.matricula):''}</option>`).join('')}
-function renderCompButtons(){const box=$('g360FcDevCompButtons');if(!box)return;box.innerHTML=competencias.map(k=>`<button type="button" class="fc-dev-comp-btn${k===currentMonth?' active':''}" data-fcdev-comp="${k}">${compLabel(k).replace(' DE ',' / ')}</button>`).join('');box.querySelectorAll('[data-fcdev-comp]').forEach(b=>b.onclick=async()=>{const k=b.dataset.fcdevComp;if(k===currentMonth)return;currentMonth=k;renderCompButtons();await loadRows()})}
+function renderCompButtons(){const box=$('g360FcDevCompButtons'),sel=$('g360FcDevCompSelect');if(!box||!sel)return;competencias=[...new Set(competencias)].sort();sel.innerHTML=competencias.length?competencias.map(k=>`<option value="${k}"${k===currentMonth?' selected':''}>${compLabel(k).replace(' DE ',' / ')}</option>`).join(''):'<option value="">Nenhuma competência aberta</option>';sel.value=currentMonth&&competencias.includes(currentMonth)?currentMonth:(competencias[0]||'');if(sel.value&&sel.value!==currentMonth)currentMonth=sel.value;if(!sel.dataset.fcdevBound){sel.dataset.fcdevBound='1';sel.addEventListener('change',async()=>{const k=sel.value;if(!k||k===currentMonth)return;currentMonth=k;await loadRows()})}}
 async function loadComps(selectKey=''){const oid=obraId();let q=sb().from('folga_campo_despesas').select('competencia,obra_id').order('competencia',{ascending:false});if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error)throw r.error;const fromDb=(r.data||[]).map(x=>monthKey(x.competencia)).filter(x=>/^\d{4}-\d{2}$/.test(x));competencias=[...new Set([...fromDb,...readLocalComps(),'2026-08'])].sort();saveLocalComps(competencias);const target=selectKey&&competencias.includes(selectKey)?selectKey:(currentMonth&&competencias.includes(currentMonth)?currentMonth:competencias[0]||'2026-08');currentMonth=target;renderCompButtons()}
 async function loadRows(){if(!currentMonth){rows=[];render();return}let q=sb().from('folga_campo_despesas').select('*').eq('competencia',compDate(currentMonth)).order('colaborador_nome').order('created_at');const oid=obraId();if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error)throw r.error;rows=r.data||[];render()}
 function selectedColab(){return colabs.find(c=>String(c.id)===String($('g360FcDevColab')?.value||''))||null}function personRows(){const c=selectedColab();return c?rows.filter(r=>String(r.colaborador_id)===String(c.id)):[]}
