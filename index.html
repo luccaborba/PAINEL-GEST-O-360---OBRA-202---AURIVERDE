@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- V243: Reembolsos — PDF individual por botão ao lado do nome no Resumo da Competência; Excel somente consolidado -->
 <!-- V242: Reembolsos — PDF individual no Resumo da Competência; Excel consolidado permanece no topo; preserva V241 -->
 <!-- V235: RH separa quadro próprio de terceiros; inativação de terceiro não conta como demissão -->
 <!-- V234: Controle de Reembolsos RH + Dashboard de despesas RH -->
@@ -2169,7 +2170,7 @@ html.g360-ui-ready .content-col {
           <div class="g360-reemb-toolbar-grid">
             <label>Competência<select id="g360ReembCompSelect"><option value="">Carregando...</option></select></label>
             <label>Colaborador<select id="g360ReembColab"><option value="">Selecione...</option></select></label>
-            <div class="g360-reemb-export-actions"><button type="button" class="clear-btn" id="g360ReembExcelComp">📊 Excel consolidado + individuais</button></div>
+            <div class="g360-reemb-export-actions"><button type="button" class="clear-btn" id="g360ReembExcelComp">📊 Excel consolidado</button></div>
           </div>
           <div class="g360-reemb-person" id="g360ReembPessoaResumo">Selecione um colaborador para lançar ou consultar despesas.</div>
         </section>
@@ -9778,7 +9779,7 @@ function exportExcel(){
   if(!rows.length)return alert('Não há lançamentos nesta competência.');
   if(!window.XLSX?.utils)return alert('Biblioteca Excel não carregada.');
 
-  const wb=XLSX.utils.book_new(),used=new Set();
+  const wb=XLSX.utils.book_new();
   const groups={};
 
   rows.forEach(r=>{
@@ -9790,7 +9791,7 @@ function exportExcel(){
   const pessoas=Object.values(groups).sort((a,b)=>String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR'));
   const totalGeral=rows.reduce((s,r)=>s+Number(r.valor||0),0);
 
-  // PRIMEIRA ABA — igual à lógica da planilha enviada.
+  // EXCEL CONSOLIDADO — uma única aba com o resumo da competência.
   const geral=[
     ['RELAÇÃO DESPESAS DE VIAGEM / REEMBOLSO',null,null,null],
     [null,null,null,null],
@@ -9805,50 +9806,11 @@ function exportExcel(){
     [null,null,null,null]
   ];
 
-  let ws=XLSX.utils.aoa_to_sheet(geral);
+  const ws=XLSX.utils.aoa_to_sheet(geral);
   const geralTotalRow=geral.length;
   ws[`D${geralTotalRow}`]={t:'n',f:`SUM(D4:D${3+pessoas.length})`,v:totalGeral,z:'R$ #,##0.00'};
   reembApplyModelLayout(ws,'geral',geralTotalRow);
   XLSX.utils.book_append_sheet(wb,ws,'RELATORIO GERAL');
-  used.add('RELATORIO GERAL');
-
-  // ABAS INDIVIDUAIS — ITEM | DESCRIÇÃO | DATA | FORNECEDOR | VALOR
-  pessoas.forEach(g=>{
-    const itens=[...(g.itens||[])].sort((a,b)=>
-      String(a.data_despesa||'').localeCompare(String(b.data_despesa||'')) ||
-      String(a.created_at||'').localeCompare(String(b.created_at||''))
-    );
-
-    const a=[
-      ['RELAÇÃO DESPESAS DE VIAGEM / REEMBOLSO',null,null,null,null],
-      [null,null,null,null,null],
-      ['NOME:',String(g.nome||'').toUpperCase(),'FUNÇÃO',String(g.funcao||'').toUpperCase(),null],
-      [null,null,null,null,null],
-      ['ITEM','DESCRIÇÃO','DATA','FORNECEDOR','VALOR'],
-      ...itens.map((r,i)=>[
-        String(i+1).padStart(2,'0'),
-        String(r.descricao||'').toUpperCase(),
-        r.data_despesa ? new Date(r.data_despesa+'T12:00:00') : null,
-        String(r.fornecedor||'').toUpperCase(),
-        Number(r.valor||0)
-      ]),
-      [null,null,null,null,null],
-      [null,null,null,null,null]
-    ];
-
-    const s=XLSX.utils.aoa_to_sheet(a);
-    const firstDataRow=6;
-    const lastDataRow=5+itens.length;
-    const totalRow=a.length;
-    s[`E${totalRow}`]={
-      t:'n',
-      f:`SUM(E${firstDataRow}:E${Math.max(firstDataRow,lastDataRow)})`,
-      v:itens.reduce((sum,r)=>sum+Number(r.valor||0),0),
-      z:'R$ #,##0.00'
-    };
-    reembApplyModelLayout(s,'pessoa',totalRow);
-    XLSX.utils.book_append_sheet(wb,s,sheetName(g.nome,used));
-  });
 
   XLSX.writeFile(wb,`RELATORIO_REEMBOLSOS_${monthKey(currentComp.competencia)}.xlsx`);
 }
@@ -9873,31 +9835,46 @@ function exportPdfPessoa(targetKey){
   if(!pr.length)return alert('Não há despesas para este colaborador.');
   if(!window.jspdf?.jsPDF)return alert('Biblioteca PDF não carregada.');
 
+  pr=[...pr].sort((a,b)=>
+    String(a.data_despesa||'').localeCompare(String(b.data_despesa||'')) ||
+    String(a.created_at||'').localeCompare(String(b.created_at||''))
+  );
+
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
   const W=doc.internal.pageSize.getWidth();
+  const H=doc.internal.pageSize.getHeight();
+  const margin=24;
 
   doc.setFillColor(252,211,174);
-  doc.rect(28,28,W-56,48,'F');
+  doc.rect(margin,24,W-(margin*2),46,'F');
   doc.setDrawColor(20);
-  doc.rect(28,28,W-56,48);
+  doc.rect(margin,24,W-(margin*2),46);
   doc.setTextColor(20);
   doc.setFont('helvetica','bold');
-  doc.setFontSize(16);
-  doc.text('RELAÇÃO DESPESAS DE VIAGEM / REEMBOLSO',W/2,58,{align:'center'});
+  doc.setFontSize(15);
+  doc.text('RELAÇÃO DESPESAS DE VIAGEM / REEMBOLSO',W/2,53,{align:'center'});
 
-  doc.setFontSize(10);
-  doc.rect(28,98,W-56,34);
-  doc.text('NOME:',34,119);
+  doc.setFontSize(9.5);
+  doc.rect(margin,88,W-(margin*2),32);
+  doc.text('NOME:',margin+7,108);
   doc.setFont('helvetica','normal');
-  doc.text(String(c.nome||''),74,119);
+  doc.text(String(c.nome||''),margin+47,108);
   doc.setFont('helvetica','bold');
-  doc.text('FUNÇÃO:',W*0.58,119);
+  doc.text('FUNÇÃO:',W*0.58,108);
   doc.setFont('helvetica','normal');
-  doc.text(String(c.funcao||''),W*0.64,119);
+  doc.text(String(c.funcao||''),W*0.64,108);
+
+  // Ajuste automático para manter o relatório individual em uma única página A4.
+  const qtd=Math.max(1,pr.length);
+  const disponivel=Math.max(180,H-170);
+  const alturaAlvo=Math.max(8,Math.min(22,disponivel/(qtd+2)));
+  const fontSize=Math.max(5.5,Math.min(9,alturaAlvo*0.42));
+  const cellPadding=Math.max(1.2,Math.min(5,alturaAlvo*0.18));
 
   doc.autoTable({
-    startY:154,
+    startY:140,
+    margin:{left:margin,right:margin,bottom:34},
     head:[['ITEM','DESCRIÇÃO','DATA','FORNECEDOR','VALOR']],
     body:pr.map((r,i)=>[
       String(i+1).padStart(2,'0'),
@@ -9907,22 +9884,24 @@ function exportPdfPessoa(targetKey){
       brl(r.valor)
     ]),
     theme:'grid',
-    styles:{fontSize:9,cellPadding:6,textColor:[20,20,20]},
-    headStyles:{fillColor:[252,211,174],textColor:[20,20,20],fontStyle:'bold'},
+    pageBreak:'avoid',
+    rowPageBreak:'avoid',
+    styles:{fontSize,cellPadding,textColor:[20,20,20],overflow:'linebreak',valign:'middle'},
+    headStyles:{fillColor:[252,211,174],textColor:[20,20,20],fontStyle:'bold',fontSize:Math.max(fontSize,6)},
     columnStyles:{
-      0:{cellWidth:45},
-      1:{cellWidth:360},
-      2:{cellWidth:80},
+      0:{cellWidth:42,halign:'center'},
+      1:{cellWidth:350},
+      2:{cellWidth:74,halign:'center'},
       3:{cellWidth:190},
-      4:{cellWidth:90,halign:'right'}
+      4:{cellWidth:88,halign:'right'}
     }
   });
 
-  const y=(doc.lastAutoTable?.finalY||200)+10;
+  const y=Math.min(H-24,(doc.lastAutoTable?.finalY||200)+14);
   const total=pr.reduce((s,r)=>s+Number(r.valor||0),0);
   doc.setFont('helvetica','bold');
-  doc.setFontSize(11);
-  doc.text(`TOTAL: ${brl(total)}`,W-34,y,{align:'right'});
+  doc.setFontSize(10.5);
+  doc.text(`TOTAL: ${brl(total)}`,W-margin,y,{align:'right'});
   doc.save(`reembolso_${String(c.nome).replace(/[^A-Za-z0-9À-ÿ]+/g,'_')}_${monthKey(currentComp.competencia)}.pdf`);
 }
 async function init(){if(!$('view-rhdpReembolsos')||!sb())return;const now=new Date().toISOString().slice(0,7);$('g360ReembCompNova').value=now;$('g360ReembData').value=new Date().toISOString().slice(0,10);try{await Promise.all([loadColabs(),loadComps(now)]);await loadRows()}catch(e){console.error(e);alert('Falha ao carregar reembolsos: '+(e?.message||e))}if(!$('g360ReembAbrirComp').dataset.bound){$('g360ReembAbrirComp').dataset.bound='1';$('g360ReembAbrirComp').onclick=openComp;$('g360ReembCompSelect').onchange=async()=>{currentComp=comps.find(c=>String(c.id)===String($('g360ReembCompSelect').value))||null;await loadRows()};$('g360ReembColab').onchange=render;$('g360ReembAdicionar').onclick=addRow;$('g360ReembLimpar').onclick=clearForm;$('g360ReembExcelComp').onclick=exportExcel}}
