@@ -14,7 +14,7 @@
 <!DOCTYPE html>
 <!-- V279: Folga DEV — competências em caixa de seleção e tipografia dos rótulos padronizada -->
 <!-- V275: Folga Campo DEV simplificada sem Data/Fornecedor no lançamento e relatórios -->
-<!-- V282: Folga de Campo EM DEV — TERMO recuperado e PDF de despesas em retrato -->
+<!-- V283: Folga de Campo EM DEV — TERMO gera diretamente o PDF do colaborador na competência selecionada -->
 <!-- V274: Folga de Campo EM DEV — reconstruído do zero com fluxo espelhado em Reembolsos; antigo projeto ocultado; Termo de Concessão preservado -->
 <!-- V273: Folga de Campo — despesas persistidas em tabela própria no Supabase; dashboard por competência; programação preservada -->
 <!-- V272: Folga de Campo por etapas — programação por competência + pagamento de despesas por colaborador; PDF individual; sem dashboard de projeção -->
@@ -20740,49 +20740,52 @@ function renderCompButtons(){const box=$('g360FcDevCompButtons'),sel=$('g360FcDe
 async function loadComps(selectKey=''){const oid=obraId();let q=sb().from('folga_campo_despesas').select('competencia,obra_id').order('competencia',{ascending:false});if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error)throw r.error;const fromDb=(r.data||[]).map(x=>monthKey(x.competencia)).filter(x=>/^\d{4}-\d{2}$/.test(x));competencias=[...new Set([...fromDb,...readLocalComps(),'2026-08'])].sort();saveLocalComps(competencias);const target=selectKey&&competencias.includes(selectKey)?selectKey:(currentMonth&&competencias.includes(currentMonth)?currentMonth:competencias[0]||'2026-08');currentMonth=target;renderCompButtons()}
 async function loadRows(){if(!currentMonth){rows=[];render();return}let q=sb().from('folga_campo_despesas').select('*').eq('competencia',compDate(currentMonth)).order('colaborador_nome').order('created_at');const oid=obraId();if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error)throw r.error;rows=r.data||[];render()}
 function selectedColab(){return colabs.find(c=>String(c.id)===String($('g360FcDevColab')?.value||''))||null}function personRows(){const c=selectedColab();return c?rows.filter(r=>String(r.colaborador_id)===String(c.id)):[]}
-function openTermForPerson(key){
+async function openTermForPerson(key){
   const pr=rows.filter(r=>String(r.colaborador_id||r.colaborador_nome)===String(key));
   if(!pr.length)return alert('Não há colaborador vinculado a este lançamento.');
   const nome=String(pr[0].colaborador_nome||'').trim();
+  if(!nome)return alert('Colaborador não identificado para gerar o Termo de Concessão.');
+
   try{
-    // Sincroniza a competência e o colaborador com o módulo preservado de concessão.
-    if(currentMonth){
-      fcProj.months=Array.isArray(fcProj.months)?fcProj.months:[];
-      if(!fcProj.months.includes(currentMonth))fcProj.months.push(currentMonth);
-      fcProj.months=[...new Set(fcProj.months)].sort();
-      fcProj.current=currentMonth;
-      fcProj.included=fcProj.included||{};
-      const incluidos=Array.isArray(fcProj.included[currentMonth])?fcProj.included[currentMonth]:[];
-      if(nome&&!incluidos.includes(nome))incluidos.push(nome);
-      fcProj.included[currentMonth]=incluidos;
-      fcProj.overrides=fcProj.overrides||{};
-      fcProj.overrides[currentMonth]=fcProj.overrides[currentMonth]||{};
-      fcProj.selected=fcProj.selected||{};
-      fcProj.selected[currentMonth]=Array.isArray(fcProj.selected[currentMonth])?fcProj.selected[currentMonth]:[];
-      fcSelected=new Set(fcProj.selected[currentMonth]);
-      fcSaveProj();
+    // O botão TERMO deve IMPRIMIR diretamente o Termo de Concessão do colaborador
+    // na MESMA competência selecionada no módulo Folga de Campo em DEV.
+    if(!currentMonth)return alert('Selecione uma competência antes de gerar o Termo.');
+
+    // Recarrega o histórico oficial do projeto preservado de concessão para evitar
+    // usar somente dados antigos do localStorage.
+    try{ await fcReloadSupabaseHistory(); }catch(e){ console.warn('Falha ao atualizar histórico do Termo:',e); }
+
+    fcProj.months=Array.isArray(fcProj.months)?fcProj.months:[];
+    if(!fcProj.months.includes(currentMonth))fcProj.months.push(currentMonth);
+    fcProj.months=[...new Set(fcProj.months)].sort();
+    fcProj.current=currentMonth;
+    fcProj.included=fcProj.included||{};
+    fcProj.overrides=fcProj.overrides||{};
+    fcProj.selected=fcProj.selected||{};
+
+    // Garante que o colaborador faça parte da competência preservada sem alterar
+    // os dados do formulário de concessão já existentes.
+    const incluidos=Array.isArray(fcProj.included[currentMonth])?fcProj.included[currentMonth]:[];
+    if(!incluidos.includes(nome))incluidos.push(nome);
+    fcProj.included[currentMonth]=incluidos;
+    fcProj.overrides[currentMonth]=fcProj.overrides[currentMonth]||{};
+    fcProj.selected[currentMonth]=Array.isArray(fcProj.selected[currentMonth])?fcProj.selected[currentMonth]:[];
+    fcSelected=new Set(fcProj.selected[currentMonth]);
+    fcSaveProj();
+
+    const registro=fcRegistros().find(r=>String(r.nome||'').trim().toUpperCase()===nome.toUpperCase());
+    if(!registro){
+      return alert('Não encontrei '+nome+' no formulário preservado de Concessão de Folga para '+compLabel(currentMonth)+'.');
+    }
+    if(!fcElegivel(registro)){
+      return alert('O Termo de Concessão de '+nome+' ainda não possui todos os dados necessários nesta competência. Preencha período, destino, distância e demais dados do Termo antes de gerar o PDF.');
     }
 
-    // Usa a mesma navegação do botão original do projeto de concessão.
-    fcAbrirView('formconcessao');
-    renderFolgaCampoForm();
-
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      const busca=document.getElementById('fcSearch');
-      if(busca){
-        busca.value=nome;
-        fcState.search=nome;
-        fcState.onlyReady=false;
-        const only=document.getElementById('fcOnlyReady');
-        if(only)only.checked=false;
-        renderFolgaCampoForm();
-      }
-      const linha=[...document.querySelectorAll('#tableFolgaForm tr[data-nome]')].find(tr=>String(tr.dataset.nome||'').trim()===nome);
-      if(linha)linha.scrollIntoView({behavior:'smooth',block:'center'});
-    }));
+    // Usa exatamente o mesmo gerador PDF original do Termo de Concessão.
+    fcGerarPdfLote([registro]);
   }catch(e){
     console.error('TERMO FOLGA:',e);
-    alert('Não foi possível abrir o Termo de Concessão deste colaborador: '+(e?.message||e));
+    alert('Não foi possível gerar o Termo de Concessão deste colaborador: '+(e?.message||e));
   }
 }
 function render(){
@@ -20801,7 +20804,7 @@ function render(){
   body?.querySelectorAll('[data-fcdev-del]').forEach(b=>b.onclick=()=>delRow(b.dataset.fcdevDel));
   const groups={};rows.forEach(r=>{const k=String(r.colaborador_id||r.colaborador_nome);if(!groups[k])groups[k]={key:k,nome:r.colaborador_nome,funcao:r.funcao,qtd:0,total:0};groups[k].qtd++;groups[k].total+=Number(r.valor||0)});
   const rb=$('g360FcDevResumoBody');
-  if(rb){const gs=Object.values(groups).sort((a,b)=>String(a.nome).localeCompare(String(b.nome),'pt-BR'));rb.innerHTML=gs.length?gs.map(g=>`<tr><td><div class="g360-reemb-resumo-nome"><span class="fc-dev-row-actions"><button type="button" class="fc-dev-mini-action" data-fcdev-pdf="${esc(g.key)}" title="Gerar relatório de despesas">PDF</button><button type="button" class="fc-dev-mini-action term" data-fcdev-termo="${esc(g.key)}" title="Abrir Termo de Concessão">TERMO</button></span><b>${esc(g.nome)}</b></div></td><td>${esc(g.funcao||'')}</td><td>${g.qtd}</td><td><b>${brl(g.total)}</b></td></tr>`).join(''):'<tr><td colspan="4"><div class="empty-state">Nenhum lançamento nesta competência.</div></td></tr>';rb.querySelectorAll('[data-fcdev-pdf]').forEach(b=>b.onclick=()=>exportPdfPessoa(b.dataset.fcdevPdf));rb.querySelectorAll('[data-fcdev-termo]').forEach(b=>b.onclick=()=>openTermForPerson(b.dataset.fcdevTermo));}
+  if(rb){const gs=Object.values(groups).sort((a,b)=>String(a.nome).localeCompare(String(b.nome),'pt-BR'));rb.innerHTML=gs.length?gs.map(g=>`<tr><td><div class="g360-reemb-resumo-nome"><span class="fc-dev-row-actions"><button type="button" class="fc-dev-mini-action" data-fcdev-pdf="${esc(g.key)}" title="Gerar relatório de despesas">PDF</button><button type="button" class="fc-dev-mini-action term" data-fcdev-termo="${esc(g.key)}" title="Gerar Termo de Concessão desta competência">TERMO</button></span><b>${esc(g.nome)}</b></div></td><td>${esc(g.funcao||'')}</td><td>${g.qtd}</td><td><b>${brl(g.total)}</b></td></tr>`).join(''):'<tr><td colspan="4"><div class="empty-state">Nenhum lançamento nesta competência.</div></td></tr>';rb.querySelectorAll('[data-fcdev-pdf]').forEach(b=>b.onclick=()=>exportPdfPessoa(b.dataset.fcdevPdf));rb.querySelectorAll('[data-fcdev-termo]').forEach(b=>b.onclick=()=>openTermForPerson(b.dataset.fcdevTermo));}
 }
 function openCompModal(){if(!obraId())return alert('Selecione uma obra.');const now=new Date(),base=currentMonth&&/^\d{4}-\d{2}$/.test(currentMonth)?currentMonth:`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`,[y,m]=base.split('-');if($('g360FcDevCompMes'))$('g360FcDevCompMes').value=m;if($('g360FcDevCompAno'))$('g360FcDevCompAno').value=y;const modal=$('g360FcDevCompModal');if(modal){modal.classList.add('open');modal.setAttribute('aria-hidden','false')}}
 function closeCompModal(){const modal=$('g360FcDevCompModal');if(modal){modal.classList.remove('open');modal.setAttribute('aria-hidden','true')}}
