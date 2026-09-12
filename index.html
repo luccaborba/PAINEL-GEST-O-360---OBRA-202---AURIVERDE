@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- V236: Reembolsos exportam RELATORIO GERAL + uma aba individual por colaborador, conforme modelo enviado -->
+<!-- V237: corrige estrutura dos scripts/menus e mantém exportação RELATORIO GERAL + abas individuais -->
 <!-- V235: RH separa quadro próprio de terceiros; inativação de terceiro não conta como demissão -->
 <!-- V234: Controle de Reembolsos RH + Dashboard de despesas RH -->
 <!-- V233: Alojamentos com ciclo mensal de medição e período calculado automaticamente -->
@@ -9632,8 +9632,7 @@ async function g360AbrirImportacaoAdmissao(){
 document.addEventListener('click',e=>{
   if(e.target?.closest?.('#g360ImportarAdmColab')){e.preventDefault();g360AbrirImportacaoAdmissao();}
 });
-
-
+</script>
 <script id="g360-reembolsos-js-v234">
 (function(){
 'use strict';
