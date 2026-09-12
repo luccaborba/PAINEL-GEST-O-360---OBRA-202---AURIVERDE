@@ -10,6 +10,9 @@
 <!-- V247: MAIÚSCULAS automáticas em campos textuais; preserva e-mail, senha, URL/link e campos técnicos -->
 <!-- V245: Corrige Forçar novo login de todos — elimina referência fora de escopo a users -->
 <!DOCTYPE html>
+<!-- V273: Folga de Campo — despesas persistidas em tabela própria no Supabase; dashboard por competência; programação preservada -->
+<!-- V272: Folga de Campo por etapas — programação por competência + pagamento de despesas por colaborador; PDF individual; sem dashboard de projeção -->
+<!-- V271: Dashboard RH por competência; Folga de Campo base AGOSTO/2026; correção Abrir nova competência -->
 <!-- V265: baseado integralmente na V262; ajuste SOMENTE visual do filtro de alojamentos -->
 <!-- V260: patrimônio — permite o mesmo item em vários alojamentos; fallback seguro quando RPC antiga bloqueia segunda alocação -->
 <!-- V259: Cadastro de Itens do Patrimônio — edição exclusiva MASTER + PDF para conferência de inventário -->
@@ -1945,6 +1948,13 @@ html.g360-ui-ready .content-col {
 }
 .g360-reemb-pdf-mini:hover{border-color:var(--gold);transform:translateY(-1px)}
 </style>
+
+<style id="g360-folga-pagamentos-v272-css">
+#g360FcPayHead{margin-top:14px}
+#g360FcPayResumo .g360-reemb-pdf-mini{margin-right:7px}
+.fc-btn-danger-v272{border:1px solid rgba(229,72,77,.45);background:rgba(229,72,77,.08);color:#ff8589;border-radius:5px;padding:6px 8px;cursor:pointer;font-size:10px;font-weight:800}
+.fc-btn-danger-v272:hover{background:rgba(229,72,77,.16)}
+</style>
 </head>
 <body>
 <!-- V155: convite personalizado + primeiro acesso com criação de senha -->
@@ -3455,12 +3465,60 @@ html.g360-ui-ready .content-col {
         </section>
 
         <section class="kpis-4" id="kpi-baixadas" style="grid-template-columns:repeat(3,1fr);"></section>
-        <section class="panel">
-          <h2>Previsão de Custo Mensal com Folga de Campo <span class="tag">Folgas com data programada</span></h2>
-          <div style="height:280px;position:relative;"><canvas id="chBaixadaMensal"></canvas></div>
+
+        <!-- V272 — PAGAMENTO DE DESPESAS / FOLGA DE CAMPO -->
+        <section class="panel g360-reemb-head" id="g360FcPayHead">
+          <div>
+            <h2>Pagamento de Despesas — Folga de Campo</h2>
+            <div class="g360-reemb-sub">Lance as despesas por competência e colaborador. O PDF individual segue o mesmo padrão do Reembolso, com o título “PAGAMENTO DE DESPESAS - FOLGA DE CAMPO”.</div>
+          </div>
+          <div class="g360-reemb-head-actions">
+            <button type="button" class="clear-btn" id="g360FcPayTermo">📝 Termo de concessão</button>
+            <button type="button" class="btn-primary" id="g360FcPayNovaComp">＋ Abrir nova competência</button>
+          </div>
         </section>
+
+        <section class="kpis-4 g360-reemb-kpis" id="g360FcPayKpis">
+          <div class="kpi"><div class="kpi-label">COMPETÊNCIA</div><div class="kpi-value" id="g360FcPayKpiComp" style="font-size:20px">—</div><div class="kpi-sub">Mês selecionado</div></div>
+          <div class="kpi"><div class="kpi-label">TOTAL FOLGA DE CAMPO</div><div class="kpi-value" id="g360FcPayKpiTotal">R$ 0,00</div><div class="kpi-sub">Despesas lançadas</div></div>
+          <div class="kpi"><div class="kpi-label">COLABORADORES</div><div class="kpi-value" id="g360FcPayKpiPessoas">0</div><div class="kpi-sub">Com despesa</div></div>
+          <div class="kpi"><div class="kpi-label">LANÇAMENTOS</div><div class="kpi-value" id="g360FcPayKpiItens">0</div><div class="kpi-sub">Linhas de despesa</div></div>
+        </section>
+
+        <section class="panel g360-reemb-toolbar">
+          <div class="g360-reemb-toolbar-grid">
+            <label>Competência<select id="g360FcPayComp"><option value="">Carregando...</option></select></label>
+            <label>Colaborador<select id="g360FcPayColab"><option value="">Selecione...</option></select></label>
+            <div class="g360-reemb-export-actions"><button type="button" class="clear-btn" id="g360FcPayExcel">📊 Excel consolidado + individuais</button></div>
+          </div>
+          <div class="g360-reemb-person" id="g360FcPayPessoaResumo">Selecione uma competência e um colaborador.</div>
+        </section>
+
         <section class="panel">
-          <h2>Colaboradores em Regime de Folga de Campo <span class="tag" id="baixadaCountTag"></span></h2>
+          <div class="g360-reemb-form-grid">
+            <label class="span2">Descrição da despesa<input id="g360FcPayDescricao" placeholder="Ex.: PASSAGEM RODOVIÁRIA - GOIÂNIA -> CRIXÁS"></label>
+            <label>Data<input type="date" id="g360FcPayData"></label>
+            <label>Fornecedor<input id="g360FcPayFornecedor" placeholder="Ex.: EXPRESSO UNIÃO LTDA"></label>
+            <label>Categoria<select id="g360FcPayCategoria"><option value="PASSAGEM">Passagem</option><option value="HOSPEDAGEM">Hospedagem</option><option value="ALIMENTACAO">Alimentação</option><option value="COMBUSTIVEL">Combustível</option><option value="TRANSPORTE">Transporte</option><option value="OUTROS">Outros</option></select></label>
+            <label>Valor (R$)<input type="number" min="0.01" step="0.01" id="g360FcPayValor" placeholder="0,00"></label>
+            <label class="span2">Observação<input id="g360FcPayObs" placeholder="Opcional"></label>
+          </div>
+          <div class="g360-reemb-form-actions"><button type="button" class="clear-btn" id="g360FcPayLimpar">Limpar</button><button type="button" class="btn-primary" id="g360FcPayIncluir">＋ Incluir</button></div>
+        </section>
+
+        <section class="panel">
+          <div class="g360-reemb-table-head"><div><h2 id="g360FcPayTabelaTitulo">Despesas do colaborador</h2><div class="g360-reemb-sub" id="g360FcPayTabelaSub">—</div></div><div class="g360-reemb-person-total">Total: <b id="g360FcPayPessoaTotal">R$ 0,00</b></div></div>
+          <div class="table-scroll"><table><thead><tr><th>Item</th><th>Descrição</th><th>Data</th><th>Fornecedor</th><th>Categoria</th><th>Valor</th><th>Ações</th></tr></thead><tbody id="g360FcPayBody"><tr><td colspan="7"><div class="empty-state">Selecione um colaborador.</div></td></tr></tbody></table></div>
+        </section>
+
+        <section class="panel">
+          <div class="g360-reemb-table-head"><div><h2>Resumo da competência</h2><div class="g360-reemb-sub">Consolidado por colaborador. Use o botão 📄 ao lado do nome para gerar o PDF individual.</div></div></div>
+          <div class="table-scroll"><table><thead><tr><th>Colaborador</th><th>Função</th><th>Qtd. despesas</th><th>Total</th></tr></thead><tbody id="g360FcPayResumo"></tbody></table></div>
+        </section>
+
+
+        <section class="panel">
+          <h2>Base para Programação de Baixadas <span class="tag" id="baixadaCountTag"></span></h2>
           <div class="filters">
             <input type="text" id="baixadaSearch" placeholder="Buscar colaborador por nome...">
             <select id="baixadaEquipeSelect" title="Filtrar por equipe">
@@ -3566,8 +3624,8 @@ html.g360-ui-ready .content-col {
             </div>
           </div>
 
-          <h2>📋 Cadastro de Colaboradores — Folga de Campo <span class="tag" id="fcCountTag"></span></h2>
-          <p style="color:var(--ink-soft);font-size:12px;margin:0 0 16px;">Cada competência é controlada separadamente. Ao abrir uma nova competência, o sistema analisa a <b style="color:var(--ink)">última baixada</b> e a <b style="color:var(--ink)">periodicidade</b> cadastradas em cada colaborador e sugere automaticamente quem deve sair no período. Você pode confirmar, incluir ou retirar colaboradores antes de abrir a competência.</p>
+          <h2>📋 Programação da Competência — Folga de Campo <span class="tag" id="fcCountTag"></span></h2>
+          <p style="color:var(--ink-soft);font-size:12px;margin:0 0 16px;">Cada competência é controlada separadamente. Ao abrir uma nova competência, o sistema analisa a <b style="color:var(--ink)">última baixada</b> e a <b style="color:var(--ink)">periodicidade</b> e sugere quem deve sair no período. Depois de abrir, você pode <b style="color:var(--ink)">editar, incluir ou excluir</b> colaboradores da programação antes de gerar o Termo de Concessão.</p>
 
           <section class="fc-kpis">
             <div class="kpi"><div class="kpi-label">Colaboradores Ativos</div><div class="kpi-value" id="fcKpiTotal">–</div></div>
@@ -3590,7 +3648,7 @@ html.g360-ui-ready .content-col {
                   <th class="fc-chkcol"><input type="checkbox" id="fcSelectAll" class="fc-chk"></th>
                   <th>Mat.</th><th>Nome</th><th>Função</th><th>Destino (Residência)</th>
                   <th class="num">Distância</th><th>Período da Folga</th><th class="num">Dias</th>
-                  <th class="num">Valor Reembolso</th><th>Status</th><th>Editar</th><th>Formulário</th>
+                  <th class="num">Valor Reembolso</th><th>Status</th><th>Editar</th><th>Excluir</th><th>Formulário</th>
                 </tr>
               </thead>
               <tbody id="tableFolgaForm"></tbody>
@@ -5313,7 +5371,7 @@ const FC_OBRA_TXT = 'Obra 202 – Implantação Auriverde';
 const FC_NUM_EXTENSO = {1:"um",2:"dois",3:"três",4:"quatro",5:"cinco",6:"seis",7:"sete",8:"oito",9:"nove",10:"dez",11:"onze",12:"doze",13:"treze",14:"catorze",15:"quinze"};
 const FC_MESES = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
 
-const FC_SEED_MONTH = '2026-09';
+const FC_SEED_MONTH = '2026-08';
 const FC_STORAGE_KEY = 'fc_proj_v1';
 
 function fcMonthKeyToLabel(key){
@@ -5359,6 +5417,24 @@ function fcLoadProj(){
     if (!raw) return fcDefaultProj();
     const parsed = JSON.parse(raw);
     if (!parsed || !Array.isArray(parsed.months) || !parsed.months.length) return fcDefaultProj();
+
+    // V271 — a competência-base que vinha sendo tratada como SETEMBRO/2026
+    // pertence à competência AGOSTO/2026. Migra apenas a base local antiga quando
+    // AGOSTO ainda não existe, preservando competências futuras criadas depois.
+    if (!parsed.months.includes('2026-08') && parsed.months.includes('2026-09')) {
+      const idx = parsed.months.indexOf('2026-09');
+      parsed.months[idx] = '2026-08';
+      parsed.overrides = parsed.overrides || {};
+      parsed.selected = parsed.selected || {};
+      parsed.included = parsed.included || {};
+      parsed.overrides['2026-08'] = parsed.overrides['2026-09'] || {};
+      parsed.selected['2026-08'] = parsed.selected['2026-09'] || [];
+      parsed.included['2026-08'] = Object.prototype.hasOwnProperty.call(parsed.included,'2026-09') ? parsed.included['2026-09'] : null;
+      delete parsed.overrides['2026-09'];
+      delete parsed.selected['2026-09'];
+      delete parsed.included['2026-09'];
+      if (parsed.current === '2026-09') parsed.current = '2026-08';
+    }
     if (!parsed.overrides) parsed.overrides = {};
     if (!parsed.selected) parsed.selected = {};
     if (!parsed.included) parsed.included = {};
@@ -5421,6 +5497,9 @@ async function fcSyncMonthToSupabase(key=fcProj.current){
       const naoProgramada=!!f?.naoProgramada;
       const paraReembolso=!!(f?.paraReembolso || naoProgramada);
       const baseNova=!!(f?.baseNovaProgramacao || naoProgramada);
+      // V273 — despesas reais da Folga de Campo ficam em folga_campo_despesas.
+      // O registro de programação não carrega mais lançamentos financeiros em JSON.
+      const valorEfetivo=Number(f?.valor||0);
 
       const row={
         obra_id:obraId,
@@ -5434,8 +5513,8 @@ async function fcSyncMonthToSupabase(key=fcProj.current){
         data_fim:f?.dataFim||null,
         data_saida:f?.dataIni||null,
         data_retorno:f?.retorno||null,
-        valor_reembolso:Number(f?.valor||0),
-        custo:Number(f?.valor||0),
+        valor_reembolso:valorEfetivo,
+        custo:valorEfetivo,
         dias:f?.dias??null,
         status:f?(naoProgramada?'NAO_PROGRAMADA':'PROGRAMADA'):'PENDENTE',
         incluido:true,
@@ -5518,6 +5597,7 @@ function fcDbRowToFolga(r){
     ultimaBaixada:r?.ultima_baixada_base||null,
     periodicidade:r?.periodicidade_base||null,
     lancadaEm:dados.lancadaEm||r?.created_at||null,
+    pagamentos:Array.isArray(dados.pagamentos)?dados.pagamentos:[],
     supabaseId:r?.id||null,
     persisted:true
   };
@@ -5552,10 +5632,34 @@ function fcHydrateFromSupabaseRows(rows){
   fcSelected=new Set((fcProj.selected[fcProj.current]||[]).filter(n=>(fcProj.included[fcProj.current]||[]).includes(n)));
   fcSaveProj();
 }
+async function fcNormalizeLegacySeedCompetencia(obraId){
+  if(!obraId || window.g360PreviewMode!==false || !window.g360SupabaseClient) return;
+  const marker='g360_fc_competencia_base_ago2026_v271_'+obraId;
+  if(localStorage.getItem(marker)==='ok') return;
+  try{
+    const sb=window.g360SupabaseClient;
+    const ago=await sb.from('folga_campo').select('id',{count:'exact',head:true}).eq('obra_id',obraId).eq('competencia','2026-08-01');
+    if(ago.error) throw ago.error;
+    if(Number(ago.count||0)===0){
+      const setRows=await sb.from('folga_campo').select('id').eq('obra_id',obraId).eq('competencia','2026-09-01');
+      if(setRows.error) throw setRows.error;
+      if((setRows.data||[]).length){
+        const ids=setRows.data.map(r=>r.id).filter(Boolean);
+        const up=await sb.from('folga_campo').update({competencia:'2026-08-01',updated_at:new Date().toISOString()}).in('id',ids);
+        if(up.error) throw up.error;
+        console.info('[G360] Folga de Campo: competência-base ajustada de SET/2026 para AGO/2026:',ids.length,'registro(s).');
+      }
+    }
+    localStorage.setItem(marker,'ok');
+  }catch(e){
+    console.warn('[G360] Não foi possível normalizar automaticamente a competência-base da Folga de Campo:',e);
+  }
+}
 async function fcReloadSupabaseHistory(){
   if(window.g360PreviewMode!==false || !window.g360SupabaseClient) return [];
   const obraId=await fcSupabaseObraId();
   if(!obraId) return [];
+  await fcNormalizeLegacySeedCompetencia(obraId);
   const q=await window.g360SupabaseClient.from('folga_campo')
     .select('*')
     .eq('obra_id',obraId)
@@ -5694,6 +5798,7 @@ function renderFolgaCampoForm(){
       <td class="num">${valor}</td>
       <td>${badge}</td>
       <td><button class="fc-edit-link" data-edit="${r.nome}" title="Editar dados da folga">✎ Editar</button></td>
+      <td><button class="crud-danger" data-fc-remove="${r.nome}" title="Excluir colaborador desta competência">🗑 Excluir</button></td>
       <td>${eleg?`<button class="fc-pdf-link" data-single="${r.nome}">Gerar PDF</button>`:'<button class="fc-pdf-link" disabled>—</button>'}</td>
     </tr>`;
   }).join('');
@@ -5717,6 +5822,21 @@ function renderFolgaCampoForm(){
   tbody.querySelectorAll('[data-edit]').forEach(btn=>{
     btn.addEventListener('click', e=>{
       fcOpenEditModal(e.currentTarget.dataset.edit);
+    });
+  });
+  tbody.querySelectorAll('[data-fc-remove]').forEach(btn=>{
+    btn.addEventListener('click', async e=>{
+      const nome=e.currentTarget.dataset.fcRemove;
+      if(!nome || !confirm(`Excluir ${nome} da competência ${fcMonthKeyToLabel(fcProj.current)}?\n\nO colaborador continuará no cadastro geral e poderá ser incluído novamente.`)) return;
+      const lista=fcProj.included?.[fcProj.current];
+      if(Array.isArray(lista)) fcProj.included[fcProj.current]=lista.filter(n=>n!==nome);
+      if(fcProj.overrides?.[fcProj.current]) delete fcProj.overrides[fcProj.current][nome];
+      fcSelected.delete(nome);
+      fcProj.selected[fcProj.current]=Array.from(fcSelected);
+      fcSaveProj();
+      try{ await fcSyncMonthToSupabase(fcProj.current); }catch(_){ return; }
+      renderFolgaCampoForm();
+      window.g360FolgaPagamentosV272?.refresh?.();
     });
   });
   fcUpdateSelBar();
@@ -6378,9 +6498,11 @@ function renderBaixadas(){
       const next = new Date(occ); next.setMonth(next.getMonth()+ciclo); occ = next;
     }
   });
-  barChart('chBaixadaMensal', labelsProjecao, [
-    {label:'Custo previsto com baixada', data:custosPorMes, backgroundColor:PALETTE[0], borderRadius:3}
-  ], false, true, 'currency');
+  if(document.getElementById('chBaixadaMensal')){
+    barChart('chBaixadaMensal', labelsProjecao, [
+      {label:'Custo previsto com baixada', data:custosPorMes, backgroundColor:PALETTE[0], borderRadius:3}
+    ], false, true, 'currency');
+  }
 
   // ---- Filtros por nome, equipe, setor/equipe e período ----
   const equipeSelect = document.getElementById('baixadaEquipeSelect');
@@ -10069,7 +10191,57 @@ function exportPdfPessoa(targetKey){
 async function init(){if(!$('view-rhdpReembolsos')||!sb())return;const now=new Date().toISOString().slice(0,7);$('g360ReembCompNova').value=now;$('g360ReembData').value=new Date().toISOString().slice(0,10);try{await Promise.all([loadColabs(),loadComps(now)]);await loadRows()}catch(e){console.error(e);alert('Falha ao carregar reembolsos: '+(e?.message||e))}if(!$('g360ReembAbrirComp').dataset.bound){$('g360ReembAbrirComp').dataset.bound='1';$('g360ReembAbrirComp').onclick=openComp;$('g360ReembCompSelect').onchange=async()=>{currentComp=comps.find(c=>String(c.id)===String($('g360ReembCompSelect').value))||null;await loadRows()};$('g360ReembColab').onchange=render;$('g360ReembAdicionar').onclick=addRow;$('g360ReembLimpar').onclick=clearForm;$('g360ReembExcelComp').onclick=exportExcel}}
 window.g360ReembolsosV234={init,refresh:loadRows};
 
-async function loadExpenseDashboard(){if(!sb())return;const oid=obraId(),today=new Date(),keys=[];for(let i=5;i>=0;i--){const d=new Date(today.getFullYear(),today.getMonth()-i,1);keys.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`)}const start=keys[0]+'-01',end=new Date(today.getFullYear(),today.getMonth()+1,1).toISOString().slice(0,10);let rq=sb().from('rh_reembolso_lancamentos').select('valor,data_despesa,colaborador_id,obra_id').gte('data_despesa',start).lt('data_despesa',end),fq=sb().from('folga_campo').select('competencia,valor_reembolso,custo,colaborador_id,obra_id,incluido').gte('competencia',start).lt('competencia',end);if(oid){rq=rq.eq('obra_id',oid);fq=fq.eq('obra_id',oid)}const [rr,fr]=await Promise.all([rq,fq]);if(rr.error||fr.error){console.warn('Despesas RH:',rr.error||fr.error);return}const rrows=rr.data||[],frows=(fr.data||[]).filter(x=>x.incluido!==false),cur=keys[keys.length-1],rv=rrows.filter(x=>monthKey(x.data_despesa)===cur),fv=frows.filter(x=>monthKey(x.competencia)===cur),rTotal=rv.reduce((s,x)=>s+Number(x.valor||0),0),fTotal=fv.reduce((s,x)=>s+Number(x.valor_reembolso??x.custo??0),0);$('g360RhDespesasCompetencia')&&($('g360RhDespesasCompetencia').textContent=compLabel(cur));$('g360RhKpiReemb')&&($('g360RhKpiReemb').textContent=brl(rTotal));$('g360RhKpiFolga')&&($('g360RhKpiFolga').textContent=brl(fTotal));$('g360RhKpiDespTotal')&&($('g360RhKpiDespTotal').textContent=brl(rTotal+fTotal));$('g360RhKpiReembPessoas')&&($('g360RhKpiReembPessoas').textContent=new Set(rv.map(x=>x.colaborador_id).filter(Boolean)).size);const ctx=$('chRhDespesas');if(!ctx||!window.Chart)return;const rSerie=keys.map(k=>rrows.filter(x=>monthKey(x.data_despesa)===k).reduce((s,x)=>s+Number(x.valor||0),0)),fSerie=keys.map(k=>frows.filter(x=>monthKey(x.competencia)===k).reduce((s,x)=>s+Number(x.valor_reembolso??x.custo??0),0));chart?.destroy();chart=new Chart(ctx,{type:'bar',data:{labels:keys.map(compLabel),datasets:[{label:'Reembolsos',data:rSerie},{label:'Folga de Campo',data:fSerie}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#ddd'}}},scales:{x:{ticks:{color:'#aaa'}},y:{ticks:{color:'#aaa',callback:v=>'R$ '+Number(v).toLocaleString('pt-BR')}}}}})}
+async function loadExpenseDashboard(){
+  if(!sb())return;
+  const oid=obraId(),today=new Date(),keys=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(today.getFullYear(),today.getMonth()-i,1);
+    keys.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+  }
+  const start=keys[0]+'-01';
+  const end=new Date(today.getFullYear(),today.getMonth()+1,1).toISOString().slice(0,10);
+
+  // REEMBOLSO: o mês contábil é a COMPETÊNCIA aberta, não a data do comprovante/despesa.
+  let cq=sb().from('rh_reembolso_competencias').select('id,competencia,obra_id').gte('competencia',start).lt('competencia',end);
+  // V273 — Folga de Campo financeira vem da tabela própria de despesas.
+  let fq=sb().from('folga_campo_despesas').select('competencia,valor,colaborador_id,obra_id').gte('competencia',start).lt('competencia',end);
+  if(oid){cq=cq.eq('obra_id',oid);fq=fq.eq('obra_id',oid)}
+  const [cr,fr]=await Promise.all([cq,fq]);
+  if(cr.error||fr.error){console.warn('Despesas RH:',cr.error||fr.error);return}
+
+  const comps=cr.data||[];
+  const compById=new Map(comps.map(c=>[String(c.id),monthKey(c.competencia)]));
+  const compIds=comps.map(c=>c.id).filter(Boolean);
+  let rrows=[];
+  if(compIds.length){
+    let rq=sb().from('rh_reembolso_lancamentos').select('valor,competencia_id,colaborador_id,obra_id').in('competencia_id',compIds);
+    if(oid)rq=rq.eq('obra_id',oid);
+    const rr=await rq;
+    if(rr.error){console.warn('Despesas RH — reembolsos:',rr.error);return}
+    rrows=rr.data||[];
+  }
+
+  const frows=fr.data||[];
+  const rKey=x=>compById.get(String(x.competencia_id))||'';
+  const cur=keys[keys.length-1];
+  const rv=rrows.filter(x=>rKey(x)===cur);
+  const fv=frows.filter(x=>monthKey(x.competencia)===cur);
+  const rTotal=rv.reduce((s,x)=>s+Number(x.valor||0),0);
+  const fTotal=fv.reduce((s,x)=>s+Number(x.valor||0),0);
+
+  $('g360RhDespesasCompetencia')&&($('g360RhDespesasCompetencia').textContent=compLabel(cur));
+  $('g360RhKpiReemb')&&($('g360RhKpiReemb').textContent=brl(rTotal));
+  $('g360RhKpiFolga')&&($('g360RhKpiFolga').textContent=brl(fTotal));
+  $('g360RhKpiDespTotal')&&($('g360RhKpiDespTotal').textContent=brl(rTotal+fTotal));
+  $('g360RhKpiReembPessoas')&&($('g360RhKpiReembPessoas').textContent=new Set(rv.map(x=>x.colaborador_id).filter(Boolean)).size);
+
+  const ctx=$('chRhDespesas');
+  if(!ctx||!window.Chart)return;
+  const rSerie=keys.map(k=>rrows.filter(x=>rKey(x)===k).reduce((s,x)=>s+Number(x.valor||0),0));
+  const fSerie=keys.map(k=>frows.filter(x=>monthKey(x.competencia)===k).reduce((s,x)=>s+Number(x.valor||0),0));
+  chart?.destroy();
+  chart=new Chart(ctx,{type:'bar',data:{labels:keys.map(compLabel),datasets:[{label:'Reembolsos',data:rSerie},{label:'Folga de Campo',data:fSerie}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#ddd'}}},scales:{x:{ticks:{color:'#aaa'}},y:{ticks:{color:'#aaa',callback:v=>'R$ '+Number(v).toLocaleString('pt-BR')}}}}});
+}
 window.g360RhDespesasV234={load:loadExpenseDashboard};
 })();
 </script>
@@ -10202,15 +10374,19 @@ document.getElementById('goFormConcessaoBtn')?.addEventListener('click', ()=> fc
 function fcAbrirAcaoDaFolga(acao){
   fcAbrirView('formconcessao');
 
-  // Garante que a view já foi renderizada antes de acionar o modal interno.
+  // V271: abre a ação diretamente após a view existir, evitando o clique indireto
+  // que às vezes falhava quando a tela ainda estava renderizando.
   requestAnimationFrame(()=>{
     requestAnimationFrame(()=>{
-      const id=acao==='nao_programada'?'fcUnplannedBtn':'fcNewMonthBtn';
-      const btn=document.getElementById(id);
-      if(btn){
-        btn.click();
-      }else{
-        console.error('[G360] Ação de Folga de Campo não encontrada:',id);
+      try{
+        if(acao==='nao_programada'){
+          if(typeof fcOpenUnplannedModal==='function') return fcOpenUnplannedModal();
+        }else{
+          if(typeof fcOpenMonthModal==='function') return fcOpenMonthModal('create');
+        }
+        throw new Error('Ação interna não disponível.');
+      }catch(e){
+        console.error('[G360] Falha ao abrir ação de Folga de Campo:',e);
         alert('Não foi possível abrir a ação de Folga de Campo. Atualize a página e tente novamente.');
       }
     });
@@ -20484,6 +20660,92 @@ textarea:not([data-preserve-case="true"]),
 
   // Campos que precisarem manter caixa original podem usar data-preserve-case="true".
   window.g360UppercaseField = upperInput;
+})();
+</script>
+
+
+<script id="g360-folga-pagamentos-v273">
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const brl=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const labelComp=k=>{if(!/^\d{4}-\d{2}$/.test(String(k||'')))return'—';const [y,m]=k.split('-');return new Date(+y,+m-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'}).toUpperCase()};
+const sb=()=>window.g360SupabaseClient;
+let currentMonth='',dbRows=[];
+function months(){const m=(typeof fcProj!=='undefined'&&Array.isArray(fcProj.months))?[...fcProj.months]:[];return [...new Set(m.filter(x=>/^\d{4}-\d{2}$/.test(x)))].sort().reverse()}
+function includedNames(month){if(typeof fcProj==='undefined')return[];const list=fcProj.included?.[month];return Array.isArray(list)?list:[]}
+function findColabByName(nome){return (typeof ATIVOS!=='undefined'?ATIVOS:[]).find(c=>c.nome===nome)||null}
+function currentNome(){return $('g360FcPayColab')?.value||''}
+function allRows(month){return dbRows.filter(r=>String(r.competencia||'').slice(0,7)===month)}
+function personRows(){const nome=currentNome();return allRows(currentMonth).filter(r=>r.colaborador_nome===nome)}
+function clearForm(){
+  if($('g360FcPayDescricao'))$('g360FcPayDescricao').value='';
+  if($('g360FcPayData'))$('g360FcPayData').value=new Date().toISOString().slice(0,10);
+  if($('g360FcPayFornecedor'))$('g360FcPayFornecedor').value='';
+  if($('g360FcPayCategoria'))$('g360FcPayCategoria').value='PASSAGEM';
+  if($('g360FcPayValor'))$('g360FcPayValor').value='';
+  if($('g360FcPayObs'))$('g360FcPayObs').value='';
+}
+function fillSelectors(preferMonth){
+  const ms=months();
+  if(preferMonth&&ms.includes(preferMonth))currentMonth=preferMonth;
+  else if(!currentMonth||!ms.includes(currentMonth))currentMonth=(typeof fcProj!=='undefined'&&ms.includes(fcProj.current))?fcProj.current:(ms[0]||'');
+  const cs=$('g360FcPayComp');if(cs){cs.innerHTML=ms.length?ms.map(k=>`<option value="${k}">${labelComp(k)}</option>`).join(''):'<option value="">Nenhuma competência</option>';cs.value=currentMonth}
+  const nomes=includedNames(currentMonth).slice().sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const sel=$('g360FcPayColab'),old=sel?.value||'';
+  if(sel){sel.innerHTML='<option value="">Selecione...</option>'+nomes.map(n=>{const c=findColabByName(n);return`<option value="${esc(n)}">${esc(n)}${c?.matricula||c?.mat?' · '+esc(c.matricula||c.mat):''}</option>`}).join('');if(nomes.includes(old))sel.value=old}
+}
+async function obraId(){if(typeof fcSupabaseObraId==='function')return await fcSupabaseObraId();return window.G360_ACTIVE_OBRA_ID||window.g360GetSelectedObra?.()?.id||null}
+async function loadRows(){
+  if(!currentMonth||!sb()){dbRows=[];render(false);return}
+  const oid=await obraId();
+  let q=sb().from('folga_campo_despesas').select('*').eq('competencia',currentMonth+'-01').order('colaborador_nome').order('data_despesa').order('created_at');
+  if(oid)q=q.eq('obra_id',oid);
+  const r=await q;if(r.error)throw r.error;dbRows=r.data||[];render(false);
+}
+function render(refill=true){
+  if(refill)fillSelectors(currentMonth);
+  const rows=allRows(currentMonth),total=rows.reduce((s,r)=>s+Number(r.valor||0),0),nomesCom=new Set(rows.map(r=>r.colaborador_nome));
+  $('g360FcPayKpiComp')&&($('g360FcPayKpiComp').textContent=labelComp(currentMonth));
+  $('g360FcPayKpiTotal')&&($('g360FcPayKpiTotal').textContent=brl(total));
+  $('g360FcPayKpiPessoas')&&($('g360FcPayKpiPessoas').textContent=nomesCom.size);
+  $('g360FcPayKpiItens')&&($('g360FcPayKpiItens').textContent=rows.length);
+  const nome=currentNome(),c=findColabByName(nome),pr=personRows(),pt=pr.reduce((s,r)=>s+Number(r.valor||0),0);
+  $('g360FcPayPessoaTotal')&&($('g360FcPayPessoaTotal').textContent=brl(pt));
+  $('g360FcPayTabelaTitulo')&&($('g360FcPayTabelaTitulo').textContent=nome?`Despesas — ${nome}`:'Despesas do colaborador');
+  $('g360FcPayTabelaSub')&&($('g360FcPayTabelaSub').textContent=nome?(c?.funcao||'Função não informada'):'—');
+  if($('g360FcPayPessoaResumo'))$('g360FcPayPessoaResumo').innerHTML=nome?`<b>${esc(nome)}</b> · ${esc(c?.funcao||'')} · ${pr.length} despesa(s) · Total <b>${brl(pt)}</b>`:'Selecione um colaborador da competência para lançar ou consultar despesas.';
+  const body=$('g360FcPayBody');if(body){body.innerHTML=!nome?'<tr><td colspan="7"><div class="empty-state">Selecione um colaborador.</div></td></tr>':(!pr.length?'<tr><td colspan="7"><div class="empty-state">Nenhuma despesa lançada para este colaborador.</div></td></tr>':pr.map((r,i)=>`<tr><td>${String(i+1).padStart(2,'0')}</td><td>${esc(r.descricao||'')}</td><td>${r.data_despesa?new Date(r.data_despesa+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</td><td>${esc(r.fornecedor||'—')}</td><td>${esc(r.categoria||'—')}</td><td>${brl(r.valor)}</td><td><button type="button" class="crud-mini danger" data-fcpay-del="${esc(r.id)}">🗑 Excluir</button></td></tr>`).join(''));body.querySelectorAll('[data-fcpay-del]').forEach(b=>b.onclick=()=>delRow(b.dataset.fcpayDel))}
+  const groups={};rows.forEach(r=>{const k=r.colaborador_nome;if(!groups[k])groups[k]={nome:k,funcao:r.funcao||'',qtd:0,total:0};groups[k].qtd++;groups[k].total+=Number(r.valor||0)});
+  const rb=$('g360FcPayResumo');if(rb){const vals=Object.values(groups).sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));rb.innerHTML=vals.length?vals.map(g=>`<tr><td><div class="g360-reemb-resumo-nome"><button type="button" class="g360-reemb-pdf-mini" data-fcpay-pdf="${esc(g.nome)}" title="Gerar PDF individual">📄</button><b>${esc(g.nome)}</b></div></td><td>${esc(g.funcao)}</td><td>${g.qtd}</td><td><b>${brl(g.total)}</b></td></tr>`).join(''):'<tr><td colspan="4"><div class="empty-state">Nenhuma despesa lançada nesta competência.</div></td></tr>';rb.querySelectorAll('[data-fcpay-pdf]').forEach(b=>b.onclick=()=>exportPdf(b.dataset.fcpayPdf))}
+}
+async function currentUserId(){try{const r=await sb()?.auth?.getUser?.();return r?.data?.user?.id||null}catch(_){return null}}
+async function addRow(){
+  const nome=currentNome();if(!currentMonth)return alert('Abra ou selecione uma competência.');if(!nome)return alert('Selecione o colaborador.');
+  const c=findColabByName(nome);if(!c?.id)return alert('Colaborador não localizado no cadastro.');
+  const desc=$('g360FcPayDescricao')?.value.trim()||'',data=$('g360FcPayData')?.value||'',forn=$('g360FcPayFornecedor')?.value.trim()||'',cat=$('g360FcPayCategoria')?.value||'OUTROS',val=Number($('g360FcPayValor')?.value||0),obs=$('g360FcPayObs')?.value.trim()||'';
+  if(!desc)return alert('Informe a descrição da despesa.');if(!data)return alert('Informe a data da despesa.');if(!(val>0))return alert('Informe um valor válido.');
+  const oid=await obraId();if(!oid)return alert('Obra ativa não identificada.');const btn=$('g360FcPayIncluir');if(btn?.disabled)return;
+  try{if(btn){btn.disabled=true;btn.textContent='⏳ Incluindo...'}const uid=await currentUserId();const payload={obra_id:oid,competencia:currentMonth+'-01',colaborador_id:c.id,matricula:c.matricula||c.mat||null,colaborador_nome:c.nome,funcao:c.funcao||null,descricao:desc.toUpperCase(),data_despesa:data,fornecedor:forn.toUpperCase()||null,categoria:cat,valor:val,observacao:obs.toUpperCase()||null,created_by:uid};const r=await sb().from('folga_campo_despesas').insert(payload);if(r.error)throw r.error;await loadRows();clearForm();if(btn){btn.textContent='✓ Incluído';await new Promise(r=>setTimeout(r,350))}if(typeof loadExpenseDashboard==='function')loadExpenseDashboard()}catch(e){console.error(e);alert('Erro ao incluir despesa de Folga de Campo: '+(e?.message||e))}finally{if(btn){btn.disabled=false;btn.textContent='＋ Incluir'}}
+}
+async function delRow(id){if(!confirm('Excluir esta despesa da Folga de Campo?'))return;try{const r=await sb().from('folga_campo_despesas').delete().eq('id',id);if(r.error)throw r.error;await loadRows();if(typeof loadExpenseDashboard==='function')loadExpenseDashboard()}catch(e){alert('Erro ao excluir despesa: '+(e?.message||e))}}
+function fmtMoney(v){return Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function date2(v){if(!v)return'';const d=new Date(v+'T12:00:00');if(Number.isNaN(d.getTime()))return'';return`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(-2)}`}
+function exportPdf(nome){
+  const c=findColabByName(nome)||{nome,funcao:''};let pr=allRows(currentMonth).filter(r=>r.colaborador_nome===nome).sort((a,b)=>String(a.data_despesa||'').localeCompare(String(b.data_despesa||''))||String(a.created_at||'').localeCompare(String(b.created_at||'')));if(!pr.length)return alert('Não há despesas para este colaborador.');if(!window.jspdf?.jsPDF)return alert('Biblioteca PDF não carregada.');
+  const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape',unit:'pt',format:'a4'}),W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),peach=[252,211,174],black=[10,10,10],left=10,right=10,fullW=W-left-right,sx=v=>left+(v/998)*fullW;
+  doc.setDrawColor(...black);doc.setLineWidth(.6);doc.setFillColor(...peach);doc.rect(left,30,fullW,48,'FD');doc.setTextColor(...black);doc.setFont('helvetica','bold');doc.setFontSize(15.5);doc.text('PAGAMENTO DE DESPESAS - FOLGA DE CAMPO',W/2,60,{align:'center'});
+  const infoY=107,infoH=34,x0=left,x1=sx(48),x2=sx(554),x3=sx(613),x4=left+fullW;doc.setLineWidth(.6);doc.setFillColor(...peach);doc.rect(x0,infoY,x1-x0,infoH,'F');doc.rect(x2,infoY,x3-x2,infoH,'F');doc.setFillColor(255,255,255);doc.rect(x1,infoY,x2-x1,infoH,'F');doc.rect(x3,infoY,x4-x3,infoH,'F');doc.setDrawColor(...black);doc.rect(x0,infoY,fullW,infoH);[x1,x2,x3].forEach(x=>doc.line(x,infoY,x,infoY+infoH));doc.setFontSize(9.2);doc.setFont('helvetica','bold');doc.text('NOME:',x0+4,infoY+22);doc.text('FUNÇÃO',x2+5,infoY+22);doc.text(String(c.nome||nome).toUpperCase(),x1+5,infoY+22);doc.text(String(c.funcao||'').toUpperCase(),x3+5,infoY+22);
+  const tableY=170,headH=32,xs=[left,sx(48),sx(554),sx(613),sx(923),left+fullW],widths=xs.slice(1).map((x,i)=>x-xs[i]),bodyFont=8.4;doc.setFont('helvetica','normal');doc.setFontSize(bodyFont);const prepared=pr.map(r=>{const d=doc.splitTextToSize(String(r.descricao||'').toUpperCase(),widths[1]-10).slice(0,3),f=doc.splitTextToSize(String(r.fornecedor||'').toUpperCase(),widths[3]-10).slice(0,3),lines=Math.max(1,d.length,f.length);return{r,d,f,rowH:lines===1?25:(lines===2?36:47)}}),bodyH=prepared.reduce((s,x)=>s+x.rowH,0);
+  doc.setFillColor(...peach);doc.setLineWidth(.6);doc.rect(left,tableY,fullW,headH,'FD');doc.rect(left,tableY+headH,fullW,bodyH);for(let i=1;i<xs.length-1;i++)doc.line(xs[i],tableY,xs[i],tableY+headH+bodyH);['ITEM','DESCRIÇÃO','DATA','FORNECEDOR','VALOR'].forEach((h,i)=>doc.text(h,(xs[i]+xs[i+1])/2,tableY+20,{align:'center'}));doc.setFont('helvetica','normal');doc.setFontSize(bodyFont);let y=tableY+headH;prepared.forEach(({r,d,f,rowH},i)=>{const cy=y+rowH/2+bodyFont*.32;if(i>0){doc.setLineWidth(.3);doc.line(left,y,left+fullW,y)}doc.text(String(i+1).padStart(2,'0'),(xs[0]+xs[1])/2,cy,{align:'center'});const ls=bodyFont+2;doc.text(d,xs[1]+5,cy-((d.length-1)*ls/2));doc.text(date2(r.data_despesa),(xs[2]+xs[3])/2,cy,{align:'center'});doc.text(f,xs[3]+5,cy-((f.length-1)*ls/2));doc.text('R$',xs[4]+5,cy);doc.text(fmtMoney(r.valor),xs[5]-5,cy,{align:'right'});y+=rowH});
+  const total=pr.reduce((s,r)=>s+Number(r.valor||0),0),totalY=tableY+headH+bodyH,totalH=Math.max(28,Math.min(34,H-totalY-8));doc.setLineWidth(.6);doc.rect(xs[4],totalY,widths[4],totalH);doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.text('R$',xs[4]+5,totalY+totalH*.64);doc.text(fmtMoney(total),xs[5]-5,totalY+totalH*.64,{align:'right'});doc.save(`folga_campo_${String(nome).replace(/[^A-Za-z0-9À-ÿ]+/g,'_')}_${currentMonth}.pdf`);
+}
+function sheetName(s,used){let n=String(s||'Pessoa').replace(/[\\\/?*\[\]:]/g,' ').replace(/\s+/g,' ').trim().slice(0,31)||'Pessoa',base=n,i=2;while(used.has(n))n=(base.slice(0,27)+' '+i++).slice(0,31);used.add(n);return n}
+function exportExcel(){const rows=allRows(currentMonth);if(!rows.length)return alert('Não há despesas nesta competência.');if(!window.XLSX?.utils)return alert('Biblioteca Excel não carregada.');const wb=XLSX.utils.book_new(),used=new Set(),groups={};rows.forEach(r=>{const k=r.colaborador_nome;if(!groups[k])groups[k]={nome:k,funcao:r.funcao||'',itens:[]};groups[k].itens.push(r)});const pessoas=Object.values(groups).sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));let geral=[['PAGAMENTO DE DESPESAS - FOLGA DE CAMPO'],[],['ORDEM','NOME COLABORADOR','FUNÇÃO','VALOR'],...pessoas.map((g,i)=>[String(i+1).padStart(2,'0'),g.nome,g.funcao,g.itens.reduce((s,r)=>s+Number(r.valor||0),0)])];let ws=XLSX.utils.aoa_to_sheet(geral);ws['!cols']=[{wch:10},{wch:40},{wch:34},{wch:16}];for(let r=4;r<=geral.length;r++)if(ws[`D${r}`])ws[`D${r}`].z='R$ #,##0.00';XLSX.utils.book_append_sheet(wb,ws,'RELATORIO GERAL');used.add('RELATORIO GERAL');pessoas.forEach(g=>{const itens=[...g.itens].sort((a,b)=>String(a.data_despesa||'').localeCompare(String(b.data_despesa||''))),a=[['PAGAMENTO DE DESPESAS - FOLGA DE CAMPO'],[],['NOME:',g.nome,'FUNÇÃO',g.funcao],[],['ITEM','DESCRIÇÃO','DATA','FORNECEDOR','VALOR'],...itens.map((r,i)=>[String(i+1).padStart(2,'0'),r.descricao,r.data_despesa?new Date(r.data_despesa+'T12:00:00'):null,r.fornecedor||'',Number(r.valor||0)])],sh=XLSX.utils.aoa_to_sheet(a);sh['!cols']=[{wch:9},{wch:58},{wch:14},{wch:32},{wch:16}];for(let r=6;r<=a.length;r++){if(sh[`C${r}`])sh[`C${r}`].z='dd/mm/yyyy';if(sh[`E${r}`])sh[`E${r}`].z='R$ #,##0.00'}XLSX.utils.book_append_sheet(wb,sh,sheetName(g.nome,used))});XLSX.writeFile(wb,`PAGAMENTO_FOLGA_CAMPO_${currentMonth}.xlsx`)}
+async function init(){if(!$('g360FcPayComp')||!sb())return;currentMonth=(typeof fcProj!=='undefined'&&fcProj.current)||months()[0]||'';clearForm();fillSelectors(currentMonth);try{await loadRows()}catch(e){console.error(e);alert('Falha ao carregar despesas da Folga de Campo: '+(e?.message||e))}$('g360FcPayComp').onchange=async()=>{currentMonth=$('g360FcPayComp').value;if(typeof fcSwitchMonth==='function'&&fcProj.months.includes(currentMonth))fcSwitchMonth(currentMonth);await loadRows()};$('g360FcPayColab').onchange=()=>render(false);$('g360FcPayLimpar').onclick=clearForm;$('g360FcPayIncluir').onclick=addRow;$('g360FcPayExcel').onclick=exportExcel;$('g360FcPayTermo').onclick=()=>typeof fcAbrirView==='function'&&fcAbrirView('formconcessao');$('g360FcPayNovaComp').onclick=()=>typeof fcAbrirAcaoDaFolga==='function'&&fcAbrirAcaoDaFolga('competencia');document.querySelector('.side-link[data-view="baixadas"]')?.addEventListener('click',()=>setTimeout(async()=>{currentMonth=(typeof fcProj!=='undefined'&&fcProj.current)||currentMonth;fillSelectors(currentMonth);try{await loadRows()}catch(e){console.error(e)}},150))}
+window.g360FolgaPagamentosV273={init,refresh:async()=>{fillSelectors(currentMonth);await loadRows()},exportPdf};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,0));else setTimeout(init,0);
 })();
 </script>
 
