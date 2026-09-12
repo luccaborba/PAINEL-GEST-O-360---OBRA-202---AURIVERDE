@@ -1,5 +1,6 @@
+<!-- V245: Corrige Forçar novo login de todos — elimina referência fora de escopo a users -->
 <!DOCTYPE html>
-<!-- V243: Reembolsos — PDF individual por botão ao lado do nome no Resumo da Competência; Excel somente consolidado -->
+<!-- V244: Reembolsos — PDF fiel ao modelo enviado; Excel com consolidado + abas individuais -->
 <!-- V242: Reembolsos — PDF individual no Resumo da Competência; Excel consolidado permanece no topo; preserva V241 -->
 <!-- V235: RH separa quadro próprio de terceiros; inativação de terceiro não conta como demissão -->
 <!-- V234: Controle de Reembolsos RH + Dashboard de despesas RH -->
@@ -2170,7 +2171,7 @@ html.g360-ui-ready .content-col {
           <div class="g360-reemb-toolbar-grid">
             <label>Competência<select id="g360ReembCompSelect"><option value="">Carregando...</option></select></label>
             <label>Colaborador<select id="g360ReembColab"><option value="">Selecione...</option></select></label>
-            <div class="g360-reemb-export-actions"><button type="button" class="clear-btn" id="g360ReembExcelComp">📊 Excel consolidado</button></div>
+            <div class="g360-reemb-export-actions"><button type="button" class="clear-btn" id="g360ReembExcelComp">📊 Excel consolidado + individuais</button></div>
           </div>
           <div class="g360-reemb-person" id="g360ReembPessoaResumo">Selecione um colaborador para lançar ou consultar despesas.</div>
         </section>
@@ -9779,7 +9780,7 @@ function exportExcel(){
   if(!rows.length)return alert('Não há lançamentos nesta competência.');
   if(!window.XLSX?.utils)return alert('Biblioteca Excel não carregada.');
 
-  const wb=XLSX.utils.book_new();
+  const wb=XLSX.utils.book_new(),used=new Set();
   const groups={};
 
   rows.forEach(r=>{
@@ -9791,7 +9792,7 @@ function exportExcel(){
   const pessoas=Object.values(groups).sort((a,b)=>String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR'));
   const totalGeral=rows.reduce((s,r)=>s+Number(r.valor||0),0);
 
-  // EXCEL CONSOLIDADO — uma única aba com o resumo da competência.
+  // PRIMEIRA ABA — consolidado da competência.
   const geral=[
     ['RELAÇÃO DESPESAS DE VIAGEM / REEMBOLSO',null,null,null],
     [null,null,null,null],
@@ -9806,11 +9807,50 @@ function exportExcel(){
     [null,null,null,null]
   ];
 
-  const ws=XLSX.utils.aoa_to_sheet(geral);
+  let ws=XLSX.utils.aoa_to_sheet(geral);
   const geralTotalRow=geral.length;
   ws[`D${geralTotalRow}`]={t:'n',f:`SUM(D4:D${3+pessoas.length})`,v:totalGeral,z:'R$ #,##0.00'};
   reembApplyModelLayout(ws,'geral',geralTotalRow);
   XLSX.utils.book_append_sheet(wb,ws,'RELATORIO GERAL');
+  used.add('RELATORIO GERAL');
+
+  // ABAS INDIVIDUAIS — uma aba por colaborador.
+  pessoas.forEach(g=>{
+    const itens=[...(g.itens||[])].sort((a,b)=>
+      String(a.data_despesa||'').localeCompare(String(b.data_despesa||'')) ||
+      String(a.created_at||'').localeCompare(String(b.created_at||''))
+    );
+
+    const a=[
+      ['RELAÇÃO DESPESAS DE VIAGEM / REEMBOLSO',null,null,null,null],
+      [null,null,null,null,null],
+      ['NOME:',String(g.nome||'').toUpperCase(),'FUNÇÃO',String(g.funcao||'').toUpperCase(),null],
+      [null,null,null,null,null],
+      ['ITEM','DESCRIÇÃO','DATA','FORNECEDOR','VALOR'],
+      ...itens.map((r,i)=>[
+        String(i+1).padStart(2,'0'),
+        String(r.descricao||'').toUpperCase(),
+        r.data_despesa ? new Date(r.data_despesa+'T12:00:00') : null,
+        String(r.fornecedor||'').toUpperCase(),
+        Number(r.valor||0)
+      ]),
+      [null,null,null,null,null],
+      [null,null,null,null,null]
+    ];
+
+    const s=XLSX.utils.aoa_to_sheet(a);
+    const firstDataRow=6;
+    const lastDataRow=5+itens.length;
+    const totalRow=a.length;
+    s[`E${totalRow}`]={
+      t:'n',
+      f:`SUM(E${firstDataRow}:E${Math.max(firstDataRow,lastDataRow)})`,
+      v:itens.reduce((sum,r)=>sum+Number(r.valor||0),0),
+      z:'R$ #,##0.00'
+    };
+    reembApplyModelLayout(s,'pessoa',totalRow);
+    XLSX.utils.book_append_sheet(wb,s,sheetName(g.nome,used));
+  });
 
   XLSX.writeFile(wb,`RELATORIO_REEMBOLSOS_${monthKey(currentComp.competencia)}.xlsx`);
 }
@@ -9821,11 +9861,7 @@ function exportPdfPessoa(targetKey){
     c=colabs.find(x=>String(x.id)===key)||null;
     pr=rows.filter(r=>String(r.colaborador_id||r.colaborador_nome)===key);
     if(!c&&pr.length){
-      c={
-        id:pr[0].colaborador_id||null,
-        nome:pr[0].colaborador_nome||'COLABORADOR',
-        funcao:pr[0].funcao||''
-      };
+      c={id:pr[0].colaborador_id||null,nome:pr[0].colaborador_nome||'COLABORADOR',funcao:pr[0].funcao||''};
     }
   }else{
     c=selectedColab();
@@ -9844,64 +9880,90 @@ function exportPdfPessoa(targetKey){
   const doc=new jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
   const W=doc.internal.pageSize.getWidth();
   const H=doc.internal.pageSize.getHeight();
-  const margin=24;
+  const peach=[252,211,174];
+  const black=[10,10,10];
+  const left=11,right=11;
+  const fullW=W-left-right;
 
-  doc.setFillColor(252,211,174);
-  doc.rect(margin,24,W-(margin*2),46,'F');
-  doc.setDrawColor(20);
-  doc.rect(margin,24,W-(margin*2),46);
-  doc.setTextColor(20);
+  // Cabeçalho — proporções do PDF-modelo enviado.
+  doc.setDrawColor(...black); doc.setLineWidth(2.5);
+  doc.setFillColor(...peach);
+  doc.rect(left,31,fullW,62,'FD');
+  doc.setTextColor(...black);
   doc.setFont('helvetica','bold');
-  doc.setFontSize(15);
-  doc.text('RELAÇÃO DESPESAS DE VIAGEM / REEMBOLSO',W/2,53,{align:'center'});
+  doc.setFontSize(17);
+  doc.text('RELAÇÃO DESPESAS DE VIAGEM / REEMBOLSO',W/2,69,{align:'center'});
 
-  doc.setFontSize(9.5);
-  doc.rect(margin,88,W-(margin*2),32);
-  doc.text('NOME:',margin+7,108);
+  // Faixa NOME / FUNÇÃO.
+  const infoY=132, infoH=42;
+  const nomeLabelW=48, funcX=466, funcLabelW=58;
+  doc.setLineWidth(2.5);
+  doc.rect(left,infoY,fullW,infoH);
+  doc.line(left+nomeLabelW,infoY,left+nomeLabelW,infoY+infoH);
+  doc.line(funcX,infoY,funcX,infoY+infoH);
+  doc.line(funcX+funcLabelW,infoY,funcX+funcLabelW,infoY+infoH);
+  doc.setFont('helvetica','bold'); doc.setFontSize(10);
+  doc.text('NOME:',left+5,158);
+  doc.text('FUNÇÃO',funcX+6,158);
   doc.setFont('helvetica','normal');
-  doc.text(String(c.nome||''),margin+47,108);
-  doc.setFont('helvetica','bold');
-  doc.text('FUNÇÃO:',W*0.58,108);
+  doc.text(String(c.nome||'').toUpperCase(),left+nomeLabelW+6,158);
+  doc.text(String(c.funcao||'').toUpperCase(),funcX+funcLabelW+6,158);
+
+  // Tabela principal — mesma estrutura visual do modelo.
+  const tableX=left, tableY=211;
+  const widths=[48,416,62,255,49];
+  const xs=[tableX]; widths.forEach(w=>xs.push(xs[xs.length-1]+w));
+  const headH=39;
+  const maxBodyH=H-tableY-headH-52;
+  const rowH=Math.max(14,Math.min(39,maxBodyH/Math.max(pr.length+1,4)));
+  const bodyCount=Math.max(pr.length+1,3); // preserva linha vazia como no modelo.
+  const bodyH=rowH*bodyCount;
+
+  doc.setFillColor(...peach); doc.setLineWidth(2.5);
+  doc.rect(tableX,tableY,fullW,headH,'FD');
+  for(let i=1;i<xs.length-1;i++) doc.line(xs[i],tableY,xs[i],tableY+headH+bodyH);
+  doc.rect(tableX,tableY+headH,fullW,bodyH);
+
+  const headers=['ITEM','DESCRIÇÃO','DATA','FORNECEDOR','VALOR'];
+  doc.setFont('helvetica','bold'); doc.setFontSize(10.5);
+  headers.forEach((h,i)=>doc.text(h,(xs[i]+xs[i+1])/2,tableY+25,{align:'center'}));
+
   doc.setFont('helvetica','normal');
-  doc.text(String(c.funcao||''),W*0.64,108);
+  doc.setFontSize(Math.max(7,Math.min(10,rowH*0.34)));
+  const bodyTop=tableY+headH;
+  const fmtMoney=v=>Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 
-  // Ajuste automático para manter o relatório individual em uma única página A4.
-  const qtd=Math.max(1,pr.length);
-  const disponivel=Math.max(180,H-170);
-  const alturaAlvo=Math.max(8,Math.min(22,disponivel/(qtd+2)));
-  const fontSize=Math.max(5.5,Math.min(9,alturaAlvo*0.42));
-  const cellPadding=Math.max(1.2,Math.min(5,alturaAlvo*0.18));
-
-  doc.autoTable({
-    startY:140,
-    margin:{left:margin,right:margin,bottom:34},
-    head:[['ITEM','DESCRIÇÃO','DATA','FORNECEDOR','VALOR']],
-    body:pr.map((r,i)=>[
-      String(i+1).padStart(2,'0'),
-      r.descricao,
-      r.data_despesa?new Date(r.data_despesa+'T12:00:00').toLocaleDateString('pt-BR'):'',
-      r.fornecedor||'',
-      brl(r.valor)
-    ]),
-    theme:'grid',
-    pageBreak:'avoid',
-    rowPageBreak:'avoid',
-    styles:{fontSize,cellPadding,textColor:[20,20,20],overflow:'linebreak',valign:'middle'},
-    headStyles:{fillColor:[252,211,174],textColor:[20,20,20],fontStyle:'bold',fontSize:Math.max(fontSize,6)},
-    columnStyles:{
-      0:{cellWidth:42,halign:'center'},
-      1:{cellWidth:350},
-      2:{cellWidth:74,halign:'center'},
-      3:{cellWidth:190},
-      4:{cellWidth:88,halign:'right'}
+  pr.forEach((r,i)=>{
+    const y0=bodyTop+i*rowH;
+    const cy=y0+rowH*0.64;
+    if(i>0){
+      doc.setLineWidth(0.55); doc.setLineDashPattern([1.5,1.5],0);
+      doc.line(tableX,y0,tableX+fullW,y0);
+      doc.setLineDashPattern([],0);
     }
+    const desc=String(r.descricao||'').toUpperCase();
+    const forn=String(r.fornecedor||'').toUpperCase();
+    const data=r.data_despesa?new Date(r.data_despesa+'T12:00:00').toLocaleDateString('pt-BR').replace(/\//g,'/'):'';
+    doc.text(String(i+1).padStart(2,'0'),(xs[0]+xs[1])/2,cy,{align:'center'});
+    const dLines=doc.splitTextToSize(desc,widths[1]-8).slice(0,2);
+    const fLines=doc.splitTextToSize(forn,widths[3]-8).slice(0,2);
+    doc.text(dLines,xs[1]+5,cy-(dLines.length-1)*4);
+    doc.text(data,(xs[2]+xs[3])/2,cy,{align:'center'});
+    doc.text(fLines,xs[3]+5,cy-(fLines.length-1)*4);
+    doc.text('R$',xs[4]+4,cy);
+    doc.text(fmtMoney(r.valor),xs[5]-5,cy,{align:'right'});
   });
 
-  const y=Math.min(H-24,(doc.lastAutoTable?.finalY||200)+14);
+  // Total exatamente abaixo da última coluna de valor.
   const total=pr.reduce((s,r)=>s+Number(r.valor||0),0);
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(10.5);
-  doc.text(`TOTAL: ${brl(total)}`,W-margin,y,{align:'right'});
+  const totalY=bodyTop+bodyH;
+  const totalH=Math.min(40,H-totalY-8);
+  doc.setLineWidth(2.5);
+  doc.rect(xs[4],totalY,widths[4],totalH);
+  doc.setFont('helvetica','bold'); doc.setFontSize(10.5);
+  doc.text('R$',xs[4]+4,totalY+totalH*0.65);
+  doc.text(fmtMoney(total),xs[5]-5,totalY+totalH*0.65,{align:'right'});
+
   doc.save(`reembolso_${String(c.nome).replace(/[^A-Za-z0-9À-ÿ]+/g,'_')}_${monthKey(currentComp.competencia)}.pdf`);
 }
 async function init(){if(!$('view-rhdpReembolsos')||!sb())return;const now=new Date().toISOString().slice(0,7);$('g360ReembCompNova').value=now;$('g360ReembData').value=new Date().toISOString().slice(0,10);try{await Promise.all([loadColabs(),loadComps(now)]);await loadRows()}catch(e){console.error(e);alert('Falha ao carregar reembolsos: '+(e?.message||e))}if(!$('g360ReembAbrirComp').dataset.bound){$('g360ReembAbrirComp').dataset.bound='1';$('g360ReembAbrirComp').onclick=openComp;$('g360ReembCompSelect').onchange=async()=>{currentComp=comps.find(c=>String(c.id)===String($('g360ReembCompSelect').value))||null;await loadRows()};$('g360ReembColab').onchange=render;$('g360ReembAdicionar').onclick=addRow;$('g360ReembLimpar').onclick=clearForm;$('g360ReembExcelComp').onclick=exportExcel}}
@@ -14996,6 +15058,9 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
       const obraNome=names.length?names.join(' • '):(ids.length?`${ids.length} obra(s) vinculada(s)`:'');
       return {...x,obra:x.obra_id,obraIds:ids,obraNome};
     });
+    // V245: disponibiliza apenas a lista administrativa necessária ao controle de sessão.
+    // O módulo de sessão roda em outro escopo e não pode acessar a variável local `users` diretamente.
+    window.g360AdminUsersCache=users.map(u=>({id:u.id,ativo:u.ativo,master:u.master,nome:u.nome,email:u.email}));
 
     perms={};
     ((up.error?[]:up.data)||[]).forEach(x=>{
@@ -17768,8 +17833,21 @@ window.g360FechamentoV57={
         currentId=String(data?.user?.id||'');
       }catch(_){}
 
+      // V245 — `users` pertence ao escopo do módulo de Usuários & Permissões.
+      // Usa o cache público alimentado por loadAll(); se ainda não existir, consulta profiles.
+      let listaUsuarios=Array.isArray(window.g360AdminUsersCache)?window.g360AdminUsersCache:[];
+      if(!listaUsuarios.length){
+        try{
+          const {data,error}=await c.from('profiles').select('id,ativo,master,nome,email');
+          if(error)throw error;
+          listaUsuarios=Array.isArray(data)?data:[];
+        }catch(e){
+          console.warn('[G360 V245] não foi possível recarregar profiles para forçar login em lote:',e);
+        }
+      }
+
       const ids=[...new Set(
-        (users||[])
+        listaUsuarios
           .filter(u=>u?.id && u.ativo!==false && String(u.id)!==currentId)
           .map(u=>String(u.id))
       )];
