@@ -1,8 +1,14 @@
+<!-- V266: Patrimônio dos Alojamentos — filtro principal em checkbox; remove painel duplicado de inventário; PDF/Excel sob o filtro -->
+<!-- V262: Patrimônio dos Alojamentos — downloads PDF/Excel com filtro por caixas de seleção -->
+<!-- V257: Patrimônio dos alojamentos — removido botão legado "+ Cadastrar bem"; cadastro de itens permanece no módulo próprio -->
 <!-- V254: PDF Reembolsos — nome/função em negrito; corpo das despesas normal; cabeçalho e total em negrito -->
 <!-- V253: PDF Reembolsos — rótulos NOME/FUNÇÃO em laranja; campos de conteúdo em branco -->
 <!-- V247: MAIÚSCULAS automáticas em campos textuais; preserva e-mail, senha, URL/link e campos técnicos -->
 <!-- V245: Corrige Forçar novo login de todos — elimina referência fora de escopo a users -->
 <!DOCTYPE html>
+<!-- V265: baseado integralmente na V262; ajuste SOMENTE visual do filtro de alojamentos -->
+<!-- V260: patrimônio — permite o mesmo item em vários alojamentos; fallback seguro quando RPC antiga bloqueia segunda alocação -->
+<!-- V259: Cadastro de Itens do Patrimônio — edição exclusiva MASTER + PDF para conferência de inventário -->
 <!-- V252: PDF reembolso sem linha vazia; altura por conteúdo -->
 <!-- V244: Reembolsos — PDF fiel ao modelo enviado; Excel com consolidado + abas individuais -->
 <!-- V242: Reembolsos — PDF individual no Resumo da Competência; Excel consolidado permanece no topo; preserva V241 -->
@@ -589,6 +595,17 @@ try{window.g360PrimeiroAcessoPendente()}catch(_){}})();</script>
 @media(max-width:1100px){#view-patrimonioEstoque .epi-stock-toolbar{grid-template-columns:1fr 1fr 1fr}#view-patrimonioEstoque #patStockEntrada{grid-column:auto}#view-patrimonioEstoque .epi-stock-kpis{grid-template-columns:1fr 1fr}}
 
 
+
+/* V266 — filtro de alojamentos integrado à listagem + exportações abaixo */
+.g360-pat-main-filters-v266{align-items:flex-start}
+.g360-pat-filter-export-v266{display:flex;flex-direction:column;gap:6px;min-width:320px;max-width:520px;flex:0 1 520px}
+.g360-pat-filter-export-v266 .g360-pat-rel-filter-wrap{display:block;width:100%}
+.g360-pat-filter-export-v266 #g360PatRelFiltroBtnV261{width:100%;display:flex;align-items:center;justify-content:space-between;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.g360-pat-filter-export-v266 .g360-pat-rel-filter-panel{left:0;right:auto;width:360px;max-width:min(420px,90vw)}
+.g360-pat-export-under-v266{display:flex;gap:6px}
+.g360-pat-export-under-v266 .clear-btn{margin:0;padding:6px 12px;min-width:84px}
+.g360-pat-filter-export-v266 .g360-pat-rel-v258-help{font-size:10px;color:var(--ink-dim);min-height:12px}
+@media(max-width:900px){.g360-pat-filter-export-v266{min-width:100%;max-width:none;flex:1 1 100%}.g360-pat-filter-export-v266 .g360-pat-rel-filter-panel{width:min(360px,92vw)}}
 </style>
 
 
@@ -1871,6 +1888,20 @@ html.g360-ui-ready .content-col {
 .g360-pat-v240-action{display:flex;align-items:end;padding-bottom:1px}
 .g360-pat-v240-note{margin-top:9px;font-size:10.8px;color:var(--ink-soft)}
 @media(max-width:900px){.g360-pat-v240-grid,.g360-pat-v240-grid4,.g360-pat-v240-grid5{grid-template-columns:1fr}.g360-pat-v240-action button{width:100%}}
+
+.g360-pat-rel-v258{margin-top:0}
+.g360-pat-rel-v258-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.g360-pat-rel-v258-title{font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.35px}
+.g360-pat-rel-v258-actions{display:flex;gap:8px;flex-wrap:wrap}
+.g360-pat-rel-v258-checks{display:flex;flex-direction:column;gap:0;padding:0;background:transparent;border:0}
+/* Usa exatamente o mesmo padrão visual dos checkboxes do filtro de Situação dos Contratos */
+.g360-pat-rel-v258-checks .tipo-filter-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink);padding:5px 4px;border-radius:4px;cursor:pointer;font-family:var(--font-body);text-transform:none;letter-spacing:0;font-weight:400;line-height:normal;min-height:0;border:0}
+.g360-pat-rel-v258-checks .tipo-filter-item:hover{background:var(--asphalt)}
+.g360-pat-rel-v258-checks .tipo-filter-item input[type=checkbox]{appearance:auto;-webkit-appearance:auto;accent-color:var(--yellow);width:14px;height:14px;flex-shrink:0;margin:0;cursor:pointer}
+.g360-pat-rel-v258-help{font-size:10.8px;color:var(--ink-soft);margin-top:8px}
+.g360-pat-rel-filter-panel{width:360px;max-width:min(92vw,360px)}
+.g360-pat-rel-filter-wrap{z-index:25}
+@media(max-width:700px){.g360-pat-rel-v258-actions{width:100%}.g360-pat-rel-filter-wrap{width:100%}.g360-pat-rel-v258-actions>.crud-primary{flex:1}.g360-pat-rel-filter-wrap>.clear-btn{width:100%}.g360-pat-rel-filter-panel{left:0;right:auto;width:100%}}
 </style>
 
 <style id="g360-cascade-arrow-padronizado-v241">
@@ -2339,6 +2370,7 @@ html.g360-ui-ready .content-col {
         <section class="panel">
           <div class="filters">
             <input id="g360PatItemBuscaV240" type="text" placeholder="Buscar por código ou item...">
+            <button type="button" class="crud-primary" id="g360PatItemListaPdfV259">📄 PDF — Lista de itens</button>
             <span class="count-badge" id="g360PatItemCountV240">0 item(ns)</span>
           </div>
           <div class="table-scroll">
@@ -2383,9 +2415,25 @@ html.g360-ui-ready .content-col {
         </section>
 
         <section class="panel">
-          <div class="filters">
+          <div class="filters g360-pat-main-filters-v266">
             <input id="g360PatAlocBuscaV240" type="text" placeholder="Buscar item ou alojamento...">
-            <select id="g360PatAlocFiltroAlojV240"><option value="">Todos os alojamentos</option></select>
+            <div class="g360-pat-filter-export-v266">
+              <span class="tipo-filter-wrap g360-pat-rel-filter-wrap" style="margin-left:0;">
+                <button class="clear-btn" id="g360PatRelFiltroBtnV261" type="button">Todos os alojamentos ▾</button>
+                <div id="g360PatRelFiltroPanelV261" class="tipo-filter-panel g360-pat-rel-filter-panel">
+                  <div class="tipo-filter-actions">
+                    <button id="g360PatRelTodosBtnV261" type="button">Selecionar todos</button>
+                    <button id="g360PatRelNenhumBtnV261" type="button">Limpar</button>
+                  </div>
+                  <div class="g360-pat-rel-v258-checks" id="g360PatRelChecksV258"></div>
+                </div>
+              </span>
+              <div class="g360-pat-export-under-v266">
+                <button class="clear-btn" type="button" id="g360PatRelPdfV258">📄 PDF</button>
+                <button class="clear-btn" type="button" id="g360PatRelExcelV258">📊 EXCEL</button>
+              </div>
+              <div class="g360-pat-rel-v258-help" id="g360PatRelResumoV258"></div>
+            </div>
             <span class="count-badge" id="g360PatAlocCountV240">0 registro(s)</span>
           </div>
           <div class="table-scroll">
@@ -14626,8 +14674,8 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
     ['patBusca','patAlojFiltro','patCategoriaFiltro','patEstadoFiltro'].forEach(id=>{const e=document.getElementById(id);if(e)e.addEventListener(id==='patBusca'?'input':'change',renderPatrimonio)});
     const l=document.getElementById('patLimparFiltro');if(l)l.onclick=()=>{patBusca.value='';patAlojFiltro.value='';patCategoriaFiltro.value='';patEstadoFiltro.value='';renderPatrimonio()};
     const ex=document.getElementById('patExportCsv');if(ex)ex.onclick=()=>{const rows=patFiltered(), cols=['codigo_patrimonio','descricao','categoria','marca','modelo','numero_serie','alojamento_codigo','comodo','quantidade','valor_unitario','estado_conservacao','status','responsavel','observacao'];const csv=[cols.join(';'),...rows.map(r=>cols.map(c=>'"'+String(r[c]??'').replace(/"/g,'""')+'"').join(';'))].join('\n');const b=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='inventario_patrimonio.csv';a.click();URL.revokeObjectURL(u)};
-    const v=document.getElementById('view-patrimonio');if(v&&!v.querySelector('.g360-pat-actions'))v.insertAdjacentHTML('afterbegin','<div class="g360-pat-actions"><button id="g360PatCad">＋ Cadastrar bem</button><button id="g360PatMov">↔ Registrar movimentação</button></div>');
-    const pc=document.getElementById('g360PatCad');if(pc)pc.onclick=()=>openCrud('patrimonio');const pm=document.getElementById('g360PatMov');if(pm)pm.onclick=()=>openCrud('movimentacoes');
+    const v=document.getElementById('view-patrimonio');if(v&&!v.querySelector('.g360-pat-actions'))v.insertAdjacentHTML('afterbegin','<div class="g360-pat-actions"><button id="g360PatMov">↔ Registrar movimentação</button></div>');
+    const pm=document.getElementById('g360PatMov');if(pm)pm.onclick=()=>openCrud('movimentacoes');
     const invNovo=document.getElementById('g360PatInvNovo');if(invNovo)invNovo.onclick=()=>openCrud('patrimonio');
     ['patInvBusca','patInvCategoria','patInvStatus'].forEach(id=>{const e=document.getElementById(id);if(e)e.addEventListener(id==='patInvBusca'?'input':'change',renderPatrimonioInventario)});
     const il=document.getElementById('patInvLimpar');if(il)il.onclick=()=>{patInvBusca.value='';patInvCategoria.value='';patInvStatus.value='';renderPatrimonioInventario()};
@@ -19861,14 +19909,26 @@ const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const sb=()=>window.g360SupabaseClient;
 const obraId=()=>window.g360GetSelectedObra?.()?.id||window.G360_ACTIVE_OBRA_ID||null;
-let itens=[],alocs=[],alojs=[];
+let itens=[],alocs=[],alojs=[],isMaster=false;
 
 function alojNome(a){return [a.descricao,a.contrato_codigo].filter(Boolean).join(' · ')||'ALOJAMENTO';}
 function fmtQtd(v){const n=Number(v||0);return Number.isInteger(n)?String(n):n.toLocaleString('pt-BR',{maximumFractionDigits:2});}
 
+async function loadMasterV259(){
+  try{
+    const client=sb(); if(!client){isMaster=false;return false;}
+    const {data:{session}}=await client.auth.getSession();
+    if(!session?.user?.id){isMaster=false;return false;}
+    const r=await client.from('profiles').select('master').eq('id',session.user.id).maybeSingle();
+    isMaster=!!r.data?.master;
+    return isMaster;
+  }catch(_){isMaster=false;return false;}
+}
+
 async function loadBase(){
   const oid=obraId();
   if(!sb())throw new Error('Supabase não inicializado.');
+  await loadMasterV259();
   let qi=sb().from('patrimonio_catalogo').select('*').order('descricao');
   let qa=sb().from('patrimonio_alocacoes').select('id,obra_id,item_id,alojamento_id,quantidade,patrimonio_catalogo(id,codigo_item,descricao,unidade),alojamentos(id,descricao,contrato_codigo)').order('created_at');
   let ql=sb().from('alojamentos').select('id,descricao,contrato_codigo,status').order('descricao');
@@ -19887,16 +19947,11 @@ function renderAll(){
   const alojOpts='<option value="">Selecione...</option>'+alojs.map(a=>`<option value="${esc(a.id)}">${esc(alojNome(a))}</option>`).join('');
   if($('g360PatAlocAlojV240'))$('g360PatAlocAlojV240').innerHTML=alojOpts;
   if($('g360PatTransDestinoV240'))$('g360PatTransDestinoV240').innerHTML=alojOpts;
-  if($('g360PatAlocFiltroAlojV240')){
-    const cur=$('g360PatAlocFiltroAlojV240').value;
-    $('g360PatAlocFiltroAlojV240').innerHTML='<option value="">Todos os alojamentos</option>'+alojs.map(a=>`<option value="${esc(a.id)}">${esc(alojNome(a))}</option>`).join('');
-    $('g360PatAlocFiltroAlojV240').value=cur;
-  }
   if($('g360PatTransOrigemV240'))$('g360PatTransOrigemV240').innerHTML='<option value="">Selecione...</option>'+alocs.map(a=>{
     const i=a.patrimonio_catalogo||{}, al=a.alojamentos||{};
     return `<option value="${esc(a.id)}">${esc(i.codigo_item)} · ${esc(i.descricao)} · ${esc(alojNome(al))} · saldo ${esc(fmtQtd(a.quantidade))} ${esc(i.unidade||'UN')}</option>`;
   }).join('');
-  renderItens();renderAlocs();
+  renderRelatorioFiltros();renderItens();renderAlocs();
 }
 
 function renderItens(){
@@ -19905,17 +19960,45 @@ function renderItens(){
   if($('g360PatItemCountV240'))$('g360PatItemCountV240').textContent=rows.length+' item(ns)';
   if($('g360PatItemBodyV240'))$('g360PatItemBodyV240').innerHTML=rows.length?rows.map(x=>`<tr>
     <td><b>${esc(x.codigo_item)}</b></td><td>${esc(x.descricao)}</td><td>${esc(x.unidade)}</td>
-    <td><button class="crud-mini" type="button" data-pat-edit-item="${esc(x.id)}">✏️ Editar</button></td>
+    <td>${isMaster?`<button class="crud-mini" type="button" data-pat-edit-item="${esc(x.id)}">✏️ Editar</button>`:'<span style="color:var(--ink-dim);font-size:11px">Somente MASTER</span>'}</td>
   </tr>`).join(''):'<tr><td colspan="4">Nenhum item cadastrado.</td></tr>';
   document.querySelectorAll('[data-pat-edit-item]').forEach(b=>b.onclick=()=>editarItem(b.dataset.patEditItem));
 }
 
+function exportListaItensPdfV259(){
+  if(!itens.length)return alert('Não há itens cadastrados para gerar o PDF.');
+  const jsPDF=window.jspdf?.jsPDF;if(!jsPDF)return alert('Biblioteca de PDF não carregada.');
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const pw=doc.internal.pageSize.getWidth(),ph=doc.internal.pageSize.getHeight(),m=10,usable=pw-(m*2);
+  const peach=[255,211,170];
+  doc.setFillColor(...peach);doc.setDrawColor(0);doc.setLineWidth(.25);doc.rect(m,8,usable,14,'FD');
+  doc.setFont('helvetica','bold');doc.setFontSize(12);doc.text('LISTA DE ITENS CADASTRADOS — CONFERÊNCIA DE INVENTÁRIO',pw/2,16.5,{align:'center'});
+  const obra=window.g360GetSelectedObra?.();
+  const obraTxt=obra?[obra.codigo,obra.nome].filter(Boolean).join(' — '):'OBRA SELECIONADA';
+  doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.text(`OBRA: ${obraTxt||'—'}`,m,28);
+  doc.text(`EMISSÃO: ${new Date().toLocaleString('pt-BR')}`,pw-m,28,{align:'right'});
+  const rows=[...itens].sort((a,b)=>String(a.codigo_item||'').localeCompare(String(b.codigo_item||''),'pt-BR',{numeric:true}));
+  doc.autoTable({
+    startY:32,margin:{left:m,right:m,bottom:14},theme:'grid',
+    head:[['COD ITEM','DESCRIÇÃO','UND','QTD. CONFERIDA','ESTADO']],
+    body:rows.map(x=>[x.codigo_item||'',x.descricao||'',x.unidade||'','','']),
+    styles:{font:'helvetica',fontStyle:'normal',fontSize:8,textColor:[0,0,0],lineColor:[0,0,0],lineWidth:.15,cellPadding:2.1,minCellHeight:8,valign:'middle'},
+    headStyles:{fillColor:peach,textColor:[0,0,0],fontStyle:'bold',halign:'center',lineColor:[0,0,0],lineWidth:.2},
+    columnStyles:{0:{cellWidth:28},1:{cellWidth:78},2:{cellWidth:17,halign:'center'},3:{cellWidth:31,halign:'center'},4:{cellWidth:36}},
+    didDrawPage:()=>{
+      doc.setFont('helvetica','normal');doc.setFontSize(6.8);doc.setTextColor(90);
+      doc.text(`Página ${doc.internal.getNumberOfPages()}`,pw-m,ph-6,{align:'right'});
+    }
+  });
+  doc.save(`LISTA_ITENS_PATRIMONIO_${new Date().toISOString().slice(0,10)}.pdf`);
+}
+
 function renderAlocs(){
   const q=($('g360PatAlocBuscaV240')?.value||'').trim().toLowerCase();
-  const af=$('g360PatAlocFiltroAlojV240')?.value||'';
+  const selecionados=new Set(relAlojSelecionados());
   const rows=alocs.filter(a=>{
     const i=a.patrimonio_catalogo||{}, al=a.alojamentos||{};
-    return (!af||String(a.alojamento_id)===String(af))&&(!q||[i.codigo_item,i.descricao,i.unidade,al.descricao,al.contrato_codigo].some(v=>String(v||'').toLowerCase().includes(q)));
+    return selecionados.has(String(a.alojamento_id))&&(!q||[i.codigo_item,i.descricao,i.unidade,al.descricao,al.contrato_codigo].some(v=>String(v||'').toLowerCase().includes(q)));
   });
   if($('g360PatAlocCountV240'))$('g360PatAlocCountV240').textContent=rows.length+' registro(s)';
   if($('g360PatAlocBodyV240'))$('g360PatAlocBodyV240').innerHTML=rows.length?rows.map(a=>{
@@ -19923,6 +20006,110 @@ function renderAlocs(){
     return `<tr><td><b>${esc(i.codigo_item)}</b></td><td>${esc(i.descricao)}</td><td>${esc(i.unidade)}</td><td>${esc(alojNome(al))}</td><td><b>${esc(fmtQtd(a.quantidade))}</b></td><td><button class="crud-mini" type="button" data-pat-trans="${esc(a.id)}">↔ Transferir</button></td></tr>`;
   }).join(''):'<tr><td colspan="6">Nenhum item alocado em alojamento.</td></tr>';
   document.querySelectorAll('[data-pat-trans]').forEach(b=>b.onclick=()=>{$('g360PatTransOrigemV240').value=b.dataset.patTrans;$('g360PatTransQtdV240').focus();});
+}
+
+function renderRelatorioFiltros(){
+  const box=$('g360PatRelChecksV258');
+  if(!box)return;
+  const antigos=new Set(Array.from(box.querySelectorAll('input[data-aloj-id]:checked')).map(x=>String(x.value)));
+  box.innerHTML=alojs.map(a=>`<label class="tipo-filter-item"><input type="checkbox" data-aloj-id value="${esc(a.id)}"><span>${esc(alojNome(a))}</span></label>`).join('');
+  const checks=Array.from(box.querySelectorAll('input[data-aloj-id]'));
+  if(!antigos.size && checks.length) checks.forEach(c=>c.checked=true);
+  else checks.forEach(c=>c.checked=antigos.has(String(c.value)));
+  checks.forEach(c=>c.onchange=()=>{atualizarResumoRelatorio();renderAlocs();});
+  atualizarResumoRelatorio();
+}
+
+function relAlojSelecionados(){
+  return Array.from(document.querySelectorAll('#g360PatRelChecksV258 input[data-aloj-id]:checked')).map(x=>String(x.value));
+}
+function relRows(){
+  const ids=new Set(relAlojSelecionados());
+  if(!ids.size)return [];
+  return alocs.filter(a=>ids.has(String(a.alojamento_id))).slice().sort((a,b)=>{
+    const an=alojNome(a.alojamentos||{}),bn=alojNome(b.alojamentos||{});
+    return an.localeCompare(bn,'pt-BR') || String(a.patrimonio_catalogo?.descricao||'').localeCompare(String(b.patrimonio_catalogo?.descricao||''),'pt-BR');
+  });
+}
+function atualizarResumoRelatorio(){
+  const el=$('g360PatRelResumoV258');
+  const btn=$('g360PatRelFiltroBtnV261');
+  const ids=relAlojSelecionados(), rows=relRows();
+  const qtd=rows.reduce((s,r)=>s+Number(r.quantidade||0),0);
+  if(btn){
+    if(!ids.length) btn.textContent='Nenhum alojamento ▾';
+    else if(ids.length===alojs.length) btn.textContent='Todos os alojamentos ▾';
+    else if(ids.length===1){const a=alojs.find(x=>String(x.id)===String(ids[0]));btn.textContent=`${alojNome(a||{})} ▾`;}
+    else btn.textContent=`${ids.length} alojamentos selecionados ▾`;
+  }
+  if(!el)return;
+  if(!ids.length){el.textContent='Nenhum alojamento selecionado.';return;}
+  el.textContent=`${rows.length} item(ns) · quantidade ${fmtQtd(qtd)}`;
+}
+function nomeArquivoSeguro(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,80)||'RELATORIO';}
+function relEscopo(){
+  const ids=relAlojSelecionados();
+  if(ids.length===alojs.length && alojs.length)return {titulo:'GERAL',nome:'GERAL'};
+  if(ids.length===1){const a=alojs.find(x=>String(x.id)===String(ids[0]));return {titulo:alojNome(a||{}),nome:nomeArquivoSeguro(alojNome(a||{}))};}
+  return {titulo:`${ids.length} ALOJAMENTOS SELECIONADOS`,nome:'SELECIONADOS'};
+}
+function relDataHora(){return new Date().toLocaleString('pt-BR');}
+
+function exportRelPdf(){
+  const rows=relRows();
+  if(!relAlojSelecionados().length)return alert('Marque pelo menos um alojamento.');
+  if(!rows.length)return alert('Não há itens alocados nos alojamentos selecionados.');
+  const jsPDF=window.jspdf?.jsPDF;if(!jsPDF)return alert('Biblioteca de PDF não carregada.');
+  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const pw=doc.internal.pageSize.getWidth(), m=9, usable=pw-m*2;
+  const peach=[255,211,170];
+  const escopo=relEscopo();
+  doc.setFillColor(...peach);doc.setDrawColor(0);doc.setLineWidth(.25);doc.rect(m,8,usable,15,'FD');
+  doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('INVENTÁRIO DE PATRIMÔNIO POR ALOJAMENTO',pw/2,17.5,{align:'center'});
+  doc.setFontSize(9);doc.text(`ESCOPO: ${escopo.titulo}`,m,31);
+  doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.text(`EMISSÃO: ${relDataHora()}`,pw-m,31,{align:'right'});
+  const body=rows.map(a=>{const i=a.patrimonio_catalogo||{},al=a.alojamentos||{};return [i.codigo_item||'',i.descricao||'',i.unidade||'',alojNome(al),fmtQtd(a.quantidade)];});
+  doc.autoTable({
+    startY:35,margin:{left:m,right:m},theme:'grid',
+    head:[['COD ITEM','DESCRIÇÃO','UND','ALOJAMENTO','QUANTIDADE']],body,
+    styles:{font:'helvetica',fontStyle:'normal',fontSize:8,textColor:[0,0,0],lineColor:[0,0,0],lineWidth:.18,cellPadding:2,valign:'middle'},
+    headStyles:{fillColor:peach,textColor:[0,0,0],fontStyle:'bold',halign:'center',lineColor:[0,0,0],lineWidth:.22},
+    columnStyles:{0:{cellWidth:28},1:{cellWidth:85},2:{cellWidth:18,halign:'center'},3:{cellWidth:112},4:{cellWidth:32,halign:'right'}},
+    didParseCell:data=>{if(data.section==='body')data.cell.styles.fontStyle='normal';}
+  });
+  const total=rows.reduce((s,r)=>s+Number(r.quantidade||0),0);
+  const y=doc.lastAutoTable.finalY+6;
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text(`QUANTIDADE TOTAL: ${fmtQtd(total)}`,pw-m,y,{align:'right'});
+  doc.save(`INVENTARIO_PATRIMONIO_${escopo.nome}.pdf`);
+}
+
+function excelSheetName(v,used){
+  let base=String(v||'ALOJAMENTO').replace(/[\\\/?*\[\]:]/g,' ').replace(/\s+/g,' ').trim().slice(0,31)||'ALOJAMENTO';
+  let name=base,n=2;while(used.has(name)){const suf=` ${n++}`;name=(base.slice(0,31-suf.length)+suf)}used.add(name);return name;
+}
+function exportRelExcel(){
+  const rows=relRows();
+  if(!relAlojSelecionados().length)return alert('Marque pelo menos um alojamento.');
+  if(!rows.length)return alert('Não há itens alocados nos alojamentos selecionados.');
+  if(!window.XLSX)return alert('Biblioteca do Excel não carregada.');
+  const wb=XLSX.utils.book_new(), used=new Set();
+  const headers=['COD ITEM','DESCRIÇÃO','UND','ALOJAMENTO','QUANTIDADE'];
+  const aoa=[['INVENTÁRIO DE PATRIMÔNIO POR ALOJAMENTO'],[`ESCOPO: ${relEscopo().titulo}`],[],headers];
+  rows.forEach(a=>{const i=a.patrimonio_catalogo||{},al=a.alojamentos||{};aoa.push([i.codigo_item||'',i.descricao||'',i.unidade||'',alojNome(al),Number(a.quantidade||0)]);});
+  aoa.push([],['','','','QUANTIDADE TOTAL',rows.reduce((s,r)=>s+Number(r.quantidade||0),0)]);
+  const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=[{wch:16},{wch:42},{wch:10},{wch:42},{wch:14}];ws['!merges']=[XLSX.utils.decode_range('A1:E1'),XLSX.utils.decode_range('A2:E2')];
+  XLSX.utils.book_append_sheet(wb,ws,'CONSOLIDADO');used.add('CONSOLIDADO');
+  const ids=relAlojSelecionados();
+  ids.forEach(id=>{
+    const rr=rows.filter(r=>String(r.alojamento_id)===String(id));if(!rr.length)return;
+    const al=alojs.find(a=>String(a.id)===String(id));const nome=alojNome(al||{});
+    const data=[['INVENTÁRIO DE PATRIMÔNIO'],[`ALOJAMENTO: ${nome}`],[],['COD ITEM','DESCRIÇÃO','UND','QUANTIDADE']];
+    rr.forEach(a=>{const i=a.patrimonio_catalogo||{};data.push([i.codigo_item||'',i.descricao||'',i.unidade||'',Number(a.quantidade||0)]);});
+    data.push([],['','','QUANTIDADE TOTAL',rr.reduce((s,r)=>s+Number(r.quantidade||0),0)]);
+    const sh=XLSX.utils.aoa_to_sheet(data);sh['!cols']=[{wch:16},{wch:48},{wch:10},{wch:14}];sh['!merges']=[XLSX.utils.decode_range('A1:D1'),XLSX.utils.decode_range('A2:D2')];
+    XLSX.utils.book_append_sheet(wb,sh,excelSheetName(nome,used));
+  });
+  XLSX.writeFile(wb,`INVENTARIO_PATRIMONIO_${relEscopo().nome}.xlsx`);
 }
 
 async function salvarItem(){
@@ -19937,12 +20124,12 @@ async function salvarItem(){
     if(r.error)throw r.error;
     $('g360PatItemDescricaoV240').value='';
     await loadBase();
-    alert('Item cadastrado com sucesso. COD ITEM: '+r.data.codigo_item);
   }catch(e){alert(e.message||String(e))}
   finally{if(btn){btn.disabled=false;btn.textContent='＋ Cadastrar item'}}
 }
 
 async function editarItem(id){
+  if(!isMaster)return alert('A edição do cadastro de itens é exclusiva do usuário MASTER.');
   const row=itens.find(x=>String(x.id)===String(id));if(!row)return;
   const desc=prompt('ITEM:',row.descricao||'');if(desc===null)return;
   const un=prompt('UNIDADE:',row.unidade||'UN');if(un===null)return;
@@ -19960,8 +20147,42 @@ async function incluir(){
   if(!(qtd>0))return alert('Informe uma QUANTIDADE válida.');
   const btn=$('g360PatAlocSalvarV240');if(btn){btn.disabled=true;btn.textContent='Gravando...'}
   try{
+    // Fluxo principal: mantém a função SQL existente.
     const r=await sb().rpc('g360_patrimonio_incluir_v240',{p_obra_id:oid,p_item_id:item,p_alojamento_id:aloj,p_quantidade:qtd});
-    if(r.error)throw r.error;
+    if(r.error){
+      const msg=String(r.error.message||'');
+      // V260: algumas versões antigas da RPC bloqueavam o MESMO item ao tentar
+      // cadastrá-lo em um segundo alojamento. Nessa situação validamos item e
+      // alojamento diretamente e gravamos/atualizamos a alocação sem duplicar a linha.
+      if(/item n[aã]o pertence .*obra ativa|est[aá] inativo/i.test(msg)){
+        const [ri,ra]=await Promise.all([
+          sb().from('patrimonio_catalogo').select('id,obra_id,ativo').eq('id',item).maybeSingle(),
+          sb().from('alojamentos').select('id,obra_id,status').eq('id',aloj).maybeSingle()
+        ]);
+        if(ri.error)throw ri.error;
+        if(ra.error)throw ra.error;
+        const itemOk=ri.data&&String(ri.data.obra_id)===String(oid)&&ri.data.ativo!==false;
+        const alojOk=ra.data&&String(ra.data.obra_id)===String(oid)&&!['INATIVO','RESCINDIDO','ENCERRADO'].includes(String(ra.data.status||'').toUpperCase());
+        if(!itemOk)throw new Error('O item selecionado não está ativo nesta obra.');
+        if(!alojOk)throw new Error('O alojamento selecionado não está ativo nesta obra.');
+
+        const ex=await sb().from('patrimonio_alocacoes')
+          .select('id,quantidade')
+          .eq('obra_id',oid).eq('item_id',item).eq('alojamento_id',aloj)
+          .maybeSingle();
+        if(ex.error)throw ex.error;
+        if(ex.data?.id){
+          const novaQtd=Number(ex.data.quantidade||0)+qtd;
+          const up=await sb().from('patrimonio_alocacoes').update({quantidade:novaQtd}).eq('id',ex.data.id);
+          if(up.error)throw up.error;
+        }else{
+          const ins=await sb().from('patrimonio_alocacoes').insert({obra_id:oid,item_id:item,alojamento_id:aloj,quantidade:qtd});
+          if(ins.error)throw ins.error;
+        }
+      }else{
+        throw r.error;
+      }
+    }
     $('g360PatAlocQtdV240').value='1';
     await loadBase();
   }catch(e){alert(e.message||String(e))}
@@ -19991,8 +20212,24 @@ function bind(){
   if($('g360PatAlocSalvarV240'))$('g360PatAlocSalvarV240').onclick=incluir;
   if($('g360PatTransferirV240'))$('g360PatTransferirV240').onclick=transferir;
   if($('g360PatItemBuscaV240'))$('g360PatItemBuscaV240').oninput=renderItens;
+  if($('g360PatItemListaPdfV259'))$('g360PatItemListaPdfV259').onclick=exportListaItensPdfV259;
   if($('g360PatAlocBuscaV240'))$('g360PatAlocBuscaV240').oninput=renderAlocs;
-  if($('g360PatAlocFiltroAlojV240'))$('g360PatAlocFiltroAlojV240').onchange=renderAlocs;
+  if($('g360PatRelPdfV258'))$('g360PatRelPdfV258').onclick=exportRelPdf;
+  if($('g360PatRelExcelV258'))$('g360PatRelExcelV258').onclick=exportRelExcel;
+  const relFiltroBtn=$('g360PatRelFiltroBtnV261'), relFiltroPanel=$('g360PatRelFiltroPanelV261');
+  if(relFiltroBtn&&relFiltroPanel){
+    relFiltroBtn.onclick=(e)=>{e.stopPropagation();relFiltroPanel.classList.toggle('open');};
+    relFiltroPanel.onclick=(e)=>e.stopPropagation();
+    document.addEventListener('click',()=>relFiltroPanel.classList.remove('open'));
+  }
+  if($('g360PatRelTodosBtnV261'))$('g360PatRelTodosBtnV261').onclick=()=>{
+    document.querySelectorAll('#g360PatRelChecksV258 input[data-aloj-id]').forEach(c=>c.checked=true);
+    atualizarResumoRelatorio();renderAlocs();
+  };
+  if($('g360PatRelNenhumBtnV261'))$('g360PatRelNenhumBtnV261').onclick=()=>{
+    document.querySelectorAll('#g360PatRelChecksV258 input[data-aloj-id]').forEach(c=>c.checked=false);
+    atualizarResumoRelatorio();renderAlocs();
+  };
 }
 
 window.g360RenderPatrimonioV240=async function(){try{await loadBase()}catch(e){console.error(e);alert('Patrimônio: '+(e.message||e)+'\n\nExecute o SQL V240 no Supabase.')}};
