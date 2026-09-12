@@ -1,3 +1,5 @@
+<!-- V269 DEFINITIVO: boot leve de permissões + matriz revisada + novas funcionalidades patrimônio -->
+<!-- V268: Patrimônio dos Alojamentos — detecção dinâmica de MASTER para exibir/executar Excluir -->
 <!-- V267: Patrimônio dos Alojamentos — MASTER pode excluir uma alocação diretamente na tabela -->
 <!-- V266: Patrimônio dos Alojamentos — filtro principal em checkbox; remove painel duplicado de inventário; PDF/Excel sob o filtro -->
 <!-- V262: Patrimônio dos Alojamentos — downloads PDF/Excel com filtro por caixas de seleção -->
@@ -4361,7 +4363,7 @@ html.g360-ui-ready .content-col {
           <div class="g360-perm-top">
             <div>
               <h2 id="g360PermMatrixTitle">Permissões personalizáveis do usuário</h2>
-              <div class="g360-perm-help"><b>EDIÇÃO LIBERADA:</b> perfis RH, ENGENHEIROS, TÉCNICO DE SEGURANÇA e GESTOR podem ter permissões personalizadas por usuário. O perfil nativo é apenas o padrão inicial. Usuários & Permissões continua exclusivo do MASTER.</div><div style="margin-top:10px;max-width:420px"><label style="font-size:11px;color:var(--ink-soft);font-weight:700">OBRA VINCULADA<select id="g360PermObra" style="width:100%;margin-top:5px;background:#0e0f11;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:9px"><option value="">Selecione a obra</option></select></label></div>
+              <div class="g360-perm-help"><b>EDIÇÃO LIBERADA:</b> as permissões podem ser personalizadas por usuário e por obra. As colunas agora contemplam também inclusão, transferência e exportação PDF/Excel. O perfil nativo é apenas o padrão inicial. Usuários &amp; Permissões continua exclusivo do MASTER.</div><div style="margin-top:10px;max-width:420px"><label style="font-size:11px;color:var(--ink-soft);font-weight:700">OBRA VINCULADA<select id="g360PermObra" style="width:100%;margin-top:5px;background:#0e0f11;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:9px"><option value="">Selecione a obra</option></select></label></div>
             </div>
             <div class="g360-perm-actions">
               <button type="button" class="crud-mini" id="g360PermReadOnly">👁 Somente leitura</button>
@@ -4372,7 +4374,7 @@ html.g360-ui-ready .content-col {
           </div>
           <div class="table-scroll">
             <table class="g360-perm-matrix">
-              <thead><tr><th>Módulo</th><th>Visualizar</th><th>Criar</th><th>Editar</th><th>Aprovar</th><th>Ativar/Inativar</th><th>Excluir</th><th>Exportar</th></tr></thead>
+              <thead><tr><th>Módulo / Funcionalidade</th><th>Visualizar</th><th>Criar / Incluir</th><th>Editar / Transferir</th><th>Aprovar</th><th>Ativar / Inativar</th><th>Excluir</th><th>Exportar PDF/Excel</th></tr></thead>
               <tbody id="g360PermMatrixBody"></tbody>
             </table>
           </div>
@@ -14952,7 +14954,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
 <script>
 (function(){
   const MODULES=[
-    ['alertas','Central de Alertas','alertas'],['projetos','Projetos / Obras','projetosObras'],['executivo','Painel Gerencial','executivo'],['colaboradores','Colaboradores (RH / DP)','base'],['cargos_salarios','Cargos e Salários','cargosSalarios'],['termos','Termos de Responsabilidade','termoResponsabilidade'],['alojamentos','Alojamentos','alojamento'],['patrimonio_inventario','Inventário de Patrimônio','patrimonioInventario'],['patrimonio_estoque','Estoque de Patrimônio','patrimonioEstoque'],['patrimonio_alojamento','Patrimônio por Alojamento','patrimonio'],['organograma','Organograma Setor/Equipe','organograma'],['contratos','Contratos','contratos'],['aditivos','Aditivos de Contratos','aditivosContratos'],['fechamento','Fechamento de Praça','fechamentoPraca'],['admissao','Admissão','rhdpAdmissao'],['demissao','Solicitação de Demissão','rhdpDemissao'],['movimentacao','Movimentação Interna','rhdpMovimentacao'],['advertencia','Advertência Disciplinar','rhdpAdvertencia'],['folga','Folga de Campo','baixadas'],['reembolsos','Reembolsos','rhdpReembolsos'],['sesmt','SESMT › Segurança do Trabalho','sesmt'],
+    ['alertas','Central de Alertas','alertas'],['projetos','Projetos / Obras','projetosObras'],['executivo','Painel Gerencial','executivo'],['colaboradores','Colaboradores (RH / DP)','base'],['cargos_salarios','Cargos e Salários','cargosSalarios'],['termos','Termos de Responsabilidade','termoResponsabilidade'],['alojamentos','Alojamentos','alojamento'],['patrimonio_inventario','Patrimônio › Cadastro de Itens','patrimonioInventario'],['patrimonio_estoque','Patrimônio › Estoque / Movimentações','patrimonioEstoque'],['patrimonio_alojamento','Patrimônio › Alojamentos / Transferências / Relatórios','patrimonio'],['organograma','Organograma Setor/Equipe','organograma'],['contratos','Contratos','contratos'],['aditivos','Aditivos de Contratos','aditivosContratos'],['fechamento','Fechamento de Praça','fechamentoPraca'],['admissao','Admissão','rhdpAdmissao'],['demissao','Solicitação de Demissão','rhdpDemissao'],['movimentacao','Movimentação Interna','rhdpMovimentacao'],['advertencia','Advertência Disciplinar','rhdpAdvertencia'],['folga','Folga de Campo','baixadas'],['reembolsos','Reembolsos','rhdpReembolsos'],['sesmt','SESMT › Segurança do Trabalho','sesmt'],
     ['sesmt_estoque','SESMT › Controle de Estoque — Acesso geral','sesmtEstoque'],
     ['sesmt_estoque_consulta','SESMT › Estoque — Consulta / Estoque Atual',''],
     ['sesmt_estoque_entrada','SESMT › Estoque — Entrada',''],
@@ -15048,13 +15050,8 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
     const u=user(id);
     if(u?.master)return allPerm();
 
-    // V176: se houver uma matriz personalizada salva para o usuário,
-    // ela sempre prevalece, mesmo quando o perfil é nativo.
-    const perfilAtual=normPerfil(u?.perfil);
-    if(perfilAtual==='TECNICO_SEGURANCA'){
-      return nativePerm(perfilAtual,module) || blankPerm(false);
-    }
-
+    // V269: permissões personalizadas salvas para o usuário SEMPRE prevalecem
+    // sobre o perfil nativo, inclusive para TÉCNICO DE SEGURANÇA.
     const custom=perms[id]?.[module];
     if(custom)return {...blankPerm(false),...custom};
 
@@ -15072,7 +15069,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
   };
   function toastPerm(msg){let e=document.getElementById('g360PermToast');if(!e){e=document.createElement('div');e.id='g360PermToast';e.style='position:fixed;right:18px;bottom:18px;z-index:101000;background:#202226;border:1px solid #6e6520;color:#f5df78;padding:11px 14px;border-radius:8px;font:12px Arial;box-shadow:0 12px 35px #0008';document.body.appendChild(e)}e.textContent=msg;clearTimeout(e._t);e._t=setTimeout(()=>e.remove(),3000)}
   function currentView(){return document.querySelector('.view.active')?.id?.replace(/^view-/,'')||'executivo'}
-  function classifyAction(el){const txt=(el.textContent||'').toLowerCase();if(el.classList.contains('danger')||/excluir|remover|apagar|delet/.test(txt))return'excluir';if(/aprovar|aprovação/.test(txt))return'aprovar';if(el.classList.contains('toggle')||/ativar|inativar/.test(txt))return'ativar';if(/editar|alterar|salvar|atualizar|preencher|registrar/.test(txt))return'editar';if(/novo|nova|cadastrar|adicionar|criar|incluir|solicitar/.test(txt))return'criar';if(/export|pdf|excel|xls|csv|baixar/.test(txt))return'exportar';return null}
+  function classifyAction(el){const txt=(el.textContent||'').toLowerCase();if(el.classList.contains('danger')||/excluir|remover|apagar|delet/.test(txt))return'excluir';if(/aprovar|aprovação/.test(txt))return'aprovar';if(el.classList.contains('toggle')||/ativar|inativar/.test(txt))return'ativar';if(/export|pdf|excel|xls|csv|baixar|imprimir/.test(txt))return'exportar';if(/editar|alterar|salvar|atualizar|preencher|registrar|transferir|movimentar|movimentação/.test(txt))return'editar';if(/novo|nova|cadastrar|adicionar|criar|incluir|solicitar|lançar/.test(txt))return'criar';return null}
   function actionFromCrudButton(el){if(el.matches('.crud-row-actions .danger'))return'excluir';if(el.matches('.crud-row-actions .toggle'))return'ativar';return classifyAction(el)}
   function ensureNote(v){let n=v.querySelector(':scope > .g360-access-note');if(!n){n=document.createElement('div');n.className='g360-access-note';v.insertBefore(n,v.firstChild)}return n}
 
@@ -15091,6 +15088,71 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
       if(r.ok)sessionStorage.setItem('g360_bootstrap_checked','1');
     }catch(e){console.warn('Bootstrap admin:',e)}
   }
+  let g360AdminDataLoaded=false;
+  let g360AccessBootPromise=null;
+
+  // V269: boot leve. No carregamento inicial busca somente o usuário logado,
+  // suas permissões e obras. A lista completa de usuários é carregada apenas
+  // quando o MASTER abre Usuários & Permissões. Isso reduz chamadas e tempo de tela inicial.
+  async function loadCurrentAccessFast(){
+    if(!PROD)return;
+    if(g360AccessBootPromise)return g360AccessBootPromise;
+    g360AccessBootPromise=(async()=>{
+      const {data:{session}}=await sb.auth.getSession();
+      if(!session)return;
+      await ensureFirstMaster(session);
+      currentId=session.user.id;
+
+      let pr=await sb.from('profiles').select('id,nome,email,perfil,obra_id,ativo,master,created_at').eq('id',currentId).maybeSingle();
+      if(pr.error||!pr.data){
+        // fallback administrativo somente se a leitura do próprio perfil falhar
+        try{
+          const adm=await adminApi('GET');
+          const me=(Array.isArray(adm?.profiles)?adm.profiles:[]).find(x=>String(x.id)===String(currentId));
+          pr={data:me||null,error:me?null:(pr.error||new Error('Perfil não encontrado'))};
+        }catch(_){ }
+      }
+      if(!pr.data)throw new Error('Falha ao carregar o perfil do usuário atual.');
+
+      const [up,uo,ob]=await Promise.all([
+        sb.from('usuario_permissoes').select('*').eq('usuario_id',currentId),
+        sb.from('usuario_obras').select('usuario_id,obra_id').eq('usuario_id',currentId),
+        sb.from('obras').select('id,codigo,nome,ativa').order('codigo')
+      ]);
+
+      obras=ob.error?[]:(ob.data||[]);
+      userObras={};
+      const ids=[];
+      if(!uo.error){
+        multiObrasDisponivel=true;
+        (uo.data||[]).forEach(r=>{if(r.obra_id)ids.push(String(r.obra_id));});
+      }else{
+        multiObrasDisponivel=false;
+      }
+      if(!ids.length && pr.data.obra_id)ids.push(String(pr.data.obra_id));
+      userObras[String(currentId)]=[...new Set(ids)];
+      const names=userObras[String(currentId)].map(id=>{
+        const o=obras.find(x=>String(x.id)===String(id));
+        return o?`${o.codigo} - ${o.nome}`:'';
+      }).filter(Boolean);
+      users=[{...pr.data,obra:pr.data.obra_id,obraIds:userObras[String(currentId)],obraNome:names.join(' • ')}];
+      window.g360AdminUsersCache=users.map(u=>({id:u.id,ativo:u.ativo,master:u.master,nome:u.nome,email:u.email}));
+
+      perms={};
+      ((up.error?[]:up.data)||[]).forEach(x=>{
+        perms[x.usuario_id]=perms[x.usuario_id]||{};
+        perms[x.usuario_id][x.modulo]={
+          visualizar:x.pode_visualizar,criar:x.pode_criar,editar:x.pode_editar,
+          aprovar:x.pode_aprovar,ativar:x.pode_ativar_inativar,
+          excluir:x.pode_excluir,exportar:x.pode_exportar
+        };
+      });
+      editingId=currentId;
+      applyAccess(false);
+    })();
+    try{return await g360AccessBootPromise;}finally{g360AccessBootPromise=null;}
+  }
+
   async function loadAll(){
     if(!PROD)return;
     const {data:{session}}=await sb.auth.getSession();
@@ -15098,6 +15160,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
 
     await ensureFirstMaster(session);
     currentId=session.user.id;
+    g360AdminDataLoaded=true;
 
     // V170: a lista administrativa de usuários vem pela API server-side,
     // que usa a service role e não fica sujeita às políticas RLS do navegador.
@@ -15630,7 +15693,21 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
   document.getElementById('g360PermSave')?.addEventListener('click',saveMatrix);document.getElementById('g360PermAll')?.addEventListener('click',()=>setMatrix('all'));document.getElementById('g360PermReadOnly')?.addEventListener('click',()=>setMatrix('read'));document.getElementById('g360PermResetNative')?.addEventListener('click',resetMatrixToNative);document.getElementById('g360NewUserBtn')?.addEventListener('click',()=>openUser());document.getElementById('g360UserModalClose')?.addEventListener('click',closeUser);document.getElementById('g360UserCancel')?.addEventListener('click',closeUser);modal?.addEventListener('click',e=>{if(e.target===modal)closeUser()});uf?.addEventListener('submit',saveUser);document.getElementById('g360CloneClose')?.addEventListener('click',closeClone);document.getElementById('g360CloneCancel')?.addEventListener('click',closeClone);cloneModal?.addEventListener('click',e=>{if(e.target===cloneModal)closeClone()});cloneForm?.addEventListener('submit',duplicateAccess);
   const permMenu=document.getElementById('g360PermMenu');permMenu?.addEventListener('click',()=>{if(!window.g360Can('usuarios','visualizar'))return toastPerm('Sem permissão para administrar usuários.');document.querySelectorAll('.side-link').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));permMenu.classList.add('active');document.getElementById('view-usuariosPermissoes').classList.add('active');renderUsers();renderMatrix();window.scrollTo(0,0)});
   document.addEventListener('click',e=>{const el=e.target.closest('button,a');if(!el||el.closest('#g360Auth')||el.matches('[data-g360-competencia="1"],[data-g360-fechamento-action="1"]')||el.closest('#g360FjCompetModal,#g360FjEditModal')||el.closest('#view-usuariosPermissoes')||el.closest('#g360UserModal')||!currentId)return;const view=el.closest('.view'),m=moduleByView(view?.id?.replace(/^view-/,'')||currentView());if(!m)return;const a=actionFromCrudButton(el);if(a&&!window.g360Can(m,a)){e.preventDefault();e.stopImmediatePropagation();toastPerm('Sem permissão para '+a+' neste módulo.')}},true);
-  (async()=>{if(!PROD)return;try{await loadAll()}catch(e){console.error(e);toastPerm('Falha ao carregar usuários/permissões: '+e.message)}})();
+  // V269: inicia somente com o acesso do usuário atual.
+  (async()=>{if(!PROD)return;try{await loadCurrentAccessFast()}catch(e){console.error(e);toastPerm('Falha ao carregar acesso: '+e.message)}})();
+
+  // A carga administrativa completa fica sob demanda.
+  document.querySelectorAll('[data-view="usuariosPermissoes"]').forEach(el=>{
+    el.addEventListener('click',async()=>{
+      try{
+        const u=user(currentId);
+        if(!u?.master || g360AdminDataLoaded)return;
+        const msg=document.getElementById('g360PermMsg');
+        if(msg)msg.textContent='Carregando usuários e permissões...';
+        await loadAll();
+      }catch(e){console.error(e);toastPerm('Falha ao carregar usuários/permissões: '+(e.message||e));}
+    });
+  });
 })();
 </script>
 
@@ -19912,18 +19989,38 @@ const sb=()=>window.g360SupabaseClient;
 const obraId=()=>window.g360GetSelectedObra?.()?.id||window.G360_ACTIVE_OBRA_ID||null;
 let itens=[],alocs=[],alojs=[],isMaster=false;
 
+function masterAtual(){
+  try{
+    const u=window.g360CurrentUser?.();
+    if(u?.master===true)return true;
+    if(typeof window.g360Can==='function' && window.g360Can('usuarios','visualizar'))return true;
+  }catch(_){ }
+  return !!isMaster;
+}
+
 function alojNome(a){return [a.descricao,a.contrato_codigo].filter(Boolean).join(' · ')||'ALOJAMENTO';}
 function fmtQtd(v){const n=Number(v||0);return Number.isInteger(n)?String(n):n.toLocaleString('pt-BR',{maximumFractionDigits:2});}
 
 async function loadMasterV259(){
   try{
+    // Primeiro usa o usuário já carregado pelo módulo central de permissões.
+    // Isso evita falso negativo quando este módulo abre antes da consulta direta em profiles.
+    const central=window.g360CurrentUser?.();
+    if(central?.master===true){isMaster=true;return true;}
+    if(typeof window.g360Can==='function' && window.g360Can('usuarios','visualizar')){isMaster=true;return true;}
+
     const client=sb(); if(!client){isMaster=false;return false;}
     const {data:{session}}=await client.auth.getSession();
     if(!session?.user?.id){isMaster=false;return false;}
     const r=await client.from('profiles').select('master').eq('id',session.user.id).maybeSingle();
     isMaster=!!r.data?.master;
     return isMaster;
-  }catch(_){isMaster=false;return false;}
+  }catch(_){
+    // Mesmo se a leitura direta de profiles falhar por RLS/ordem de inicialização,
+    // ainda respeita a identidade já conhecida pelo controle central.
+    isMaster=!!window.g360CurrentUser?.()?.master;
+    return isMaster;
+  }
 }
 
 async function loadBase(){
@@ -19942,6 +20039,28 @@ async function loadBase(){
   renderAll();
 }
 
+function applyPatrimonioPermissoesV269(){
+  try{
+    if(typeof window.g360Can!=='function')return;
+    const canItemCreate=window.g360Can('patrimonio_inventario','criar');
+    const canItemEdit=window.g360Can('patrimonio_inventario','editar');
+    const canItemExport=window.g360Can('patrimonio_inventario','exportar');
+    const canAlojCreate=window.g360Can('patrimonio_alojamento','criar');
+    const canAlojEdit=window.g360Can('patrimonio_alojamento','editar');
+    const canAlojDelete=window.g360Can('patrimonio_alojamento','excluir');
+    const canAlojExport=window.g360Can('patrimonio_alojamento','exportar');
+    const set=(id,ok)=>{const el=$(id);if(el)el.classList.toggle('g360-perm-hidden',!ok);};
+    set('g360PatItemSalvarV240',canItemCreate);
+    set('g360PatItemListaPdfV259',canItemExport);
+    set('g360PatAlocSalvarV240',canAlojCreate);
+    set('g360PatTransferirV240',canAlojEdit);
+    set('g360PatRelPdfV258',canAlojExport);
+    set('g360PatRelExcelV258',canAlojExport);
+    document.querySelectorAll('[data-pat-edit-item]').forEach(el=>el.classList.toggle('g360-perm-hidden',!(masterAtual()&&canItemEdit)));
+    document.querySelectorAll('[data-pat-del-aloc]').forEach(el=>el.classList.toggle('g360-perm-hidden',!(masterAtual()&&canAlojDelete)));
+  }catch(e){console.warn('[V269 permissões patrimônio]',e)}
+}
+
 function renderAll(){
   const itemOpts='<option value="">Selecione...</option>'+itens.map(x=>`<option value="${esc(x.id)}">${esc(x.codigo_item)} · ${esc(x.descricao)} · ${esc(x.unidade)}</option>`).join('');
   if($('g360PatAlocItemV240'))$('g360PatAlocItemV240').innerHTML=itemOpts;
@@ -19953,6 +20072,7 @@ function renderAll(){
     return `<option value="${esc(a.id)}">${esc(i.codigo_item)} · ${esc(i.descricao)} · ${esc(alojNome(al))} · saldo ${esc(fmtQtd(a.quantidade))} ${esc(i.unidade||'UN')}</option>`;
   }).join('');
   renderRelatorioFiltros();renderItens();renderAlocs();
+  applyPatrimonioPermissoesV269();
 }
 
 function renderItens(){
@@ -19961,7 +20081,7 @@ function renderItens(){
   if($('g360PatItemCountV240'))$('g360PatItemCountV240').textContent=rows.length+' item(ns)';
   if($('g360PatItemBodyV240'))$('g360PatItemBodyV240').innerHTML=rows.length?rows.map(x=>`<tr>
     <td><b>${esc(x.codigo_item)}</b></td><td>${esc(x.descricao)}</td><td>${esc(x.unidade)}</td>
-    <td>${isMaster?`<button class="crud-mini" type="button" data-pat-edit-item="${esc(x.id)}">✏️ Editar</button>`:'<span style="color:var(--ink-dim);font-size:11px">Somente MASTER</span>'}</td>
+    <td>${(masterAtual()&&(!window.g360Can||window.g360Can('patrimonio_inventario','editar')))?`<button class="crud-mini" type="button" data-pat-edit-item="${esc(x.id)}">✏️ Editar</button>`:'<span style="color:var(--ink-dim);font-size:11px">Somente MASTER</span>'}</td>
   </tr>`).join(''):'<tr><td colspan="4">Nenhum item cadastrado.</td></tr>';
   document.querySelectorAll('[data-pat-edit-item]').forEach(b=>b.onclick=()=>editarItem(b.dataset.patEditItem));
 }
@@ -20004,7 +20124,7 @@ function renderAlocs(){
   if($('g360PatAlocCountV240'))$('g360PatAlocCountV240').textContent=rows.length+' registro(s)';
   if($('g360PatAlocBodyV240'))$('g360PatAlocBodyV240').innerHTML=rows.length?rows.map(a=>{
     const i=a.patrimonio_catalogo||{},al=a.alojamentos||{};
-    return `<tr><td><b>${esc(i.codigo_item)}</b></td><td>${esc(i.descricao)}</td><td>${esc(i.unidade)}</td><td>${esc(alojNome(al))}</td><td><b>${esc(fmtQtd(a.quantidade))}</b></td><td class="crud-row-actions"><button class="crud-mini" type="button" data-pat-trans="${esc(a.id)}">↔ Transferir</button>${isMaster?`<button class="crud-mini danger" type="button" data-pat-del-aloc="${esc(a.id)}">🗑 Excluir</button>`:''}</td></tr>`;
+    return `<tr><td><b>${esc(i.codigo_item)}</b></td><td>${esc(i.descricao)}</td><td>${esc(i.unidade)}</td><td>${esc(alojNome(al))}</td><td><b>${esc(fmtQtd(a.quantidade))}</b></td><td class="crud-row-actions"><button class="crud-mini" type="button" data-pat-trans="${esc(a.id)}">↔ Transferir</button>${(masterAtual()&&(!window.g360Can||window.g360Can('patrimonio_alojamento','excluir')))?`<button class="crud-mini danger" type="button" data-pat-del-aloc="${esc(a.id)}">🗑 Excluir</button>`:''}</td></tr>`;
   }).join(''):'<tr><td colspan="6">Nenhum item alocado em alojamento.</td></tr>';
   document.querySelectorAll('[data-pat-trans]').forEach(b=>b.onclick=()=>{$('g360PatTransOrigemV240').value=b.dataset.patTrans;$('g360PatTransQtdV240').focus();});
   document.querySelectorAll('[data-pat-del-aloc]').forEach(b=>b.onclick=()=>excluirAlocacao(b.dataset.patDelAloc));
@@ -20131,7 +20251,7 @@ async function salvarItem(){
 }
 
 async function editarItem(id){
-  if(!isMaster)return alert('A edição do cadastro de itens é exclusiva do usuário MASTER.');
+  if(!masterAtual())return alert('A edição do cadastro de itens é exclusiva do usuário MASTER.');
   const row=itens.find(x=>String(x.id)===String(id));if(!row)return;
   const desc=prompt('ITEM:',row.descricao||'');if(desc===null)return;
   const un=prompt('UNIDADE:',row.unidade||'UN');if(un===null)return;
@@ -20192,7 +20312,7 @@ async function incluir(){
 }
 
 async function excluirAlocacao(id){
-  if(!isMaster)return alert('A exclusão de itens do inventário é exclusiva do usuário MASTER.');
+  if(!masterAtual())return alert('A exclusão de itens do inventário é exclusiva do usuário MASTER.');
   const row=alocs.find(x=>String(x.id)===String(id));
   if(!row)return alert('Lançamento não encontrado.');
   const item=row.patrimonio_catalogo||{}, al=row.alojamentos||{};
@@ -20254,6 +20374,7 @@ window.g360RenderPatrimonioV240=async function(){try{await loadBase()}catch(e){c
 window.g360RenderPatrimonioItensV240=window.g360RenderPatrimonioV240;
 
 function init(){
+  if(window.performance?.mark)performance.mark('g360-patrimonio-init');
   bind();
   try{
     if(typeof RENDERERS==='object'){
