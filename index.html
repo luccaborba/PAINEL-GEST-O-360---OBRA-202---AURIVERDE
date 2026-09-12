@@ -1,3 +1,4 @@
+<!-- V267: Patrimônio dos Alojamentos — MASTER pode excluir uma alocação diretamente na tabela -->
 <!-- V266: Patrimônio dos Alojamentos — filtro principal em checkbox; remove painel duplicado de inventário; PDF/Excel sob o filtro -->
 <!-- V262: Patrimônio dos Alojamentos — downloads PDF/Excel com filtro por caixas de seleção -->
 <!-- V257: Patrimônio dos alojamentos — removido botão legado "+ Cadastrar bem"; cadastro de itens permanece no módulo próprio -->
@@ -20003,9 +20004,10 @@ function renderAlocs(){
   if($('g360PatAlocCountV240'))$('g360PatAlocCountV240').textContent=rows.length+' registro(s)';
   if($('g360PatAlocBodyV240'))$('g360PatAlocBodyV240').innerHTML=rows.length?rows.map(a=>{
     const i=a.patrimonio_catalogo||{},al=a.alojamentos||{};
-    return `<tr><td><b>${esc(i.codigo_item)}</b></td><td>${esc(i.descricao)}</td><td>${esc(i.unidade)}</td><td>${esc(alojNome(al))}</td><td><b>${esc(fmtQtd(a.quantidade))}</b></td><td><button class="crud-mini" type="button" data-pat-trans="${esc(a.id)}">↔ Transferir</button></td></tr>`;
+    return `<tr><td><b>${esc(i.codigo_item)}</b></td><td>${esc(i.descricao)}</td><td>${esc(i.unidade)}</td><td>${esc(alojNome(al))}</td><td><b>${esc(fmtQtd(a.quantidade))}</b></td><td class="crud-row-actions"><button class="crud-mini" type="button" data-pat-trans="${esc(a.id)}">↔ Transferir</button>${isMaster?`<button class="crud-mini danger" type="button" data-pat-del-aloc="${esc(a.id)}">🗑 Excluir</button>`:''}</td></tr>`;
   }).join(''):'<tr><td colspan="6">Nenhum item alocado em alojamento.</td></tr>';
   document.querySelectorAll('[data-pat-trans]').forEach(b=>b.onclick=()=>{$('g360PatTransOrigemV240').value=b.dataset.patTrans;$('g360PatTransQtdV240').focus();});
+  document.querySelectorAll('[data-pat-del-aloc]').forEach(b=>b.onclick=()=>excluirAlocacao(b.dataset.patDelAloc));
 }
 
 function renderRelatorioFiltros(){
@@ -20187,6 +20189,22 @@ async function incluir(){
     await loadBase();
   }catch(e){alert(e.message||String(e))}
   finally{if(btn){btn.disabled=false;btn.textContent='＋ Incluir'}}
+}
+
+async function excluirAlocacao(id){
+  if(!isMaster)return alert('A exclusão de itens do inventário é exclusiva do usuário MASTER.');
+  const row=alocs.find(x=>String(x.id)===String(id));
+  if(!row)return alert('Lançamento não encontrado.');
+  const item=row.patrimonio_catalogo||{}, al=row.alojamentos||{};
+  const texto=[item.codigo_item,item.descricao,alojNome(al),`Qtd.: ${fmtQtd(row.quantidade)}`].filter(Boolean).join(' — ');
+  if(!confirm(`Excluir este item do inventário deste alojamento?
+
+${texto}
+
+Esta ação remove somente esta alocação; o item continuará cadastrado no catálogo.`))return;
+  const r=await sb().from('patrimonio_alocacoes').delete().eq('id',id);
+  if(r.error)return alert(r.error.message||String(r.error));
+  await loadBase();
 }
 
 async function transferir(){
