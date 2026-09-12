@@ -1,4 +1,7 @@
 <!DOCTYPE html>
+<!-- V239: RH Formulários em re-cascata alfabética; preserva V238 e Excel consolidado + individuais -->
+<!-- V235: RH separa quadro próprio de terceiros; inativação de terceiro não conta como demissão -->
+<!-- V234: Controle de Reembolsos RH + Dashboard de despesas RH -->
 <!-- V233: Alojamentos com ciclo mensal de medição e período calculado automaticamente -->
 <!-- V232: remove Histórico do menu SESMT e move Fechamento de Praça para Contratos -->
 <!-- V230: corrige navegação do submenu Relatórios do Controle de Estoque -->
@@ -1834,6 +1837,23 @@ html.g360-ui-ready .content-col {
 #view-sesmtEstoque [data-sesmt-stock-pane="historico"]{display:none!important}
 </style>
 
+
+<style id="g360-reembolsos-v234">
+.g360-reemb-head,.g360-rh-exp-head,.g360-reemb-table-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}.g360-reemb-sub,.g360-rh-exp-sub{font-size:11px;color:var(--ink-soft);line-height:1.5}.g360-reemb-head-actions,.g360-reemb-export-actions,.g360-reemb-form-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:end}.g360-reemb-head-actions input{min-width:160px}.g360-reemb-toolbar-grid{display:grid;grid-template-columns:210px minmax(280px,1fr) auto;gap:10px;align-items:end}.g360-reemb-toolbar-grid label,.g360-reemb-form-grid label{font-size:10px;color:var(--ink-soft);font-weight:800;letter-spacing:.03em}.g360-reemb-toolbar-grid select,.g360-reemb-form-grid input,.g360-reemb-form-grid select,.g360-reemb-head-actions input{width:100%;box-sizing:border-box;margin-top:5px;background:#111316;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:10px}.g360-reemb-person{margin-top:10px;padding:10px 12px;border-left:3px solid #f5c518;background:#191b1f;font-size:11px}.g360-reemb-form-grid{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px}.g360-reemb-form-grid .span2{grid-column:span 2}.g360-reemb-form-actions{justify-content:flex-end;margin-top:12px}.g360-reemb-person-total{font-size:13px;padding:8px 12px;border:1px solid var(--line);border-radius:6px}.g360-reemb-person-total b{color:#f5c518;font-size:16px}.g360-reemb-kpis,.g360-rh-exp-kpis{margin-bottom:14px}.g360-reemb-toolbar{margin-bottom:14px}.g360-rh-exp-kpis{grid-template-columns:repeat(4,minmax(160px,1fr))}
+@media(max-width:1000px){.g360-reemb-toolbar-grid{grid-template-columns:1fr 1fr}.g360-reemb-export-actions{grid-column:1/-1}.g360-reemb-form-grid{grid-template-columns:1fr 1fr}.g360-rh-exp-kpis{grid-template-columns:1fr 1fr}}
+@media(max-width:650px){.g360-reemb-toolbar-grid,.g360-reemb-form-grid,.g360-rh-exp-kpis{grid-template-columns:1fr}.g360-reemb-form-grid .span2{grid-column:auto}}
+</style>
+
+
+<style id="g360-rh-formularios-v239">
+#g360RhFormsGroupV239{width:100%}
+#g360RhFormsToggleV239{position:relative;cursor:pointer}
+#g360RhFormsToggleV239 .g360-rh-forms-arrow{margin-left:auto;font-size:18px;transition:transform .18s ease}
+#g360RhFormsGroupV239.open .g360-rh-forms-arrow{transform:rotate(90deg)}
+#g360RhFormsSubmenuV239{display:none;padding-left:18px}
+#g360RhFormsGroupV239.open #g360RhFormsSubmenuV239{display:block}
+#g360RhFormsSubmenuV239 .side-link{padding-left:14px}
+</style>
 </head>
 <body>
 <!-- V155: convite personalizado + primeiro acesso com criação de senha -->
@@ -1962,12 +1982,25 @@ html.g360-ui-ready .content-col {
             <div class="side-link" data-view="base"><span class="ic">🗂</span>Colaboradores</div>
             <div class="side-link" data-view="organograma"><span class="ic">🗺️</span>Organograma Setor/Equipe</div>
             <div class="side-link" data-view="cargosSalarios"><span class="ic">💰</span>Cargos e Salários</div>
-            <div class="side-link" data-view="termoResponsabilidade"><span class="ic">🧾</span>Termo de Responsabilidade</div>
-            <div class="side-link" data-view="rhdpAdmissao"><span class="ic">🧑‍💼</span>Admissão</div>
-            <div class="side-link" data-view="rhdpDemissao"><span class="ic">📤</span>Solicitação de Demissão</div>
-            <div class="side-link" data-view="rhdpMovimentacao"><span class="ic">🔀</span>Movimentação Interna</div>
-            <div class="side-link" id="g360AdvertenciaMenu" data-view="rhdpAdvertencia" style="display:flex!important"><span class="ic">⚠️</span>Advertência Disciplinar</div>
+            <div class="g360-rh-forms-group" id="g360RhFormsGroupV239">
+  <div class="side-link g360-rh-forms-toggle" id="g360RhFormsToggleV239">
+    <span class="ic">📋</span>Formulários
+    <span class="g360-rh-forms-arrow">›</span>
+  </div>
+  <div class="g360-rh-forms-submenu" id="g360RhFormsSubmenuV239">
+  <div class="side-link" data-view="rhdpAdmissao"><span class="ic">🧑‍💼</span>Admissão</div>
+  <div class="side-link" id="g360AdvertenciaMenu" data-view="rhdpAdvertencia" style="display:flex!important"><span class="ic">⚠️</span>Advertência Disciplinar</div>
+  <div class="side-link" data-view="rhdpMovimentacao"><span class="ic">🔀</span>Movimentação Interna</div>
+  <div class="side-link" data-view="rhdpDemissao"><span class="ic">📤</span>Solicitação de Demissão</div>
+  <div class="side-link" data-view="termoResponsabilidade"><span class="ic">🧾</span>Termo de Responsabilidade</div>
+  </div>
+</div>
+            
+            
+            
+            
             <div class="side-link" data-view="baixadas"><span class="ic">🧳</span>Folga de Campo</div>
+            <div class="side-link" data-view="rhdpReembolsos"><span class="ic">💳</span>Reembolsos</div>
 
           </div>
         </div>
@@ -2059,6 +2092,57 @@ html.g360-ui-ready .content-col {
           <div class="panel"><h2>Colaboradores por Função</h2><div style="height:340px;position:relative;"><canvas id="chColabFuncao"></canvas></div></div>
           <div class="panel"><h2>Colaboradores por Setor/Equipe</h2><div style="height:340px;position:relative;"><canvas id="chColabSetor"></canvas></div></div>
         </div>
+        <section class="panel" id="g360RhDespesasPanel" style="margin-top:14px">
+          <div class="g360-rh-exp-head"><div><h2>Despesas RH</h2><div class="g360-rh-exp-sub">Acompanhamento de reembolsos e custos de Folga de Campo.</div></div><span class="tag" id="g360RhDespesasCompetencia">Competência atual</span></div>
+          <section class="kpis-4 g360-rh-exp-kpis">
+            <div class="kpi"><div class="kpi-label">REEMBOLSOS</div><div class="kpi-value" id="g360RhKpiReemb">R$ 0,00</div><div class="kpi-sub">Competência atual</div></div>
+            <div class="kpi"><div class="kpi-label">FOLGA DE CAMPO</div><div class="kpi-value" id="g360RhKpiFolga">R$ 0,00</div><div class="kpi-sub">Competência atual</div></div>
+            <div class="kpi"><div class="kpi-label">TOTAL DESPESAS</div><div class="kpi-value" id="g360RhKpiDespTotal">R$ 0,00</div><div class="kpi-sub">Reembolso + Folga</div></div>
+            <div class="kpi"><div class="kpi-label">REEMBOLSADOS</div><div class="kpi-value" id="g360RhKpiReembPessoas">0</div><div class="kpi-sub">Colaboradores no mês</div></div>
+          </section>
+          <div style="height:300px;position:relative;margin-top:14px"><canvas id="chRhDespesas"></canvas></div>
+        </section>
+      </div>
+
+      <!-- ================= REEMBOLSOS RH ================= -->
+      <div class="view" id="view-rhdpReembolsos">
+        <section class="panel g360-reemb-head">
+          <div><h2>Controle de Reembolsos</h2><div class="g360-reemb-sub">Abra uma competência mensal, lance as despesas por colaborador e exporte o consolidado em Excel e o relatório individual em PDF.</div></div>
+          <div class="g360-reemb-head-actions"><input type="month" id="g360ReembCompNova"><button type="button" class="btn-primary" id="g360ReembAbrirComp">＋ Abrir competência</button></div>
+        </section>
+        <section class="kpis-4 g360-reemb-kpis">
+          <div class="kpi"><div class="kpi-label">COMPETÊNCIA</div><div class="kpi-value" id="g360ReembKpiComp" style="font-size:20px">—</div><div class="kpi-sub">Mês selecionado</div></div>
+          <div class="kpi"><div class="kpi-label">TOTAL REEMBOLSOS</div><div class="kpi-value" id="g360ReembKpiTotal">R$ 0,00</div><div class="kpi-sub">Valor acumulado</div></div>
+          <div class="kpi"><div class="kpi-label">COLABORADORES</div><div class="kpi-value" id="g360ReembKpiPessoas">0</div><div class="kpi-sub">Com lançamento</div></div>
+          <div class="kpi"><div class="kpi-label">LANÇAMENTOS</div><div class="kpi-value" id="g360ReembKpiItens">0</div><div class="kpi-sub">Linhas de despesa</div></div>
+        </section>
+        <section class="panel g360-reemb-toolbar">
+          <div class="g360-reemb-toolbar-grid">
+            <label>Competência<select id="g360ReembCompSelect"><option value="">Carregando...</option></select></label>
+            <label>Colaborador<select id="g360ReembColab"><option value="">Selecione...</option></select></label>
+            <div class="g360-reemb-export-actions"><button type="button" class="clear-btn" id="g360ReembPdfPessoa">📄 PDF do colaborador</button><button type="button" class="clear-btn" id="g360ReembExcelComp">📊 Excel consolidado + individuais</button></div>
+          </div>
+          <div class="g360-reemb-person" id="g360ReembPessoaResumo">Selecione um colaborador para lançar ou consultar despesas.</div>
+        </section>
+        <section class="panel">
+          <div class="g360-reemb-form-grid">
+            <label class="span2">Descrição da despesa<input id="g360ReembDescricao" placeholder="Ex.: PASSAGEM RODOVIÁRIA - GOIÂNIA -> CRIXÁS"></label>
+            <label>Data<input type="date" id="g360ReembData"></label>
+            <label>Fornecedor<input id="g360ReembFornecedor" placeholder="Ex.: EXPRESSO UNIÃO LTDA"></label>
+            <label>Categoria<select id="g360ReembCategoria"><option value="PASSAGEM">Passagem</option><option value="HOSPEDAGEM">Hospedagem</option><option value="ALIMENTACAO">Alimentação</option><option value="COMBUSTIVEL">Combustível</option><option value="TRANSPORTE">Transporte</option><option value="OUTROS">Outros</option></select></label>
+            <label>Valor (R$)<input type="number" min="0.01" step="0.01" id="g360ReembValor" placeholder="0,00"></label>
+            <label class="span2">Observação<input id="g360ReembObs" placeholder="Opcional"></label>
+          </div>
+          <div class="g360-reemb-form-actions"><button type="button" class="clear-btn" id="g360ReembLimpar">Limpar</button><button type="button" class="btn-primary" id="g360ReembAdicionar">＋ Adicionar linha</button></div>
+        </section>
+        <section class="panel">
+          <div class="g360-reemb-table-head"><div><h2 id="g360ReembTabelaTitulo">Despesas do colaborador</h2><div class="g360-reemb-sub" id="g360ReembTabelaSub">—</div></div><div class="g360-reemb-person-total">Total: <b id="g360ReembPessoaTotal">R$ 0,00</b></div></div>
+          <div class="table-scroll"><table><thead><tr><th>Item</th><th>Descrição</th><th>Data</th><th>Fornecedor</th><th>Categoria</th><th>Valor</th><th>Ações</th></tr></thead><tbody id="g360ReembBody"><tr><td colspan="7"><div class="empty-state">Selecione um colaborador.</div></td></tr></tbody></table></div>
+        </section>
+        <section class="panel">
+          <div class="g360-reemb-table-head"><div><h2>Resumo da competência</h2><div class="g360-reemb-sub">Consolidado por colaborador.</div></div></div>
+          <div class="table-scroll"><table><thead><tr><th>Colaborador</th><th>Função</th><th>Qtd. despesas</th><th>Total</th></tr></thead><tbody id="g360ReembResumoBody"></tbody></table></div>
+        </section>
       </div>
 
       <!-- ================= COLABORADORES ================= -->
@@ -4376,18 +4460,29 @@ function expText(c){
 let ATIVOS = [];
 let AFASTADOS_ = [];
 let DESLIGADOS = [];
+let TERCEIROS_ATIVOS = [];
+let TERCEIROS_INATIVOS = [];
 let HC_TOTAL = 0;
 function g360NormStatus(v){ return String(v||'').trim().toUpperCase(); }
+function g360TipoContrato(c){ return String(c?.tipoContrato ?? c?.tipo_contrato ?? '').trim().toUpperCase(); }
+function g360IsTerceiro(c){
+  const t=g360TipoContrato(c).normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  return ['TER','TERC','TERCEIRO','TERCEIROS','TERCEIRIZADO','TERCEIRIZADOS'].includes(t);
+}
 function g360DemissaoDate(c){
   // Compatibilidade com bases antigas/nomes alternativos de coluna.
   return c?.demissao || c?.data_demissao || c?.['demissão'] || null;
 }
 function refreshRhDerived(){
-  ATIVOS = COLABS.filter(c=>g360NormStatus(c.status)==='ATIVO');
-  AFASTADOS_ = COLABS.filter(c=>g360NormStatus(c.status)==='AFASTADO');
-  // Desligamento é um EVENTO de RH: a fonte de verdade é a data de demissão.
-  // Status DESLIGADO sem data continua fora do gráfico mensal, pois não há competência para atribuir.
-  DESLIGADOS = COLABS.filter(c=>!!g360DemissaoDate(c));
+  // V235 — indicadores de RH consideram somente quadro próprio.
+  // Terceiros permanecem na base operacional, porém INATIVAR terceiro NÃO é demissão.
+  ATIVOS = COLABS.filter(c=>!g360IsTerceiro(c) && g360NormStatus(c.status)==='ATIVO');
+  AFASTADOS_ = COLABS.filter(c=>!g360IsTerceiro(c) && g360NormStatus(c.status)==='AFASTADO');
+  TERCEIROS_ATIVOS = COLABS.filter(c=>g360IsTerceiro(c) && g360NormStatus(c.status)==='ATIVO');
+  TERCEIROS_INATIVOS = COLABS.filter(c=>g360IsTerceiro(c) && g360NormStatus(c.status)==='INATIVO');
+  // Desligamento é evento exclusivo do quadro próprio. Mesmo que um terceiro legado tenha
+  // data de demissão preenchida, ele não entra em demissões, turnover ou gráficos RH.
+  DESLIGADOS = COLABS.filter(c=>!g360IsTerceiro(c) && !!g360DemissaoDate(c));
   HC_TOTAL = ATIVOS.length + AFASTADOS_.length;
 }
 refreshRhDerived();
@@ -4425,7 +4520,7 @@ function admissoesPorMes(){
   }
   return MONTHS.map(d=>{
     const next = new Date(d.getFullYear(), d.getMonth()+1, 1);
-    return COLABS.filter(c=>c.admissao && pDate(c.admissao)>=d && pDate(c.admissao)<next).length;
+    return COLABS.filter(c=>!g360IsTerceiro(c) && c.admissao && pDate(c.admissao)>=d && pDate(c.admissao)<next).length;
   });
 }
 function desligPorMes(){
@@ -4437,6 +4532,7 @@ function desligPorMes(){
   return MONTHS.map(d=>{
     const next = new Date(d.getFullYear(), d.getMonth()+1, 1);
     return COLABS.filter(c=>{
+      if(g360IsTerceiro(c)) return false;
       const raw=g360DemissaoDate(c); if(!raw) return false;
       const dt=pDate(String(raw).slice(0,10)); return dt && dt>=d && dt<next;
     }).length;
@@ -4737,7 +4833,7 @@ function renderExecutivo(){
   const alojados = ATIVOS.filter(c=>c.usaAloj==='S').length;
   const desligados12m = DESLIGADOS.filter(c=>c.demissao && pDate(c.demissao)>=LAST365);
   const mesAtualIni = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
-  const admMesAtual = COLABS.filter(c=>c.admissao && pDate(c.admissao)>=mesAtualIni).length;
+  const admMesAtual = COLABS.filter(c=>!g360IsTerceiro(c) && c.admissao && pDate(c.admissao)>=mesAtualIni).length;
   const proxMesAtual = new Date(TODAY.getFullYear(), TODAY.getMonth()+1, 1);
   const desligadosMesAtual = DESLIGADOS.filter(c=>c.demissao && pDate(c.demissao)>=mesAtualIni && pDate(c.demissao)<proxMesAtual).length;
   const emExperiencia = ATIVOS.filter(c=> expMarco(c) && pDate(expMarco(c))>=TODAY).length;
@@ -6969,7 +7065,7 @@ async function g360RhChartRows(){
   if(window.g360PreviewMode===false && window.g360SupabaseClient){
     try{
       const sbLive=window.g360SupabaseClient;
-      const ret=await sbLive.from('funcionarios').select('id,matricula,nome,admissao,demissao,status,obra_id');
+      const ret=await sbLive.from('funcionarios').select('id,matricula,nome,tipo_contrato,admissao,demissao,status,obra_id');
       if(ret.error) throw ret.error;
       const rows=ret.data||[];
       window.G360_RH_GRAPH_RAW_ROWS=rows;
@@ -6978,7 +7074,7 @@ async function g360RhChartRows(){
       console.error('[G360 RH V13] Falha na leitura geral de funcionarios; usando COLABS em memória.',err);
     }
   }
-  return COLABS.map(c=>({id:c.id,matricula:c.mat,nome:c.nome,admissao:c.admissao,demissao:g360DemissaoDate(c),status:c.status,obra_id:c.obra_id||null}));
+  return COLABS.map(c=>({id:c.id,matricula:c.mat,nome:c.nome,tipo_contrato:g360TipoContrato(c),admissao:c.admissao,demissao:g360DemissaoDate(c),status:c.status,obra_id:c.obra_id||null}));
 }
 function g360RhDate(raw){
   if(!raw) return null;
@@ -6989,19 +7085,23 @@ function g360RhDate(raw){
   if(m){ const d=new Date(Number(m[3]),Number(m[2])-1,Number(m[1])); return Number.isNaN(d.getTime())?null:d; }
   const d=new Date(txt); return Number.isNaN(d.getTime())?null:d;
 }
+function g360RhRowIsTerceiro(r){
+  const t=String(r?.tipo_contrato||'').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  return ['TER','TERC','TERCEIRO','TERCEIROS','TERCEIRIZADO','TERCEIRIZADOS'].includes(t);
+}
 async function renderColabCharts(){
   const seq=(window.G360_RH_CHART_SEQ||0)+1; window.G360_RH_CHART_SEQ=seq;
   const rows=await g360RhChartRows();
   if(seq!==window.G360_RH_CHART_SEQ) return;
   const admData=MONTHS.map(d=>{
     const next=new Date(d.getFullYear(),d.getMonth()+1,1);
-    return rows.reduce((n,r)=>{const dt=g360RhDate(r.admissao);return n+(dt&&dt>=d&&dt<next?1:0)},0);
+    return rows.reduce((n,r)=>{if(g360RhRowIsTerceiro(r))return n;const dt=g360RhDate(r.admissao);return n+(dt&&dt>=d&&dt<next?1:0)},0);
   });
   const demData=MONTHS.map(d=>{
     const next=new Date(d.getFullYear(),d.getMonth()+1,1);
-    return rows.reduce((n,r)=>{const dt=g360RhDate(r.demissao);return n+(dt&&dt>=d&&dt<next?1:0)},0);
+    return rows.reduce((n,r)=>{if(g360RhRowIsTerceiro(r))return n;const dt=g360RhDate(r.demissao);return n+(dt&&dt>=d&&dt<next?1:0)},0);
   });
-  const detalheDemissoes=rows.filter(r=>!!g360RhDate(r.demissao)).map(r=>({matricula:r.matricula,nome:r.nome,demissao:r.demissao,status:r.status,obra_id:r.obra_id}));
+  const detalheDemissoes=rows.filter(r=>!g360RhRowIsTerceiro(r)&&!!g360RhDate(r.demissao)).map(r=>({matricula:r.matricula,nome:r.nome,demissao:r.demissao,status:r.status,obra_id:r.obra_id}));
   window.G360_RH_CHART_SOURCE={rows:rows.length,labels:MONTH_LABELS.slice(),admissoes:admData.slice(),demissoes:demData.slice(),demissoesDetalhe:detalheDemissoes,generatedAt:new Date().toISOString()};
   console.info('[G360 RH V13] gráfico geral reconstruído da tabela funcionarios',window.G360_RH_CHART_SOURCE);
   comboChart('chColabAdmDem', MONTH_LABELS, admData, demData, 'Admissões', 'Demissões');
@@ -7020,8 +7120,9 @@ function renderColabKpis(){
   const turnoverGeral = HC_TOTAL ? desligados12m.length/HC_TOTAL : 0;
 
   renderKpis('kpi-colaboradores', [
-    {label:'Headcount Ativo', value: fmtInt(ATIVOS.length)},
-    {label:'Afastados', value: fmtInt(AFASTADOS_.length)},
+    {label:'Headcount Próprio Ativo', value: fmtInt(ATIVOS.length)},
+    {label:'Terceiros Ativos', value: fmtInt(TERCEIROS_ATIVOS.length)},
+    {label:'Afastados (próprios)', value: fmtInt(AFASTADOS_.length)},
     {label:'Desligados (12M)', value: fmtInt(desligados12m.length)},
     {label:'Admissões (mês atual)', value: fmtInt(admMesAtual)},
     {label:'Em Período de Experiência', value: fmtInt(emExperiencia), alt:true},
@@ -7108,6 +7209,7 @@ function renderRhDpDashboard(){
   recalcExperienciaColaboradores(COLABS);
   renderColabKpis();
   try{ renderColabCharts(); }catch(e){ console.error('Dashboard RH/DP:',e); }
+  try{ window.g360RhDespesasV234?.load?.(); }catch(e){ console.error('Dashboard despesas RH:',e); }
   colabChartsRendered = true;
 }
 function renderColabTable(){
@@ -7147,7 +7249,7 @@ function renderColabTable(){
             return `
               <button type="button" class="crud-mini" onclick="g360CrudEdit('funcionarios','${enc}')">✏️ Editar</button>
               <button type="button" class="crud-mini toggle" onclick="g360CrudToggle('funcionarios','${enc}')">${String(c.status||'').toUpperCase()==='ATIVO'?'⏸ Inativar':'▶ Ativar'}</button>
-              ${String(c.status||'').toUpperCase()!=='DESLIGADO'?`<button type="button" class="crud-mini offboard" onclick="g360CrudOffboard('funcionarios','${enc}')">🚪 Desligar</button>`:''}
+              ${!g360IsTerceiro(c) && String(c.status||'').toUpperCase()!=='DESLIGADO'?`<button type="button" class="crud-mini offboard" onclick="g360CrudOffboard('funcionarios','${enc}')">🚪 Desligar</button>`:''}
               <button type="button" class="crud-mini danger" onclick="g360CrudDelete('funcionarios','${enc}')">🗑</button>
             `;
           })()}
@@ -9552,6 +9654,169 @@ async function g360AbrirImportacaoAdmissao(){
 document.addEventListener('click',e=>{
   if(e.target?.closest?.('#g360ImportarAdmColab')){e.preventDefault();g360AbrirImportacaoAdmissao();}
 });
+</script>
+<script id="g360-reembolsos-js-v234">
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);let comps=[],rows=[],colabs=[],currentComp=null,currentColab=null,chart=null;
+const sb=()=>window.g360SupabaseClient;const obraId=()=>window.g360GetSelectedObra?.()?.id||window.G360_ACTIVE_OBRA_ID||null;
+const brl=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});const esc=s=>String(s??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const monthKey=v=>String(v||'').slice(0,7);const compDate=k=>/^\d{4}-\d{2}$/.test(k)?k+'-01':k;const compLabel=k=>{if(!k)return'—';const [y,m]=k.split('-');return new Date(Number(y),Number(m)-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'}).toUpperCase()};
+function currentUserId(){return sb()?.auth?.getUser?.().then(r=>r.data?.user?.id||null)}
+async function loadColabs(){const oid=obraId();let q=sb().from('funcionarios').select('id,matricula,nome,funcao,status,obra_id').order('nome');if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error)throw r.error;colabs=(r.data||[]).filter(c=>!['DESLIGADO','INATIVO','ABANDONO'].includes(String(c.status||'').toUpperCase()));const sel=$('g360ReembColab');if(sel)sel.innerHTML='<option value="">Selecione...</option>'+colabs.map(c=>`<option value="${esc(c.id)}">${esc(c.nome)}${c.matricula?' · '+esc(c.matricula):''}</option>`).join('')}
+async function loadComps(selectKey=''){const oid=obraId();let q=sb().from('rh_reembolso_competencias').select('*').order('competencia',{ascending:false});if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error)throw r.error;comps=r.data||[];const sel=$('g360ReembCompSelect');if(sel){sel.innerHTML=comps.length?comps.map(c=>`<option value="${c.id}" data-key="${monthKey(c.competencia)}">${compLabel(monthKey(c.competencia))} · ${c.status||'ABERTA'}</option>`).join(''):'<option value="">Nenhuma competência aberta</option>';let target=comps.find(c=>monthKey(c.competencia)===selectKey)||comps[0];if(target){sel.value=target.id;currentComp=target}else currentComp=null}}
+async function loadRows(){if(!currentComp){rows=[];render();return}const r=await sb().from('rh_reembolso_lancamentos').select('*').eq('competencia_id',currentComp.id).order('colaborador_nome').order('data_despesa').order('created_at');if(r.error)throw r.error;rows=r.data||[];render()}
+function selectedColab(){return colabs.find(c=>String(c.id)===String($('g360ReembColab')?.value||''))||null}
+function personRows(){const c=selectedColab();return c?rows.filter(r=>String(r.colaborador_id)===String(c.id)):[]}
+function render(){const key=currentComp?monthKey(currentComp.competencia):'';$('g360ReembKpiComp')&&($('g360ReembKpiComp').textContent=key?compLabel(key):'—');const total=rows.reduce((s,r)=>s+Number(r.valor||0),0);const pids=new Set(rows.map(r=>r.colaborador_id||r.colaborador_nome).filter(Boolean));$('g360ReembKpiTotal')&&($('g360ReembKpiTotal').textContent=brl(total));$('g360ReembKpiPessoas')&&($('g360ReembKpiPessoas').textContent=pids.size);$('g360ReembKpiItens')&&($('g360ReembKpiItens').textContent=rows.length);
+ const c=selectedColab();currentColab=c;const pr=personRows(),pt=pr.reduce((s,r)=>s+Number(r.valor||0),0);$('g360ReembPessoaTotal')&&($('g360ReembPessoaTotal').textContent=brl(pt));$('g360ReembTabelaTitulo')&&($('g360ReembTabelaTitulo').textContent=c?`Despesas — ${c.nome}`:'Despesas do colaborador');$('g360ReembTabelaSub')&&($('g360ReembTabelaSub').textContent=c?(c.funcao||'Função não informada'):'—');$('g360ReembPessoaResumo')&&($('g360ReembPessoaResumo').innerHTML=c?`<b>${esc(c.nome)}</b> · ${esc(c.funcao||'')} · ${pr.length} despesa(s) · Total <b>${brl(pt)}</b>`:'Selecione um colaborador para lançar ou consultar despesas.');
+ const body=$('g360ReembBody');if(body)body.innerHTML=!c?'<tr><td colspan="7"><div class="empty-state">Selecione um colaborador.</div></td></tr>':(!pr.length?'<tr><td colspan="7"><div class="empty-state">Nenhuma despesa lançada para este colaborador.</div></td></tr>':pr.map((r,i)=>`<tr><td>${String(i+1).padStart(2,'0')}</td><td>${esc(r.descricao)}</td><td>${r.data_despesa?new Date(r.data_despesa+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</td><td>${esc(r.fornecedor||'—')}</td><td>${esc(r.categoria||'—')}</td><td><b>${brl(r.valor)}</b></td><td><button type="button" class="crud-mini danger" data-reemb-del="${r.id}">🗑 Excluir</button></td></tr>`).join(''));body?.querySelectorAll('[data-reemb-del]').forEach(b=>b.onclick=()=>delRow(b.dataset.reembDel));
+ const groups={};rows.forEach(r=>{const k=String(r.colaborador_id||r.colaborador_nome);if(!groups[k])groups[k]={nome:r.colaborador_nome,funcao:r.funcao,qtd:0,total:0};groups[k].qtd++;groups[k].total+=Number(r.valor||0)});const rb=$('g360ReembResumoBody');if(rb)rb.innerHTML=Object.values(groups).length?Object.values(groups).sort((a,b)=>a.nome.localeCompare(b.nome)).map(g=>`<tr><td><b>${esc(g.nome)}</b></td><td>${esc(g.funcao||'')}</td><td>${g.qtd}</td><td><b>${brl(g.total)}</b></td></tr>`).join(''):'<tr><td colspan="4"><div class="empty-state">Nenhum lançamento nesta competência.</div></td></tr>';}
+async function openComp(){const k=$('g360ReembCompNova')?.value||'';if(!k)return alert('Selecione a competência.');const oid=obraId();if(!oid)return alert('Selecione uma obra.');const exists=comps.find(c=>monthKey(c.competencia)===k);if(exists){currentComp=exists;$('g360ReembCompSelect').value=exists.id;await loadRows();return alert('Esta competência já está aberta.');}const uid=await currentUserId();const r=await sb().from('rh_reembolso_competencias').insert({obra_id:oid,competencia:compDate(k),status:'ABERTA',created_by:uid}).select('*').single();if(r.error)return alert('Não foi possível abrir a competência: '+r.error.message);await loadComps(k);await loadRows()}
+function clearForm(){$('g360ReembDescricao').value='';$('g360ReembData').value=new Date().toISOString().slice(0,10);$('g360ReembFornecedor').value='';$('g360ReembCategoria').value='PASSAGEM';$('g360ReembValor').value='';$('g360ReembObs').value=''}
+async function addRow(){const c=selectedColab();if(!currentComp)return alert('Abra ou selecione uma competência.');if(!c)return alert('Selecione o colaborador.');const desc=$('g360ReembDescricao').value.trim(),data=$('g360ReembData').value,forn=$('g360ReembFornecedor').value.trim(),cat=$('g360ReembCategoria').value,val=Number($('g360ReembValor').value||0),obs=$('g360ReembObs').value.trim();if(!desc)return alert('Informe a descrição da despesa.');if(!data)return alert('Informe a data da despesa.');if(!(val>0))return alert('Informe um valor válido.');const uid=await currentUserId();const payload={competencia_id:currentComp.id,obra_id:obraId(),colaborador_id:c.id,matricula:c.matricula||null,colaborador_nome:c.nome,funcao:c.funcao||null,descricao:desc,data_despesa:data,fornecedor:forn||null,categoria:cat||null,valor:val,observacao:obs||null,created_by:uid};const r=await sb().from('rh_reembolso_lancamentos').insert(payload);if(r.error)return alert('Erro ao adicionar despesa: '+r.error.message);await loadRows();clearForm()}
+async function delRow(id){if(!confirm('Excluir esta despesa do reembolso?'))return;const r=await sb().from('rh_reembolso_lancamentos').delete().eq('id',id);if(r.error)return alert(r.error.message);await loadRows()}
+function sheetName(s,used){
+  const clean=String(s||'Pessoa').replace(/[\\\/?*\[\]:]/g,' ').replace(/\s+/g,' ').trim();
+  const words=clean.split(' ').filter(Boolean);
+  // Nome curto e legível para a aba individual, semelhante à planilha-modelo.
+  let n='';
+  if(words.length<=2)n=clean;
+  else{
+    const keep=[];
+    for(const w of words){
+      if(keep.length>=3)break;
+      keep.push(w);
+    }
+    n=keep.join(' ');
+  }
+  n=(n||'Pessoa').slice(0,31);
+  let base=n,i=2;
+  while(used.has(n)){n=(base.slice(0,27)+' '+i++).slice(0,31)}
+  used.add(n);
+  return n;
+}
+
+function reembCellRef(c,r){
+  let n=c,s='';
+  while(n>0){n--;s=String.fromCharCode(65+(n%26))+s;n=Math.floor(n/26)}
+  return s+r;
+}
+
+function reembApplyModelLayout(ws,kind,totalRow){
+  // Estrutura visual da planilha-modelo. O SheetJS Community preserva
+  // mesclagens, larguras, alturas, formatos numéricos e fórmulas.
+  ws['!rows']=ws['!rows']||[];
+  ws['!merges']=ws['!merges']||[];
+  if(kind==='geral'){
+    ws['!merges'].push({s:{r:0,c:0},e:{r:0,c:3}});
+    ws['!cols']=[{wch:10},{wch:40},{wch:34},{wch:16}];
+    ws['!rows'][0]={hpt:26};
+    for(let r=3;r<=totalRow;r++){
+      const cell=ws[`D${r}`];
+      if(cell)cell.z='R$ #,##0.00';
+    }
+  }else{
+    ws['!merges'].push({s:{r:0,c:0},e:{r:0,c:4}});
+    // NOME em B3 e FUNÇÃO em D3/E3 no mesmo desenho do arquivo enviado.
+    ws['!cols']=[{wch:9},{wch:58},{wch:14},{wch:32},{wch:16}];
+    ws['!rows'][0]={hpt:26};
+    for(let r=6;r<=totalRow;r++){
+      const d=ws[`C${r}`]; if(d)d.z='dd/mm/yyyy';
+      const v=ws[`E${r}`]; if(v)v.z='R$ #,##0.00';
+    }
+  }
+}
+
+function exportExcel(){
+  if(!currentComp)return alert('Selecione uma competência.');
+  if(!rows.length)return alert('Não há lançamentos nesta competência.');
+  if(!window.XLSX?.utils)return alert('Biblioteca Excel não carregada.');
+
+  const wb=XLSX.utils.book_new(),used=new Set();
+  const groups={};
+
+  rows.forEach(r=>{
+    const k=String(r.colaborador_id||r.colaborador_nome);
+    if(!groups[k])groups[k]={nome:r.colaborador_nome,funcao:r.funcao,itens:[]};
+    groups[k].itens.push(r);
+  });
+
+  const pessoas=Object.values(groups).sort((a,b)=>String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR'));
+  const totalGeral=rows.reduce((s,r)=>s+Number(r.valor||0),0);
+
+  // PRIMEIRA ABA — igual à lógica da planilha enviada.
+  const geral=[
+    ['RELAÇÃO DESPESAS DE VIAGEM / REEMBOLSO',null,null,null],
+    [null,null,null,null],
+    ['ORDEM','NOME COLABORADOR','FUNÇÃO','VALOR'],
+    ...pessoas.map((g,i)=>[
+      String(i+1).padStart(2,'0'),
+      String(g.nome||'').toUpperCase(),
+      String(g.funcao||'').toUpperCase(),
+      g.itens.reduce((s,r)=>s+Number(r.valor||0),0)
+    ]),
+    [null,null,null,null],
+    [null,null,null,null]
+  ];
+
+  let ws=XLSX.utils.aoa_to_sheet(geral);
+  const geralTotalRow=geral.length;
+  ws[`D${geralTotalRow}`]={t:'n',f:`SUM(D4:D${3+pessoas.length})`,v:totalGeral,z:'R$ #,##0.00'};
+  reembApplyModelLayout(ws,'geral',geralTotalRow);
+  XLSX.utils.book_append_sheet(wb,ws,'RELATORIO GERAL');
+  used.add('RELATORIO GERAL');
+
+  // ABAS INDIVIDUAIS — ITEM | DESCRIÇÃO | DATA | FORNECEDOR | VALOR
+  pessoas.forEach(g=>{
+    const itens=[...(g.itens||[])].sort((a,b)=>
+      String(a.data_despesa||'').localeCompare(String(b.data_despesa||'')) ||
+      String(a.created_at||'').localeCompare(String(b.created_at||''))
+    );
+
+    const a=[
+      ['RELAÇÃO DESPESAS DE VIAGEM / REEMBOLSO',null,null,null,null],
+      [null,null,null,null,null],
+      ['NOME:',String(g.nome||'').toUpperCase(),'FUNÇÃO',String(g.funcao||'').toUpperCase(),null],
+      [null,null,null,null,null],
+      ['ITEM','DESCRIÇÃO','DATA','FORNECEDOR','VALOR'],
+      ...itens.map((r,i)=>[
+        String(i+1).padStart(2,'0'),
+        String(r.descricao||'').toUpperCase(),
+        r.data_despesa ? new Date(r.data_despesa+'T12:00:00') : null,
+        String(r.fornecedor||'').toUpperCase(),
+        Number(r.valor||0)
+      ]),
+      [null,null,null,null,null],
+      [null,null,null,null,null]
+    ];
+
+    const s=XLSX.utils.aoa_to_sheet(a);
+    const firstDataRow=6;
+    const lastDataRow=5+itens.length;
+    const totalRow=a.length;
+    s[`E${totalRow}`]={
+      t:'n',
+      f:`SUM(E${firstDataRow}:E${Math.max(firstDataRow,lastDataRow)})`,
+      v:itens.reduce((sum,r)=>sum+Number(r.valor||0),0),
+      z:'R$ #,##0.00'
+    };
+    reembApplyModelLayout(s,'pessoa',totalRow);
+    XLSX.utils.book_append_sheet(wb,s,sheetName(g.nome,used));
+  });
+
+  XLSX.writeFile(wb,`RELATORIO_REEMBOLSOS_${monthKey(currentComp.competencia)}.xlsx`);
+}
+function exportPdfPessoa(){const c=selectedColab(),pr=personRows();if(!c)return alert('Selecione o colaborador.');if(!pr.length)return alert('Não há despesas para este colaborador.');if(!window.jspdf?.jsPDF)return alert('Biblioteca PDF não carregada.');const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape',unit:'pt',format:'a4'}),W=doc.internal.pageSize.getWidth();doc.setFillColor(252,211,174);doc.rect(28,28,W-56,48,'F');doc.setDrawColor(20);doc.rect(28,28,W-56,48);doc.setTextColor(20);doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text('RELAÇÃO DESPESAS DE VIAGEM / REEMBOLSO',W/2,58,{align:'center'});doc.setFontSize(10);doc.rect(28,98,W-56,34);doc.text('NOME:',34,119);doc.setFont('helvetica','normal');doc.text(String(c.nome||''),74,119);doc.setFont('helvetica','bold');doc.text('FUNÇÃO:',W*0.58,119);doc.setFont('helvetica','normal');doc.text(String(c.funcao||''),W*0.64,119);doc.autoTable({startY:154,head:[['ITEM','DESCRIÇÃO','DATA','FORNECEDOR','VALOR']],body:pr.map((r,i)=>[String(i+1).padStart(2,'0'),r.descricao,r.data_despesa?new Date(r.data_despesa+'T12:00:00').toLocaleDateString('pt-BR'):'',r.fornecedor||'',brl(r.valor)]),theme:'grid',styles:{fontSize:9,cellPadding:6,textColor:[20,20,20]},headStyles:{fillColor:[252,211,174],textColor:[20,20,20],fontStyle:'bold'},columnStyles:{0:{cellWidth:45},1:{cellWidth:360},2:{cellWidth:80},3:{cellWidth:190},4:{cellWidth:90,halign:'right'}}});const y=(doc.lastAutoTable?.finalY||200)+10,total=pr.reduce((s,r)=>s+Number(r.valor||0),0);doc.setFont('helvetica','bold');doc.setFontSize(11);doc.text(`TOTAL: ${brl(total)}`,W-34,y,{align:'right'});doc.save(`reembolso_${String(c.nome).replace(/[^A-Za-z0-9À-ÿ]+/g,'_')}_${monthKey(currentComp.competencia)}.pdf`)}
+async function init(){if(!$('view-rhdpReembolsos')||!sb())return;const now=new Date().toISOString().slice(0,7);$('g360ReembCompNova').value=now;$('g360ReembData').value=new Date().toISOString().slice(0,10);try{await Promise.all([loadColabs(),loadComps(now)]);await loadRows()}catch(e){console.error(e);alert('Falha ao carregar reembolsos: '+(e?.message||e))}if(!$('g360ReembAbrirComp').dataset.bound){$('g360ReembAbrirComp').dataset.bound='1';$('g360ReembAbrirComp').onclick=openComp;$('g360ReembCompSelect').onchange=async()=>{currentComp=comps.find(c=>String(c.id)===String($('g360ReembCompSelect').value))||null;await loadRows()};$('g360ReembColab').onchange=render;$('g360ReembAdicionar').onclick=addRow;$('g360ReembLimpar').onclick=clearForm;$('g360ReembExcelComp').onclick=exportExcel;$('g360ReembPdfPessoa').onclick=exportPdfPessoa}}
+window.g360ReembolsosV234={init,refresh:loadRows};
+
+async function loadExpenseDashboard(){if(!sb())return;const oid=obraId(),today=new Date(),keys=[];for(let i=5;i>=0;i--){const d=new Date(today.getFullYear(),today.getMonth()-i,1);keys.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`)}const start=keys[0]+'-01',end=new Date(today.getFullYear(),today.getMonth()+1,1).toISOString().slice(0,10);let rq=sb().from('rh_reembolso_lancamentos').select('valor,data_despesa,colaborador_id,obra_id').gte('data_despesa',start).lt('data_despesa',end),fq=sb().from('folga_campo').select('competencia,valor_reembolso,custo,colaborador_id,obra_id,incluido').gte('competencia',start).lt('competencia',end);if(oid){rq=rq.eq('obra_id',oid);fq=fq.eq('obra_id',oid)}const [rr,fr]=await Promise.all([rq,fq]);if(rr.error||fr.error){console.warn('Despesas RH:',rr.error||fr.error);return}const rrows=rr.data||[],frows=(fr.data||[]).filter(x=>x.incluido!==false),cur=keys[keys.length-1],rv=rrows.filter(x=>monthKey(x.data_despesa)===cur),fv=frows.filter(x=>monthKey(x.competencia)===cur),rTotal=rv.reduce((s,x)=>s+Number(x.valor||0),0),fTotal=fv.reduce((s,x)=>s+Number(x.valor_reembolso??x.custo??0),0);$('g360RhDespesasCompetencia')&&($('g360RhDespesasCompetencia').textContent=compLabel(cur));$('g360RhKpiReemb')&&($('g360RhKpiReemb').textContent=brl(rTotal));$('g360RhKpiFolga')&&($('g360RhKpiFolga').textContent=brl(fTotal));$('g360RhKpiDespTotal')&&($('g360RhKpiDespTotal').textContent=brl(rTotal+fTotal));$('g360RhKpiReembPessoas')&&($('g360RhKpiReembPessoas').textContent=new Set(rv.map(x=>x.colaborador_id).filter(Boolean)).size);const ctx=$('chRhDespesas');if(!ctx||!window.Chart)return;const rSerie=keys.map(k=>rrows.filter(x=>monthKey(x.data_despesa)===k).reduce((s,x)=>s+Number(x.valor||0),0)),fSerie=keys.map(k=>frows.filter(x=>monthKey(x.competencia)===k).reduce((s,x)=>s+Number(x.valor_reembolso??x.custo??0),0));chart?.destroy();chart=new Chart(ctx,{type:'bar',data:{labels:keys.map(compLabel),datasets:[{label:'Reembolsos',data:rSerie},{label:'Folga de Campo',data:fSerie}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#ddd'}}},scales:{x:{ticks:{color:'#aaa'}},y:{ticks:{color:'#aaa',callback:v=>'R$ '+Number(v).toLocaleString('pt-BR')}}}}})}
+window.g360RhDespesasV234={load:loadExpenseDashboard};
+})();
+</script>
+<script>
+
 
 const RENDERERS = {
   projetosObras: ()=>window.g360RenderProjects?.(),
@@ -9559,7 +9824,7 @@ const RENDERERS = {
   patrimonioInventario: ()=>window.g360RenderPatrimonioInventario?.(), patrimonio: ()=>window.g360RenderPatrimonioAlojamento?.(),
   contratos: ctrInit, alertas: renderAlertas, baixadas: renderBaixadas, sesmt: renderSESMT, sesmtEstoque: ()=>window.g360EpiInit?.(), sesmtTermo: ()=>window.g360EpiInit?.(), formconcessao: renderFolgaCampoForm,
   fechamentoPraca: renderFechamentoJulho,
-  rhdpAdmissao: renderRhdpAdmissao, rhdpDemissao: renderRhdpDemissao, rhdpMovimentacao: renderRhdpMovimentacao, rhdpAdvertencia: renderRhdpAdvertencia, termoResponsabilidade: renderTermoResponsabilidade,
+  rhdpAdmissao: renderRhdpAdmissao, rhdpDemissao: renderRhdpDemissao, rhdpMovimentacao: renderRhdpMovimentacao, rhdpAdvertencia: renderRhdpAdvertencia, rhdpReembolsos: ()=>window.g360ReembolsosV234?.init?.(), termoResponsabilidade: renderTermoResponsabilidade,
 };
 const rendered = new Set();
 document.querySelectorAll('.side-link').forEach(btn=>{
@@ -9587,7 +9852,7 @@ document.querySelectorAll('.side-link').forEach(btn=>{
       document.getElementById('g360PatrimonioCascade')?.classList.add('open');
       document.getElementById('g360PatrimonioCascadeToggle')?.setAttribute('aria-expanded','true');
     }
-    if(['rhdpDashboard','organograma','base','cargosSalarios','termoResponsabilidade','rhdpAdmissao','rhdpDemissao','rhdpMovimentacao','rhdpAdvertencia','baixadas','alertas'].includes(view)){
+    if(['rhdpDashboard','organograma','base','cargosSalarios','termoResponsabilidade','rhdpAdmissao','rhdpDemissao','rhdpMovimentacao','rhdpAdvertencia','baixadas','rhdpReembolsos','alertas'].includes(view)){
       document.getElementById('g360RhDpCascade')?.classList.add('open');
       document.getElementById('g360RhDpCascadeToggle')?.setAttribute('aria-expanded','true');
     }
@@ -12898,6 +13163,7 @@ window.GESTAO360_CONFIG = {
     window.G360_RH_LIVE_MONTHLY = MONTHS.map(d=>{
       const next=new Date(d.getFullYear(),d.getMonth()+1,1);
       return fRows.filter(r=>{
+        if(g360IsTerceiro(r)) return false;
         const raw=r.demissao ?? r.data_demissao ?? r['demissão'] ?? null;
         if(!raw) return false;
         const txt=String(raw).slice(0,10);
@@ -12910,6 +13176,7 @@ window.GESTAO360_CONFIG = {
     window.G360_RH_LIVE_ADMISSOES_MONTHLY = MONTHS.map(d=>{
       const next=new Date(d.getFullYear(),d.getMonth()+1,1);
       return fRows.filter(r=>{
+        if(g360IsTerceiro(r)) return false;
         const raw=r.admissao ?? r.data_admissao ?? null;
         if(!raw) return false;
         const txt=String(raw).slice(0,10);
@@ -12919,7 +13186,7 @@ window.GESTAO360_CONFIG = {
         return dt>=d && dt<next;
       }).length;
     });
-    window.G360_RH_LIVE_ROWS = fRows.map(r=>({id:r.id,matricula:r.matricula,nome:r.nome,status:r.status,demissao:(r.demissao ?? r.data_demissao ?? r['demissão'] ?? null)}));
+    window.G360_RH_LIVE_ROWS = fRows.map(r=>({id:r.id,matricula:r.matricula,nome:r.nome,tipo_contrato:r.tipo_contrato,status:r.status,demissao:(r.demissao ?? r.data_demissao ?? r['demissão'] ?? null)}));
     const col=fRows.map(snakeToColab), con=(c.data||[]).map(mapContrato), alo=(a.data||[]).map(mapAloj);
     // A fonte viva do RH passa a ser o retorno atual do Supabase nesta própria execução.
     // Assim Headcount, Desligados e Admissões x Demissões não dependem do reload/cache para atualizar.
@@ -13417,6 +13684,25 @@ window.GESTAO360_CONFIG = {
     }
     if(kind==='funcionarios'){
       const st=g360Form.elements.status, box=document.getElementById('g360DesligamentoBox'), dem=document.getElementById('g360Demissao');
+      const tipoContratoEl=g360Form.elements.tipo_contrato;
+      const syncStatusTerceiro=()=>{
+        if(!st||!tipoContratoEl)return;
+        const tipo=String(tipoContratoEl.value||'').trim().toUpperCase();
+        const terceiro=['TER','TERC','TERCEIRO','TERCEIROS','TERCEIRIZADO','TERCEIRIZADOS'].includes(tipo.normalize('NFD').replace(/[\u0300-\u036f]/g,''));
+        if(terceiro){
+          const atual=String(st.value||'ATIVO').toUpperCase();
+          st.innerHTML='<option value="ATIVO">ATIVO</option><option value="INATIVO">INATIVO</option>';
+          st.value=atual==='INATIVO'?'INATIVO':'ATIVO';
+          if(box)box.style.display='none';
+          if(dem)dem.value='';
+        }else if(st.options.length<=2){
+          const atual=String(st.value||'ATIVO').toUpperCase();
+          st.innerHTML=['ATIVO','INATIVO','DESLIGADO','FÉRIAS','AFASTADO','SUSPENSO','ABANDONO'].map(x=>`<option value="${x}">${x}</option>`).join('');
+          st.value=[...st.options].some(o=>o.value===atual)?atual:'ATIVO';
+        }
+      };
+      tipoContratoEl?.addEventListener('change',syncStatusTerceiro);
+      syncStatusTerceiro();
       // V23 — Cadastro de colaboradores: campos obrigatórios + regras condicionais.
       const optionalAlways=new Set(['venc_aso','cnh','cat_cnh','venc_cnh','ult_baixada','prox_baixada','periodicidade_baixada','custo_baixada','vt','cidade_baixada','uf_baixada','telefone','email','horario_entrada','horario_saida','intervalo_inicio','intervalo_fim','jornada_observacao','alojamento']);
       d.fields.forEach(f=>{const el=g360Form.elements[f[0]];if(el&&!optionalAlways.has(f[0]))el.required=true;});
@@ -13912,6 +14198,14 @@ window.GESTAO360_CONFIG = {
             g360Form.elements.tipo_contrato?.focus();return;
           }
         }
+        if(g360IsTerceiro(obj)){
+          // Terceiro é apenas ATIVO/INATIVO. Inativação não gera evento de demissão.
+          obj.status=String(obj.status||'ATIVO').toUpperCase()==='INATIVO'?'INATIVO':'ATIVO';
+          obj.demissao=null;
+          obj.data_demissao=null;
+          obj.motivo_deslig=null;
+          obj.tipo_deslig=null;
+        }
         const direitoRaw=String(obj.direito_baixada??'').trim().toLowerCase();
         if(!['true','false'].includes(direitoRaw)){
           alert('Informe se o colaborador tem direito de baixada.');
@@ -14403,7 +14697,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
 <script>
 (function(){
   const MODULES=[
-    ['alertas','Central de Alertas','alertas'],['projetos','Projetos / Obras','projetosObras'],['executivo','Painel Gerencial','executivo'],['colaboradores','Colaboradores (RH / DP)','base'],['cargos_salarios','Cargos e Salários','cargosSalarios'],['termos','Termos de Responsabilidade','termoResponsabilidade'],['alojamentos','Alojamentos','alojamento'],['patrimonio_inventario','Inventário de Patrimônio','patrimonioInventario'],['patrimonio_estoque','Estoque de Patrimônio','patrimonioEstoque'],['patrimonio_alojamento','Patrimônio por Alojamento','patrimonio'],['organograma','Organograma Setor/Equipe','organograma'],['contratos','Contratos','contratos'],['aditivos','Aditivos de Contratos','aditivosContratos'],['fechamento','Fechamento de Praça','fechamentoPraca'],['admissao','Admissão','rhdpAdmissao'],['demissao','Solicitação de Demissão','rhdpDemissao'],['movimentacao','Movimentação Interna','rhdpMovimentacao'],['advertencia','Advertência Disciplinar','rhdpAdvertencia'],['folga','Folga de Campo','baixadas'],['sesmt','SESMT › Segurança do Trabalho','sesmt'],
+    ['alertas','Central de Alertas','alertas'],['projetos','Projetos / Obras','projetosObras'],['executivo','Painel Gerencial','executivo'],['colaboradores','Colaboradores (RH / DP)','base'],['cargos_salarios','Cargos e Salários','cargosSalarios'],['termos','Termos de Responsabilidade','termoResponsabilidade'],['alojamentos','Alojamentos','alojamento'],['patrimonio_inventario','Inventário de Patrimônio','patrimonioInventario'],['patrimonio_estoque','Estoque de Patrimônio','patrimonioEstoque'],['patrimonio_alojamento','Patrimônio por Alojamento','patrimonio'],['organograma','Organograma Setor/Equipe','organograma'],['contratos','Contratos','contratos'],['aditivos','Aditivos de Contratos','aditivosContratos'],['fechamento','Fechamento de Praça','fechamentoPraca'],['admissao','Admissão','rhdpAdmissao'],['demissao','Solicitação de Demissão','rhdpDemissao'],['movimentacao','Movimentação Interna','rhdpMovimentacao'],['advertencia','Advertência Disciplinar','rhdpAdvertencia'],['folga','Folga de Campo','baixadas'],['reembolsos','Reembolsos','rhdpReembolsos'],['sesmt','SESMT › Segurança do Trabalho','sesmt'],
     ['sesmt_estoque','SESMT › Controle de Estoque — Acesso geral','sesmtEstoque'],
     ['sesmt_estoque_consulta','SESMT › Estoque — Consulta / Estoque Atual',''],
     ['sesmt_estoque_entrada','SESMT › Estoque — Entrada',''],
@@ -14423,7 +14717,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
   const PERFIS_NATIVOS=new Set(['ENGENHEIROS','RH','TECNICO_SEGURANCA','GESTOR']);
   const RH_MODULES=new Set([
     'colaboradores','cargos_salarios','organograma',
-    'admissao','demissao','movimentacao','advertencia','folga'
+    'admissao','demissao','movimentacao','advertencia','folga','reembolsos'
   ]);
   const SESMT_MODULES=new Set([
     'sesmt','sesmt_estoque','sesmt_estoque_consulta','sesmt_estoque_entrada',
@@ -19318,6 +19612,25 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 
+
+<script id="g360-rh-formularios-js-v239">
+(function(){
+  function init(){
+    const g=document.getElementById('g360RhFormsGroupV239');
+    const t=document.getElementById('g360RhFormsToggleV239');
+    if(!g||!t||t.dataset.bound)return;
+    t.dataset.bound='1';
+    t.addEventListener('click',function(e){
+      e.preventDefault(); e.stopPropagation();
+      g.classList.toggle('open');
+    });
+    const sub=document.getElementById('g360RhFormsSubmenuV239');
+    if(sub)sub.addEventListener('click',function(e){e.stopPropagation();});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);
+  else init();
+})();
+</script>
 </body>
 </html>
 
