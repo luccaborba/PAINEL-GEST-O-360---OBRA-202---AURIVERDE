@@ -10561,6 +10561,8 @@ async function init(){
       $('g360ReembAbrirComp').onclick=openComp;
       $('g360ReembCompSelect').onchange=async()=>{currentComp=comps.find(c=>String(c.id)===String($('g360ReembCompSelect').value))||null;lastLoadedCompId=null;await loadRows(true)};
       $('g360ReembColab').onchange=render;
+      $('g360ReembTipo').onchange=syncReembTipo;
+      syncReembTipo();
       $('g360ReembAdicionar').onclick=addRow;
       $('g360ReembLimpar').onclick=clearForm;
       $('g360ReembPdfComp').onclick=exportPdfCompetencia;
