@@ -1,4 +1,3 @@
-<!-- V317: Folga de Campo — carrega periodicidade_baixada para sugestão automática -->
 <!-- V291: Reembolsos com editar/excluir por lançamento + dashboard/login sempre no topo -->
 <!-- V288: corrige lançamento de Reembolsos restaurando rotina estável e validação de valor -->
 <!-- V285: Folga de Campo definitiva — período/retorno D+1/km, roteiro estruturado, hospedagem e termo integrado ao Supabase -->
@@ -21058,7 +21057,7 @@ const storeKey=()=>`g360_fc_competencias_${obraId()||'sem_obra'}`;function curre
 function readLocalComps(){try{return JSON.parse(localStorage.getItem(storeKey())||'[]').filter(x=>/^\d{4}-\d{2}$/.test(x))}catch(_){return[]}}function saveLocalComps(list){try{localStorage.setItem(storeKey(),JSON.stringify([...new Set(list)].sort()))}catch(_){}}
 function addDaysISO(iso,n){if(!iso)return'';const d=new Date(iso+'T12:00:00');if(Number.isNaN(d.getTime()))return'';d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
 function calcDays(a,b){if(!a||!b)return null;const x=new Date(a+'T12:00:00'),y=new Date(b+'T12:00:00');return Math.max(1,Math.round((y-x)/86400000)+1)}
-async function loadColabs(){const oid=obraId();let q=sb().from('funcionarios').select('id,matricula,nome,funcao,status,obra_id,periodicidade_baixada').order('nome');if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error)throw r.error;colabs=(r.data||[]).filter(c=>!['DESLIGADO','INATIVO','ABANDONO'].includes(String(c.status||'').toUpperCase()));const sel=$('g360FcDevColab');if(sel)sel.innerHTML='<option value="">Selecione...</option>'+colabs.map(c=>`<option value="${esc(c.id)}">${esc(c.nome)}${c.matricula?' · '+esc(c.matricula):''}</option>`).join('')}
+async function loadColabs(){const oid=obraId();let q=sb().from('funcionarios').select('id,matricula,nome,funcao,status,obra_id,periodicidade_baixada,admissao').order('nome');if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error)throw r.error;colabs=(r.data||[]).filter(c=>!['DESLIGADO','INATIVO','ABANDONO'].includes(String(c.status||'').toUpperCase()));const sel=$('g360FcDevColab');if(sel)sel.innerHTML='<option value="">Selecione...</option>'+colabs.map(c=>`<option value="${esc(c.id)}">${esc(c.nome)}${c.matricula?' · '+esc(c.matricula):''}</option>`).join('')}
 function renderCompButtons(){const box=$('g360FcDevCompButtons'),sel=$('g360FcDevCompSelect');if(!box||!sel)return;competencias=[...new Set(competencias)].sort();sel.innerHTML=competencias.length?competencias.map(k=>`<option value="${k}"${k===currentMonth?' selected':''}>${compLabel(k).replace(' DE ',' / ')}</option>`).join(''):'<option value="">Nenhuma competência aberta</option>';sel.value=currentMonth&&competencias.includes(currentMonth)?currentMonth:(competencias[0]||'');if(sel.value&&sel.value!==currentMonth)currentMonth=sel.value;if(!sel.dataset.fcdevBound){sel.dataset.fcdevBound='1';sel.addEventListener('change',async()=>{const k=sel.value;if(!k||k===currentMonth)return;currentMonth=k;await loadRows();await loadMeta()})}}
 async function loadComps(selectKey=''){const oid=obraId();let q=sb().from('folga_campo_despesas').select('competencia,obra_id').order('competencia',{ascending:false});if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error)throw r.error;let q2=sb().from('folga_campo').select('competencia,obra_id').order('competencia',{ascending:false});if(oid)q2=q2.eq('obra_id',oid);const r2=await q2;const fromDb=[...(r.data||[]),...(r2.error?[]:(r2.data||[]))].map(x=>monthKey(x.competencia)).filter(x=>/^\d{4}-\d{2}$/.test(x));competencias=[...new Set([...fromDb,...readLocalComps(),'2026-08'])].sort();saveLocalComps(competencias);const target=selectKey&&competencias.includes(selectKey)?selectKey:(currentMonth&&competencias.includes(currentMonth)?currentMonth:competencias[0]||'2026-08');currentMonth=target;renderCompButtons()}
 async function loadRows(){if(!currentMonth){rows=[];render();return}let q=sb().from('folga_campo_despesas').select('*').eq('competencia',compDate(currentMonth)).order('colaborador_nome').order('created_at');const oid=obraId();if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error)throw r.error;rows=r.data||[];render()}
@@ -21070,6 +21069,18 @@ async function loadFcResidCidades(uf,selecionada=''){const el=$('g360FcDevResidC
 function fcFmtDate(v){if(!v)return'—';const d=new Date(String(v).slice(0,10)+'T12:00:00');return Number.isNaN(d.getTime())?'—':d.toLocaleDateString('pt-BR')}
 function fcAddMonthsISO(v,meses){const [y,m,d]=String(v).slice(0,10).split('-').map(Number);if(!y||!m||!d||!meses)return'';const base=new Date(y,m-1,d,12);const alvoMes=base.getMonth()+Number(meses);const dia=base.getDate();base.setDate(1);base.setMonth(alvoMes);const ultimo=new Date(base.getFullYear(),base.getMonth()+1,0).getDate();base.setDate(Math.min(dia,ultimo));return `${base.getFullYear()}-${String(base.getMonth()+1).padStart(2,'0')}-${String(base.getDate()).padStart(2,'0')}`}
 function fcPeriodicidadeMeses(txt){if(!txt)return null;const m=String(txt).match(/(\d+)\s*\/\s*(\d+)/)||String(txt).match(/(\d+)/);return m?Number(m[1]):null}
+function fcQuintoDiaUtilMes(isoBase,meses){
+ if(!isoBase||!meses)return '';
+ const d=new Date(isoBase+'T12:00:00');if(isNaN(d))return '';
+ d.setMonth(d.getMonth()+Number(meses));
+ const y=d.getFullYear(),m=d.getMonth();let uteis=0;
+ for(let dia=1;dia<=15;dia++){
+  const x=new Date(y,m,dia,12,0,0),sem=x.getDay();
+  if(sem!==0&&sem!==6)uteis++;
+  if(uteis===5)return `${y}-${String(m+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+ }
+ return '';
+}
 async function loadFolgaSuggestion(){
  const el=$('g360FcSugestao'),c=selectedColab();if(!el)return;
  if(!c){el.textContent='Selecione um colaborador para calcular a próxima folga sugerida.';return}
@@ -21085,13 +21096,20 @@ async function loadFolgaSuggestion(){
   (rr.data||[]).forEach(x=>hist.push({ini:x.periodo_folga_inicio,fim:x.periodo_folga_fim||x.periodo_folga_inicio,fonte:'REEMBOLSO — FOLGA DE CAMPO'}));
   hist.sort((a,b)=>String(b.ini||'').localeCompare(String(a.ini||'')));
   const last=hist[0],meses=fcPeriodicidadeMeses(c.periodicidade_baixada);
-  if(!last){el.innerHTML=`<b>${esc(c.nome)}</b> · Nenhuma Folga de Campo anterior localizada nos módulos Folga de Campo ou Reembolsos.`;return}
-  if(!meses){el.innerHTML=`<b>${esc(c.nome)}</b> · Última folga: <b>${fcFmtDate(last.ini)} A ${fcFmtDate(last.fim)}</b> · Fonte: ${esc(last.fonte)} · <b>Periodicidade não cadastrada no colaborador.</b>`;return}
-  const proxIni=fcAddMonthsISO(last.ini,meses);
-  const dur=Math.max(0,Math.round((new Date(last.fim+'T12:00:00')-new Date(last.ini+'T12:00:00'))/86400000));
-  const proxFim=proxIni?(()=>{const d=new Date(proxIni+'T12:00:00');d.setDate(d.getDate()+dur);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`})():'';
-  el.innerHTML=`<b>${esc(c.nome)}</b> · Última folga considerada: <b>${fcFmtDate(last.ini)} A ${fcFmtDate(last.fim)}</b> · Fonte: ${esc(last.fonte)} · Periodicidade: <b>${esc(c.periodicidade_baixada||meses+' MESES')}</b> · <span style="color:#f5c518;font-weight:800">SUGESTÃO: ${fcFmtDate(proxIni)} A ${fcFmtDate(proxFim)}</span>`;
- }catch(e){console.error('Sugestão Folga de Campo:',e);el.textContent='Não foi possível calcular a sugestão. Verifique se o schema V310 foi executado.'}
+  const base=last?.ini||c.admissao||'';
+  const fonte=last?.fonte||'DATA DE ADMISSÃO';
+  if(!base){el.innerHTML=`<b>${esc(c.nome)}</b> · Nenhuma folga anterior localizada e data de admissão não cadastrada.`;return}
+  if(!meses){el.innerHTML=`<b>${esc(c.nome)}</b> · Data-base: <b>${fcFmtDate(base)}</b> · Fonte: ${esc(fonte)} · <b>Periodicidade não cadastrada no colaborador.</b>`;return}
+  const proxIni=fcQuintoDiaUtilMes(base,meses);
+  if(!proxIni){el.innerHTML=`<b>${esc(c.nome)}</b> · Não foi possível calcular a próxima folga sugerida.`;return}
+  // Regra fixa da Folga de Campo: 2x2 = 3 dias, 3x3 = 5 dias, 6x6 = 7 dias.
+  // A programação nunca replica o dia/período anterior: o início é sempre o 5º dia útil do mês do próximo ciclo.
+  const diasFolga=meses===2?3:(meses===3?5:(meses===6?7:null));
+  if(!diasFolga){el.innerHTML=`<b>${esc(c.nome)}</b> · Periodicidade <b>${esc(c.periodicidade_baixada||meses+' MESES')}</b> sem quantidade de dias de folga configurada.`;return}
+  const proxFim=(()=>{const d=new Date(proxIni+'T12:00:00');d.setDate(d.getDate()+diasFolga-1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`})();
+  const baseTxt=last?`Última folga considerada: <b>${fcFmtDate(last.ini)} A ${fcFmtDate(last.fim)}</b> · Fonte: ${esc(last.fonte)}`:`Nenhuma folga anterior localizada · Data-base: <b>${fcFmtDate(base)}</b> · Fonte: <b>DATA DE ADMISSÃO</b>`;
+  el.innerHTML=`<b>${esc(c.nome)}</b> · ${baseTxt} · Periodicidade: <b>${esc(c.periodicidade_baixada||meses+' MESES')}</b> · Direito: <b>${diasFolga} DIAS</b> · <span style="color:#f5c518;font-weight:800">SUGESTÃO: ${fcFmtDate(proxIni)} A ${fcFmtDate(proxFim)} · INÍCIO NO 5º DIA ÚTIL</span>`;
+ }catch(e){console.error('Sugestão Folga de Campo:',e);el.textContent='Não foi possível calcular a sugestão. Verifique os dados do colaborador e o histórico de Folga de Campo.'}
 }
 async function loadMeta(){const c=selectedColab();if(!c||!currentMonth){fillMeta(null);return null}let q=sb().from('folga_campo').select('*').eq('colaborador_id',c.id).eq('competencia',compDate(currentMonth)).order('created_at',{ascending:false}).limit(1).maybeSingle();const oid=obraId();if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error)throw r.error;fillMeta(r.data||null);return r.data||null}
 function calcReturn(){const fim=$('g360FcDevDataFim')?.value||'';$('g360FcDevDataRetorno').value=fim?addDaysISO(fim,1):''}
