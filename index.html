@@ -10102,20 +10102,44 @@ async function loadReembHeader(){
 }
 async function saveReembHeader(){
  const btn=$('g360ReembSalvarCabecalho'),oldBtnText=btn?.textContent||'💾 SALVAR DADOS';
- if(btn){btn.disabled=true;btn.textContent='⏳ SALVANDO...';btn.style.opacity='.75';}
  const restore=()=>{if(btn){btn.disabled=false;btn.style.opacity='';}};
- const c=selectedColab();if(!currentComp){restore();return alert('Selecione uma competência.')}if(!c){restore();return alert('Selecione o colaborador.');}
- const tipo=String($('g360ReembTipo')?.value||'').trim().toUpperCase(),ini=$('g360ReembFolgaIni')?.value||'',fim=$('g360ReembFolgaFim')?.value||'';
- if(!tipo){restore();return alert('Selecione o tipo de reembolso.');}
- if(tipo==='FOLGA_DE_CAMPO'&&(!ini||!fim)){restore();return alert('Informe o período da Folga de Campo.');}
- if(tipo==='FOLGA_DE_CAMPO'&&fim<ini){restore();return alert('A data final da folga não pode ser anterior à data inicial.');}
- const payload={competencia_id:currentComp.id,obra_id:obraId(),colaborador_id:c.id,tipo_reembolso:tipo,periodo_folga_inicio:tipo==='FOLGA_DE_CAMPO'?ini:null,periodo_folga_fim:tipo==='FOLGA_DE_CAMPO'?fim:null,updated_at:new Date().toISOString()};
- let r=currentHeader?.id?await sb().from('rh_reembolso_cabecalhos').update(payload).eq('id',currentHeader.id).select().single():await sb().from('rh_reembolso_cabecalhos').insert({...payload,created_at:new Date().toISOString()}).select().single();
- if(r.error){console.error(r.error);restore();if(btn)btn.textContent='⚠ ERRO AO SALVAR';setTimeout(()=>{if(btn)btn.textContent=oldBtnText},2200);return alert('Não foi possível salvar. Execute o schema V313 no Supabase.')}
- currentHeader=r.data;
- if(btn)btn.textContent='✓ SALVO';
- restore();
- setTimeout(async()=>{await loadReembHeader()},1800);
+ if(btn){btn.disabled=true;btn.textContent='⏳ SALVANDO...';btn.style.opacity='.75';}
+ const c=selectedColab();
+ if(!currentComp){restore();if(btn)btn.textContent=oldBtnText;return alert('Selecione uma competência.')}
+ if(!c){restore();if(btn)btn.textContent=oldBtnText;return alert('Selecione o colaborador.')}
+ const tipo=String($('g360ReembTipo')?.value||'').trim().toUpperCase(),
+       ini=$('g360ReembFolgaIni')?.value||'',
+       fim=$('g360ReembFolgaFim')?.value||'';
+ if(!tipo){restore();if(btn)btn.textContent=oldBtnText;return alert('Selecione o tipo de reembolso.')}
+ if(tipo==='FOLGA_DE_CAMPO'&&(!ini||!fim)){restore();if(btn)btn.textContent=oldBtnText;return alert('Informe o período da Folga de Campo.')}
+ if(tipo==='FOLGA_DE_CAMPO'&&fim<ini){restore();if(btn)btn.textContent=oldBtnText;return alert('A data final da folga não pode ser anterior à data inicial.')}
+ const payload={
+   competencia_id:currentComp.id,
+   obra_id:obraId()||null,
+   colaborador_id:c.id,
+   tipo_reembolso:tipo,
+   periodo_folga_inicio:tipo==='FOLGA_DE_CAMPO'?ini:null,
+   periodo_folga_fim:tipo==='FOLGA_DE_CAMPO'?fim:null,
+   updated_at:new Date().toISOString()
+ };
+ try{
+   const savePromise=sb().from('rh_reembolso_cabecalhos')
+     .upsert(payload,{onConflict:'competencia_id,colaborador_id',ignoreDuplicates:false});
+   const timeoutPromise=new Promise((_,reject)=>setTimeout(()=>reject(new Error('TIMEOUT_SUPABASE')),12000));
+   const r=await Promise.race([savePromise,timeoutPromise]);
+   if(r?.error)throw r.error;
+   currentHeader={...(currentHeader||{}),...payload};
+   if(btn)btn.textContent='✓ SALVO';
+   restore();
+   setTimeout(async()=>{try{await loadReembHeader()}catch(e){console.error(e)}},1200);
+ }catch(e){
+   console.error('Salvar cabeçalho reembolso:',e);
+   restore();
+   if(btn)btn.textContent='⚠ ERRO AO SALVAR';
+   setTimeout(()=>{if(btn)btn.textContent=oldBtnText},2500);
+   if(String(e?.message||e).includes('TIMEOUT_SUPABASE')) return alert('O Supabase não respondeu à gravação. Execute o schema V315 e tente novamente.');
+   alert('Erro ao salvar os dados do reembolso: '+(e?.message||'verifique o schema V315 no Supabase.'));
+ }
 }
 function selectedColab(){return colabs.find(c=>String(c.id)===String($('g360ReembColab')?.value||''))||null}
 function personRows(){const c=selectedColab();return c?rows.filter(r=>String(r.colaborador_id)===String(c.id)):[]}
