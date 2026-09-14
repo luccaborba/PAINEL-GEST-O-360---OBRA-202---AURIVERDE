@@ -2326,7 +2326,8 @@ html.g360-ui-ready .content-col {
           </div>
           <div class="g360-reemb-person" id="g360ReembPessoaResumo">Selecione um colaborador para lançar ou consultar despesas.</div>
         </section>
-        <section class="panel">
+        <section class="panel" id="g360ReembCabecalhoPanel">
+          <div class="g360-reemb-table-head"><div><h2>Dados do reembolso</h2><div class="g360-reemb-sub">Informação única para este colaborador nesta competência.</div></div><button type="button" class="btn-primary" id="g360ReembSalvarCabecalho">💾 SALVAR DADOS</button></div>
           <div class="g360-reemb-form-grid">
             <label>Tipo de reembolso<select id="g360ReembTipo"><option value="">SELECIONE...</option><option value="FOLGA_DE_CAMPO">FOLGA DE CAMPO</option><option value="INGRESSO_EMPRESA">VIAGEM PARA INGRESSO NA EMPRESA</option></select></label>
             <div id="g360ReembPeriodoFolga" class="span2" hidden>
@@ -2335,6 +2336,10 @@ html.g360-ui-ready .content-col {
                 <label>Até<input type="date" id="g360ReembFolgaFim"></label>
               </div>
             </div>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="g360-reemb-form-grid">
             <label class="span2">Descrição da despesa<input id="g360ReembDescricao" placeholder="Ex.: PASSAGEM RODOVIÁRIA - GOIÂNIA -> CRIXÁS"></label>
             <label>Data<input type="date" id="g360ReembData"></label>
             <label>Fornecedor<input id="g360ReembFornecedor" placeholder="Ex.: EXPRESSO UNIÃO LTDA"></label>
@@ -2346,7 +2351,7 @@ html.g360-ui-ready .content-col {
         </section>
         <section class="panel">
           <div class="g360-reemb-table-head"><div><h2 id="g360ReembTabelaTitulo">Despesas do colaborador</h2><div class="g360-reemb-sub" id="g360ReembTabelaSub">—</div></div><div class="g360-reemb-person-total">Total: <b id="g360ReembPessoaTotal">R$ 0,00</b></div></div>
-          <div class="table-scroll"><table><thead><tr><th>Item</th><th>Tipo</th><th>Descrição</th><th>Data</th><th>Fornecedor</th><th>Categoria</th><th>Valor</th><th>Ações</th></tr></thead><tbody id="g360ReembBody"><tr><td colspan="8"><div class="empty-state">Selecione um colaborador.</div></td></tr></tbody></table></div>
+          <div class="table-scroll"><table><thead><tr><th>Item</th><th>Descrição</th><th>Data</th><th>Fornecedor</th><th>Categoria</th><th>Valor</th><th>Ações</th></tr></thead><tbody id="g360ReembBody"><tr><td colspan="7"><div class="empty-state">Selecione um colaborador.</div></td></tr></tbody></table></div>
         </section>
         <section class="panel">
           <div class="g360-reemb-table-head"><div><h2>Resumo da competência</h2><div class="g360-reemb-sub">Consolidado por colaborador.</div></div><div class="g360-reemb-export-actions"><button type="button" class="clear-btn" id="g360ReembPdfComp">📄 PDF COMPETÊNCIA</button><button type="button" class="clear-btn" id="g360ReembExcelComp">📊 EXCEL COMPETÊNCIA</button></div></div>
@@ -10078,14 +10083,35 @@ function parseMoneyInput(raw){
 function currentUserId(){return sb()?.auth?.getUser?.().then(r=>r.data?.user?.id||null)}
 async function loadColabs(){const oid=obraId();let q=sb().from('funcionarios').select('id,matricula,nome,funcao,status,obra_id,periodicidade_baixada').order('nome');if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error)throw r.error;colabs=(r.data||[]).filter(c=>!['DESLIGADO','INATIVO','ABANDONO'].includes(String(c.status||'').toUpperCase()));const sel=$('g360ReembColab');if(sel)sel.innerHTML='<option value="">Selecione...</option>'+colabs.map(c=>`<option value="${esc(c.id)}">${esc(c.nome)}${c.matricula?' · '+esc(c.matricula):''}</option>`).join('')}
 async function loadComps(selectKey=''){const oid=obraId();let q=sb().from('rh_reembolso_competencias').select('id,obra_id,competencia,status,created_at,created_by').order('competencia',{ascending:false});if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error)throw r.error;comps=r.data||[];const sel=$('g360ReembCompSelect');if(sel){sel.innerHTML=comps.length?comps.map(c=>`<option value="${c.id}" data-key="${monthKey(c.competencia)}">${compLabel(monthKey(c.competencia))} · ${c.status||'ABERTA'}</option>`).join(''):'<option value="">Nenhuma competência aberta</option>';let target=comps.find(c=>monthKey(c.competencia)===selectKey)||comps[0];if(target){sel.value=target.id;currentComp=target}else currentComp=null}}
-async function loadRows(force=true){if(!currentComp){rows=[];lastLoadedCompId=null;render();return}if(!force&&lastLoadedCompId===String(currentComp.id)&&rows.length){render();return}const r=await sb().from('rh_reembolso_lancamentos').select('id,competencia_id,obra_id,colaborador_id,matricula,colaborador_nome,funcao,tipo_reembolso,periodo_folga_inicio,periodo_folga_fim,descricao,data_despesa,fornecedor,categoria,valor,observacao,created_at,created_by').eq('competencia_id',currentComp.id).order('colaborador_nome').order('data_despesa').order('created_at');if(r.error)throw r.error;rows=(r.data||[]).map(x=>({...x,colaborador_nome:String(x.colaborador_nome||'').toLocaleUpperCase('pt-BR'),funcao:String(x.funcao||'').toLocaleUpperCase('pt-BR'),descricao:String(x.descricao||'').toLocaleUpperCase('pt-BR'),fornecedor:x.fornecedor?String(x.fornecedor).toLocaleUpperCase('pt-BR'):x.fornecedor,categoria:x.categoria?String(x.categoria).toLocaleUpperCase('pt-BR'):x.categoria,observacao:x.observacao?String(x.observacao).toLocaleUpperCase('pt-BR'):x.observacao}));lastLoadedCompId=String(currentComp.id);render()}
+async function loadRows(force=true){if(!currentComp){rows=[];lastLoadedCompId=null;render();return}if(!force&&lastLoadedCompId===String(currentComp.id)&&rows.length){render();return}const r=await sb().from('rh_reembolso_lancamentos').select('id,competencia_id,obra_id,colaborador_id,matricula,colaborador_nome,funcao,descricao,data_despesa,fornecedor,categoria,valor,observacao,created_at,created_by').eq('competencia_id',currentComp.id).order('colaborador_nome').order('data_despesa').order('created_at');if(r.error)throw r.error;rows=(r.data||[]).map(x=>({...x,colaborador_nome:String(x.colaborador_nome||'').toLocaleUpperCase('pt-BR'),funcao:String(x.funcao||'').toLocaleUpperCase('pt-BR'),descricao:String(x.descricao||'').toLocaleUpperCase('pt-BR'),fornecedor:x.fornecedor?String(x.fornecedor).toLocaleUpperCase('pt-BR'):x.fornecedor,categoria:x.categoria?String(x.categoria).toLocaleUpperCase('pt-BR'):x.categoria,observacao:x.observacao?String(x.observacao).toLocaleUpperCase('pt-BR'):x.observacao}));lastLoadedCompId=String(currentComp.id);render()}
 function reembTipoLabel(v){return String(v||'').toUpperCase()==='FOLGA_DE_CAMPO'?'FOLGA DE CAMPO':String(v||'').toUpperCase()==='INGRESSO_EMPRESA'?'VIAGEM PARA INGRESSO NA EMPRESA':'—'}
 function syncReembTipo(){const tipo=String($('g360ReembTipo')?.value||'');const box=$('g360ReembPeriodoFolga');if(box)box.hidden=tipo!=='FOLGA_DE_CAMPO';if(tipo!=='FOLGA_DE_CAMPO'){if($('g360ReembFolgaIni'))$('g360ReembFolgaIni').value='';if($('g360ReembFolgaFim'))$('g360ReembFolgaFim').value=''}}
+async function loadReembHeader(){
+ const c=selectedColab(),tipo=$('g360ReembTipo'),ini=$('g360ReembFolgaIni'),fim=$('g360ReembFolgaFim'),btn=$('g360ReembSalvarCabecalho');currentHeader=null;
+ if(tipo)tipo.value='';if(ini)ini.value='';if(fim)fim.value='';syncReembTipo();
+ if(!c||!currentComp){if(btn)btn.textContent='💾 SALVAR DADOS';return}
+ let q=sb().from('rh_reembolso_cabecalhos').select('id,competencia_id,obra_id,colaborador_id,tipo_reembolso,periodo_folga_inicio,periodo_folga_fim').eq('competencia_id',currentComp.id).eq('colaborador_id',c.id).limit(1);
+ const oid=obraId();if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error){console.error(r.error);return}
+ currentHeader=(r.data||[])[0]||null;
+ if(currentHeader){tipo.value=currentHeader.tipo_reembolso||'';ini.value=currentHeader.periodo_folga_inicio||'';fim.value=currentHeader.periodo_folga_fim||''}
+ syncReembTipo();if(btn)btn.textContent=currentHeader?'💾 SALVAR ALTERAÇÕES':'💾 SALVAR DADOS';
+}
+async function saveReembHeader(){
+ const c=selectedColab();if(!currentComp)return alert('Selecione uma competência.');if(!c)return alert('Selecione o colaborador.');
+ const tipo=String($('g360ReembTipo')?.value||'').trim().toUpperCase(),ini=$('g360ReembFolgaIni')?.value||'',fim=$('g360ReembFolgaFim')?.value||'';
+ if(!tipo)return alert('Selecione o tipo de reembolso.');
+ if(tipo==='FOLGA_DE_CAMPO'&&(!ini||!fim))return alert('Informe o período da Folga de Campo.');
+ if(tipo==='FOLGA_DE_CAMPO'&&fim<ini)return alert('A data final da folga não pode ser anterior à data inicial.');
+ const payload={competencia_id:currentComp.id,obra_id:obraId(),colaborador_id:c.id,tipo_reembolso:tipo,periodo_folga_inicio:tipo==='FOLGA_DE_CAMPO'?ini:null,periodo_folga_fim:tipo==='FOLGA_DE_CAMPO'?fim:null,updated_at:new Date().toISOString()};
+ let r=currentHeader?.id?await sb().from('rh_reembolso_cabecalhos').update(payload).eq('id',currentHeader.id).select().single():await sb().from('rh_reembolso_cabecalhos').insert({...payload,created_at:new Date().toISOString()}).select().single();
+ if(r.error){console.error(r.error);return alert('Não foi possível salvar. Execute o schema V313 no Supabase.')}
+ currentHeader=r.data;await loadReembHeader();
+}
 function selectedColab(){return colabs.find(c=>String(c.id)===String($('g360ReembColab')?.value||''))||null}
 function personRows(){const c=selectedColab();return c?rows.filter(r=>String(r.colaborador_id)===String(c.id)):[]}
 function render(){const key=currentComp?monthKey(currentComp.competencia):'';$('g360ReembKpiComp')&&($('g360ReembKpiComp').textContent=key?compLabel(key):'—');const total=rows.reduce((s,r)=>s+Number(r.valor||0),0);const pids=new Set(rows.map(r=>r.colaborador_id||r.colaborador_nome).filter(Boolean));$('g360ReembKpiTotal')&&($('g360ReembKpiTotal').textContent=brl(total));$('g360ReembKpiPessoas')&&($('g360ReembKpiPessoas').textContent=pids.size);$('g360ReembKpiItens')&&($('g360ReembKpiItens').textContent=rows.length);
  const c=selectedColab();currentColab=c;const pr=personRows(),pt=pr.reduce((s,r)=>s+Number(r.valor||0),0);$('g360ReembPessoaTotal')&&($('g360ReembPessoaTotal').textContent=brl(pt));$('g360ReembTabelaTitulo')&&($('g360ReembTabelaTitulo').textContent=c?`Despesas — ${c.nome}`:'Despesas do colaborador');$('g360ReembTabelaSub')&&($('g360ReembTabelaSub').textContent=c?(c.funcao||'Função não informada'):'—');$('g360ReembPessoaResumo')&&($('g360ReembPessoaResumo').innerHTML=c?`<b>${esc(c.nome)}</b> · ${esc(c.funcao||'')} · ${pr.length} despesa(s) · Total <b>${brl(pt)}</b>`:'Selecione um colaborador para lançar ou consultar despesas.');
- const body=$('g360ReembBody');if(body)body.innerHTML=!c?'<tr><td colspan="8"><div class="empty-state">Selecione um colaborador.</div></td></tr>':(!pr.length?'<tr><td colspan="8"><div class="empty-state">Nenhuma despesa lançada para este colaborador.</div></td></tr>':pr.map((r,i)=>`<tr><td>${String(i+1).padStart(2,'0')}</td><td>${esc(reembTipoLabel(r.tipo_reembolso))}${r.tipo_reembolso==='FOLGA_DE_CAMPO'&&r.periodo_folga_inicio&&r.periodo_folga_fim?`<div class="g360-reemb-sub">${new Date(r.periodo_folga_inicio+'T12:00:00').toLocaleDateString('pt-BR')} A ${new Date(r.periodo_folga_fim+'T12:00:00').toLocaleDateString('pt-BR')}</div>`:''}</td><td>${esc(r.descricao)}</td><td>${r.data_despesa?new Date(r.data_despesa+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</td><td>${esc(r.fornecedor||'—')}</td><td>${esc(r.categoria||'—')}</td><td><b>${brl(r.valor)}</b></td><td><div class="crud-row-actions"><button type="button" class="crud-mini" data-reemb-edit="${r.id}">✏️ Editar</button><button type="button" class="crud-mini danger" data-reemb-del="${r.id}">🗑 Excluir</button></div></td></tr>`).join(''));body?.querySelectorAll('[data-reemb-edit]').forEach(b=>b.onclick=()=>editRow(b.dataset.reembEdit));body?.querySelectorAll('[data-reemb-del]').forEach(b=>b.onclick=()=>delRow(b.dataset.reembDel));
+ const body=$('g360ReembBody');if(body)body.innerHTML=!c?'<tr><td colspan="7"><div class="empty-state">Selecione um colaborador.</div></td></tr>':(!pr.length?'<tr><td colspan="7"><div class="empty-state">Nenhuma despesa lançada para este colaborador.</div></td></tr>':pr.map((r,i)=>`<tr><td>${String(i+1).padStart(2,'0')}</td><td>${esc(r.descricao)}</td><td>${r.data_despesa?new Date(r.data_despesa+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</td><td>${esc(r.fornecedor||'—')}</td><td>${esc(r.categoria||'—')}</td><td><b>${brl(r.valor)}</b></td><td><div class="crud-row-actions"><button type="button" class="crud-mini" data-reemb-edit="${r.id}">✏️ Editar</button><button type="button" class="crud-mini danger" data-reemb-del="${r.id}">🗑 Excluir</button></div></td></tr>`).join(''));body?.querySelectorAll('[data-reemb-edit]').forEach(b=>b.onclick=()=>editRow(b.dataset.reembEdit));body?.querySelectorAll('[data-reemb-del]').forEach(b=>b.onclick=()=>delRow(b.dataset.reembDel));
  const groups={};rows.forEach(r=>{const k=String(r.colaborador_id||r.colaborador_nome);if(!groups[k])groups[k]={key:k,nome:r.colaborador_nome,funcao:r.funcao,qtd:0,total:0};groups[k].qtd++;groups[k].total+=Number(r.valor||0)});const rb=$('g360ReembResumoBody');if(rb){rb.innerHTML=Object.values(groups).length?Object.values(groups).sort((a,b)=>a.nome.localeCompare(b.nome)).map(g=>`<tr><td><div class="g360-reemb-resumo-nome"><button type="button" class="g360-reemb-pdf-mini" data-reemb-pdf="${esc(g.key)}" title="Gerar PDF individual de ${esc(g.nome)}" aria-label="Gerar PDF individual de ${esc(g.nome)}">📄</button><b>${esc(g.nome)}</b></div></td><td>${esc(g.funcao||'')}</td><td>${g.qtd}</td><td><b>${brl(g.total)}</b></td><td><button type="button" class="crud-mini" data-reemb-manage="${esc(g.key)}">✏️ Editar / 🗑 Excluir</button></td></tr>`).join(''):'<tr><td colspan="5"><div class="empty-state">Nenhum lançamento nesta competência.</div></td></tr>';rb.querySelectorAll('[data-reemb-pdf]').forEach(b=>b.onclick=()=>exportPdfPessoa(b.dataset.reembPdf));rb.querySelectorAll('[data-reemb-manage]').forEach(b=>b.onclick=()=>{const key=String(b.dataset.reembManage||'');const sel=$('g360ReembColab');if(sel){sel.value=key;render();const alvo=$('g360ReembTabelaTitulo')?.closest('.panel')||$('g360ReembTabelaTitulo');alvo?.scrollIntoView({behavior:'smooth',block:'start'});}});}}
 async function openComp(){const k=$('g360ReembCompNova')?.value||'';if(!k)return alert('Selecione a competência.');const oid=obraId();if(!oid)return alert('Selecione uma obra.');const exists=comps.find(c=>monthKey(c.competencia)===k);if(exists){currentComp=exists;$('g360ReembCompSelect').value=exists.id;await loadRows();return alert('Esta competência já está aberta.');}const uid=await currentUserId();const r=await sb().from('rh_reembolso_competencias').insert({obra_id:oid,competencia:compDate(k),status:'ABERTA',created_by:uid}).select('*').single();if(r.error)return alert('Não foi possível abrir a competência: '+r.error.message);await loadComps(k);await loadRows()}
 function setReembMode(editing){
@@ -10096,10 +10122,6 @@ function setReembMode(editing){
 }
 function clearForm(){
   editingId=null;
-  if($('g360ReembTipo'))$('g360ReembTipo').value='';
-  if($('g360ReembFolgaIni'))$('g360ReembFolgaIni').value='';
-  if($('g360ReembFolgaFim'))$('g360ReembFolgaFim').value='';
-  syncReembTipo();
   $('g360ReembDescricao').value='';
   $('g360ReembData').value=new Date().toISOString().slice(0,10);
   $('g360ReembFornecedor').value='';
@@ -10113,10 +10135,6 @@ function editRow(id){
   if(!r)return alert('Lançamento não encontrado.');
   const sel=$('g360ReembColab');
   if(sel&&r.colaborador_id){sel.value=String(r.colaborador_id);render()}
-  if($('g360ReembTipo'))$('g360ReembTipo').value=String(r.tipo_reembolso||'');
-  if($('g360ReembFolgaIni'))$('g360ReembFolgaIni').value=String(r.periodo_folga_inicio||'').slice(0,10);
-  if($('g360ReembFolgaFim'))$('g360ReembFolgaFim').value=String(r.periodo_folga_fim||'').slice(0,10);
-  syncReembTipo();
   $('g360ReembDescricao').value=String(r.descricao||'');
   $('g360ReembData').value=String(r.data_despesa||'').slice(0,10);
   $('g360ReembFornecedor').value=String(r.fornecedor||'');
@@ -10134,18 +10152,13 @@ async function addRow(){
   const c=selectedColab();
   if(!currentComp)return alert('Abra ou selecione uma competência.');
   if(!c)return alert('Selecione o colaborador.');
-  const tipo=String($('g360ReembTipo')?.value||'').trim().toUpperCase(),
-        folgaIni=$('g360ReembFolgaIni')?.value||'',
-        folgaFim=$('g360ReembFolgaFim')?.value||'',
-        desc=$('g360ReembDescricao').value.trim().toLocaleUpperCase('pt-BR'),
+  if(!currentHeader)return alert('Salve primeiro os DADOS DO REEMBOLSO deste colaborador.');
+  const desc=$('g360ReembDescricao').value.trim().toLocaleUpperCase('pt-BR'),
         data=$('g360ReembData').value,
         forn=$('g360ReembFornecedor').value.trim().toLocaleUpperCase('pt-BR'),
         cat=String($('g360ReembCategoria').value||'').toLocaleUpperCase('pt-BR'),
         val=parseMoneyInput($('g360ReembValor').value),
         obs=$('g360ReembObs').value.trim().toLocaleUpperCase('pt-BR');
-  if(!tipo)return alert('Selecione o tipo de reembolso.');
-  if(tipo==='FOLGA_DE_CAMPO'&&(!folgaIni||!folgaFim))return alert('Informe o período da Folga de Campo.');
-  if(tipo==='FOLGA_DE_CAMPO'&&folgaFim<folgaIni)return alert('A data final da folga não pode ser anterior à data inicial.');
   if(!desc)return alert('Informe a descrição da despesa.');
   if(!data)return alert('Informe a data da despesa.');
   if(!(val>0))return alert('Informe um valor válido.');
@@ -10155,7 +10168,7 @@ async function addRow(){
     if(btn){btn.disabled=true;btn.textContent=isEdit?'⏳ Salvando...':'⏳ Incluindo...';btn.setAttribute('aria-busy','true')}
     await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
     const uid=await currentUserId();
-    const payload={competencia_id:currentComp.id,obra_id:obraId(),colaborador_id:c.id,matricula:c.matricula||null,colaborador_nome:String(c.nome||'').toLocaleUpperCase('pt-BR'),funcao:c.funcao?String(c.funcao).toLocaleUpperCase('pt-BR'):null,tipo_reembolso:tipo,periodo_folga_inicio:tipo==='FOLGA_DE_CAMPO'?folgaIni:null,periodo_folga_fim:tipo==='FOLGA_DE_CAMPO'?folgaFim:null,descricao:desc,data_despesa:data,fornecedor:forn||null,categoria:cat||null,valor:val,observacao:obs||null};
+    const payload={competencia_id:currentComp.id,obra_id:obraId(),colaborador_id:c.id,matricula:c.matricula||null,colaborador_nome:String(c.nome||'').toLocaleUpperCase('pt-BR'),funcao:c.funcao?String(c.funcao).toLocaleUpperCase('pt-BR'):null,descricao:desc,data_despesa:data,fornecedor:forn||null,categoria:cat||null,valor:val,observacao:obs||null};
     let r;
     if(isEdit){
       r=await sb().from('rh_reembolso_lancamentos').update(payload).eq('id',editId);
@@ -10559,9 +10572,10 @@ async function init(){
     if(!$('g360ReembAbrirComp').dataset.bound){
       $('g360ReembAbrirComp').dataset.bound='1';
       $('g360ReembAbrirComp').onclick=openComp;
-      $('g360ReembCompSelect').onchange=async()=>{currentComp=comps.find(c=>String(c.id)===String($('g360ReembCompSelect').value))||null;lastLoadedCompId=null;await loadRows(true)};
-      $('g360ReembColab').onchange=render;
+      $('g360ReembCompSelect').onchange=async()=>{currentComp=comps.find(c=>String(c.id)===String($('g360ReembCompSelect').value))||null;lastLoadedCompId=null;await loadRows(true);await loadReembHeader()};
+      $('g360ReembColab').onchange=async()=>{render();await loadReembHeader()};
       $('g360ReembTipo').onchange=syncReembTipo;
+      $('g360ReembSalvarCabecalho').onclick=saveReembHeader;
       syncReembTipo();
       $('g360ReembAdicionar').onclick=addRow;
       $('g360ReembLimpar').onclick=clearForm;
@@ -21027,7 +21041,7 @@ async function loadFolgaSuggestion(){
  try{
   const oid=obraId();
   let fq=sb().from('folga_campo').select('data_inicio,data_fim,competencia').eq('colaborador_id',c.id).not('data_inicio','is',null).order('data_inicio',{ascending:false}).limit(10);
-  let rq=sb().from('rh_reembolso_lancamentos').select('periodo_folga_inicio,periodo_folga_fim,tipo_reembolso').eq('colaborador_id',c.id).eq('tipo_reembolso','FOLGA_DE_CAMPO').not('periodo_folga_inicio','is',null).order('periodo_folga_inicio',{ascending:false}).limit(10);
+  let rq=sb().from('rh_reembolso_cabecalhos').select('periodo_folga_inicio,periodo_folga_fim,tipo_reembolso').eq('colaborador_id',c.id).eq('tipo_reembolso','FOLGA_DE_CAMPO').not('periodo_folga_inicio','is',null).order('periodo_folga_inicio',{ascending:false}).limit(10);
   if(oid){fq=fq.eq('obra_id',oid);rq=rq.eq('obra_id',oid)}
   const [fr,rr]=await Promise.all([fq,rq]);if(fr.error)throw fr.error;if(rr.error)throw rr.error;
   const hist=[];
