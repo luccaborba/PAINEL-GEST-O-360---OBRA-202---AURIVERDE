@@ -2020,11 +2020,12 @@ html.g360-ui-ready .content-col {
 .fc-dev-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 
 .fc-route-panel .g360-reemb-table-head{margin-bottom:12px}
-.fc-route-grid{display:grid;grid-template-columns:minmax(180px,1.2fr) 84px minmax(180px,1.2fr) 84px minmax(150px,.8fr) auto;gap:10px;align-items:end}
+.fc-route-grid{display:grid;grid-template-columns:84px minmax(260px,1.55fr) 84px minmax(260px,1.55fr) minmax(150px,.8fr) auto;gap:10px;align-items:end}
 .fc-route-grid label,.fc-extra-grid label{display:flex;flex-direction:column;gap:6px;font-family:var(--font-display);font-size:12px!important;line-height:1.15;font-weight:500!important;letter-spacing:.06em;text-transform:uppercase;color:var(--white-line)!important}
 .fc-route-grid input,.fc-route-grid select,.fc-extra-grid input,.fc-extra-grid select{width:100%;background:#111316;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:9px 11px;font-family:var(--font-body);font-size:13px;font-weight:600}
 .fc-route-action{display:flex;align-items:flex-end;height:100%}.fc-route-action .btn-primary{width:100%;white-space:nowrap}
 .fc-uf-field input{text-align:center;text-transform:uppercase!important}
+.fc-route-grid .fc-uf-field select{text-align:center;padding-left:8px;padding-right:8px;text-transform:uppercase}
 .fc-extra-grid .fc-extra-route{display:none}
 .fc-extra-grid.show-route .fc-extra-route{display:flex}
 .fc-extra-grid.show-manual .fc-extra-manual{display:flex!important}
@@ -2035,8 +2036,8 @@ html.g360-ui-ready .content-col {
 .fc-folga-dados-grid input[readonly]{opacity:.8;background:#181a1e}
 @media(max-width:900px){.fc-folga-dados-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){.fc-folga-dados-grid{grid-template-columns:1fr}}
-@media(max-width:1100px){.fc-route-grid{grid-template-columns:1fr 80px 1fr 80px}.fc-route-action{grid-column:span 2}.fc-route-grid>label:nth-child(5){grid-column:span 2}}
-@media(max-width:700px){.fc-route-grid{grid-template-columns:1fr 70px}.fc-route-grid>label:nth-child(3){grid-column:1}.fc-route-grid>label:nth-child(5){grid-column:1/-1}.fc-route-action{grid-column:1/-1}}
+@media(max-width:1100px){.fc-route-grid{grid-template-columns:80px minmax(220px,1fr) 80px minmax(220px,1fr)}.fc-route-grid>label:nth-child(5){grid-column:1/4}.fc-route-action{grid-column:4}}
+@media(max-width:700px){.fc-route-grid{grid-template-columns:70px minmax(0,1fr)}.fc-route-grid>label:nth-child(3){grid-column:1}.fc-route-grid>label:nth-child(4){grid-column:2}.fc-route-grid>label:nth-child(5){grid-column:1/-1}.fc-route-action{grid-column:1/-1}}
 
 @media(max-width:700px){.fc-dev-toolbar-grid{grid-template-columns:1fr!important}.fc-dev-modal-grid{grid-template-columns:1fr}.fc-dev-comp-btn{flex:1 1 140px}}
 </style>
