@@ -1,3 +1,4 @@
+<!-- V328: Folga de Campo — sugestão no 5º dia útil do próprio mês resultante da periodicidade; regra unificada no Organograma Setor/Equipe -->
 <!-- V324: Cargos e Salários — filtro instantâneo por função/cargo -->
 <!-- V323: Folga de Campo — alimentação simplificada para uma única opção IDA E VOLTA -->
 <!-- V291: Reembolsos com editar/excluir por lançamento + dashboard/login sempre no topo -->
@@ -20,6 +21,7 @@
 <!-- V247: MAIÚSCULAS automáticas em campos textuais; preserva e-mail, senha, URL/link e campos técnicos -->
 <!-- V245: Corrige Forçar novo login de todos — elimina referência fora de escopo a users -->
 <!-- V325: módulos com competência abrem automaticamente na competência mais recente registrada -->
+<!-- V327: Organograma Setor/Equipe com sugestão de Folga de Campo na tela, PDF e Excel -->
 <!DOCTYPE html>
 <!-- V293: otimização de carregamento do módulo Reembolsos: cache por obra, consultas enxutas e evita recargas repetidas -->
 <!-- V287: PDF Folga de Campo — descrição sem espaçamento artificial e separador de trechos > -->
@@ -2610,7 +2612,7 @@ html.g360-ui-ready .content-col {
           <h2>Colaboradores <span class="tag" id="orgMembersCount"></span></h2>
           <div class="table-scroll">
             <table>
-              <thead><tr><th>Mat.</th><th>Nome</th><th>Função</th><th>Equipe</th><th>Departamento</th><th>Experiência</th></tr></thead>
+              <thead><tr><th>Mat.</th><th>Nome</th><th>Função</th><th>Equipe</th><th>Departamento</th><th>Experiência</th><th>Sugestão Folga de Campo</th></tr></thead>
               <tbody id="tableOrgMembers"></tbody>
             </table>
           </div>
@@ -3591,7 +3593,7 @@ html.g360-ui-ready .content-col {
         </section>
         <section class="panel g360-reemb-toolbar fc-dev-panel"><div class="g360-reemb-toolbar-grid fc-dev-toolbar-grid"><label>Colaborador<select id="g360FcDevColab"><option value="">Selecione...</option></select></label><div></div></div><div class="g360-reemb-person" id="g360FcDevPessoaResumo">Selecione um colaborador para lançar ou consultar despesas.</div></section>
         <section class="panel fc-dev-panel" id="g360FcSugestaoPanel">
-          <div class="g360-reemb-table-head"><div><h2>Sugestão automática de folga</h2><div class="g360-reemb-sub">O sistema usa a última Folga de Campo/Reembolso ou, se não houver histórico, a admissão. Após completar a periodicidade (2/3/6 meses), programa a baixada no 5º dia útil do mês seguinte.</div></div><div class="g360-reemb-head-actions"><button type="button" class="btn-primary" id="g360FcRelSugestoes" title="Gerar relatório de sugestão de baixadas">📄 Relatório de sugestões</button></div></div>
+          <div class="g360-reemb-table-head"><div><h2>Sugestão automática de folga</h2><div class="g360-reemb-sub">O sistema usa a última Folga de Campo/Reembolso ou, se não houver histórico, a admissão. Após completar a periodicidade (2/3/6 meses), programa a baixada no 5º dia útil do próprio mês em que a periodicidade se completa.</div></div><div class="g360-reemb-head-actions"><button type="button" class="btn-primary" id="g360FcRelSugestoes" title="Gerar relatório de sugestão de baixadas">📄 Relatório de sugestões</button></div></div>
           <div class="g360-reemb-person" id="g360FcSugestao">Selecione um colaborador para calcular a próxima folga sugerida.</div>
         </section>
         <section class="panel fc-dev-panel fc-folga-dados-panel">
@@ -9161,6 +9163,8 @@ function renderRhdpMovimentacao(){
 // ---------------------------------------------------------------
 let orgState = { setor:'', cargo:'' };
 let lastOrgReport = { members:[], cargoArr:[], cargoLabel:'' };
+let orgFolgaSugestoes = new Map();
+let orgFolgaLoadedAt = 0;
 
 function initOrgFilters(){
   const setorSel = document.getElementById('orgSetorSelect');
@@ -9301,6 +9305,30 @@ function exportOrganogramaVisualPDF(){
   const fname = 'organograma_visual_setor_equipe_' + new Date().toISOString().slice(0,10) + '.pdf';
   doc.save(fname);
 }
+function orgFolgaFmt(v){if(!v)return '—';const d=new Date(String(v).slice(0,10)+'T12:00:00');return isNaN(d)?'—':d.toLocaleDateString('pt-BR')}
+function orgFolgaAddDays(v,n){if(!v)return'';const d=new Date(v+'T12:00:00');d.setDate(d.getDate()+n);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function orgFolgaAddMonths(v,n){const [y,m,d]=String(v||'').slice(0,10).split('-').map(Number);if(!y||!m||!d)return'';const x=new Date(y,m-1,d,12),dia=x.getDate();x.setDate(1);x.setMonth(x.getMonth()+n);x.setDate(Math.min(dia,new Date(x.getFullYear(),x.getMonth()+1,0).getDate()));return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`}
+function orgFolgaMeses(txt){if(!txt)return null;const m=String(txt).match(/(\d+)\s*\/\s*(\d+)/)||String(txt).match(/(\d+)/);return m?Number(m[1]):null}
+function orgFolgaQuintoDia(base,meses){const d=new Date(base+'T12:00:00');if(isNaN(d))return'';d.setMonth(d.getMonth()+meses);const y=d.getFullYear(),m=d.getMonth();let u=0;for(let dia=1;dia<=15;dia++){const x=new Date(y,m,dia,12),sem=x.getDay();if(sem!==0&&sem!==6)u++;if(u===5)return `${y}-${String(m+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`}return''}
+function orgFolgaProxima(base,meses){const hoje=new Date();hoje.setHours(0,0,0,0);let b=String(base||'').slice(0,10);for(let i=0;i<240;i++){const ini=orgFolgaQuintoDia(b,meses);if(!ini)return'';if(new Date(ini+'T00:00:00')>=hoje)return ini;b=orgFolgaAddMonths(b,meses)}return''}
+function orgFolgaTexto(c){const k=String(c.mat??c.matricula??'');return orgFolgaSugestoes.get(k)||'—'}
+async function loadOrgFolgaSugestoes(force=false){
+ const agora=Date.now();if(!force&&orgFolgaSugestoes.size&&agora-orgFolgaLoadedAt<60000)return;
+ const client=typeof sb==='function'?sb():window.g360SupabaseClient;if(!client)return;
+ try{
+  const oid=window.G360_ACTIVE_OBRA_ID||null;
+  let fq=client.from('funcionarios').select('id,matricula,nome,status,obra_id,periodicidade_baixada,admissao,usa_aloj');if(oid)fq=fq.eq('obra_id',oid);
+  const fr=await fq;if(fr.error)throw fr.error;
+  const funcs=(fr.data||[]).filter(c=>String(c.status||'').toUpperCase()==='ATIVO'&&String(c.usa_aloj||'').toUpperCase()==='S');
+  let hq=client.from('folga_campo').select('colaborador_id,data_inicio,data_fim').not('data_inicio','is',null);if(oid)hq=hq.eq('obra_id',oid);
+  let rq=client.from('rh_reembolso_cabecalhos').select('colaborador_id,periodo_folga_inicio,periodo_folga_fim,tipo_reembolso').eq('tipo_reembolso','FOLGA_DE_CAMPO').not('periodo_folga_inicio','is',null);if(oid)rq=rq.eq('obra_id',oid);
+  const [hr,rr]=await Promise.all([hq,rq]);if(hr.error)throw hr.error;if(rr.error)throw rr.error;
+  const ult=new Map(),add=(id,ini)=>{if(!id||!ini)return;const k=String(id),a=ult.get(k);if(!a||String(ini)>String(a))ult.set(k,String(ini).slice(0,10))};
+  (hr.data||[]).forEach(x=>add(x.colaborador_id,x.data_inicio));(rr.data||[]).forEach(x=>add(x.colaborador_id,x.periodo_folga_inicio));
+  const novo=new Map();funcs.forEach(c=>{const meses=orgFolgaMeses(c.periodicidade_baixada);if(![2,3,6].includes(meses))return;const base=ult.get(String(c.id))||c.admissao;if(!base)return;const ini=orgFolgaProxima(base,meses);if(!ini)return;const dias=meses===2?3:meses===3?5:7,fim=orgFolgaAddDays(ini,dias-1),ret=orgFolgaAddDays(fim,1);novo.set(String(c.matricula??''),`${orgFolgaFmt(ini)} a ${orgFolgaFmt(fim)} · Retorno ${orgFolgaFmt(ret)}`)});
+  orgFolgaSugestoes=novo;orgFolgaLoadedAt=Date.now();
+ }catch(e){console.error('Organograma · sugestão Folga de Campo:',e)}
+}
 function orgReportContext(){
   const filtroTxt = [];
   if(orgState.setor) filtroTxt.push(`Setor/Equipe: ${orgState.setor}`);
@@ -9343,8 +9371,8 @@ function exportOrganogramaPDF(){
 
   doc.autoTable({
     startY: y,
-    head: [['Mat.','Nome','Função','Equipe','Departamento','Experiência']],
-    body: members.map(c=>[c.mat??'', c.nome, c.funcao??'', c.equipe??'', c.depto??'', expText(c)]),
+    head: [['Mat.','Nome','Função','Equipe','Departamento','Experiência','Sugestão Folga de Campo']],
+    body: members.map(c=>[c.mat??'', c.nome, c.funcao??'', c.equipe??'', c.depto??'', expText(c), orgFolgaTexto(c)]),
     styles:{ fontSize:8.5, cellPadding:4 },
     headStyles:{ fillColor:[31,56,100], textColor:255 },
     alternateRowStyles:{ fillColor:[245,245,245] },
@@ -9375,17 +9403,18 @@ function exportOrganogramaXLS(){
     rows.push([], ['Por Cargo'], ['Cargo','Quantidade'], ...cargoArr.map(([k,v])=>[v.label, v.count]));
   }
 
-  rows.push([], ['Colaboradores'], ['Matrícula','Nome','Função','Equipe','Departamento','Experiência'],
-    ...members.map(c=>[c.mat??'', c.nome, c.funcao??'', c.equipe??'', c.depto??'', expText(c)]));
+  rows.push([], ['Colaboradores'], ['Matrícula','Nome','Função','Equipe','Departamento','Experiência','Sugestão Folga de Campo'],
+    ...members.map(c=>[c.mat??'', c.nome, c.funcao??'', c.equipe??'', c.depto??'', expText(c), orgFolgaTexto(c)]));
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:24},{wch:34},{wch:28},{wch:20},{wch:18},{wch:16}];
+  ws['!cols'] = [{wch:14},{wch:34},{wch:28},{wch:22},{wch:20},{wch:16},{wch:38}];
   XLSX.utils.book_append_sheet(wb, ws, 'Organograma');
 
   const fname = 'organograma_setor_equipe_' + new Date().toISOString().slice(0,10) + '.xlsx';
   XLSX.writeFile(wb, fname);
 }
-function renderOrganograma(){
+async function renderOrganograma(){
+  await loadOrgFolgaSugestoes();
   let members = ATIVOS.filter(c=>{
     if(orgState.setor && c.setorEquipe !== orgState.setor) return false;
     if(orgState.cargo && accentKey(stripTier(c.funcao)) !== orgState.cargo) return false;
@@ -9423,8 +9452,8 @@ function renderOrganograma(){
 
   document.getElementById('orgMembersCount').textContent = noFilter ? `${members.length} colaborador(es) — todos os ativos` : `${members.length} colaborador(es)`;
   fillTable('tableOrgMembers', members, c=>`
-    <tr><td>${c.mat??''}</td><td>${c.nome}</td><td>${c.funcao??''}</td><td>${c.equipe??''}</td><td>${c.depto??''}</td><td>${expBadge(c)}</td></tr>
-  `, 'Nenhum colaborador encontrado com os filtros atuais.', 6);
+    <tr><td>${c.mat??''}</td><td>${c.nome}</td><td>${c.funcao??''}</td><td>${c.equipe??''}</td><td>${c.depto??''}</td><td>${expBadge(c)}</td><td>${orgFolgaTexto(c)}</td></tr>
+  `, 'Nenhum colaborador encontrado com os filtros atuais.', 7);
 
   const cargoLabelObj = cargoArr.find(([k])=>k===orgState.cargo);
   lastOrgReport = { members, cargoArr, cargoLabel: cargoLabelObj ? cargoLabelObj[1].label : '' };
@@ -21095,7 +21124,7 @@ function fcPeriodicidadeMeses(txt){if(!txt)return null;const m=String(txt).match
 function fcQuintoDiaUtilMes(isoBase,meses){
  if(!isoBase||!meses)return '';
  const d=new Date(isoBase+'T12:00:00');if(isNaN(d))return '';
- d.setMonth(d.getMonth()+Number(meses)+1);
+ d.setMonth(d.getMonth()+Number(meses));
  const y=d.getFullYear(),m=d.getMonth();let uteis=0;
  for(let dia=1;dia<=15;dia++){
   const x=new Date(y,m,dia,12,0,0),sem=x.getDay();
@@ -21142,7 +21171,7 @@ async function loadFolgaSuggestion(){
   const calcSug=fcSugestaoFutura(base,meses),proxIni=calcSug.data;
   if(!proxIni){el.innerHTML=`<b>${esc(c.nome)}</b> · Não foi possível calcular a próxima folga sugerida.`;return}
   // Regra fixa da Folga de Campo: 2x2 = 3 dias, 3x3 = 5 dias, 6x6 = 7 dias.
-  // Regra: data-base + periodicidade completa (2/3/6 meses) e, somente no mês seguinte, início no 5º dia útil.
+  // Regra: data-base + periodicidade completa (2/3/6 meses) e início no 5º dia útil do próprio mês resultante.
   // Nunca replica o dia/período da folga anterior.
   const diasFolga=meses===2?3:(meses===3?5:(meses===6?7:null));
   if(!diasFolga){el.innerHTML=`<b>${esc(c.nome)}</b> · Periodicidade <b>${esc(c.periodicidade_baixada||meses+' MESES')}</b> sem quantidade de dias de folga configurada.`;return}
