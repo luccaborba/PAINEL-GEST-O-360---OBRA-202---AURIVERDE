@@ -1,3 +1,4 @@
+<!-- V324: Cargos e Salários — filtro instantâneo por função/cargo -->
 <!-- V323: Folga de Campo — alimentação simplificada para uma única opção IDA E VOLTA -->
 <!-- V291: Reembolsos com editar/excluir por lançamento + dashboard/login sempre no topo -->
 <!-- V288: corrige lançamento de Reembolsos restaurando rotina estável e validação de valor -->
@@ -18,6 +19,7 @@
 <!-- V289: Reembolsos — gravação/exibição em MAIÚSCULAS + PDF consolidado por competência -->
 <!-- V247: MAIÚSCULAS automáticas em campos textuais; preserva e-mail, senha, URL/link e campos técnicos -->
 <!-- V245: Corrige Forçar novo login de todos — elimina referência fora de escopo a users -->
+<!-- V325: módulos com competência abrem automaticamente na competência mais recente registrada -->
 <!DOCTYPE html>
 <!-- V293: otimização de carregamento do módulo Reembolsos: cache por obra, consultas enxutas e evita recargas repetidas -->
 <!-- V287: PDF Folga de Campo — descrição sem espaçamento artificial e separador de trechos > -->
@@ -2247,6 +2249,12 @@ html.g360-ui-ready .content-col {
           <div class="section-title">
             <div><h2>CARGOS E SALÁRIOS</h2><p>Cadastro mestre utilizado no cadastro de colaboradores para preencher função, nível e salário.</p></div>
             <button type="button" class="btn primary" id="g360NovoCargoSalario">＋ Novo cargo / salário</button>
+          </div>
+          <div style="display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin:14px 0 16px">
+            <label style="flex:1;min-width:260px;max-width:520px">CONSULTAR FUNÇÃO
+              <input type="text" id="g360FiltroCargoSalario" placeholder="DIGITE A FUNÇÃO..." autocomplete="off" style="width:100%;text-transform:uppercase">
+            </label>
+            <button type="button" class="btn" id="g360LimparFiltroCargoSalario" title="Limpar filtro">✕ Limpar</button>
           </div>
           <div id="g360CargosSalariosLista"><div class="empty-state">Carregando cargos e salários...</div></div>
         </section>
@@ -9962,7 +9970,17 @@ async function renderCargosSalarios(){
   const {data,error}=await sb.from('cargos_salarios').select('*').order('funcao');
   if(error){box.innerHTML='<div class="empty-state">'+String(error.message||error)+'</div>';return;}
   const rows=data||[];
-  box.innerHTML=rows.length?`<div style="overflow:auto"><table><thead><tr><th>FUNÇÃO / CARGO</th><th>NÍVEL</th><th>SALÁRIO</th><th>STATUS</th><th>AÇÕES</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${String(r.funcao||r.cargo||r.nome||'')}</td><td>${String(r.nivel||'')}</td><td>${Number(r.salario||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td><td><span class="badge ${r.ativo===false?'bad':'ok'}">${r.ativo===false?'INATIVO':'ATIVO'}</span></td><td><button class="crud-mini" onclick="g360OpenCrudProduction('cargosSalarios','${r.id}')">✏️ Editar</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty-state">Nenhum cargo cadastrado.</div>';
+  const filtro=document.getElementById('g360FiltroCargoSalario');
+  const limpar=document.getElementById('g360LimparFiltroCargoSalario');
+  const normaliza=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
+  const desenhar=()=>{
+    const q=normaliza(filtro?.value);
+    const filtradas=q?rows.filter(r=>normaliza(r.funcao||r.cargo||r.nome).includes(q)):rows;
+    box.innerHTML=filtradas.length?`<div style="overflow:auto"><table><thead><tr><th>FUNÇÃO / CARGO</th><th>NÍVEL</th><th>SALÁRIO</th><th>STATUS</th><th>AÇÕES</th></tr></thead><tbody>${filtradas.map(r=>`<tr><td>${String(r.funcao||r.cargo||r.nome||'')}</td><td>${String(r.nivel||'')}</td><td>${Number(r.salario||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td><td><span class="badge ${r.ativo===false?'bad':'ok'}">${r.ativo===false?'INATIVO':'ATIVO'}</span></td><td><button class="crud-mini" onclick="g360OpenCrudProduction('cargosSalarios','${r.id}')">✏️ Editar</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty-state">Nenhuma função encontrada.</div>';
+  };
+  desenhar();
+  if(filtro){filtro.oninput=desenhar;filtro.onkeydown=e=>{if(e.key==='Escape'){filtro.value='';desenhar();}};}
+  if(limpar)limpar.onclick=()=>{if(filtro){filtro.value='';filtro.focus();}desenhar();};
   document.getElementById('g360NovoCargoSalario')?.addEventListener('click',()=>window.g360OpenCrudProduction?.('cargosSalarios'));
 }
 
@@ -17496,7 +17514,7 @@ async function boot(){
     }
     state.bound=true;bindStatusChecks();
     const periods=await fetchPeriods();
-    const preferred=periods.includes('AGOSTO/2026')?'AGOSTO/2026':periods.at(-1)||'AGOSTO/2026';
+    const preferred=periods.at(-1)||'AGOSTO/2026';
     state.period=preferred;
     await refreshSelect(preferred);
     await load(preferred);
@@ -21060,7 +21078,7 @@ function addDaysISO(iso,n){if(!iso)return'';const d=new Date(iso+'T12:00:00');if
 function calcDays(a,b){if(!a||!b)return null;const x=new Date(a+'T12:00:00'),y=new Date(b+'T12:00:00');return Math.max(1,Math.round((y-x)/86400000)+1)}
 async function loadColabs(){const oid=obraId();let q=sb().from('funcionarios').select('id,matricula,nome,funcao,status,obra_id,periodicidade_baixada,admissao,cidade,distancia_baixada_km,usa_aloj').order('nome');if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error)throw r.error;colabs=(r.data||[]).filter(c=>!['DESLIGADO','INATIVO','ABANDONO'].includes(String(c.status||'').toUpperCase()));const sel=$('g360FcDevColab');if(sel)sel.innerHTML='<option value="">Selecione...</option>'+colabs.map(c=>`<option value="${esc(c.id)}">${esc(c.nome)}${c.matricula?' · '+esc(c.matricula):''}</option>`).join('')}
 function renderCompButtons(){const box=$('g360FcDevCompButtons'),sel=$('g360FcDevCompSelect');if(!box||!sel)return;competencias=[...new Set(competencias)].sort();sel.innerHTML=competencias.length?competencias.map(k=>`<option value="${k}"${k===currentMonth?' selected':''}>${compLabel(k).replace(' DE ',' / ')}</option>`).join(''):'<option value="">Nenhuma competência aberta</option>';sel.value=currentMonth&&competencias.includes(currentMonth)?currentMonth:(competencias[0]||'');if(sel.value&&sel.value!==currentMonth)currentMonth=sel.value;if(!sel.dataset.fcdevBound){sel.dataset.fcdevBound='1';sel.addEventListener('change',async()=>{const k=sel.value;if(!k||k===currentMonth)return;currentMonth=k;await loadRows();await loadMeta()})}}
-async function loadComps(selectKey=''){const oid=obraId();let q=sb().from('folga_campo_despesas').select('competencia,obra_id').order('competencia',{ascending:false});if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error)throw r.error;let q2=sb().from('folga_campo').select('competencia,obra_id').order('competencia',{ascending:false});if(oid)q2=q2.eq('obra_id',oid);const r2=await q2;const fromDb=[...(r.data||[]),...(r2.error?[]:(r2.data||[]))].map(x=>monthKey(x.competencia)).filter(x=>/^\d{4}-\d{2}$/.test(x));competencias=[...new Set([...fromDb,...readLocalComps(),'2026-08'])].sort();saveLocalComps(competencias);const target=selectKey&&competencias.includes(selectKey)?selectKey:(currentMonth&&competencias.includes(currentMonth)?currentMonth:competencias[0]||'2026-08');currentMonth=target;renderCompButtons()}
+async function loadComps(selectKey=''){const oid=obraId();let q=sb().from('folga_campo_despesas').select('competencia,obra_id').order('competencia',{ascending:false});if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error)throw r.error;let q2=sb().from('folga_campo').select('competencia,obra_id').order('competencia',{ascending:false});if(oid)q2=q2.eq('obra_id',oid);const r2=await q2;const fromDb=[...(r.data||[]),...(r2.error?[]:(r2.data||[]))].map(x=>monthKey(x.competencia)).filter(x=>/^\d{4}-\d{2}$/.test(x));competencias=[...new Set([...fromDb,...readLocalComps(),'2026-08'])].sort();saveLocalComps(competencias);const latest=competencias.at(-1)||'2026-08';const target=selectKey&&competencias.includes(selectKey)?selectKey:latest;currentMonth=target;renderCompButtons()}
 async function loadRows(){if(!currentMonth){rows=[];render();return}let q=sb().from('folga_campo_despesas').select('*').eq('competencia',compDate(currentMonth)).order('colaborador_nome').order('created_at');const oid=obraId();if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error)throw r.error;rows=r.data||[];render()}
 function selectedColab(){return colabs.find(c=>String(c.id)===String($('g360FcDevColab')?.value||''))||null}function personRows(){const c=selectedColab();return c?rows.filter(r=>String(r.colaborador_id)===String(c.id)):[]}
 function fillMeta(row){currentMeta=row||null;const btn=$('g360FcDevSalvarDados');if(btn)btn.textContent=row?.id?'💾 SALVAR ALTERAÇÕES':'💾 SALVAR DADOS DA FOLGA';$('g360FcDevDataIni').value=row?.data_inicio||row?.data_saida||'';$('g360FcDevDataFim').value=row?.data_fim||'';$('g360FcDevDataRetorno').value=row?.data_retorno||($('g360FcDevDataFim').value?addDaysISO($('g360FcDevDataFim').value,1):'');$('g360FcDevKm').value=row?.distancia_km??'';const uf=String(row?.uf_residencia||'').toUpperCase(),cidade=String(row?.cidade_residencia||'');if($('g360FcDevResidUf'))$('g360FcDevResidUf').value=uf;if(typeof loadFcResidCidades==='function')loadFcResidCidades(uf,cidade);}
