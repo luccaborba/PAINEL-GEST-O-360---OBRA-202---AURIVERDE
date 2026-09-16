@@ -21246,7 +21246,7 @@ function fcSugV348Cidade(c){const cid=String(c.cidade_baixada||c.cidade||'—').
 function fcSugV348Regra(km){km=Number(km);if(!Number.isFinite(km)||km<=0)return null;if(km<=500)return{meses:2,dias:3,per:'2x2'};if(km<=1000)return{meses:3,dias:5,per:'3x3'};return{meses:6,dias:7,per:'6x6'}}
 function fcSugV348AbrirFiltro(dados){
  document.getElementById('g360FcSugV348Modal')?.remove();
- const grupos=[...new Set(dados.colabs.map(fcSugV348Grupo))].sort((a,b)=>a.localeCompare(b,'pt-BR')),meses=fcSugV348Meses();
+ const fonteGrupos=(dados.colabs&&dados.colabs.length)?dados.colabs:(Array.isArray(COLABS)?COLABS.map(c=>({setor_equipe:c.setor_equipe||c.setorEquipe,equipe:c.equipe,depto:c.depto})):[]); const grupos=[...new Set(fonteGrupos.map(fcSugV348Grupo).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR')),meses=fcSugV348Meses();
  const ov=document.createElement('div');ov.id='g360FcSugV348Modal';ov.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:16px';
  ov.innerHTML=`<style>
  #g360FcSugV348Modal .box{width:min(720px,94vw);max-height:84vh;overflow:auto;background:#202327;border:1px solid #444;border-radius:8px;padding:16px;color:#fff;box-shadow:0 18px 60px #000;font-size:11px}
@@ -21258,7 +21258,7 @@ function fcSugV348AbrirFiltro(dados){
  #g360FcSugV348Modal .list{display:grid;gap:6px;max-height:240px;overflow:auto} #g360FcSugV348Modal .gen{border:1px solid #d6aa00;background:#f5c518;color:#111;border-radius:5px;padding:8px 13px;font-size:11px;font-weight:900;cursor:pointer}
  @media(max-width:650px){#g360FcSugV348Modal .grid{grid-template-columns:1fr}}
  </style><div class="box"><div style="display:flex;justify-content:space-between;gap:12px"><div><div class="title">RELATÓRIO DE SUGESTÕES DE FOLGA</div><div class="sub">Fonte: public.colaboradores · ${dados.colabs.length} colaboradores</div></div><button type="button" id="g360FcSugV348Fechar" class="clear-btn">FECHAR</button></div>
- <div class="grid"><section><div class="st">SETOR / EQUIPE</div><label style="margin-bottom:8px"><input type="checkbox" id="g360FcSugV348SetTodos" checked> TODOS</label><div class="list">${grupos.map(g=>`<label><input type="checkbox" class="g360FcSugV348Set" value="${esc(g)}"> ${esc(g)}</label>`).join('')}</div></section>
+ <div class="grid"><section><div class="st">SETOR / EQUIPE</div><label style="margin-bottom:8px"><input type="checkbox" id="g360FcSugV348SetTodos" checked> TODOS</label><div class="list">${grupos.map(g=>`<label><input type="checkbox" class="g360FcSugV348Set" value="${esc(g)}" checked> ${esc(g)}</label>`).join('')}</div></section>
  <section><div class="st">MÊS DA SUGESTÃO</div><label style="margin-bottom:8px"><input type="checkbox" id="g360FcSugV348MesTodos" checked> TODOS OS 6 MESES</label><div class="list">${meses.map(m=>`<label><input type="checkbox" class="g360FcSugV348Mes" value="${m.ym}"> ${m.label}</label>`).join('')}</div></section></div>
  <div style="display:flex;justify-content:flex-end;margin-top:14px"><button type="button" id="g360FcSugV348Gerar" class="gen">📄 GERAR RELATÓRIO</button></div></div>`;
  document.body.appendChild(ov);
