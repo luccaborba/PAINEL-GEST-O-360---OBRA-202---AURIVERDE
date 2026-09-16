@@ -21247,7 +21247,7 @@ async function fcSugCarregarBase(){
   const [cr,pr,fr] = await Promise.all([
    db.from('colaboradores').select('id,mat,nome,funcao,status,admissao,depto,equipe,setor_equipe,usa_aloj,cidade,cidade_baixada,uf_baixada,distancia_baixada_km,periodicidade_baixada,ult_baixada').order('nome'),
    db.from('folga_campo_projecoes').select('colaborador_id,mes_referencia,data_ini,data_fim,retorno').order('data_ini',{ascending:false}),
-   appDb.from('folga_campo').select('colaborador_id,competencia,data_inicio,data_fim,data_retorno,created_at').order('data_inicio',{ascending:false})
+   appDb.from('folga_campo').select('colaborador_id,matricula,colaborador_nome,competencia,data_inicio,data_fim,data_retorno,created_at').order('data_inicio',{ascending:false})
   ]);
   if(cr.error)throw cr.error;
   if(pr.error)console.warn('Histórico de projeções de Folga:',pr.error);
@@ -21262,13 +21262,13 @@ async function fcSugCarregarBase(){
    if(rc.error)throw rc.error;
    const comps=rc.data||[],compIds=comps.map(x=>x.id).filter(Boolean),compById=new Map(comps.map(x=>[String(x.id),x.competencia]));
    if(compIds.length){
-    const rr=await appDb.from('rh_reembolso_lancamentos').select('colaborador_id,competencia_id,data_despesa,categoria,descricao,observacao,created_at').in('competencia_id',compIds);
+    const rr=await appDb.from('rh_reembolso_lancamentos').select('colaborador_id,matricula,colaborador_nome,competencia_id,data_despesa,categoria,descricao,observacao,created_at').in('competencia_id',compIds);
     if(rr.error)throw rr.error;
-    reembHist=(rr.data||[]).filter(x=>{const tag=[x.categoria,x.descricao,x.observacao].filter(Boolean).join(' ').toUpperCase();return tag.includes('FOLGA DE CAMPO')||tag.includes('FOLGA CAMPO')}).map(x=>{const comp=compById.get(String(x.competencia_id))||'';const data=(x.data_despesa&&String(x.data_despesa).slice(0,7)===String(comp).slice(0,7))?x.data_despesa:comp;return {colaborador_id:x.colaborador_id,data_ini:data,data_fim:data,mes_referencia:comp,fonte:'REEMBOLSO · FOLGA DE CAMPO'}});
+    reembHist=(rr.data||[]).filter(x=>{const tag=[x.categoria,x.descricao,x.observacao].filter(Boolean).join(' ').toUpperCase();return tag.includes('FOLGA DE CAMPO')||tag.includes('FOLGA CAMPO')}).map(x=>{const comp=compById.get(String(x.competencia_id))||'';const data=(x.data_despesa&&String(x.data_despesa).slice(0,7)===String(comp).slice(0,7))?x.data_despesa:comp;return {colaborador_id:x.colaborador_id,matricula:x.matricula,colaborador_nome:x.colaborador_nome,data_ini:data,data_fim:data,mes_referencia:comp,fonte:'REEMBOLSO · FOLGA DE CAMPO'}});
    }
   }catch(e){console.warn('Histórico de Reembolsos com tag FOLGA DE CAMPO:',e)}
   fcSugHistCache=[
-   ...(fr.error?[]:(fr.data||[]).map(x=>({colaborador_id:x.colaborador_id,data_ini:x.data_inicio||x.competencia,data_fim:x.data_fim||x.data_inicio||x.competencia,mes_referencia:x.competencia,fonte:'FOLGA DE CAMPO'}))),
+   ...(fr.error?[]:(fr.data||[]).map(x=>({colaborador_id:x.colaborador_id,matricula:x.matricula,colaborador_nome:x.colaborador_nome,data_ini:x.data_inicio||x.competencia,data_fim:x.data_fim||x.data_inicio||x.competencia,mes_referencia:x.competencia,fonte:'FOLGA DE CAMPO'}))),
    ...reembHist,
    ...(pr.error?[]:(pr.data||[]).map(x=>({colaborador_id:x.colaborador_id,data_ini:x.data_ini,data_fim:x.data_fim,mes_referencia:x.mes_referencia,fonte:'PROJEÇÃO DE FOLGA'})))
   ];
@@ -21323,12 +21323,20 @@ async function gerarRelatorioSugestoesPdf(filtros){
   // Base única confirmada: colaboradores + folga_campo_projecoes, carregadas uma única vez e mantidas em memória.
   const hist=Array.isArray(fcSugHistCache)?fcSugHistCache:[];
   const ult=new Map();
-  const addHist=(id,ini,fim,fonte)=>{if(!id||!ini)return;const k=String(id),at=ult.get(k);if(!at||String(ini)>String(at.ini))ult.set(k,{ini,fim:fim||ini,fonte})};
-  hist.forEach(x=>addHist(x.colaborador_id,x.data_ini,x.data_fim,x.fonte||'ÚLTIMA FOLGA'));
+  const normNome=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toUpperCase();
+  const normMat=v=>String(v||'').replace(/\D/g,'').replace(/^0+/,'');
+  const setUlt=(k,ini,fim,fonte)=>{if(!k||!ini)return;const at=ult.get(k);if(!at||String(ini)>String(at.ini))ult.set(k,{ini,fim:fim||ini,fonte})};
+  hist.forEach(x=>{
+   const ini=x.data_ini;if(!ini)return;
+   setUlt('ID:'+String(x.colaborador_id||''),ini,x.data_fim,x.fonte||'ÚLTIMA FOLGA');
+   const mat=normMat(x.matricula);if(mat)setUlt('MAT:'+mat,ini,x.data_fim,x.fonte||'ÚLTIMA FOLGA');
+   const nome=normNome(x.colaborador_nome||x.nome);if(nome)setUlt('NOME:'+nome,ini,x.data_fim,x.fonte||'ÚLTIMA FOLGA');
+  });
   const linhas=[],pend=[];
   elegiveis.forEach(orig=>{
    const c=orig;
-   const meses=fcPeriodicidadeMeses(c.periodicidade_baixada),last=ult.get(String(c.id)),base=last?.ini||c.ult_baixada||c.admissao||'',fonte=last?.fonte||(c.ult_baixada?'ÚLTIMA FOLGA':'ADMISSÃO');
+   const last=ult.get('ID:'+String(c.id||''))||ult.get('MAT:'+normMat(c.matricula||c.mat))||ult.get('NOME:'+normNome(c.nome));
+   const meses=fcPeriodicidadeMeses(c.periodicidade_baixada),base=last?.ini||c.ult_baixada||c.admissao||'',fonte=last?.fonte||(c.ult_baixada?'ÚLTIMA FOLGA':'ADMISSÃO');
    if(!base){pend.push([c.matricula||'—',String(c.nome||'').toUpperCase(),'SEM DATA-BASE']);return}
    if(!meses||![2,3,6].includes(meses)){pend.push([c.matricula||'—',String(c.nome||'').toUpperCase(),'SEM PERIODICIDADE 2x2 / 3x3 / 6x6']);return}
    const calcSug=fcSugestaoFutura(String(base).slice(0,10),meses),ini=calcSug.data;if(!ini){pend.push([c.matricula||'—',String(c.nome||'').toUpperCase(),'ERRO NO CÁLCULO']);return}
