@@ -21211,94 +21211,85 @@ async function loadFolgaSuggestion(){
  }catch(e){console.error('Sugestão Folga de Campo:',e);el.textContent='Não foi possível calcular a sugestão. Verifique os dados do colaborador e o histórico de Folga de Campo.'}
 }
 
-/* V346 — Relatório de Sugestões reconstruído do zero.
-   Fonte cadastral única: public.colaboradores (base atual).
-   Sem funcionarios, sem exceções por colaborador e sem pré-carga do relatório no init. */
-const FC_SUG_API_URL='https://kgntjgcsfhsjkwenorhl.supabase.co/rest/v1/colaboradores';
+/* V348 — Relatório de Sugestões de Folga reconstruído do zero.
+   Fonte única cadastral: public.colaboradores.
+   Histórico: public.folga_campo_projecoes.
+   Regra: KM define periodicidade/dias; última folga lançada prevalece sobre admissão;
+   sugestão no 5º dia útil do mês resultante, avançando ciclos já vencidos. */
+const FC_SUG_BASE='https://kgntjgcsfhsjkwenorhl.supabase.co/rest/v1';
 const FC_SUG_API_KEY='sb_publishable_yKWF7Hr9oBh83pqfGEKv3g_K9HPim48';
-let fcSugNovaCache=null;
+let fcSugV348Cache=null;
 
-async function fcSugNovaBuscarColaboradores(force=false){
-  if(!force && Array.isArray(fcSugNovaCache)) return fcSugNovaCache;
-  const campos='id,mat,nome,funcao,status,admissao,depto,equipe,setor_equipe,usa_aloj,cidade,cidade_baixada,uf_baixada,distancia_baixada_km,periodicidade_baixada,ult_baixada';
-  const ctl=new AbortController();
-  const timer=setTimeout(()=>ctl.abort(),8000);
-  try{
-    const resp=await fetch(`${FC_SUG_API_URL}?select=${encodeURIComponent(campos)}&order=nome.asc`,{
-      method:'GET',mode:'cors',credentials:'omit',cache:'no-store',
-      headers:{apikey:FC_SUG_API_KEY,Accept:'application/json'},signal:ctl.signal
-    });
-    if(!resp.ok){const txt=await resp.text();throw new Error(`API colaboradores: HTTP ${resp.status}${txt?' · '+txt.slice(0,180):''}`)}
-    const data=await resp.json();
-    fcSugNovaCache=(Array.isArray(data)?data:[]).filter(c=>!['DESLIGADO','INATIVO','ABANDONO'].includes(String(c.status||'').toUpperCase()));
-    return fcSugNovaCache;
-  }catch(e){
-    if(e?.name==='AbortError')throw new Error('A consulta de public.colaboradores excedeu 8 segundos.');
-    throw e;
-  }finally{clearTimeout(timer)}
+async function fcSugV348Fetch(path){
+ const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),8000);
+ try{
+  const r=await fetch(FC_SUG_BASE+path,{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',headers:{apikey:FC_SUG_API_KEY,Accept:'application/json'},signal:ctl.signal});
+  if(!r.ok){const t=await r.text();throw new Error(`HTTP ${r.status}${t?' · '+t.slice(0,160):''}`)}
+  return await r.json();
+ }finally{clearTimeout(timer)}
 }
-function fcSugNovaProximosSeisMeses(){
-  const b=new Date();b.setDate(1);
-  return Array.from({length:6},(_,i)=>{const d=new Date(b.getFullYear(),b.getMonth()+i+1,1,12);return {ym:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,label:d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'}).toUpperCase()}})
+async function fcSugV348Carregar(force=false){
+ if(!force&&fcSugV348Cache)return fcSugV348Cache;
+ const campos='id,mat,nome,funcao,status,admissao,depto,equipe,setor_equipe,cidade,cidade_baixada,uf_baixada,distancia_baixada_km';
+ const [cs,hs]=await Promise.all([
+  fcSugV348Fetch(`/colaboradores?select=${encodeURIComponent(campos)}&order=nome.asc`),
+  fcSugV348Fetch('/folga_campo_projecoes?select=colaborador_id,data_ini,data_fim,retorno,mes_referencia,created_at&data_ini=not.is.null&order=data_ini.desc')
+ ]);
+ const ult=new Map();
+ (Array.isArray(hs)?hs:[]).forEach(h=>{if(h.colaborador_id&&!ult.has(h.colaborador_id))ult.set(h.colaborador_id,h)});
+ const colabs=(Array.isArray(cs)?cs:[]).filter(c=>!['DESLIGADO','INATIVO','ABANDONO'].includes(String(c.status||'').trim().toUpperCase()));
+ fcSugV348Cache={colabs,ult};return fcSugV348Cache;
 }
-function fcSugNovaEhAlojado(c){return c.usa_aloj===true||['S','SIM','TRUE','1'].includes(String(c.usa_aloj||'').trim().toUpperCase())}
-function fcSugNovaGrupo(c){return String(c.setor_equipe||c.equipe||c.depto||'SEM SETOR / EQUIPE').trim().toUpperCase()||'SEM SETOR / EQUIPE'}
-function fcSugNovaCidade(c){
-  const cid=String(c.cidade_baixada||c.cidade||'—').trim().toUpperCase();
-  const uf=String(c.uf_baixada||'').trim().toUpperCase();
-  return uf?`${cid} / ${uf}`:cid;
+function fcSugV348Meses(){const b=new Date();b.setDate(1);return Array.from({length:6},(_,i)=>{const d=new Date(b.getFullYear(),b.getMonth()+i+1,1,12);return{ym:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,label:d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'}).toUpperCase()}})}
+function fcSugV348Grupo(c){return String(c.setor_equipe||c.equipe||c.depto||'SEM SETOR / EQUIPE').trim().toUpperCase()||'SEM SETOR / EQUIPE'}
+function fcSugV348Cidade(c){const cid=String(c.cidade_baixada||c.cidade||'—').trim().toUpperCase(),uf=String(c.uf_baixada||'').trim().toUpperCase();return uf&& !cid.endsWith(' - '+uf)&&!cid.endsWith('/ '+uf)?`${cid} / ${uf}`:cid}
+function fcSugV348Regra(km){km=Number(km);if(!Number.isFinite(km)||km<=0)return null;if(km<=500)return{meses:2,dias:3,per:'2x2'};if(km<=1000)return{meses:3,dias:5,per:'3x3'};return{meses:6,dias:7,per:'6x6'}}
+function fcSugV348AbrirFiltro(dados){
+ document.getElementById('g360FcSugV348Modal')?.remove();
+ const grupos=[...new Set(dados.colabs.map(fcSugV348Grupo))].sort((a,b)=>a.localeCompare(b,'pt-BR')),meses=fcSugV348Meses();
+ const ov=document.createElement('div');ov.id='g360FcSugV348Modal';ov.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:16px';
+ ov.innerHTML=`<style>
+ #g360FcSugV348Modal .box{width:min(720px,94vw);max-height:84vh;overflow:auto;background:#202327;border:1px solid #444;border-radius:8px;padding:16px;color:#fff;box-shadow:0 18px 60px #000;font-size:11px}
+ #g360FcSugV348Modal .title{font-size:14px;font-weight:900} #g360FcSugV348Modal .sub{font-size:10px;opacity:.7;margin-top:3px}
+ #g360FcSugV348Modal .grid{display:grid;grid-template-columns:1.25fr 1fr;gap:14px;margin-top:14px} #g360FcSugV348Modal section{border:1px solid #3b3f45;border-radius:7px;padding:11px}
+ #g360FcSugV348Modal .st{font-size:10px;font-weight:900;margin-bottom:8px} #g360FcSugV348Modal label{font-size:10px!important;line-height:1.2!important;font-weight:600!important;display:flex;gap:6px;align-items:center}
+ #g360FcSugV348Modal input[type=checkbox]{appearance:none;-webkit-appearance:none;width:12px!important;height:12px!important;min-width:12px!important;margin:0!important;border:1px solid #777b82;border-radius:2px;background:#17191c;display:inline-grid;place-content:center}
+ #g360FcSugV348Modal input[type=checkbox]:checked{background:#f5c518;border-color:#f5c518} #g360FcSugV348Modal input[type=checkbox]:checked:after{content:'✓';font-size:8px;line-height:1;color:#111;font-weight:900}
+ #g360FcSugV348Modal .list{display:grid;gap:6px;max-height:240px;overflow:auto} #g360FcSugV348Modal .gen{border:1px solid #d6aa00;background:#f5c518;color:#111;border-radius:5px;padding:8px 13px;font-size:11px;font-weight:900;cursor:pointer}
+ @media(max-width:650px){#g360FcSugV348Modal .grid{grid-template-columns:1fr}}
+ </style><div class="box"><div style="display:flex;justify-content:space-between;gap:12px"><div><div class="title">RELATÓRIO DE SUGESTÕES DE FOLGA</div><div class="sub">Fonte: public.colaboradores · ${dados.colabs.length} colaboradores</div></div><button type="button" id="g360FcSugV348Fechar" class="clear-btn">FECHAR</button></div>
+ <div class="grid"><section><div class="st">SETOR / EQUIPE</div><label style="margin-bottom:8px"><input type="checkbox" id="g360FcSugV348SetTodos" checked> TODOS</label><div class="list">${grupos.map(g=>`<label><input type="checkbox" class="g360FcSugV348Set" value="${esc(g)}"> ${esc(g)}</label>`).join('')}</div></section>
+ <section><div class="st">MÊS DA SUGESTÃO</div><label style="margin-bottom:8px"><input type="checkbox" id="g360FcSugV348MesTodos" checked> TODOS OS 6 MESES</label><div class="list">${meses.map(m=>`<label><input type="checkbox" class="g360FcSugV348Mes" value="${m.ym}"> ${m.label}</label>`).join('')}</div></section></div>
+ <div style="display:flex;justify-content:flex-end;margin-top:14px"><button type="button" id="g360FcSugV348Gerar" class="gen">📄 GERAR RELATÓRIO</button></div></div>`;
+ document.body.appendChild(ov);
+ const st=ov.querySelector('#g360FcSugV348SetTodos'),sets=[...ov.querySelectorAll('.g360FcSugV348Set')],mt=ov.querySelector('#g360FcSugV348MesTodos'),ms=[...ov.querySelectorAll('.g360FcSugV348Mes')];
+ const syncSet=()=>sets.forEach(x=>x.disabled=st.checked),syncMes=()=>ms.forEach(x=>x.disabled=mt.checked);syncSet();syncMes();
+ st.onchange=()=>{if(st.checked)sets.forEach(x=>x.checked=false);syncSet()};mt.onchange=()=>{if(mt.checked)ms.forEach(x=>x.checked=false);syncMes()};
+ ov.querySelector('#g360FcSugV348Fechar').onclick=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)ov.remove()};
+ ov.querySelector('#g360FcSugV348Gerar').onclick=()=>{const setores=st.checked?null:sets.filter(x=>x.checked).map(x=>x.value),selMes=mt.checked?meses.map(x=>x.ym):ms.filter(x=>x.checked).map(x=>x.value);if(setores&&!setores.length)return alert('Selecione um Setor / Equipe ou marque TODOS.');if(!selMes.length)return alert('Selecione um mês ou marque TODOS OS 6 MESES.');ov.remove();fcSugV348Pdf(dados,{setores,meses:selMes})};
 }
-function fcSugNovaAbrirFiltro(colabs){
-  document.getElementById('g360FcSugNovoModal')?.remove();
-  const grupos=[...new Set(colabs.filter(fcSugNovaEhAlojado).map(fcSugNovaGrupo))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-  const meses=fcSugNovaProximosSeisMeses();
-  const ov=document.createElement('div');ov.id='g360FcSugNovoModal';ov.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:16px';
-  ov.innerHTML=`<style>
-  #g360FcSugNovoModal .sug-box{width:min(700px,94vw);max-height:84vh;overflow:auto;background:#202327;border:1px solid #444;border-radius:8px;padding:17px;color:#fff;box-shadow:0 18px 60px #000;font-size:10px}
-  #g360FcSugNovoModal .sug-title{font-size:15px;font-weight:900} #g360FcSugNovoModal .sug-sub{font-size:10px;opacity:.72;margin-top:3px}
-  #g360FcSugNovoModal .sug-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:14px;margin-top:14px} #g360FcSugNovoModal section{border:1px solid #3b3f45;border-radius:7px;padding:11px}
-  #g360FcSugNovoModal .sec-title{font-size:10px;font-weight:900;margin-bottom:8px} #g360FcSugNovoModal label{font-size:10px!important;line-height:1.15!important;font-weight:600!important;display:flex;gap:6px;align-items:center}
-  #g360FcSugNovoModal input[type=checkbox]{appearance:none;-webkit-appearance:none;width:12px!important;height:12px!important;min-width:12px!important;margin:0!important;border:1px solid #777b82;border-radius:2px;background:#17191c;display:inline-grid;place-content:center}
-  #g360FcSugNovoModal input[type=checkbox]:checked{background:#f5c518;border-color:#f5c518} #g360FcSugNovoModal input[type=checkbox]:checked:after{content:'✓';font-size:8px;line-height:1;color:#111;font-weight:900}
-  #g360FcSugNovoModal input[type=checkbox]:disabled{opacity:1} #g360FcSugNovoModal .list{display:grid;gap:6px}
-  @media(max-width:650px){#g360FcSugNovoModal .sug-grid{grid-template-columns:1fr}}
-  </style><div class="sug-box"><div style="display:flex;justify-content:space-between;gap:12px"><div><div class="sug-title">RELATÓRIO DE SUGESTÕES DE FOLGA</div><div class="sug-sub">Fonte: public.colaboradores · ${colabs.length} colaboradores carregados</div></div><button type="button" id="g360FcSugNovoFechar" class="clear-btn">FECHAR</button></div>
-  <div class="sug-grid"><section><div class="sec-title">SETOR / EQUIPE</div><label style="margin-bottom:8px"><input type="checkbox" id="g360FcSugNovoSetTodos" checked> TODOS</label><div class="list">${grupos.map(g=>`<label><input type="checkbox" class="g360FcSugNovoSet" value="${esc(g)}" disabled> ${esc(g)}</label>`).join('')}</div></section>
-  <section><div class="sec-title">MÊS DA SUGESTÃO</div><label style="margin-bottom:8px"><input type="checkbox" id="g360FcSugNovoMesTodos" checked> TODOS OS 6 MESES</label><div class="list">${meses.map(m=>`<label><input type="checkbox" class="g360FcSugNovoMes" value="${m.ym}" disabled> ${m.label}</label>`).join('')}</div></section></div>
-  <div style="display:flex;justify-content:flex-end;margin-top:14px"><button type="button" id="g360FcSugNovoGerar" class="primary-btn">📄 GERAR RELATÓRIO</button></div></div>`;
-  document.body.appendChild(ov);
-  const st=ov.querySelector('#g360FcSugNovoSetTodos'),sets=[...ov.querySelectorAll('.g360FcSugNovoSet')],mt=ov.querySelector('#g360FcSugNovoMesTodos'),ms=[...ov.querySelectorAll('.g360FcSugNovoMes')];
-  st.onchange=()=>sets.forEach(x=>{x.disabled=st.checked;if(st.checked)x.checked=false}); mt.onchange=()=>ms.forEach(x=>{x.disabled=mt.checked;if(mt.checked)x.checked=false});
-  ov.querySelector('#g360FcSugNovoFechar').onclick=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)ov.remove()};
-  ov.querySelector('#g360FcSugNovoGerar').onclick=()=>{const setores=st.checked?null:sets.filter(x=>x.checked).map(x=>x.value),mesSel=mt.checked?meses.map(x=>x.ym):ms.filter(x=>x.checked).map(x=>x.value);if(setores&& !setores.length)return alert('Selecione um Setor / Equipe ou marque TODOS.');if(!mesSel.length)return alert('Selecione um mês ou marque TODOS OS 6 MESES.');ov.remove();fcSugNovaGerarPdf(colabs,{setores,meses:mesSel})};
-}
-async function gerarRelatorioSugestoes(){
-  const btn=$('g360FcRelSugestoes');
-  try{if(btn){btn.disabled=true;btn.textContent='⏳ Carregando...'}const colabs=await fcSugNovaBuscarColaboradores();fcSugNovaAbrirFiltro(colabs)}
-  catch(e){console.error('Novo relatório de sugestões:',e);alert('Não foi possível consultar public.colaboradores: '+(e?.message||e))}
-  finally{if(btn){btn.disabled=false;btn.textContent='📄 Relatório de sugestões'}}
-}
-function fcSugNovaGerarPdf(colabs,filtros){
-  try{
-    if(!window.jspdf?.jsPDF||typeof window.jspdf.jsPDF!=='function')throw new Error('Biblioteca PDF não carregada.');
-    const linhas=[],pend=[];
-    colabs.filter(c=>fcSugNovaEhAlojado(c)&&(!filtros.setores||filtros.setores.includes(fcSugNovaGrupo(c)))).forEach(c=>{
-      const meses=fcPeriodicidadeMeses(c.periodicidade_baixada),base=c.ult_baixada||c.admissao||'',fonte=c.ult_baixada?'ÚLTIMA FOLGA':'ADMISSÃO';
-      if(!base){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'SEM DATA-BASE']);return}
-      if(![2,3,6].includes(meses)){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'SEM PERIODICIDADE 2x2 / 3x3 / 6x6']);return}
-      const ini=fcSugestaoFutura(String(base).slice(0,10),meses)?.data;if(!ini){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'ERRO NO CÁLCULO']);return}
-      if(!filtros.meses.includes(String(ini).slice(0,7)))return;
-      const dias=meses===2?3:meses===3?5:7,fim=addDaysISO(ini,dias-1),ret=addDaysISO(fim,1);
-      linhas.push({grupo:fcSugNovaGrupo(c),nome:String(c.nome||'').toUpperCase(),row:[c.mat||'—',String(c.nome||'').toUpperCase(),String(c.funcao||'—').toUpperCase(),fcSugNovaCidade(c),c.distancia_baixada_km??'—',`${meses}x${meses}`,fonte,fcFmtDate(ini),fcFmtDate(fim),fcFmtDate(ret)]});
-    });
-    linhas.sort((a,b)=>a.grupo.localeCompare(b.grupo,'pt-BR')||a.nome.localeCompare(b.nome,'pt-BR'));pend.sort((a,b)=>String(a[1]).localeCompare(String(b[1]),'pt-BR'));
-    const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'}),PW=doc.internal.pageSize.getWidth();
-    const cab=()=>{try{if(typeof CCL_LOGO_B64!=='undefined')doc.addImage(CCL_LOGO_B64,'PNG',12,8,35,17)}catch(_){}doc.setTextColor(0);doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('RELATÓRIO DE SUGESTÃO DE BAIXADAS',PW/2,15,{align:'center'});doc.setFont('helvetica','normal');doc.setFontSize(8);const st=filtros.setores?.length?filtros.setores.join(' | '):'TODOS OS SETORES / EQUIPES';const mt=filtros.meses.map(ym=>{const [y,m]=ym.split('-').map(Number);return new Date(y,m-1,1,12).toLocaleDateString('pt-BR',{month:'short',year:'numeric'}).toUpperCase()}).join(' | ');doc.text(`Obra 202 · ${st}`,PW/2,21,{align:'center',maxWidth:PW-25});doc.text(`Meses: ${mt} · 2x2=3 dias | 3x3=5 dias | 6x6=7 dias · 5º dia útil`,PW/2,26,{align:'center',maxWidth:PW-25})};
-    cab();let y=31;const gs=[...new Set(linhas.map(x=>x.grupo))];
-    gs.forEach((g,i)=>{if(i&&y>155){doc.addPage();cab();y=31}const itens=linhas.filter(x=>x.grupo===g);doc.setFillColor(235,235,235);doc.rect(8,y,PW-16,7,'F');doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text(g,10,y+4.8);y+=9;doc.autoTable({startY:y,margin:{left:8,right:8,bottom:14},head:[['MAT.','COLABORADOR','FUNÇÃO','CIDADE / UF','KM','PER.','BASE','INÍCIO','FIM','RETORNO']],body:itens.map(x=>x.row),theme:'grid',styles:{font:'helvetica',fontSize:6.2,cellPadding:1.35,textColor:[20,20,20],lineColor:[90,90,90],lineWidth:.15,valign:'middle'},headStyles:{fontStyle:'bold',fillColor:[245,197,24],textColor:[0,0,0],halign:'center'},columnStyles:{0:{cellWidth:12,halign:'center'},1:{cellWidth:43},2:{cellWidth:40},3:{cellWidth:35},4:{cellWidth:12,halign:'center'},5:{cellWidth:12,halign:'center'},6:{cellWidth:19,halign:'center'},7:{cellWidth:20,halign:'center'},8:{cellWidth:20,halign:'center'},9:{cellWidth:20,halign:'center'}},showHead:'everyPage'});y=doc.lastAutoTable.finalY+6});
-    if(pend.length){if(y>170){doc.addPage();y=15}doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text('PENDÊNCIAS',8,y);doc.autoTable({startY:y+3,margin:{left:8,right:8,bottom:14},head:[['MAT.','COLABORADOR','MOTIVO']],body:pend,theme:'grid',styles:{font:'helvetica',fontSize:7,cellPadding:1.8},headStyles:{fontStyle:'bold',fillColor:[230,230,230],textColor:[0,0,0]}})}
-    const total=doc.internal.getNumberOfPages();for(let i=1;i<=total;i++){doc.setPage(i);doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(90);doc.text(`Fonte: public.colaboradores · ${linhas.length} sugestões · ${pend.length} pendências`,8,202);doc.text(`Página ${i}/${total}`,PW-8,202,{align:'right'})}doc.save(`RELATORIO_SUGESTAO_BAIXADAS_${new Date().toISOString().slice(0,10)}.pdf`)
-  }catch(e){console.error('Novo PDF sugestões:',e);alert('Não foi possível gerar o relatório: '+(e?.message||e))}
+async function gerarRelatorioSugestoes(){const btn=$('g360FcRelSugestoes');try{if(btn){btn.disabled=true;btn.textContent='⏳ Carregando...'}const d=await fcSugV348Carregar();fcSugV348AbrirFiltro(d)}catch(e){console.error('Sugestões V348:',e);alert('Falha ao carregar Relatório de Sugestões: '+(e?.message||e))}finally{if(btn){btn.disabled=false;btn.textContent='📄 Relatório de sugestões'}}}
+function fcSugV348Pdf(dados,filtros){
+ try{
+  if(!window.jspdf?.jsPDF)throw new Error('Biblioteca PDF não carregada.');
+  const linhas=[],pend=[];
+  dados.colabs.forEach(c=>{
+   const grupo=fcSugV348Grupo(c);if(filtros.setores&&!filtros.setores.includes(grupo))return;
+   const regra=fcSugV348Regra(c.distancia_baixada_km);if(!regra){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'SEM KM CADASTRADO']);return}
+   const h=dados.ult.get(c.id),base=(h?.data_ini||c.admissao||'').slice(0,10),fonte=h?'ÚLTIMA FOLGA':'ADMISSÃO';if(!base){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'SEM ADMISSÃO / HISTÓRICO']);return}
+   const sug=fcSugestaoFutura(base,regra.meses),ini=sug?.data||'';if(!ini){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'ERRO NO CÁLCULO']);return}if(!filtros.meses.includes(ini.slice(0,7)))return;
+   const fim=addDaysISO(ini,regra.dias-1),ret=addDaysISO(fim,1);
+   linhas.push({grupo,nome:String(c.nome||'').toUpperCase(),row:[c.mat||'—',String(c.nome||'').toUpperCase(),String(c.funcao||'—').toUpperCase(),fcSugV348Cidade(c),Number(c.distancia_baixada_km).toLocaleString('pt-BR'),regra.per,fonte,fcFmtDate(ini),fcFmtDate(fim),fcFmtDate(ret)]});
+  });
+  linhas.sort((a,b)=>a.grupo.localeCompare(b.grupo,'pt-BR')||a.nome.localeCompare(b.nome,'pt-BR'));
+  const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'}),PW=doc.internal.pageSize.getWidth();
+  const cab=()=>{try{if(typeof CCL_LOGO_B64!=='undefined')doc.addImage(CCL_LOGO_B64,'PNG',12,8,35,17)}catch(_){}doc.setTextColor(0);doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('RELATÓRIO DE SUGESTÃO DE BAIXADAS',PW/2,15,{align:'center'});doc.setFont('helvetica','normal');doc.setFontSize(8);const st=filtros.setores?.length?filtros.setores.join(' | '):'TODOS OS SETORES / EQUIPES';const mt=filtros.meses.map(ym=>{const[y,m]=ym.split('-').map(Number);return new Date(y,m-1,1,12).toLocaleDateString('pt-BR',{month:'short',year:'numeric'}).toUpperCase()}).join(' | ');doc.text(`Obra 202 · ${st}`,PW/2,21,{align:'center',maxWidth:PW-25});doc.text(`Meses: ${mt} · até 500 km = 2x2 / 3 dias · 501–1000 km = 3x3 / 5 dias · acima de 1000 km = 6x6 / 7 dias · 5º dia útil`,PW/2,26,{align:'center',maxWidth:PW-25})};
+  cab();let y=31;const gs=[...new Set(linhas.map(x=>x.grupo))];
+  if(!linhas.length){doc.setFont('helvetica','bold');doc.setFontSize(11);doc.text('NENHUMA SUGESTÃO ENCONTRADA PARA OS FILTROS SELECIONADOS.',PW/2,45,{align:'center'})}
+  gs.forEach((g,i)=>{if(i&&y>155){doc.addPage();cab();y=31}const itens=linhas.filter(x=>x.grupo===g);doc.setFillColor(235);doc.rect(8,y,PW-16,7,'F');doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text(g,10,y+4.8);y+=9;doc.autoTable({startY:y,margin:{left:8,right:8,bottom:14},head:[['MAT.','COLABORADOR','FUNÇÃO','CIDADE / UF','KM','PER.','BASE','INÍCIO','FIM','RETORNO']],body:itens.map(x=>x.row),theme:'grid',styles:{font:'helvetica',fontSize:6.2,cellPadding:1.35,textColor:[20,20,20],lineColor:[90,90,90],lineWidth:.15,valign:'middle'},headStyles:{fontStyle:'bold',fillColor:[245,197,24],textColor:[0,0,0],halign:'center'},columnStyles:{0:{cellWidth:12,halign:'center'},1:{cellWidth:43},2:{cellWidth:40},3:{cellWidth:35},4:{cellWidth:12,halign:'center'},5:{cellWidth:12,halign:'center'},6:{cellWidth:19,halign:'center'},7:{cellWidth:20,halign:'center'},8:{cellWidth:20,halign:'center'},9:{cellWidth:20,halign:'center'}},showHead:'everyPage'});y=doc.lastAutoTable.finalY+6});
+  if(pend.length){if(y>165){doc.addPage();y=15}doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text('PENDÊNCIAS CADASTRAIS',8,y);doc.autoTable({startY:y+3,margin:{left:8,right:8,bottom:14},head:[['MAT.','COLABORADOR','MOTIVO']],body:pend,theme:'grid',styles:{font:'helvetica',fontSize:7,cellPadding:1.8},headStyles:{fontStyle:'bold',fillColor:[230,230,230],textColor:[0,0,0]}})}
+  const total=doc.internal.getNumberOfPages();for(let i=1;i<=total;i++){doc.setPage(i);doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(90);doc.text(`Fonte: public.colaboradores + public.folga_campo_projecoes · ${linhas.length} sugestões · ${pend.length} pendências`,8,202);doc.text(`Página ${i}/${total}`,PW-8,202,{align:'right'})}doc.save(`RELATORIO_SUGESTAO_BAIXADAS_${new Date().toISOString().slice(0,10)}.pdf`);
+ }catch(e){console.error('PDF sugestões V348:',e);alert('Não foi possível gerar o relatório: '+(e?.message||e))}
 }
 async function fcSugPrefetchHistorico(){return []}
 
