@@ -21277,20 +21277,26 @@ function fcSugV348Pdf(dados,filtros){
  try{
   if(!window.jspdf?.jsPDF)throw new Error('Biblioteca PDF não carregada.');
   const linhas=[],pend=[];
+  const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();
+  const setorOk=grupo=>{const g=norm(grupo);return (filtros.setores||[]).some(s=>{const f=norm(s);return g===f||g.startsWith(f+' - ')||f.startsWith(g+' - ')});};
+  const quintoDiaUtil=(yy,mm)=>{let u=0;for(let d=1;d<=15;d++){const sem=new Date(yy,mm-1,d,12).getDay();if(sem!==0&&sem!==6)u++;if(u===5)return `${yy}-${String(mm).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}return '';};
   dados.colabs.forEach(c=>{
-   const grupo=fcSugV348Grupo(c);if(filtros.setores&&!filtros.setores.includes(grupo))return;
-   const regra=fcSugV348Regra(c.distancia_baixada_km);if(!regra){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'SEM KM CADASTRADO']);return}
-   const h=dados.ult.get(c.id),base=(c.ult_baixada||h?.data_ini||c.admissao||'').slice(0,10),fonte=c.ult_baixada?'ÚLTIMA BAIXADA':(h?'ÚLTIMA FOLGA':'ADMISSÃO');if(!base){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'SEM ADMISSÃO / HISTÓRICO']);return}
-   // Calcula diretamente cada competência selecionada a partir da data-base.
-   // Ex.: admissão em AGO + periodicidade 2x2 => OUT, DEZ, FEV... sempre no 5º dia útil.
-   const bd=new Date(base+'T12:00:00');if(isNaN(bd)){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'DATA-BASE INVÁLIDA']);return}
-   let encontrou=false;
+   const grupo=fcSugV348Grupo(c);if(!setorOk(grupo))return;
+   const regra=fcSugV348Regra(c.distancia_baixada_km);if(!regra){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'SEM KM CADASTRADO']);return;}
+   const h=dados.ult.get(c.id);
+   // Histórico real mais recente é a base. ult_baixada participa somente como outro histórico; admissão é fallback.
+   const historicos=[h?.data_ini,c.ult_baixada].filter(Boolean).map(v=>String(v).slice(0,10)).sort().reverse();
+   const base=(historicos[0]||c.admissao||'').slice(0,10),fonte=historicos.length?(h?.data_ini===historicos[0]?'ÚLTIMA FOLGA':'ÚLTIMA BAIXADA'):'ADMISSÃO';
+   if(!base){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'SEM ADMISSÃO / HISTÓRICO']);return;}
+   const m=base.match(/^(\d{4})-(\d{2})-(\d{2})/);if(!m){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'DATA-BASE INVÁLIDA']);return;}
+   const by=Number(m[1]),bm=Number(m[2]);
    (filtros.meses||[]).forEach(ym=>{
-    const [yy,mm]=String(ym).split('-').map(Number);if(!yy||!mm)return;
-    const dif=(yy-bd.getFullYear())*12+((mm-1)-bd.getMonth());
+    const mmatch=String(ym).match(/^(\d{4})-(\d{2})$/);if(!mmatch)return;
+    const yy=Number(mmatch[1]),mm=Number(mmatch[2]);
+    const dif=(yy-by)*12+(mm-bm);
+    // O primeiro direito nasce após um ciclo completo; depois repete sempre pela periodicidade.
     if(dif<regra.meses||dif%regra.meses!==0)return;
-    let uteis=0,ini='';for(let dia=1;dia<=15;dia++){const x=new Date(yy,mm-1,dia,12),sem=x.getDay();if(sem!==0&&sem!==6)uteis++;if(uteis===5){ini=`${yy}-${String(mm).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;break}}
-    if(!ini)return;encontrou=true;
+    const ini=quintoDiaUtil(yy,mm);if(!ini)return;
     const fim=addDaysISO(ini,regra.dias-1),ret=addDaysISO(fim,1);
     linhas.push({grupo,nome:String(c.nome||'').toUpperCase(),mes:ym,row:[c.mat||'—',String(c.nome||'').toUpperCase(),String(c.funcao||'—').toUpperCase(),fcSugV348Cidade(c),Number(c.distancia_baixada_km).toLocaleString('pt-BR'),regra.per,fonte,fcFmtDate(ini),fcFmtDate(fim),fcFmtDate(ret)]});
    });
