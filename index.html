@@ -3626,7 +3626,7 @@ html.g360-ui-ready .content-col {
             <div class="fc-flow-progress"><span data-fc-step="1" class="active">1 · DADOS DA FOLGA</span><span data-fc-step="2">2 · ROTEIRO</span><span data-fc-step="3">3 · DESPESAS EXTRAS</span></div>
         <section class="panel g360-reemb-toolbar fc-dev-panel fc-flow-step fc-flow-step-1"><div class="g360-reemb-toolbar-grid fc-dev-toolbar-grid"><label>Colaborador<select id="g360FcDevColab"><option value="">Selecione...</option></select></label><div></div></div><div class="g360-reemb-person" id="g360FcDevPessoaResumo">Selecione um colaborador para lançar ou consultar despesas.</div></section>
         <section class="panel fc-dev-panel fc-flow-step fc-flow-step-1" id="g360FcSugestaoPanel">
-          <div class="g360-reemb-table-head"><div><h2>Sugestão automática de folga</h2><div class="g360-reemb-sub">O sistema usa a última Folga de Campo/Reembolso ou, se não houver histórico, a admissão. Após completar a periodicidade (2/3/6 meses), programa a baixada no 5º dia útil do próprio mês em que a periodicidade se completa.</div></div></div>
+          <div class="g360-reemb-table-head"><div><h2>Sugestão automática de folga</h2><div class="g360-reemb-sub">O sistema usa a última Folga de Campo/Reembolso ou, se não houver histórico, a admissão. Após completar a periodicidade (2/3/6 meses), programa a baixada no data-base + ciclo do próprio mês em que a periodicidade se completa.</div></div></div>
           <div class="g360-reemb-person" id="g360FcSugestao">Selecione um colaborador para calcular a próxima folga sugerida.</div>
         </section>
         <section class="panel fc-dev-panel fc-folga-dados-panel fc-flow-step fc-flow-step-1">
@@ -21175,19 +21175,12 @@ function fcQuintoDiaUtilMes(isoBase,meses){
 }
 function fcSugestaoFutura(isoBase,meses){
  if(!isoBase||!meses)return {data:'',ciclos:0,baseCiclo:isoBase||''};
- const hoje=new Date();hoje.setHours(0,0,0,0);
- let baseCiclo=String(isoBase).slice(0,10),ciclos=1,data='';
- // Se a sugestão de um ciclo já passou, avança ciclos completos da periodicidade
- // até encontrar a primeira baixada que ainda não venceu.
- for(let i=0;i<240;i++){
-  data=fcQuintoDiaUtilMes(baseCiclo,meses);
-  if(!data)break;
-  const sug=new Date(data+'T00:00:00');
-  if(sug>=hoje)return {data,ciclos,baseCiclo};
-  baseCiclo=fcAddMonthsISO(baseCiclo,meses);
-  ciclos++;
- }
- return {data:'',ciclos,baseCiclo};
+ // Nova regra: a próxima sugestão é sempre a data-base + UM ciclo completo.
+ // Base = última folga/baixada real; se não houver histórico, admissão.
+ // Não usa data-base + ciclo e não pula automaticamente ciclos vencidos.
+ const baseCiclo=String(isoBase).slice(0,10);
+ const data=fcAddMonthsISO(baseCiclo,Number(meses));
+ return {data,ciclos:1,baseCiclo};
 }
 async function loadFolgaSuggestion(){
  const el=$('g360FcSugestao'),c=selectedColab();if(!el)return;
@@ -21211,7 +21204,7 @@ async function loadFolgaSuggestion(){
   const calcSug=fcSugestaoFutura(base,meses),proxIni=calcSug.data;
   if(!proxIni){el.innerHTML=`<b>${esc(c.nome)}</b> · Não foi possível calcular a próxima folga sugerida.`;return}
   // Regra fixa da Folga de Campo: 2x2 = 3 dias, 3x3 = 5 dias, 6x6 = 7 dias.
-  // Regra: data-base + periodicidade completa (2/3/6 meses) e início no 5º dia útil do próprio mês resultante.
+  // Regra: data-base + periodicidade completa (2/3/6 meses) e início no data-base + ciclo do próprio mês resultante.
   // Nunca replica o dia/período da folga anterior.
   const diasFolga=meses===2?3:(meses===3?5:(meses===6?7:null));
   if(!diasFolga){el.innerHTML=`<b>${esc(c.nome)}</b> · Periodicidade <b>${esc(c.periodicidade_baixada||meses+' MESES')}</b> sem quantidade de dias de folga configurada.`;return}
@@ -21336,7 +21329,7 @@ async function gerarRelatorioSugestoesPdf(filtros){
   linhas.sort((a,b)=>a.grupo.localeCompare(b.grupo,'pt-BR')||a.nome.localeCompare(b.nome,'pt-BR'));
   pend.sort((a,b)=>String(a[1]).localeCompare(String(b[1]),'pt-BR'));
   const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'}),PW=doc.internal.pageSize.getWidth();
-  const cabecalho=()=>{try{if(typeof CCL_LOGO_B64!=='undefined')doc.addImage(CCL_LOGO_B64,'PNG',12,8,35,17)}catch(_){ }doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('RELATÓRIO DE SUGESTÃO DE BAIXADAS',PW/2,15,{align:'center'});doc.setFont('helvetica','normal');doc.setFontSize(8);const setTxt=filtros?.setores?.length?filtros.setores.join(' | '):'TODOS OS SETORES / ENCARREGADOS';const mesTxt=(filtros?.meses||[]).map(ym=>{const [y,m]=ym.split('-').map(Number);return new Date(y,m-1,1,12).toLocaleDateString('pt-BR',{month:'short',year:'numeric'}).toUpperCase()}).join(' | ');doc.text(`Obra 202 · ${setTxt}`,PW/2,21,{align:'center',maxWidth:PW-25});doc.text(`Meses: ${mesTxt} · 2x2=3 dias | 3x3=5 dias | 6x6=7 dias · 5º dia útil`,PW/2,26,{align:'center',maxWidth:PW-25});};
+  const cabecalho=()=>{try{if(typeof CCL_LOGO_B64!=='undefined')doc.addImage(CCL_LOGO_B64,'PNG',12,8,35,17)}catch(_){ }doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('RELATÓRIO DE SUGESTÃO DE BAIXADAS',PW/2,15,{align:'center'});doc.setFont('helvetica','normal');doc.setFontSize(8);const setTxt=filtros?.setores?.length?filtros.setores.join(' | '):'TODOS OS SETORES / ENCARREGADOS';const mesTxt=(filtros?.meses||[]).map(ym=>{const [y,m]=ym.split('-').map(Number);return new Date(y,m-1,1,12).toLocaleDateString('pt-BR',{month:'short',year:'numeric'}).toUpperCase()}).join(' | ');doc.text(`Obra 202 · ${setTxt}`,PW/2,21,{align:'center',maxWidth:PW-25});doc.text(`Meses: ${mesTxt} · 2x2=3 dias | 3x3=5 dias | 6x6=7 dias · data-base + ciclo`,PW/2,26,{align:'center',maxWidth:PW-25});};
   cabecalho();let yAtual=31;
   const grupos=[...new Set(linhas.map(x=>x.grupo))];
   grupos.forEach((grupo,idx)=>{const itens=linhas.filter(x=>x.grupo===grupo);if(idx>0&&yAtual>155){doc.addPage();cabecalho();yAtual=31}doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(0);doc.setFillColor(235,235,235);doc.rect(8,yAtual,PW-16,7,'F');doc.text(grupo,10,yAtual+4.8);yAtual+=9;doc.autoTable({startY:yAtual,margin:{left:8,right:8,bottom:14},head:[['MAT.','COLABORADOR','FUNÇÃO','ADMISSÃO','CIDADE / UF','KM','PER.','BASE','INÍCIO','FIM','RETORNO','SAÍDA','RETORNO']],body:itens.map(x=>x.row),theme:'grid',styles:{font:'helvetica',fontSize:5.9,cellPadding:1.25,textColor:[20,20,20],lineColor:[90,90,90],lineWidth:.15,valign:'middle'},headStyles:{fontStyle:'bold',fillColor:[245,197,24],textColor:[0,0,0],halign:'center'},columnStyles:{0:{cellWidth:10,halign:'center'},1:{cellWidth:34},2:{cellWidth:30},3:{cellWidth:17,halign:'center'},4:{cellWidth:28},5:{cellWidth:10,halign:'center'},6:{cellWidth:10,halign:'center'},7:{cellWidth:16,halign:'center'},8:{cellWidth:17,halign:'center'},9:{cellWidth:17,halign:'center'},10:{cellWidth:17,halign:'center'},11:{cellWidth:19,halign:'center'},12:{cellWidth:19,halign:'center'}},showHead:'everyPage'});yAtual=doc.lastAutoTable.finalY+6;});
