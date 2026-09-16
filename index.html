@@ -13921,6 +13921,13 @@ window.GESTAO360_CONFIG = {
   OBRA_NOME: "IMPLANTAÇÃO AURIVERDE"
 };
 
+// V338 — base cadastral atual usada exclusivamente pelo Relatório de Sugestões de Folga.
+// A conexão principal acima permanece inalterada para preservar os módulos e históricos existentes.
+window.GESTAO360_FOLGA_CADASTRO_CONFIG = {
+  SUPABASE_URL: "https://kgntjgcsfhsjkvenorhl.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_yKWF7Hr9oBh83pqfGEKv3g_K9HPim48"
+};
+
 </script>
 <script>
 /* CRUD + Patrimônio / Inventário integrados neste próprio HTML */
@@ -21209,13 +21216,35 @@ async function loadFolgaSuggestion(){
   el.innerHTML=`<b>${esc(c.nome)}</b> · ${baseTxt} · Periodicidade: <b>${esc(c.periodicidade_baixada||meses+' MESES')}</b> · Direito: <b>${diasFolga} DIAS</b> · <span style="color:#f5c518;font-weight:800">SUGESTÃO: ${fcFmtDate(proxIni)} A ${fcFmtDate(proxFim)} · INÍCIO NO 5º DIA ÚTIL</span>`;
  }catch(e){console.error('Sugestão Folga de Campo:',e);el.textContent='Não foi possível calcular a sugestão. Verifique os dados do colaborador e o histórico de Folga de Campo.'}
 }
+let fcSugCadastroClient=null,fcSugColabs=[];
+function fcSugDb(){
+ if(fcSugCadastroClient)return fcSugCadastroClient;
+ const cfg=window.GESTAO360_FOLGA_CADASTRO_CONFIG||{};
+ if(!window.supabase?.createClient||!cfg.SUPABASE_URL||!cfg.SUPABASE_ANON_KEY)return null;
+ fcSugCadastroClient=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+ return fcSugCadastroClient;
+}
+async function fcSugCarregarColaboradores(){
+ const cli=fcSugDb();if(!cli)throw new Error('Base cadastral da Folga não configurada.');
+ let obraAtualId=null;
+ try{
+  const or=await cli.from('obras').select('id,codigo,nome');
+  if(!or.error){const alvo=(or.data||[]).find(o=>String(o.codigo||'').trim()==='202'||String(o.nome||'').toUpperCase().includes('AURIVERDE'));obraAtualId=alvo?.id||null}
+ }catch(_){ }
+ let q=cli.from('colaboradores').select('id,mat,nome,funcao,status,obra_id,periodicidade_baixada,admissao,cidade,cidade_baixada,uf_baixada,distancia_baixada_km,usa_aloj,depto,equipe,setor_equipe').order('nome');
+ if(obraAtualId)q=q.eq('obra_id',obraAtualId);
+ const r=await q;if(r.error)throw r.error;
+ fcSugColabs=(r.data||[]).filter(c=>!['DESLIGADO','INATIVO','ABANDONO'].includes(String(c.status||'').toUpperCase())).map(c=>({...c,matricula:c.mat}));
+ return fcSugColabs;
+}
 function fcProximosSeisMeses(){
  const base=new Date();base.setDate(1);
  return Array.from({length:6},(_,i)=>{const d=new Date(base.getFullYear(),base.getMonth()+i+1,1,12);const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;return {ym,label:d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'}).toUpperCase()}})
 }
-function abrirFiltrosRelatorioSugestoes(){
+async function abrirFiltrosRelatorioSugestoes(){
  const antigo=document.getElementById('g360FcSugFiltModal');if(antigo)antigo.remove();
- const grupos=[...new Set(colabs.filter(c=>String(c.usa_aloj||'').trim().toUpperCase()==='S').map(c=>String(c.setor_equipe||c.equipe||c.depto||'SEM SETOR / EQUIPE').toUpperCase()))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+ let baseSug=[];try{baseSug=await fcSugCarregarColaboradores()}catch(e){console.error(e);return alert('Falha ao carregar cadastro atual para o Relatório de Sugestões: '+(e?.message||e))}
+ const grupos=[...new Set(baseSug.filter(c=>c.usa_aloj===true||String(c.usa_aloj||'').trim().toUpperCase()==='S'||String(c.usa_aloj||'').trim().toUpperCase()==='SIM').map(c=>String(c.setor_equipe||c.equipe||c.depto||'SEM SETOR / EQUIPE').toUpperCase()))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
  const meses=fcProximosSeisMeses();
  const ov=document.createElement('div');ov.id='g360FcSugFiltModal';ov.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:18px';
  ov.innerHTML=`<div style="width:min(920px,96vw);max-height:90vh;overflow:auto;background:#202327;border:1px solid #444;border-radius:9px;padding:20px;color:#fff;box-shadow:0 18px 60px #000">
@@ -21239,17 +21268,19 @@ async function gerarRelatorioSugestoesPdf(filtros){
  try{
   if(!window.jspdf?.jsPDF||typeof window.jspdf.jsPDF!=='function')throw new Error('Biblioteca PDF não carregada.');
   if(btn){btn.disabled=true;btn.textContent='⏳ Gerando...'}
-  const oid=obraId();
-  // Folga de Campo é destinada aos colaboradores alojados. Mantém somente ativos da obra atual.
-  const elegiveis=colabs.filter(c=>String(c.usa_aloj||'').trim().toUpperCase()==='S' && (!filtros?.setores || filtros.setores.includes(String(c.setor_equipe||c.equipe||c.depto||'SEM SETOR / EQUIPE').toUpperCase())));
-  let fq=sb().from('folga_campo').select('colaborador_id,data_inicio,data_fim').not('data_inicio','is',null);
-  let rq=sb().from('rh_reembolso_cabecalhos').select('colaborador_id,periodo_folga_inicio,periodo_folga_fim,tipo_reembolso').eq('tipo_reembolso','FOLGA_DE_CAMPO').not('periodo_folga_inicio','is',null);
-  if(oid){fq=fq.eq('obra_id',oid);rq=rq.eq('obra_id',oid)}
-  const [fr,rr]=await Promise.all([fq,rq]);if(fr.error)throw fr.error;if(rr.error)throw rr.error;
+  const cli=fcSugDb();
+  const baseSug=fcSugColabs.length?fcSugColabs:await fcSugCarregarColaboradores();
+  // V338: relatório usa a base cadastral atual; não altera a conexão principal nem os lançamentos antigos.
+  const elegiveis=baseSug.filter(c=>(c.usa_aloj===true||String(c.usa_aloj||'').trim().toUpperCase()==='S'||String(c.usa_aloj||'').trim().toUpperCase()==='SIM') && (!filtros?.setores || filtros.setores.includes(String(c.setor_equipe||c.equipe||c.depto||'SEM SETOR / EQUIPE').toUpperCase())));
+  const ids=elegiveis.map(c=>c.id).filter(Boolean);
+  let hist=[];
+  if(ids.length){
+   const hr=await cli.from('folga_campo_projecoes').select('colaborador_id,data_ini,data_fim,mes_referencia').in('colaborador_id',ids).not('data_ini','is',null).order('data_ini',{ascending:false});
+   if(hr.error)throw hr.error;hist=hr.data||[];
+  }
   const ult=new Map();
   const addHist=(id,ini,fim,fonte)=>{if(!id||!ini)return;const k=String(id),at=ult.get(k);if(!at||String(ini)>String(at.ini))ult.set(k,{ini,fim:fim||ini,fonte})};
-  (fr.data||[]).forEach(x=>addHist(x.colaborador_id,x.data_inicio,x.data_fim,'ÚLTIMA FOLGA'));
-  (rr.data||[]).forEach(x=>addHist(x.colaborador_id,x.periodo_folga_inicio,x.periodo_folga_fim,'REEMBOLSO'));
+  hist.forEach(x=>addHist(x.colaborador_id,x.data_ini,x.data_fim,'ÚLTIMA FOLGA'));
   const linhas=[],pend=[];
   elegiveis.forEach(c=>{
    const meses=fcPeriodicidadeMeses(c.periodicidade_baixada),last=ult.get(String(c.id)),base=last?.ini||c.admissao||'',fonte=last?.fonte||'ADMISSÃO';
