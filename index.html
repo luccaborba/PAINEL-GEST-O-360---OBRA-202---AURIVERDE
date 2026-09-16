@@ -21263,10 +21263,14 @@ function fcSugV348AbrirFiltro(dados){
  <div style="display:flex;justify-content:flex-end;margin-top:14px"><button type="button" id="g360FcSugV348Gerar" class="gen">📄 GERAR RELATÓRIO</button></div></div>`;
  document.body.appendChild(ov);
  const st=ov.querySelector('#g360FcSugV348SetTodos'),sets=[...ov.querySelectorAll('.g360FcSugV348Set')],mt=ov.querySelector('#g360FcSugV348MesTodos'),ms=[...ov.querySelectorAll('.g360FcSugV348Mes')];
- const syncSet=()=>sets.forEach(x=>x.disabled=st.checked),syncMes=()=>ms.forEach(x=>x.disabled=mt.checked);syncSet();syncMes();
- st.onchange=()=>{if(st.checked)sets.forEach(x=>x.checked=false);syncSet()};mt.onchange=()=>{if(mt.checked)ms.forEach(x=>x.checked=false);syncMes()};
+ // TODOS passa a representar seleção real: marca/desmarca todos, sem bloquear os itens individuais.
+ const marcarTodosSetores=v=>sets.forEach(x=>x.checked=v),marcarTodosMeses=v=>ms.forEach(x=>x.checked=v);
+ marcarTodosSetores(true);marcarTodosMeses(true);
+ st.onchange=()=>marcarTodosSetores(st.checked);mt.onchange=()=>marcarTodosMeses(mt.checked);
+ sets.forEach(x=>x.onchange=()=>{st.checked=sets.length>0&&sets.every(i=>i.checked)});
+ ms.forEach(x=>x.onchange=()=>{mt.checked=ms.length>0&&ms.every(i=>i.checked)});
  ov.querySelector('#g360FcSugV348Fechar').onclick=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)ov.remove()};
- ov.querySelector('#g360FcSugV348Gerar').onclick=()=>{const setores=st.checked?null:sets.filter(x=>x.checked).map(x=>x.value),selMes=mt.checked?meses.map(x=>x.ym):ms.filter(x=>x.checked).map(x=>x.value);if(setores&&!setores.length)return alert('Selecione um Setor / Equipe ou marque TODOS.');if(!selMes.length)return alert('Selecione um mês ou marque TODOS OS 6 MESES.');ov.remove();fcSugV348Pdf(dados,{setores,meses:selMes})};
+ ov.querySelector('#g360FcSugV348Gerar').onclick=()=>{const setores=sets.filter(x=>x.checked).map(x=>x.value),selMes=ms.filter(x=>x.checked).map(x=>x.value);if(!setores.length)return alert('Selecione pelo menos um Setor / Equipe.');if(!selMes.length)return alert('Selecione pelo menos um mês.');ov.remove();fcSugV348Pdf(dados,{setores,meses:selMes})};
 }
 async function gerarRelatorioSugestoes(){const btn=$('g360FcRelSugestoes');try{if(btn){btn.disabled=true;btn.textContent='⏳ Carregando...'}const d=await fcSugV348Carregar();fcSugV348AbrirFiltro(d)}catch(e){console.error('Sugestões V348:',e);alert('Falha ao carregar Relatório de Sugestões: '+(e?.message||e))}finally{if(btn){btn.disabled=false;btn.textContent='📄 Relatório de sugestões'}}}
 function fcSugV348Pdf(dados,filtros){
