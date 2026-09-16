@@ -21209,14 +21209,39 @@ async function loadFolgaSuggestion(){
   el.innerHTML=`<b>${esc(c.nome)}</b> · ${baseTxt} · Periodicidade: <b>${esc(c.periodicidade_baixada||meses+' MESES')}</b> · Direito: <b>${diasFolga} DIAS</b> · <span style="color:#f5c518;font-weight:800">SUGESTÃO: ${fcFmtDate(proxIni)} A ${fcFmtDate(proxFim)} · INÍCIO NO 5º DIA ÚTIL</span>`;
  }catch(e){console.error('Sugestão Folga de Campo:',e);el.textContent='Não foi possível calcular a sugestão. Verifique os dados do colaborador e o histórico de Folga de Campo.'}
 }
-async function gerarRelatorioSugestoes(){
+function fcProximosSeisMeses(){
+ const base=new Date();base.setDate(1);
+ return Array.from({length:6},(_,i)=>{const d=new Date(base.getFullYear(),base.getMonth()+i+1,1,12);const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;return {ym,label:d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'}).toUpperCase()}})
+}
+function abrirFiltrosRelatorioSugestoes(){
+ const antigo=document.getElementById('g360FcSugFiltModal');if(antigo)antigo.remove();
+ const grupos=[...new Set(colabs.filter(c=>String(c.usa_aloj||'').trim().toUpperCase()==='S').map(c=>String(c.setor_equipe||c.equipe||c.depto||'SEM SETOR / EQUIPE').toUpperCase()))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+ const meses=fcProximosSeisMeses();
+ const ov=document.createElement('div');ov.id='g360FcSugFiltModal';ov.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:18px';
+ ov.innerHTML=`<div style="width:min(920px,96vw);max-height:90vh;overflow:auto;background:#202327;border:1px solid #444;border-radius:9px;padding:20px;color:#fff;box-shadow:0 18px 60px #000">
+  <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start"><div><div style="font-weight:900;font-size:18px">RELATÓRIO DE SUGESTÕES DE FOLGA</div><div style="opacity:.72;margin-top:5px">Selecione Setor / Equipe e o mês da folga sugerida.</div></div><button type="button" id="g360FcSugFiltFechar" class="clear-btn">FECHAR</button></div>
+  <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:18px;margin-top:18px">
+   <section style="border:1px solid #3b3f45;border-radius:7px;padding:14px"><div style="font-weight:900;margin-bottom:10px">SETOR / EQUIPE</div><label style="display:flex;gap:8px;align-items:center;margin-bottom:10px;font-weight:800"><input type="checkbox" id="g360FcSugSetTodos" checked> TODOS</label><div id="g360FcSugSetLista" style="display:grid;gap:7px">${grupos.map((g,i)=>`<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" class="g360FcSugSet" value="${esc(g)}" disabled> ${esc(g)}</label>`).join('')}</div></section>
+   <section style="border:1px solid #3b3f45;border-radius:7px;padding:14px"><div style="font-weight:900;margin-bottom:10px">MÊS DA SUGESTÃO</div><label style="display:flex;gap:8px;align-items:center;margin-bottom:10px;font-weight:800"><input type="checkbox" id="g360FcSugMesTodos" checked> TODOS OS 6 MESES</label><div id="g360FcSugMesLista" style="display:grid;gap:7px">${meses.map(m=>`<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" class="g360FcSugMes" value="${m.ym}" disabled> ${m.label}</label>`).join('')}</div></section>
+  </div>
+  <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px"><button type="button" id="g360FcSugFiltGerar" class="primary-btn">📄 GERAR RELATÓRIO</button></div>
+ </div>`;
+ document.body.appendChild(ov);
+ const setTodos=ov.querySelector('#g360FcSugSetTodos'),sets=[...ov.querySelectorAll('.g360FcSugSet')],mesTodos=ov.querySelector('#g360FcSugMesTodos'),ms=[...ov.querySelectorAll('.g360FcSugMes')];
+ setTodos.onchange=()=>{sets.forEach(x=>{x.disabled=setTodos.checked;if(setTodos.checked)x.checked=false})};
+ mesTodos.onchange=()=>{ms.forEach(x=>{x.disabled=mesTodos.checked;if(mesTodos.checked)x.checked=false})};
+ ov.querySelector('#g360FcSugFiltFechar').onclick=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)ov.remove()};
+ ov.querySelector('#g360FcSugFiltGerar').onclick=async()=>{const setores=setTodos.checked?null:sets.filter(x=>x.checked).map(x=>x.value),mesesSel=mesTodos.checked?meses.map(x=>x.ym):ms.filter(x=>x.checked).map(x=>x.value);if(setores&&setores.length===0)return alert('Selecione pelo menos um Setor / Equipe ou marque TODOS.');if(!mesesSel.length)return alert('Selecione pelo menos um mês ou marque TODOS OS 6 MESES.');ov.remove();await gerarRelatorioSugestoesPdf({setores,meses:mesesSel,mesesTodos:mesTodos.checked})};
+}
+async function gerarRelatorioSugestoes(){abrirFiltrosRelatorioSugestoes()}
+async function gerarRelatorioSugestoesPdf(filtros){
  const btn=$('g360FcRelSugestoes');
  try{
   if(!window.jspdf?.jsPDF||typeof window.jspdf.jsPDF!=='function')throw new Error('Biblioteca PDF não carregada.');
   if(btn){btn.disabled=true;btn.textContent='⏳ Gerando...'}
   const oid=obraId();
   // Folga de Campo é destinada aos colaboradores alojados. Mantém somente ativos da obra atual.
-  const elegiveis=colabs.filter(c=>String(c.usa_aloj||'').trim().toUpperCase()==='S');
+  const elegiveis=colabs.filter(c=>String(c.usa_aloj||'').trim().toUpperCase()==='S' && (!filtros?.setores || filtros.setores.includes(String(c.setor_equipe||c.equipe||c.depto||'SEM SETOR / EQUIPE').toUpperCase())));
   let fq=sb().from('folga_campo').select('colaborador_id,data_inicio,data_fim').not('data_inicio','is',null);
   let rq=sb().from('rh_reembolso_cabecalhos').select('colaborador_id,periodo_folga_inicio,periodo_folga_fim,tipo_reembolso').eq('tipo_reembolso','FOLGA_DE_CAMPO').not('periodo_folga_inicio','is',null);
   if(oid){fq=fq.eq('obra_id',oid);rq=rq.eq('obra_id',oid)}
@@ -21231,13 +21256,14 @@ async function gerarRelatorioSugestoes(){
    if(!base){pend.push([c.matricula||'—',String(c.nome||'').toUpperCase(),'SEM DATA-BASE']);return}
    if(!meses||![2,3,6].includes(meses)){pend.push([c.matricula||'—',String(c.nome||'').toUpperCase(),'SEM PERIODICIDADE 2x2 / 3x3 / 6x6']);return}
    const calcSug=fcSugestaoFutura(String(base).slice(0,10),meses),ini=calcSug.data;if(!ini){pend.push([c.matricula||'—',String(c.nome||'').toUpperCase(),'ERRO NO CÁLCULO']);return}
+   if(filtros?.meses?.length && !filtros.meses.includes(String(ini).slice(0,7)))return;
    const dias=meses===2?3:meses===3?5:7,fim=addDaysISO(ini,dias-1),ret=addDaysISO(fim,1);
    linhas.push({nome:String(c.nome||'').toUpperCase(),grupo:String(c.setor_equipe||c.equipe||c.depto||'SEM SETOR / EQUIPE').toUpperCase(),row:[c.matricula||'—',String(c.nome||'').toUpperCase(),String(c.funcao||'—').toUpperCase(),String(c.cidade_baixada||c.cidade||'—').toUpperCase()+(c.uf_baixada?' / '+String(c.uf_baixada).toUpperCase():''),c.distancia_baixada_km??'—',`${meses}x${meses}`,fonte,fcFmtDate(ini),fcFmtDate(fim),fcFmtDate(ret)]});
   });
   linhas.sort((a,b)=>a.grupo.localeCompare(b.grupo,'pt-BR')||a.nome.localeCompare(b.nome,'pt-BR'));
   pend.sort((a,b)=>String(a[1]).localeCompare(String(b[1]),'pt-BR'));
   const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'}),PW=doc.internal.pageSize.getWidth();
-  const cabecalho=()=>{try{if(typeof CCL_LOGO_B64!=='undefined')doc.addImage(CCL_LOGO_B64,'PNG',12,8,35,17)}catch(_){ }doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('RELATÓRIO DE SUGESTÃO DE BAIXADAS',PW/2,15,{align:'center'});doc.setFont('helvetica','normal');doc.setFontSize(8);doc.text('Obra 202 · Colaboradores ativos e alojados · Separado por Setor / Equipe',PW/2,21,{align:'center'});doc.text('Regras: 2x2 = 3 dias | 3x3 = 5 dias | 6x6 = 7 dias · Início no 5º dia útil do mês correspondente',PW/2,26,{align:'center'});};
+  const cabecalho=()=>{try{if(typeof CCL_LOGO_B64!=='undefined')doc.addImage(CCL_LOGO_B64,'PNG',12,8,35,17)}catch(_){ }doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('RELATÓRIO DE SUGESTÃO DE BAIXADAS',PW/2,15,{align:'center'});doc.setFont('helvetica','normal');doc.setFontSize(8);const setTxt=filtros?.setores?.length?filtros.setores.join(' | '):'TODOS OS SETORES / EQUIPES';const mesTxt=(filtros?.meses||[]).map(ym=>{const [y,m]=ym.split('-').map(Number);return new Date(y,m-1,1,12).toLocaleDateString('pt-BR',{month:'short',year:'numeric'}).toUpperCase()}).join(' | ');doc.text(`Obra 202 · ${setTxt}`,PW/2,21,{align:'center',maxWidth:PW-25});doc.text(`Meses: ${mesTxt} · 2x2=3 dias | 3x3=5 dias | 6x6=7 dias · 5º dia útil`,PW/2,26,{align:'center',maxWidth:PW-25});};
   cabecalho();let yAtual=31;
   const grupos=[...new Set(linhas.map(x=>x.grupo))];
   grupos.forEach((grupo,idx)=>{const itens=linhas.filter(x=>x.grupo===grupo);if(idx>0&&yAtual>155){doc.addPage();cabecalho();yAtual=31}doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(0);doc.setFillColor(235,235,235);doc.rect(8,yAtual,PW-16,7,'F');doc.text(grupo,10,yAtual+4.8);yAtual+=9;doc.autoTable({startY:yAtual,margin:{left:8,right:8,bottom:14},head:[['MAT.','COLABORADOR','FUNÇÃO','CIDADE / UF','KM','PER.','BASE','INÍCIO','FIM','RETORNO']],body:itens.map(x=>x.row),theme:'grid',styles:{font:'helvetica',fontSize:6.2,cellPadding:1.35,textColor:[20,20,20],lineColor:[90,90,90],lineWidth:.15,valign:'middle'},headStyles:{fontStyle:'bold',fillColor:[245,197,24],textColor:[0,0,0],halign:'center'},columnStyles:{0:{cellWidth:12,halign:'center'},1:{cellWidth:43},2:{cellWidth:40},3:{cellWidth:35},4:{cellWidth:12,halign:'center'},5:{cellWidth:12,halign:'center'},6:{cellWidth:19,halign:'center'},7:{cellWidth:20,halign:'center'},8:{cellWidth:20,halign:'center'},9:{cellWidth:20,halign:'center'}},showHead:'everyPage'});yAtual=doc.lastAutoTable.finalY+6;});
