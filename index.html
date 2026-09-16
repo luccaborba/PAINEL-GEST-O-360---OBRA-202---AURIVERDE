@@ -21230,7 +21230,7 @@ async function fcSugV348Fetch(path){
 }
 async function fcSugV348Carregar(force=false){
  if(!force&&fcSugV348Cache)return fcSugV348Cache;
- const campos='id,mat,nome,funcao,status,admissao,depto,equipe,setor_equipe,cidade,cidade_baixada,uf_baixada,distancia_baixada_km';
+ const campos='id,mat,nome,funcao,status,admissao,depto,equipe,setor_equipe,cidade,cidade_baixada,uf_baixada,distancia_baixada_km,ult_baixada';
  const [cs,hs]=await Promise.all([
   fcSugV348Fetch(`/colaboradores?select=${encodeURIComponent(campos)}&order=nome.asc`),
   fcSugV348Fetch('/folga_campo_projecoes?select=colaborador_id,data_ini,data_fim,retorno,mes_referencia,created_at&data_ini=not.is.null&order=data_ini.desc')
@@ -21280,12 +21280,22 @@ function fcSugV348Pdf(dados,filtros){
   dados.colabs.forEach(c=>{
    const grupo=fcSugV348Grupo(c);if(filtros.setores&&!filtros.setores.includes(grupo))return;
    const regra=fcSugV348Regra(c.distancia_baixada_km);if(!regra){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'SEM KM CADASTRADO']);return}
-   const h=dados.ult.get(c.id),base=(h?.data_ini||c.admissao||'').slice(0,10),fonte=h?'ÚLTIMA FOLGA':'ADMISSÃO';if(!base){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'SEM ADMISSÃO / HISTÓRICO']);return}
-   const sug=fcSugestaoFutura(base,regra.meses),ini=sug?.data||'';if(!ini){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'ERRO NO CÁLCULO']);return}if(!filtros.meses.includes(ini.slice(0,7)))return;
-   const fim=addDaysISO(ini,regra.dias-1),ret=addDaysISO(fim,1);
-   linhas.push({grupo,nome:String(c.nome||'').toUpperCase(),row:[c.mat||'—',String(c.nome||'').toUpperCase(),String(c.funcao||'—').toUpperCase(),fcSugV348Cidade(c),Number(c.distancia_baixada_km).toLocaleString('pt-BR'),regra.per,fonte,fcFmtDate(ini),fcFmtDate(fim),fcFmtDate(ret)]});
+   const h=dados.ult.get(c.id),base=(c.ult_baixada||h?.data_ini||c.admissao||'').slice(0,10),fonte=c.ult_baixada?'ÚLTIMA BAIXADA':(h?'ÚLTIMA FOLGA':'ADMISSÃO');if(!base){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'SEM ADMISSÃO / HISTÓRICO']);return}
+   // Calcula diretamente cada competência selecionada a partir da data-base.
+   // Ex.: admissão em AGO + periodicidade 2x2 => OUT, DEZ, FEV... sempre no 5º dia útil.
+   const bd=new Date(base+'T12:00:00');if(isNaN(bd)){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'DATA-BASE INVÁLIDA']);return}
+   let encontrou=false;
+   (filtros.meses||[]).forEach(ym=>{
+    const [yy,mm]=String(ym).split('-').map(Number);if(!yy||!mm)return;
+    const dif=(yy-bd.getFullYear())*12+((mm-1)-bd.getMonth());
+    if(dif<regra.meses||dif%regra.meses!==0)return;
+    let uteis=0,ini='';for(let dia=1;dia<=15;dia++){const x=new Date(yy,mm-1,dia,12),sem=x.getDay();if(sem!==0&&sem!==6)uteis++;if(uteis===5){ini=`${yy}-${String(mm).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;break}}
+    if(!ini)return;encontrou=true;
+    const fim=addDaysISO(ini,regra.dias-1),ret=addDaysISO(fim,1);
+    linhas.push({grupo,nome:String(c.nome||'').toUpperCase(),mes:ym,row:[c.mat||'—',String(c.nome||'').toUpperCase(),String(c.funcao||'—').toUpperCase(),fcSugV348Cidade(c),Number(c.distancia_baixada_km).toLocaleString('pt-BR'),regra.per,fonte,fcFmtDate(ini),fcFmtDate(fim),fcFmtDate(ret)]});
+   });
   });
-  linhas.sort((a,b)=>a.grupo.localeCompare(b.grupo,'pt-BR')||a.nome.localeCompare(b.nome,'pt-BR'));
+  linhas.sort((a,b)=>String(a.mes||'').localeCompare(String(b.mes||''))||a.grupo.localeCompare(b.grupo,'pt-BR')||a.nome.localeCompare(b.nome,'pt-BR'));
   const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'}),PW=doc.internal.pageSize.getWidth();
   const cab=()=>{try{if(typeof CCL_LOGO_B64!=='undefined')doc.addImage(CCL_LOGO_B64,'PNG',12,8,35,17)}catch(_){}doc.setTextColor(0);doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('RELATÓRIO DE SUGESTÃO DE BAIXADAS',PW/2,15,{align:'center'});doc.setFont('helvetica','normal');doc.setFontSize(8);const st=filtros.setores?.length?filtros.setores.join(' | '):'TODOS OS SETORES / EQUIPES';const mt=filtros.meses.map(ym=>{const[y,m]=ym.split('-').map(Number);return new Date(y,m-1,1,12).toLocaleDateString('pt-BR',{month:'short',year:'numeric'}).toUpperCase()}).join(' | ');doc.text(`Obra 202 · ${st}`,PW/2,21,{align:'center',maxWidth:PW-25});doc.text(`Meses: ${mt} · até 500 km = 2x2 / 3 dias · 501–1000 km = 3x3 / 5 dias · acima de 1000 km = 6x6 / 7 dias · 5º dia útil`,PW/2,26,{align:'center',maxWidth:PW-25})};
   cab();let y=31;const gs=[...new Set(linhas.map(x=>x.grupo))];
