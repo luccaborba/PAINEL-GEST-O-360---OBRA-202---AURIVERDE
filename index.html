@@ -21218,29 +21218,48 @@ if(!document.getElementById('g360-fc-sug-check-v339')){
 #g360FcSugFiltModal input[type="checkbox"]:checked{background:#f5c518;border-color:#f5c518}
 #g360FcSugFiltModal input[type="checkbox"]:checked::after{content:"✓";color:#111;font-size:13px;font-weight:1000;line-height:1}
 #g360FcSugFiltModal input[type="checkbox"]:disabled{opacity:.45;cursor:not-allowed}
-#g360FcSugFiltModal{font-size:13px}
-#g360FcSugFiltModal label{font-size:12px!important;line-height:1.25!important;font-weight:600}
-#g360FcSugFiltModal section>div:first-child{font-size:13px!important}
-#g360FcSugFiltModal input[type="checkbox"]{width:15px;height:15px;min-width:15px}
-#g360FcSugFiltModal input[type="checkbox"]:checked::after{font-size:11px}
+#g360FcSugFiltModal{font-size:12px}
+#g360FcSugFiltModal label{font-size:11px!important;line-height:1.2!important;font-weight:600}
+#g360FcSugFiltModal section>div:first-child{font-size:12px!important}
+#g360FcSugFiltModal input[type="checkbox"]{width:13px;height:13px;min-width:13px}
+#g360FcSugFiltModal input[type="checkbox"]:checked::after{font-size:9px}
 #g360FcSugFiltModal input[type="checkbox"]:checked:disabled{opacity:1;background:#f5c518;border-color:#f5c518}`;document.head.appendChild(st);
 }
 let fcSugColabs=[];
+let fcSugCargaPromise=null;
+let fcSugDbClient=null;
+function fcSugDb(){
+ if(fcSugDbClient)return fcSugDbClient;
+ if(!window.supabase?.createClient)throw new Error('Biblioteca Supabase não carregada.');
+ fcSugDbClient=window.supabase.createClient(
+  'https://kgntjgcsfhsjkvenorhl.supabase.co',
+  'sb_publishable_yKWF7Hr9oBh83pqfGEKv3g_K9HPim48',
+  {auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}
+ );
+ return fcSugDbClient;
+}
+async function fcSugCarregarBase(){
+ if(fcSugColabs.length && Array.isArray(fcSugHistCache))return {colabs:fcSugColabs,hist:fcSugHistCache};
+ if(fcSugCargaPromise)return fcSugCargaPromise;
+ fcSugCargaPromise=(async()=>{
+  const db=fcSugDb();
+  const [cr,hr]=await Promise.all([
+   db.from('colaboradores').select('id,mat,nome,funcao,status,admissao,depto,equipe,setor_equipe,usa_aloj,cidade,cidade_baixada,uf_baixada,distancia_baixada_km,periodicidade_baixada,ult_baixada').order('nome'),
+   db.from('folga_campo_projecoes').select('colaborador_id,mes_referencia,data_ini,data_fim,retorno').order('data_ini',{ascending:false})
+  ]);
+  if(cr.error)throw cr.error;
+  if(hr.error)throw hr.error;
+  fcSugColabs=(cr.data||[])
+   .filter(c=>!['DESLIGADO','INATIVO','ABANDONO'].includes(String(c.status||'').toUpperCase()))
+   .map(c=>({...c,matricula:c.mat||'',setor_equipe:c.setor_equipe||c.equipe||c.depto||''}));
+  fcSugHistCache=(hr.data||[]).map(x=>({colaborador_id:x.colaborador_id,data_ini:x.data_ini,data_fim:x.data_fim,mes_referencia:x.mes_referencia}));
+  return {colabs:fcSugColabs,hist:fcSugHistCache};
+ })().finally(()=>{fcSugCargaPromise=null});
+ return fcSugCargaPromise;
+}
 async function fcSugCarregarColaboradores(){
- // V344 — usa EXCLUSIVAMENTE a mesma base/conexão do módulo Folga (sb()).
- // Sem segundo projeto, sem segundo cliente e sem fetch externo.
- if(Array.isArray(fcSugColabs)&&fcSugColabs.length)return fcSugColabs;
- if(Array.isArray(colabs)&&colabs.length){
-   fcSugColabs=colabs.map(c=>({...c,matricula:c.matricula??c.mat??'',setor_equipe:c.setor_equipe||c.equipe||c.depto||''}));
-   return fcSugColabs;
- }
- const oid=obraId();
- let q=sb().from('funcionarios').select('id,matricula,nome,funcao,status,admissao,depto,equipe,setor_equipe,usa_aloj,cidade,cidade_baixada,uf_baixada,distancia_baixada_km,periodicidade_baixada,ult_baixada').order('nome');
- if(oid)q=q.eq('obra_id',oid);
- const {data,error}=await q;
- if(error)throw error;
- fcSugColabs=(data||[]).filter(c=>!['DESLIGADO','INATIVO','ABANDONO'].includes(String(c.status||'').toUpperCase()));
- return fcSugColabs;
+ const r=await fcSugCarregarBase();
+ return r.colabs;
 }
 
 function fcProximosSeisMeses(){
@@ -21253,7 +21272,7 @@ async function abrirFiltrosRelatorioSugestoes(){
  const grupos=[...new Set(baseSug.filter(c=>c.usa_aloj===true||String(c.usa_aloj||'').trim().toUpperCase()==='S'||String(c.usa_aloj||'').trim().toUpperCase()==='SIM').map(c=>String(c.setor_equipe||c.equipe||c.depto||'SEM SETOR / EQUIPE').toUpperCase()))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
  const meses=fcProximosSeisMeses();
  const ov=document.createElement('div');ov.id='g360FcSugFiltModal';ov.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:18px';
- ov.innerHTML=`<style>#g360FcSugFiltModal label{font-size:12px!important;line-height:1.25!important;font-weight:600!important}#g360FcSugFiltModal input[type="checkbox"]{width:14px!important;height:14px!important;min-width:14px!important;accent-color:#f5c518!important;margin:0!important}#g360FcSugFiltModal section>div:first-child{font-size:13px!important}</style><div style="width:min(760px,94vw);max-height:86vh;overflow:auto;background:#202327;border:1px solid #444;border-radius:9px;padding:20px;color:#fff;box-shadow:0 18px 60px #000">
+ ov.innerHTML=`<style>#g360FcSugFiltModal label{font-size:11px!important;line-height:1.2!important;font-weight:600!important}#g360FcSugFiltModal input[type="checkbox"]{width:13px!important;height:13px!important;min-width:13px!important;accent-color:#f5c518!important;margin:0!important}#g360FcSugFiltModal section>div:first-child{font-size:12px!important}</style><div style="width:min(760px,94vw);max-height:86vh;overflow:auto;background:#202327;border:1px solid #444;border-radius:9px;padding:20px;color:#fff;box-shadow:0 18px 60px #000">
   <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start"><div><div style="font-weight:900;font-size:18px">RELATÓRIO DE SUGESTÕES DE FOLGA</div><div style="opacity:.72;margin-top:5px">Selecione Setor / Equipe e o mês da folga sugerida.</div></div><button type="button" id="g360FcSugFiltFechar" class="clear-btn">FECHAR</button></div>
   <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:18px;margin-top:18px">
    <section style="border:1px solid #3b3f45;border-radius:7px;padding:14px"><div style="font-weight:900;margin-bottom:10px">SETOR / EQUIPE</div><label style="display:flex;gap:8px;align-items:center;margin-bottom:10px;font-weight:800"><input type="checkbox" id="g360FcSugSetTodos" checked> TODOS</label><div id="g360FcSugSetLista" style="display:grid;gap:7px">${grupos.map((g,i)=>`<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" class="g360FcSugSet" value="${esc(g)}" disabled> ${esc(g)}</label>`).join('')}</div></section>
@@ -21270,38 +21289,25 @@ async function abrirFiltrosRelatorioSugestoes(){
 }
 async function gerarRelatorioSugestoes(){abrirFiltrosRelatorioSugestoes()}
 async function fcSugPrefetchHistorico(){
- if(fcSugHistCache)return fcSugHistCache;
- if(fcSugHistPromise)return fcSugHistPromise;
- fcSugHistPromise=(async()=>{
-  try{
-   let hq=sb().from('folga_campo').select('colaborador_id,data_inicio,data_saida,data_fim,competencia').not('data_inicio','is',null);
-   const oid=obraId();if(oid)hq=hq.eq('obra_id',oid);
-   const hr=await hq;if(hr.error)throw hr.error;
-   fcSugHistCache=(hr.data||[]).map(x=>({colaborador_id:x.colaborador_id,data_ini:x.data_inicio||x.data_saida,data_fim:x.data_fim,mes_referencia:x.competencia}));
-  }catch(e){console.warn('Pré-carga histórico sugestões:',e);fcSugHistCache=[]}
-  finally{fcSugHistPromise=null}
-  return fcSugHistCache;
- })();
- return fcSugHistPromise;
+ try{const r=await fcSugCarregarBase();return r.hist}catch(e){console.warn('Pré-carga relatório de sugestões:',e);return []}
 }
+
 async function gerarRelatorioSugestoesPdf(filtros){
  const btn=$('g360FcRelSugestoes');
  try{
   if(!window.jspdf?.jsPDF||typeof window.jspdf.jsPDF!=='function')throw new Error('Biblioteca PDF não carregada.');
   if(btn){btn.disabled=true;btn.textContent='⏳ Gerando...'}
   const baseSug=fcSugColabs.length?fcSugColabs:await fcSugCarregarColaboradores();
-  // V338: relatório usa a base cadastral atual; não altera a conexão principal nem os lançamentos antigos.
+  // Relatório usa exclusivamente a base cadastral confirmada do módulo de sugestões.
   const elegiveis=baseSug.filter(c=>(c.usa_aloj===true||String(c.usa_aloj||'').trim().toUpperCase()==='S'||String(c.usa_aloj||'').trim().toUpperCase()==='SIM') && (!filtros?.setores || filtros.setores.includes(String(c.setor_equipe||c.equipe||c.depto||'SEM SETOR / EQUIPE').toUpperCase())));
   const ids=elegiveis.map(c=>c.id).filter(Boolean);
-  // V342: histórico pré-carregado em segundo plano; evita consulta pesada ao clicar em GERAR.
-  let hist=Array.isArray(fcSugHistCache)?fcSugHistCache:[];
-  if(!hist.length && fcSugHistPromise){try{hist=await fcSugHistPromise||[]}catch(_){hist=[]}}
+  // Base única confirmada: colaboradores + folga_campo_projecoes, carregadas uma única vez e mantidas em memória.
+  const hist=Array.isArray(fcSugHistCache)?fcSugHistCache:[];
   const ult=new Map();
   const addHist=(id,ini,fim,fonte)=>{if(!id||!ini)return;const k=String(id),at=ult.get(k);if(!at||String(ini)>String(at.ini))ult.set(k,{ini,fim:fim||ini,fonte})};
   hist.forEach(x=>addHist(x.colaborador_id,x.data_ini,x.data_fim,'ÚLTIMA FOLGA'));
   const linhas=[],pend=[];
   elegiveis.forEach(orig=>{
-   // Correção cadastral confirmada: matrícula 6605 deve sempre refletir a migração atual no relatório.
    const c=orig;
    const meses=fcPeriodicidadeMeses(c.periodicidade_baixada),last=ult.get(String(c.id)),base=last?.ini||c.ult_baixada||c.admissao||'',fonte=last?.fonte||(c.ult_baixada?'ÚLTIMA FOLGA':'ADMISSÃO');
    if(!base){pend.push([c.matricula||'—',String(c.nome||'').toUpperCase(),'SEM DATA-BASE']);return}
