@@ -21216,6 +21216,16 @@ async function loadFolgaSuggestion(){
   el.innerHTML=`<b>${esc(c.nome)}</b> · ${baseTxt} · Periodicidade: <b>${esc(c.periodicidade_baixada||meses+' MESES')}</b> · Direito: <b>${diasFolga} DIAS</b> · <span style="color:#f5c518;font-weight:800">SUGESTÃO: ${fcFmtDate(proxIni)} A ${fcFmtDate(proxFim)} · INÍCIO NO 5º DIA ÚTIL</span>`;
  }catch(e){console.error('Sugestão Folga de Campo:',e);el.textContent='Não foi possível calcular a sugestão. Verifique os dados do colaborador e o histórico de Folga de Campo.'}
 }
+
+/* V339 — padrão visual dos checkboxes do filtro de Sugestões */
+if(!document.getElementById('g360-fc-sug-check-v339')){
+ const st=document.createElement('style');st.id='g360-fc-sug-check-v339';st.textContent=`
+#g360FcSugFiltModal input[type="checkbox"]{appearance:none;-webkit-appearance:none;width:17px;height:17px;min-width:17px;border:1px solid #777b82;border-radius:3px;background:#17191c;cursor:pointer;display:inline-grid;place-content:center;vertical-align:middle}
+#g360FcSugFiltModal input[type="checkbox"]:checked{background:#f5c518;border-color:#f5c518}
+#g360FcSugFiltModal input[type="checkbox"]:checked::after{content:"✓";color:#111;font-size:13px;font-weight:1000;line-height:1}
+#g360FcSugFiltModal input[type="checkbox"]:disabled{opacity:.45;cursor:not-allowed}
+#g360FcSugFiltModal input[type="checkbox"]:checked:disabled{opacity:.72}`;document.head.appendChild(st);
+}
 let fcSugCadastroClient=null,fcSugColabs=[];
 function fcSugDb(){
  if(fcSugCadastroClient)return fcSugCadastroClient;
@@ -21225,18 +21235,28 @@ function fcSugDb(){
  return fcSugCadastroClient;
 }
 async function fcSugCarregarColaboradores(){
- const cli=fcSugDb();if(!cli)throw new Error('Base cadastral da Folga não configurada.');
- let obraAtualId=null;
- try{
-  const or=await cli.from('obras').select('id,codigo,nome');
-  if(!or.error){const alvo=(or.data||[]).find(o=>String(o.codigo||'').trim()==='202'||String(o.nome||'').toUpperCase().includes('AURIVERDE'));obraAtualId=alvo?.id||null}
- }catch(_){ }
- let q=cli.from('colaboradores').select('id,mat,nome,funcao,status,obra_id,periodicidade_baixada,admissao,cidade,cidade_baixada,uf_baixada,distancia_baixada_km,usa_aloj,depto,equipe,setor_equipe').order('nome');
- if(obraAtualId)q=q.eq('obra_id',obraAtualId);
- const r=await q;if(r.error)throw r.error;
- fcSugColabs=(r.data||[]).filter(c=>!['DESLIGADO','INATIVO','ABANDONO'].includes(String(c.status||'').toUpperCase())).map(c=>({...c,matricula:c.mat}));
+ const normalizar=(arr)=> (arr||[]).filter(c=>!['DESLIGADO','INATIVO','ABANDONO'].includes(String(c.status||'').toUpperCase())).map(c=>({...c,matricula:c.matricula||c.mat||'',setor_equipe:c.setor_equipe||c.equipe||c.depto||''}));
+ const cli=fcSugDb();
+ if(cli){
+  try{
+   let obraAtualId=null;
+   const or=await cli.from('obras').select('id,codigo,nome');
+   if(!or.error){const alvo=(or.data||[]).find(o=>String(o.codigo||'').trim()==='202'||String(o.nome||'').toUpperCase().includes('AURIVERDE'));obraAtualId=alvo?.id||null}
+   let q=cli.from('colaboradores').select('id,mat,nome,funcao,status,obra_id,periodicidade_baixada,admissao,cidade,cidade_baixada,uf_baixada,distancia_baixada_km,usa_aloj,depto,equipe,setor_equipe').order('nome');
+   if(obraAtualId)q=q.eq('obra_id',obraAtualId);
+   const r=await q;
+   if(!r.error&&Array.isArray(r.data)){fcSugColabs=normalizar(r.data);return fcSugColabs}
+   if(r.error)console.warn('Base cadastral atual indisponível; usando cadastro já carregado no Folga.',r.error);
+  }catch(e){console.warn('Base cadastral atual indisponível; usando cadastro já carregado no Folga.',e)}
+ }
+ // Fallback seguro: não bloqueia o botão do relatório se a segunda conexão falhar.
+ // Usa somente dados já carregados pelo módulo Folga; não grava nem altera banco.
+ const locais=Array.isArray(colabs)?colabs:[];
+ if(!locais.length)throw new Error('Não foi possível carregar o cadastro de colaboradores.');
+ fcSugColabs=normalizar(locais);
  return fcSugColabs;
 }
+
 function fcProximosSeisMeses(){
  const base=new Date();base.setDate(1);
  return Array.from({length:6},(_,i)=>{const d=new Date(base.getFullYear(),base.getMonth()+i+1,1,12);const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;return {ym,label:d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'}).toUpperCase()}})
@@ -21275,8 +21295,20 @@ async function gerarRelatorioSugestoesPdf(filtros){
   const ids=elegiveis.map(c=>c.id).filter(Boolean);
   let hist=[];
   if(ids.length){
-   const hr=await cli.from('folga_campo_projecoes').select('colaborador_id,data_ini,data_fim,mes_referencia').in('colaborador_id',ids).not('data_ini','is',null).order('data_ini',{ascending:false});
-   if(hr.error)throw hr.error;hist=hr.data||[];
+   try{
+    if(cli){
+     const hr=await cli.from('folga_campo_projecoes').select('colaborador_id,data_ini,data_fim,mes_referencia').in('colaborador_id',ids).not('data_ini','is',null).order('data_ini',{ascending:false});
+     if(!hr.error)hist=hr.data||[]; else console.warn('Histórico atual indisponível; tentando histórico do Folga principal.',hr.error);
+    }
+   }catch(e){console.warn('Histórico atual indisponível; tentando histórico do Folga principal.',e)}
+   if(!hist.length){
+    try{
+     let hq=sb().from('folga_campo').select('colaborador_id,data_inicio,data_saida,data_fim,competencia').in('colaborador_id',ids);
+     const oid=obraId();if(oid)hq=hq.eq('obra_id',oid);
+     const hr2=await hq;
+     if(!hr2.error)hist=(hr2.data||[]).map(x=>({colaborador_id:x.colaborador_id,data_ini:x.data_inicio||x.data_saida,data_fim:x.data_fim,mes_referencia:x.competencia}));
+    }catch(e){console.warn('Histórico principal também indisponível.',e)}
+   }
   }
   const ult=new Map();
   const addHist=(id,ini,fim,fonte)=>{if(!id||!ini)return;const k=String(id),at=ult.get(k);if(!at||String(ini)>String(at.ini))ult.set(k,{ini,fim:fim||ini,fonte})};
