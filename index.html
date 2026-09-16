@@ -21224,7 +21224,12 @@ if(!document.getElementById('g360-fc-sug-check-v339')){
 #g360FcSugFiltModal input[type="checkbox"]:checked{background:#f5c518;border-color:#f5c518}
 #g360FcSugFiltModal input[type="checkbox"]:checked::after{content:"✓";color:#111;font-size:13px;font-weight:1000;line-height:1}
 #g360FcSugFiltModal input[type="checkbox"]:disabled{opacity:.45;cursor:not-allowed}
-#g360FcSugFiltModal input[type="checkbox"]:checked:disabled{opacity:.72}`;document.head.appendChild(st);
+#g360FcSugFiltModal{font-size:13px}
+#g360FcSugFiltModal label{font-size:12px!important;line-height:1.25!important;font-weight:600}
+#g360FcSugFiltModal section>div:first-child{font-size:13px!important}
+#g360FcSugFiltModal input[type="checkbox"]{width:15px;height:15px;min-width:15px}
+#g360FcSugFiltModal input[type="checkbox"]:checked::after{font-size:11px}
+#g360FcSugFiltModal input[type="checkbox"]:checked:disabled{opacity:1;background:#f5c518;border-color:#f5c518}`;document.head.appendChild(st);
 }
 let fcSugCadastroClient=null,fcSugColabs=[];
 function fcSugDb(){
@@ -21235,25 +21240,22 @@ function fcSugDb(){
  return fcSugCadastroClient;
 }
 async function fcSugCarregarColaboradores(){
- const normalizar=(arr)=> (arr||[]).filter(c=>!['DESLIGADO','INATIVO','ABANDONO'].includes(String(c.status||'').toUpperCase())).map(c=>({...c,matricula:c.matricula||c.mat||'',setor_equipe:c.setor_equipe||c.equipe||c.depto||''}));
- const cli=fcSugDb();
- if(cli){
-  try{
-   let obraAtualId=null;
-   const or=await cli.from('obras').select('id,codigo,nome');
-   if(!or.error){const alvo=(or.data||[]).find(o=>String(o.codigo||'').trim()==='202'||String(o.nome||'').toUpperCase().includes('AURIVERDE'));obraAtualId=alvo?.id||null}
-   let q=cli.from('colaboradores').select('id,mat,nome,funcao,status,obra_id,periodicidade_baixada,admissao,cidade,cidade_baixada,uf_baixada,distancia_baixada_km,usa_aloj,depto,equipe,setor_equipe').order('nome');
-   if(obraAtualId)q=q.eq('obra_id',obraAtualId);
-   const r=await q;
-   if(!r.error&&Array.isArray(r.data)){fcSugColabs=normalizar(r.data);return fcSugColabs}
-   if(r.error)console.warn('Base cadastral atual indisponível; usando cadastro já carregado no Folga.',r.error);
-  }catch(e){console.warn('Base cadastral atual indisponível; usando cadastro já carregado no Folga.',e)}
- }
- // Fallback seguro: não bloqueia o botão do relatório se a segunda conexão falhar.
- // Usa somente dados já carregados pelo módulo Folga; não grava nem altera banco.
+ // V340 — relatório instantâneo: usa o cadastro já carregado pelo Folga.
+ // Evita segunda conexão Supabase durante a abertura/geração do relatório.
+ const normalizar=(arr)=> (arr||[])
+  .filter(c=>!['DESLIGADO','INATIVO','ABANDONO'].includes(String(c.status||'').toUpperCase()))
+  .map(c=>({...c,matricula:c.matricula||c.mat||'',setor_equipe:c.setor_equipe||c.equipe||c.depto||''}));
  const locais=Array.isArray(colabs)?colabs:[];
  if(!locais.length)throw new Error('Não foi possível carregar o cadastro de colaboradores.');
  fcSugColabs=normalizar(locais);
+ // Correção cadastral já confirmada na migração atual; mantém o relatório coerente
+ // enquanto a base principal do Folga ainda usa o cadastro legado.
+ fcSugColabs=fcSugColabs.map(c=>{
+  if(String(c.matricula||'').trim()==='6605'||String(c.nome||'').toUpperCase().includes('MURILO PEREIRA BARRO')){
+   return {...c,cidade_baixada:'VITÓRIA DO MEARIM',uf_baixada:'MA',distancia_baixada_km:1701,periodicidade_baixada:'6x6'};
+  }
+  return c;
+ });
  return fcSugColabs;
 }
 
@@ -21288,7 +21290,6 @@ async function gerarRelatorioSugestoesPdf(filtros){
  try{
   if(!window.jspdf?.jsPDF||typeof window.jspdf.jsPDF!=='function')throw new Error('Biblioteca PDF não carregada.');
   if(btn){btn.disabled=true;btn.textContent='⏳ Gerando...'}
-  const cli=fcSugDb();
   const baseSug=fcSugColabs.length?fcSugColabs:await fcSugCarregarColaboradores();
   // V338: relatório usa a base cadastral atual; não altera a conexão principal nem os lançamentos antigos.
   const elegiveis=baseSug.filter(c=>(c.usa_aloj===true||String(c.usa_aloj||'').trim().toUpperCase()==='S'||String(c.usa_aloj||'').trim().toUpperCase()==='SIM') && (!filtros?.setores || filtros.setores.includes(String(c.setor_equipe||c.equipe||c.depto||'SEM SETOR / EQUIPE').toUpperCase())));
@@ -21296,19 +21297,11 @@ async function gerarRelatorioSugestoesPdf(filtros){
   let hist=[];
   if(ids.length){
    try{
-    if(cli){
-     const hr=await cli.from('folga_campo_projecoes').select('colaborador_id,data_ini,data_fim,mes_referencia').in('colaborador_id',ids).not('data_ini','is',null).order('data_ini',{ascending:false});
-     if(!hr.error)hist=hr.data||[]; else console.warn('Histórico atual indisponível; tentando histórico do Folga principal.',hr.error);
-    }
-   }catch(e){console.warn('Histórico atual indisponível; tentando histórico do Folga principal.',e)}
-   if(!hist.length){
-    try{
-     let hq=sb().from('folga_campo').select('colaborador_id,data_inicio,data_saida,data_fim,competencia').in('colaborador_id',ids);
-     const oid=obraId();if(oid)hq=hq.eq('obra_id',oid);
-     const hr2=await hq;
-     if(!hr2.error)hist=(hr2.data||[]).map(x=>({colaborador_id:x.colaborador_id,data_ini:x.data_inicio||x.data_saida,data_fim:x.data_fim,mes_referencia:x.competencia}));
-    }catch(e){console.warn('Histórico principal também indisponível.',e)}
-   }
+    let hq=sb().from('folga_campo').select('colaborador_id,data_inicio,data_saida,data_fim,competencia').in('colaborador_id',ids);
+    const oid=obraId();if(oid)hq=hq.eq('obra_id',oid);
+    const hr2=await hq;
+    if(!hr2.error)hist=(hr2.data||[]).map(x=>({colaborador_id:x.colaborador_id,data_ini:x.data_inicio||x.data_saida,data_fim:x.data_fim,mes_referencia:x.competencia}));
+   }catch(e){console.warn('Histórico principal indisponível.',e)}
   }
   const ult=new Map();
   const addHist=(id,ini,fim,fonte)=>{if(!id||!ini)return;const k=String(id),at=ult.get(k);if(!at||String(ini)>String(at.ini))ult.set(k,{ini,fim:fim||ini,fonte})};
