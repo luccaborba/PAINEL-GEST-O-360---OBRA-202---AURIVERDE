@@ -21239,13 +21239,13 @@ async function fcSugCarregarBase(){
  fcSugCargaPromise=(async()=>{
   const db=fcSugDb();
   const oid=(typeof obraId==='function'?obraId():null);
-  let cq=db.from('funcionarios').select('id,matricula,nome,funcao,tipo_contrato,status,admissao,depto,equipe,setor_equipe,setor_encarregado,usa_aloj,cidade,cidade_baixada,uf_baixada,distancia_baixada_km,periodicidade_baixada,ult_baixada').eq('status','ATIVO').order('nome');
+  let cq=db.from('funcionarios').select('id,matricula,nome,funcao,tipo_contrato,status,admissao,depto,equipe,setor_equipe,usa_aloj,cidade,cidade_baixada,uf_baixada,distancia_baixada_km,periodicidade_baixada,ult_baixada').eq('status','ATIVO').order('nome');
   let fq=db.from('folga_campo').select('colaborador_id,data_inicio,data_fim,competencia').not('data_inicio','is',null).order('data_inicio',{ascending:false});
   let rq=db.from('rh_reembolso_cabecalhos').select('colaborador_id,periodo_folga_inicio,periodo_folga_fim,tipo_reembolso').eq('tipo_reembolso','FOLGA_DE_CAMPO').not('periodo_folga_inicio','is',null).order('periodo_folga_inicio',{ascending:false});
   if(oid){cq=cq.eq('obra_id',oid);fq=fq.eq('obra_id',oid);rq=rq.eq('obra_id',oid)}
   const [cr,fr,rr]=await Promise.all([cq,fq,rq]);
   if(cr.error)throw cr.error;if(fr.error)throw fr.error;if(rr.error)throw rr.error;
-  fcSugColabs=(cr.data||[]).filter(c=>String(c.tipo_contrato||'').trim().toUpperCase()!=='PJ').map(c=>({...c,mat:c.matricula||'',setor_encarregado:c.setor_encarregado||''}));
+  fcSugColabs=(cr.data||[]).filter(c=>String(c.tipo_contrato||'').trim().toUpperCase()!=='PJ').map(c=>({...c,mat:c.matricula||'',setor_encarregado:c.setor_equipe||c.equipe||c.depto||'NÃO INFORMADO'}));
   const hist=[];
   (fr.data||[]).forEach(x=>hist.push({colaborador_id:x.colaborador_id,data_ini:x.data_inicio,data_fim:x.data_fim||x.data_inicio,fonte:'ÚLTIMA FOLGA'}));
   (rr.data||[]).forEach(x=>hist.push({colaborador_id:x.colaborador_id,data_ini:x.periodo_folga_inicio,data_fim:x.periodo_folga_fim||x.periodo_folga_inicio,fonte:'REEMBOLSO — FOLGA DE CAMPO'}));
