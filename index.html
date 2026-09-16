@@ -21177,7 +21177,7 @@ function fcSugestaoFutura(isoBase,meses){
  if(!isoBase||!meses)return {data:'',ciclos:0,baseCiclo:isoBase||''};
  // Nova regra: a próxima sugestão é sempre a data-base + UM ciclo completo.
  // Base = última folga/baixada real; se não houver histórico, admissão.
- // Não usa data-base + ciclo e não pula automaticamente ciclos vencidos.
+ // Não usa 5º dia útil e não pula automaticamente ciclos vencidos.
  const baseCiclo=String(isoBase).slice(0,10);
  const data=fcAddMonthsISO(baseCiclo,Number(meses));
  return {data,ciclos:1,baseCiclo};
@@ -21275,7 +21275,9 @@ async function fcSugCarregarColaboradores(){
 
 function fcProximosSeisMeses(){
  const base=new Date();base.setDate(1);
- return Array.from({length:6},(_,i)=>{const d=new Date(base.getFullYear(),base.getMonth()+i+1,1,12);const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;return {ym,label:d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'}).toUpperCase()}})
+ // Inclui o mês atual. Antes começava em +1 mês, por isso SET/2026
+ // desaparecia do filtro e colaboradores vencidos em setembro não eram impressos.
+ return Array.from({length:6},(_,i)=>{const d=new Date(base.getFullYear(),base.getMonth()+i,1,12);const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;return {ym,label:d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'}).toUpperCase()}})
 }
 async function abrirFiltrosRelatorioSugestoes(){
  const antigo=document.getElementById('g360FcSugFiltModal');if(antigo)antigo.remove();
