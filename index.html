@@ -21223,22 +21223,25 @@ let fcSugV348Cache=null;
 async function fcSugV348Fetch(path){
  const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),8000);
  try{
-  const r=await fetch(FC_SUG_BASE+path,{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',headers:{apikey:FC_SUG_API_KEY,Accept:'application/json'},signal:ctl.signal});
+  const r=await fetch(FC_SUG_BASE+path,{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',headers:{apikey:FC_SUG_API_KEY,Authorization:`Bearer ${FC_SUG_API_KEY}`,Accept:'application/json'},signal:ctl.signal});
   if(!r.ok){const t=await r.text();throw new Error(`HTTP ${r.status}${t?' · '+t.slice(0,160):''}`)}
   return await r.json();
  }finally{clearTimeout(timer)}
 }
 async function fcSugV348Carregar(force=false){
  if(!force&&fcSugV348Cache)return fcSugV348Cache;
- const campos='id,mat,nome,funcao,status,admissao,depto,equipe,setor_equipe,cidade,cidade_baixada,uf_baixada,distancia_baixada_km,ult_baixada';
+ const campos='id,mat,nome,funcao,status,admissao,demissao,depto,equipe,setor_equipe,cidade,cidade_baixada,uf_baixada,distancia_baixada_km,ult_baixada';
  const [cs,hs]=await Promise.all([
   fcSugV348Fetch(`/colaboradores?select=${encodeURIComponent(campos)}&order=nome.asc`),
   fcSugV348Fetch('/folga_campo_projecoes?select=colaborador_id,data_ini,data_fim,retorno,mes_referencia,created_at&data_ini=not.is.null&order=data_ini.desc')
  ]);
  const ult=new Map();
  (Array.isArray(hs)?hs:[]).forEach(h=>{if(h.colaborador_id&&!ult.has(h.colaborador_id))ult.set(h.colaborador_id,h)});
- const colabs=(Array.isArray(cs)?cs:[]).filter(c=>!['DESLIGADO','INATIVO','ABANDONO'].includes(String(c.status||'').trim().toUpperCase()));
- fcSugV348Cache={colabs,ult};return fcSugV348Cache;
+ const recebidos=Array.isArray(cs)?cs:[];
+ if(!recebidos.length)throw new Error('A consulta de public.colaboradores retornou 0 registros. O relatório foi interrompido para não gerar PDF em branco.');
+ // Regra V353: NULL não bloqueia nem vira pendência; apenas não participa quando o dado essencial KM não existe.
+ const colabs=recebidos.filter(c=>!c.demissao && Number.isFinite(Number(c.distancia_baixada_km)) && Number(c.distancia_baixada_km)>0);
+ fcSugV348Cache={colabs,ult,totalRecebidos:recebidos.length};return fcSugV348Cache;
 }
 function fcSugV348Meses(){const b=new Date();b.setDate(1);return Array.from({length:6},(_,i)=>{const d=new Date(b.getFullYear(),b.getMonth()+i+1,1,12);return{ym:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,label:d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'}).toUpperCase()}})}
 function fcSugV348Grupo(c){return String(c.setor_equipe||c.equipe||c.depto||'SEM SETOR / EQUIPE').trim().toUpperCase()||'SEM SETOR / EQUIPE'}
@@ -21282,13 +21285,13 @@ function fcSugV348Pdf(dados,filtros){
   const quintoDiaUtil=(yy,mm)=>{let u=0;for(let d=1;d<=15;d++){const sem=new Date(yy,mm-1,d,12).getDay();if(sem!==0&&sem!==6)u++;if(u===5)return `${yy}-${String(mm).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}return '';};
   dados.colabs.forEach(c=>{
    const grupo=fcSugV348Grupo(c);if(!setorOk(grupo))return;
-   const regra=fcSugV348Regra(c.distancia_baixada_km);if(!regra){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'SEM KM CADASTRADO']);return;}
+   const regra=fcSugV348Regra(c.distancia_baixada_km);if(!regra)return; // NULL/sem KM: desconsiderar
    const h=dados.ult.get(c.id);
    // Histórico real mais recente é a base. ult_baixada participa somente como outro histórico; admissão é fallback.
    const historicos=[h?.data_ini,c.ult_baixada].filter(Boolean).map(v=>String(v).slice(0,10)).sort().reverse();
    const base=(historicos[0]||c.admissao||'').slice(0,10),fonte=historicos.length?(h?.data_ini===historicos[0]?'ÚLTIMA FOLGA':'ÚLTIMA BAIXADA'):'ADMISSÃO';
-   if(!base){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'SEM ADMISSÃO / HISTÓRICO']);return;}
-   const m=base.match(/^(\d{4})-(\d{2})-(\d{2})/);if(!m){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'DATA-BASE INVÁLIDA']);return;}
+   if(!base)return; // NULL sem base: desconsiderar
+   const m=base.match(/^(\d{4})-(\d{2})-(\d{2})/);if(!m)return;
    const by=Number(m[1]),bm=Number(m[2]);
    (filtros.meses||[]).forEach(ym=>{
     const mmatch=String(ym).match(/^(\d{4})-(\d{2})$/);if(!mmatch)return;
