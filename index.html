@@ -13921,13 +13921,6 @@ window.GESTAO360_CONFIG = {
   OBRA_NOME: "IMPLANTAÇÃO AURIVERDE"
 };
 
-// V338 — base cadastral atual usada exclusivamente pelo Relatório de Sugestões de Folga.
-// A conexão principal acima permanece inalterada para preservar os módulos e históricos existentes.
-window.GESTAO360_FOLGA_CADASTRO_CONFIG = {
-  SUPABASE_URL: "https://kgntjgcsfhsjkvenorhl.supabase.co",
-  SUPABASE_ANON_KEY: "sb_publishable_yKWF7Hr9oBh83pqfGEKv3g_K9HPim48"
-};
-
 </script>
 <script>
 /* CRUD + Patrimônio / Inventário integrados neste próprio HTML */
@@ -21232,26 +21225,21 @@ if(!document.getElementById('g360-fc-sug-check-v339')){
 #g360FcSugFiltModal input[type="checkbox"]:checked::after{font-size:11px}
 #g360FcSugFiltModal input[type="checkbox"]:checked:disabled{opacity:1;background:#f5c518;border-color:#f5c518}`;document.head.appendChild(st);
 }
-let fcSugCadastroClient=null,fcSugColabs=[];
-function fcSugDb(){
- if(fcSugCadastroClient)return fcSugCadastroClient;
- const cfg=window.GESTAO360_FOLGA_CADASTRO_CONFIG||{};
- if(!window.supabase?.createClient||!cfg.SUPABASE_URL||!cfg.SUPABASE_ANON_KEY)return null;
- fcSugCadastroClient=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
- return fcSugCadastroClient;
-}
+let fcSugColabs=[];
 async function fcSugCarregarColaboradores(){
- // V343 — fonte única: cadastro atual em public.colaboradores.
- // Uma única consulta, com cache em memória; sem exceções por colaborador.
+ // V344 — usa EXCLUSIVAMENTE a mesma base/conexão do módulo Folga (sb()).
+ // Sem segundo projeto, sem segundo cliente e sem fetch externo.
  if(Array.isArray(fcSugColabs)&&fcSugColabs.length)return fcSugColabs;
- const db=fcSugDb();
- if(!db)throw new Error('Conexão do cadastro atual não configurada.');
- const campos='id,mat,nome,funcao,status,admissao,depto,equipe,setor_equipe,usa_aloj,cidade,cidade_baixada,uf_baixada,distancia_baixada_km,periodicidade_baixada';
- const {data,error}=await db.from('colaboradores').select(campos).order('nome');
+ if(Array.isArray(colabs)&&colabs.length){
+   fcSugColabs=colabs.map(c=>({...c,matricula:c.matricula??c.mat??'',setor_equipe:c.setor_equipe||c.equipe||c.depto||''}));
+   return fcSugColabs;
+ }
+ const oid=obraId();
+ let q=sb().from('funcionarios').select('id,matricula,nome,funcao,status,admissao,depto,equipe,setor_equipe,usa_aloj,cidade,cidade_baixada,uf_baixada,distancia_baixada_km,periodicidade_baixada,ult_baixada').order('nome');
+ if(oid)q=q.eq('obra_id',oid);
+ const {data,error}=await q;
  if(error)throw error;
- fcSugColabs=(data||[])
-  .filter(c=>!['DESLIGADO','INATIVO','ABANDONO'].includes(String(c.status||'').toUpperCase()))
-  .map(c=>({...c,matricula:c.mat||'',setor_equipe:c.setor_equipe||c.equipe||c.depto||''}));
+ fcSugColabs=(data||[]).filter(c=>!['DESLIGADO','INATIVO','ABANDONO'].includes(String(c.status||'').toUpperCase()));
  return fcSugColabs;
 }
 
@@ -21261,11 +21249,11 @@ function fcProximosSeisMeses(){
 }
 async function abrirFiltrosRelatorioSugestoes(){
  const antigo=document.getElementById('g360FcSugFiltModal');if(antigo)antigo.remove();
- let baseSug=[];try{baseSug=await fcSugCarregarColaboradores()}catch(e){console.error(e);return alert('Falha ao carregar cadastro atual para o Relatório de Sugestões: '+(e?.message||e))}
+ let baseSug=[];try{baseSug=await fcSugCarregarColaboradores()}catch(e){console.error(e);return alert('Falha ao carregar colaboradores do Folga de Campo: '+(e?.message||e))}
  const grupos=[...new Set(baseSug.filter(c=>c.usa_aloj===true||String(c.usa_aloj||'').trim().toUpperCase()==='S'||String(c.usa_aloj||'').trim().toUpperCase()==='SIM').map(c=>String(c.setor_equipe||c.equipe||c.depto||'SEM SETOR / EQUIPE').toUpperCase()))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
  const meses=fcProximosSeisMeses();
  const ov=document.createElement('div');ov.id='g360FcSugFiltModal';ov.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:18px';
- ov.innerHTML=`<div style="width:min(920px,96vw);max-height:90vh;overflow:auto;background:#202327;border:1px solid #444;border-radius:9px;padding:20px;color:#fff;box-shadow:0 18px 60px #000">
+ ov.innerHTML=`<style>#g360FcSugFiltModal label{font-size:12px!important;line-height:1.25!important;font-weight:600!important}#g360FcSugFiltModal input[type="checkbox"]{width:14px!important;height:14px!important;min-width:14px!important;accent-color:#f5c518!important;margin:0!important}#g360FcSugFiltModal section>div:first-child{font-size:13px!important}</style><div style="width:min(760px,94vw);max-height:86vh;overflow:auto;background:#202327;border:1px solid #444;border-radius:9px;padding:20px;color:#fff;box-shadow:0 18px 60px #000">
   <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start"><div><div style="font-weight:900;font-size:18px">RELATÓRIO DE SUGESTÕES DE FOLGA</div><div style="opacity:.72;margin-top:5px">Selecione Setor / Equipe e o mês da folga sugerida.</div></div><button type="button" id="g360FcSugFiltFechar" class="clear-btn">FECHAR</button></div>
   <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:18px;margin-top:18px">
    <section style="border:1px solid #3b3f45;border-radius:7px;padding:14px"><div style="font-weight:900;margin-bottom:10px">SETOR / EQUIPE</div><label style="display:flex;gap:8px;align-items:center;margin-bottom:10px;font-weight:800"><input type="checkbox" id="g360FcSugSetTodos" checked> TODOS</label><div id="g360FcSugSetLista" style="display:grid;gap:7px">${grupos.map((g,i)=>`<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" class="g360FcSugSet" value="${esc(g)}" disabled> ${esc(g)}</label>`).join('')}</div></section>
