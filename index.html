@@ -1,91 +1,91 @@
-<!-- V334: Roteiro UF→Cidade em origem/destino + relatório de sugestões separado por Setor/Equipe -->
-<!-- V328: Folga de Campo — sugestão no 5º dia útil do próprio mês resultante da periodicidade; regra unificada no Organograma Setor/Equipe -->
-<!-- V324: Cargos e Salários — filtro instantâneo por função/cargo -->
-<!-- V323: Folga de Campo — alimentação simplificada para uma única opção IDA E VOLTA -->
-<!-- V291: Reembolsos com editar/excluir por lançamento + dashboard/login sempre no topo -->
-<!-- V288: corrige lançamento de Reembolsos restaurando rotina estável e validação de valor -->
-<!-- V285: Folga de Campo definitiva — período/retorno D+1/km, roteiro estruturado, hospedagem e termo integrado ao Supabase -->
-<!-- V284: Folga de Campo reformulada com roteiro por trechos e despesas condicionais -->
-<!-- V280: Folga de Campo DEV — data_despesa preenchida automaticamente pela competência para atender constraint do Supabase -->
-<!-- V276: Folga DEV — competências por botões + abertura por mês/ano em modal; sem select de competência -->
-<!-- V270: Reembolsos — botão INCLUIR com estado de processamento e proteção contra duplo clique -->
-<!-- V269 DEFINITIVO: boot leve de permissões + matriz revisada + novas funcionalidades patrimônio -->
-<!-- V268: Patrimônio dos Alojamentos — detecção dinâmica de MASTER para exibir/executar Excluir -->
-<!-- V267: Patrimônio dos Alojamentos — MASTER pode excluir uma alocação diretamente na tabela -->
-<!-- V266: Patrimônio dos Alojamentos — filtro principal em checkbox; remove painel duplicado de inventário; PDF/Excel sob o filtro -->
-<!-- V262: Patrimônio dos Alojamentos — downloads PDF/Excel com filtro por caixas de seleção -->
-<!-- V257: Patrimônio dos alojamentos — removido botão legado "+ Cadastrar bem"; cadastro de itens permanece no módulo próprio -->
-<!-- V254: PDF Reembolsos — nome/função em negrito; corpo das despesas normal; cabeçalho e total em negrito -->
-<!-- V253: PDF Reembolsos — rótulos NOME/FUNÇÃO em laranja; campos de conteúdo em branco -->
-<!-- V290: Correção definitiva de valores monetários no Reembolso (vírgula/ponto) + preserva V289 -->
-<!-- V289: Reembolsos — gravação/exibição em MAIÚSCULAS + PDF consolidado por competência -->
-<!-- V247: MAIÚSCULAS automáticas em campos textuais; preserva e-mail, senha, URL/link e campos técnicos -->
-<!-- V245: Corrige Forçar novo login de todos — elimina referência fora de escopo a users -->
-<!-- V325: módulos com competência abrem automaticamente na competência mais recente registrada -->
-<!-- V327: Organograma Setor/Equipe com sugestão de Folga de Campo na tela, PDF e Excel -->
-<!-- V329: Folga de Campo em fluxo modal por etapas: dados > roteiro > finalizar roteiro > despesas extras -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <!DOCTYPE html>
-<!-- V293: otimização de carregamento do módulo Reembolsos: cache por obra, consultas enxutas e evita recargas repetidas -->
-<!-- V287: PDF Folga de Campo — descrição sem espaçamento artificial e separador de trechos > -->
-<!-- V286: Folga de Campo — PDF despesas com espaçamento normalizado -->
-<!-- V279: Folga DEV — competências em caixa de seleção e tipografia dos rótulos padronizada -->
-<!-- V275: Folga Campo DEV simplificada sem Data/Fornecedor no lançamento e relatórios -->
-<!-- V283: Folga de Campo EM DEV — TERMO gera diretamente o PDF do colaborador na competência selecionada -->
-<!-- V274: Folga de Campo EM DEV — reconstruído do zero com fluxo espelhado em Reembolsos; antigo projeto ocultado; Termo de Concessão preservado -->
-<!-- V273: Folga de Campo — despesas persistidas em tabela própria no Supabase; dashboard por competência; programação preservada -->
-<!-- V272: Folga de Campo por etapas — programação por competência + pagamento de despesas por colaborador; PDF individual; sem dashboard de projeção -->
-<!-- V271: Dashboard RH por competência; Folga de Campo base AGOSTO/2026; correção Abrir nova competência -->
-<!-- V265: baseado integralmente na V262; ajuste SOMENTE visual do filtro de alojamentos -->
-<!-- V260: patrimônio — permite o mesmo item em vários alojamentos; fallback seguro quando RPC antiga bloqueia segunda alocação -->
-<!-- V259: Cadastro de Itens do Patrimônio — edição exclusiva MASTER + PDF para conferência de inventário -->
-<!-- V252: PDF reembolso sem linha vazia; altura por conteúdo -->
-<!-- V244: Reembolsos — PDF fiel ao modelo enviado; Excel com consolidado + abas individuais -->
-<!-- V242: Reembolsos — PDF individual no Resumo da Competência; Excel consolidado permanece no topo; preserva V241 -->
-<!-- V235: RH separa quadro próprio de terceiros; inativação de terceiro não conta como demissão -->
-<!-- V234: Controle de Reembolsos RH + Dashboard de despesas RH -->
-<!-- V233: Alojamentos com ciclo mensal de medição e período calculado automaticamente -->
-<!-- V232: remove Histórico do menu SESMT e move Fechamento de Praça para Contratos -->
-<!-- V230: corrige navegação do submenu Relatórios do Controle de Estoque -->
-<!-- V231: filtro por tipo nas movimentações e PDF com download direto -->
-<!-- V229: Relatórios no Controle de Estoque — Estoque Atual e Movimentações por Período -->
-<!-- V228: permissões SESMT reorganizadas e Técnico habilitado para operação de estoque -->
-<!-- V227: SESMT organizado em cascata, controle de estoque didático e histórico XLSX -->
-<!-- V226: força login individual direto e força-login de todos reparado pela RPC individual -->
-<!-- V225: Cidade/UF de baixada via IBGE, prefill da admissão e CPF com máscara/validação -->
-<!-- V224: feedback Gravando/Gravado ao salvar cadastro de Alojamentos -->
-<!-- V223: correção da validação de capacidade ao trocar colaborador de alojamento -->
-<!-- V222: aprovações da admissão por botão com data/hora, usuário e indicadores de tempo -->
-<!-- V221: monitoramento completo da tramitação das solicitações de contrato -->
-<!-- V220: restaura EMAIL acima do TELEFONE no PDF de admissão e mantém PDF sem créditos/rodapé -->
-<!-- V219: corrige Forçar Login individual/todos com RPC segura e verificação de sessão sem depender de RLS -->
-<!-- V218: remove RECONTRATÁVEL do PDF de admissão; permanece somente na demissão -->
-<!-- V217: remove telefone remanescente abaixo de RECONTRATÁVEL no PDF de demissão -->
-<!-- V216: remove rodapé/branding do PDF de admissão salvo/reimpresso -->
-<!-- V215: checkboxes do PDF/reimpressão com preenchimento branco real via jsPDF -->
-<!-- V214: quadrados/checkboxes sempre brancos, independente do fundo -->
-<!-- V213: PDFs RH limpos; demissão sem contato duplicado e sem rodapés/branding do sistema -->
-<!-- V212: UF fixa + cidades IBGE robustas e layout compacto de Cidade -->
-<!-- V210: layout Folga de Campo com UF antes da Cidade e KM/Período/Dias na mesma linha -->
-<!-- V209: Cidade/UF gerais do candidato, KM condicional à baixada e campos Email/Telefone uniformes -->
-<!-- V208: Cidade e UF da Baixada ficam sempre visíveis no formulário de admissão -->
-<!-- V207: remove indicação visual de contato cadastrado da demissão; contato permanece automático internamente -->
-<!-- V206: cidade/UF na admissão, contato da demissão puxado do colaborador e campos dark padronizados -->
-<!-- V205: admissão/demissão revisadas, contatos, baixada, metadata MP-01/MP-02 V-02 e base Supabase -->
-<!-- V204: corrige saldo contratual para considerar LANCADO e TITULO_GERADO no Fechamento de Praça -->
-<!-- V203: cadastro mestre de itens separado, código sequencial, estoque máximo, giro automático e sugestão de compra -->
-<!-- V202: corrige criação do perfil Técnico de Segurança em usuario_permissoes -->
-<!-- V200: corrige identificação da obra no inventário e movimentações SESMT -->
-<!-- V199: exclusão de movimentação por GESTOR/MASTER + usuário comum somente operação -->
-<!-- V198: padronização das fontes da tela SESMT / Estoque de EPIs -->
-<!-- V197: PDF do romaneio diário de movimentações de EPI -->
-<!-- V196: itens abaixo do mínimo + PDF + sugestão de compra no cadastro do EPI -->
-<!-- V195: SESMT robusto com estoque, movimentação diária, colaborador, mínimo e inventário -->
-<!-- V194: editar/excluir termos de EPI e editar/excluir cadastro/entrada de estoque -->
-<!-- V193: perfil TÉCNICO DE SEGURANÇA = acesso completo somente ao SESMT -->
-<!-- V192: estoque de EPI com exclusão individual; V191 preservada -->
-<!-- V191: reformulação visual do Termo de Entrega de EPIs; lógica e PDF preservados -->
-<!-- V190: reformulação visual do Termo de Responsabilidade; lógica e PDF preservados -->
-<!-- V158: remove contratosBase quebrado e protege listeners legados do fechamento -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <html lang="pt-BR">
 <head>
 <script>(function(){try{const v='2026-09-01-fechamento-v49-planilha-supabase';if(localStorage.getItem('g360_base_version')!==v){localStorage.removeItem('painel202_fechamentos_multi_override_v4');localStorage.removeItem('painel202_fechamentos_override_ts_v2');localStorage.removeItem('g360_medicoes_sienge_preview_v1');localStorage.setItem('g360_base_version',v)}}catch(e){}
@@ -2086,19 +2086,19 @@ html.g360-ui-ready .content-col {
 </style>
 </head>
 <body>
-<!-- V155: convite personalizado + primeiro acesso com criação de senha -->
-<!-- V154: carga resiliente de usuários/obras; usuario_permissoes legado não bloqueia perfis nativos -->
-<!-- V153: lista de usuários nunca some se usuario_obras falhar; fallback seguro + sync não destrutivo -->
-<!-- V152: seleção multiobra visível por checkboxes; sem select/dropdown de obra única -->
-<!-- V151: perfil define ações; obras definem escopo. ENGENHEIROS pode ser multiobra sem perfil adicional -->
-<!-- V150: usuários vinculados a múltiplas obras por caixa de seleção -->
-<!-- V149: perfis nativos ENGENHEIROS / RH / GESTOR -->
-<!-- V148: sessão expira por última atividade persistente + login sempre inicia no Dashboard Gerencial -->
-<!-- V146: CRUD colaboradores resolve por UUID Supabase; corrige desligamento sem matrícula -->
-<!-- V38: only Collaborators Experience cell + RH/DP Advertencia visibility -->
 
-<!-- CONSTRUX V26: Advertência RH menu permission fallback -->
-<!-- CONSTRUX V24: RH Advertência Disciplinar -->
+
+
+
+
+
+
+
+
+
+
+
+
 <div class="wrap" style="max-width:100%;padding:0;">
 
   <header class="top" style="padding:18px 28px;">
@@ -2246,7 +2246,7 @@ html.g360-ui-ready .content-col {
     <main class="content-col">
 
 
-      <!-- ================= PROJETOS / OBRAS ================= -->
+      
       <div class="view" id="view-projetosObras">
         <section class="panel">
           <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
@@ -2280,7 +2280,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      <!-- ================= PROJETOS / OBRAS ================= -->
+      
       <div class="view active" id="view-executivo">
         <section class="panel" style="margin-bottom:14px;">
           <div>
@@ -2313,7 +2313,7 @@ html.g360-ui-ready .content-col {
 
       </div>
 
-      <!-- ================= DASHBOARD RH / DP ================= -->
+      
       <div class="view" id="view-rhdpDashboard">
         <section class="panel" style="margin-bottom:14px;">
           <div>
@@ -2339,7 +2339,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      <!-- ================= REEMBOLSOS RH ================= -->
+      
       <div class="view" id="view-rhdpReembolsos">
         <section class="panel g360-reemb-head">
           <div><h2>Controle de Reembolsos</h2><div class="g360-reemb-sub">Abra uma competência mensal, lance as despesas por colaborador e exporte o consolidado em Excel e o relatório individual em PDF.</div></div>
@@ -2392,7 +2392,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      <!-- ================= COLABORADORES ================= -->
+      
       <div class="view" id="view-base">
         <section class="panel" style="margin-bottom:14px;">
           <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
@@ -2448,7 +2448,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      <!-- ================= ALOJAMENTO ================= -->
+      
       <div class="view" id="view-alojamento">
         <div class="page-title">
           <span class="pt-ic">🏘️</span>
@@ -2496,9 +2496,9 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      <!-- ================= INVENTÁRIO GERAL DE PATRIMÔNIO ================= -->
       
-      <!-- ================= PATRIMÔNIO SIMPLIFICADO V240 ================= -->
+      
+      
       <div class="view" id="view-patrimonioInventario">
         <div class="page-title">
           <span class="pt-ic">📦</span>
@@ -2606,7 +2606,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-<!-- ================= ORGANOGRAMA DE SETORES ================= -->
+
       <div class="view" id="view-organograma">
         <div class="page-title">
           <span class="pt-ic">🗺️</span>
@@ -2638,7 +2638,7 @@ html.g360-ui-ready .content-col {
       </div>
 
 
-      <!-- ================= ADITIVOS CONTRATUAIS ================= -->
+      
       <div class="view" id="view-aditivosContratos">
         <div class="page-title">
           <span class="pt-ic">🧩</span>
@@ -2671,7 +2671,7 @@ html.g360-ui-ready .content-col {
   </section>
       </div>
 
-      <!-- ================= CONTRATOS (nativo — antes era um iframe separado) ================= -->
+      
       <div class="view" id="view-contratos">
 <div class="wrap">
 
@@ -2806,7 +2806,7 @@ html.g360-ui-ready .content-col {
 </div>
       </div>
 
-      <!-- ================= FECHAMENTO DE PRAÇA (módulo próprio, lê a aba dedicada "FECHAMENTO PRAÇA") ================= -->
+      
       <div class="view" id="view-fechamentoPraca">
         <div class="page-title">
           <span class="pt-ic">✅</span>
@@ -2874,7 +2874,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      <!-- ================= RH/DP — ADMISSÃO / TRIAGEM V182 ================= -->
+      
       <div class="view" id="view-rhdpAdmissao">
         <style>
           .adm-kpis{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px;margin-bottom:14px}
@@ -3179,7 +3179,7 @@ html.g360-ui-ready .content-col {
         </div>
       </div>
 
-      <!-- ================= RH/DP — ADVERTÊNCIA DISCIPLINAR ================= -->
+      
       <div class="view" id="view-rhdpAdvertencia">
         <div class="page-title">
           <span class="pt-ic">⚠️</span>
@@ -3272,7 +3272,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      <!-- ================= RH/DP — SOLICITAÇÃO DE DEMISSÃO ================= -->
+      
       <div class="view" id="view-rhdpDemissao">
         <div class="page-title">
           <span class="pt-ic">📤</span>
@@ -3425,7 +3425,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      <!-- ================= RH/DP — MOVIMENTAÇÃO INTERNA ================= -->
+      
       <div class="view" id="view-rhdpMovimentacao">
         <div class="page-title">
           <span class="pt-ic">🔀</span>
@@ -3560,7 +3560,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      <!-- ================= CENTRAL DE ALERTAS ================= -->
+      
       <div class="view" id="view-alertas">
         <div class="page-title">
           <span class="pt-ic">🚨</span>
@@ -3588,7 +3588,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      <!-- ================= CONTROLE DE FOLGAS DE CAMPO (BAIXADA) ================= -->
+      
       <div class="view" id="view-baixadas">
         <div class="page-title">
           <span class="pt-ic">🧳</span>
@@ -3598,7 +3598,7 @@ html.g360-ui-ready .content-col {
           </div>
         </div>
 
-                <!-- V274 — NOVO PROJETO FOLGA DE CAMPO EM DEV -->
+                
         <section class="panel g360-reemb-head fc-dev-panel">
           <div class="fc-dev-head-main"><h2>Folga de Campo</h2><div class="g360-reemb-sub">Abra a competência, selecione o colaborador, monte o roteiro por trechos e lance as demais despesas da folga.</div><div id="g360FcDevCompButtons" class="fc-dev-comp-select-box"><label>Competência<select id="g360FcDevCompSelect"><option value="">Carregando...</option></select></label></div></div>
           <div class="g360-reemb-head-actions"><button type="button" class="btn-primary" id="g360FcDevIncluirFolga">＋ Incluir Folga de Campo</button><button type="button" class="btn-primary" id="g360FcRelSugestoes" title="Gerar relatório de sugestão de baixadas">📄 Relatório de sugestões</button><button type="button" class="btn-primary" id="g360FcDevAbrirComp">＋ Abrir competência</button></div>
@@ -3683,7 +3683,7 @@ html.g360-ui-ready .content-col {
 
         <section class="kpis-4" id="kpi-baixadas" style="grid-template-columns:repeat(3,1fr);"></section>
 
-        <!-- V272 — PAGAMENTO DE DESPESAS / FOLGA DE CAMPO -->
+        
         <section class="panel g360-reemb-head" id="g360FcPayHead">
           <div>
             <h2>Pagamento de Despesas — Folga de Campo</h2>
@@ -3768,7 +3768,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      <!-- ================= FORMULÁRIOS DE CONCESSÃO (Folga de Campo) ================= -->
+      
       <div class="view" id="view-formconcessao">
         <button id="goBaixadasBtn" style="background:none;border:none;color:var(--ink-soft);font-size:12px;font-family:var(--font-display);text-transform:uppercase;letter-spacing:.03em;cursor:pointer;padding:0 0 12px;display:flex;align-items:center;gap:5px;">← Voltar para Folga de Campo</button>
         <div class="page-title">
@@ -3778,7 +3778,7 @@ html.g360-ui-ready .content-col {
             <div class="pt-sub">Construtora Centro Leste · Obra 202 — Implantação Auriverde · Comunicação e Concessão de Folga de Campo, por colaborador</div>
           </div>
         </div>
-        <!-- ============ FORMULÁRIOS DE FOLGA DE CAMPO (assinatura) ============ -->
+        
         <style>
           .fc-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
           .fc-chk{width:16px;height:16px;accent-color:var(--yellow);cursor:pointer;}
@@ -3878,7 +3878,7 @@ html.g360-ui-ready .content-col {
           </div>
         </section>
 
-        <!-- Modal: novo mês -->
+        
         <div class="fc-modal-backdrop" id="fcMonthModalBackdrop">
           <div class="fc-modal">
             <h3>Abrir nova competência — Folga de Campo</h3>
@@ -3909,7 +3909,7 @@ html.g360-ui-ready .content-col {
           </div>
         </div>
 
-        <!-- Modal: folga não programada / reembolso -->
+        
         <div class="fc-modal-backdrop" id="fcUnplannedModalBackdrop">
           <div class="fc-modal">
             <h3>Folga de campo não programada</h3>
@@ -3942,7 +3942,7 @@ html.g360-ui-ready .content-col {
           </div>
         </div>
 
-        <!-- Modal: editar dados da folga de um colaborador -->
+        
         <div class="fc-modal-backdrop" id="fcEditModalBackdrop">
           <div class="fc-modal">
             <h3 id="fcEditTitle">Editar dados da folga</h3>
@@ -3977,7 +3977,7 @@ html.g360-ui-ready .content-col {
       </div>
 
 
-      <!-- ================= TERMO DE RESPONSABILIDADE ================= -->
+      
       <div class="view" id="view-termoResponsabilidade">
         <div class="page-title tr-page-head">
           <span class="pt-ic">🧾</span>
@@ -4113,7 +4113,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      <!-- ================= SESMT / ESTOQUE DE EPIs ================= -->
+      
       <div class="view" id="view-sesmtEstoque">
         <div class="page-title sesmt-stock-title">
           <span class="pt-ic">📦</span>
@@ -4397,7 +4397,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      <!-- ================= SESMT / TERMO DE ENTREGA DE EPIs ================= -->
+      
       <div class="view" id="view-sesmtTermo">
         <div class="page-title epi-term-page-head">
           <span class="pt-ic">🦺</span>
@@ -4506,7 +4506,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      <!-- ================= SESMT / ACIDENTES DE TRABALHO ================= -->
+      
       <div class="view" id="view-sesmt">
         <div class="page-title">
           <span class="pt-ic">🦺</span>
@@ -4549,7 +4549,7 @@ html.g360-ui-ready .content-col {
       </div>
 
 
-      <!-- ================= USUÁRIOS & PERMISSÕES ================= -->
+      
       <div class="view" id="view-backupSeguranca">
         <div class="page-title"><span class="pt-ic">🛡️</span><div><div class="pt-title">Backup &amp; Segurança</div><div class="pt-sub">Área exclusiva do Administrador Mestre.</div></div></div>
         <section class="panel">
@@ -4838,8 +4838,6 @@ function expText(c){
 let ATIVOS = [];
 let AFASTADOS_ = [];
 let DESLIGADOS = [];
-let TERCEIROS_ATIVOS = [];
-let TERCEIROS_INATIVOS = [];
 let HC_TOTAL = 0;
 function g360NormStatus(v){ return String(v||'').trim().toUpperCase(); }
 function g360TipoContrato(c){ return String(c?.tipoContrato ?? c?.tipo_contrato ?? '').trim().toUpperCase(); }
@@ -4856,8 +4854,6 @@ function refreshRhDerived(){
   // Terceiros permanecem na base operacional, porém INATIVAR terceiro NÃO é demissão.
   ATIVOS = COLABS.filter(c=>!g360IsTerceiro(c) && g360NormStatus(c.status)==='ATIVO');
   AFASTADOS_ = COLABS.filter(c=>!g360IsTerceiro(c) && g360NormStatus(c.status)==='AFASTADO');
-  TERCEIROS_ATIVOS = COLABS.filter(c=>g360IsTerceiro(c) && g360NormStatus(c.status)==='ATIVO');
-  TERCEIROS_INATIVOS = COLABS.filter(c=>g360IsTerceiro(c) && g360NormStatus(c.status)==='INATIVO');
   // Desligamento é evento exclusivo do quadro próprio. Mesmo que um terceiro legado tenha
   // data de demissão preenchida, ele não entra em demissões, turnover ou gráficos RH.
   DESLIGADOS = COLABS.filter(c=>!g360IsTerceiro(c) && !!g360DemissaoDate(c));
@@ -6044,7 +6040,7 @@ function renderFolgaCampoForm(){
   tbody.querySelectorAll('[data-fc-remove]').forEach(btn=>{
     btn.addEventListener('click', async e=>{
       const nome=e.currentTarget.dataset.fcRemove;
-      if(!nome || !confirm(`Excluir ${nome} da competência ${fcMonthKeyToLabel(fcProj.current)}?\n\nO colaborador continuará no cadastro geral e poderá ser incluído novamente.`)) return;
+      if(!nome || !confirm(`Excluir ${nome} da competência ${fcMonthKeyToLabel(fcProj.current)}?O colaborador continuará no cadastro geral e poderá ser incluído novamente.`)) return;
       const lista=fcProj.included?.[fcProj.current];
       if(Array.isArray(lista)) fcProj.included[fcProj.current]=lista.filter(n=>n!==nome);
       if(fcProj.overrides?.[fcProj.current]) delete fcProj.overrides[fcProj.current][nome];
@@ -7844,7 +7840,7 @@ function rhAdmValidate(data){
     if(data.baixadaAplicavel && !data.diasFolga) faltando.push('Dias de Folga');
   }
   if(faltando.length){
-    alert('Preencha os campos obrigatórios antes de continuar:\n\n• ' + faltando.join('\n• '));
+    alert('Preencha os campos obrigatórios antes de continuar:• ' + faltando.join('\n• '));
     return false;
   }
   return true;
@@ -8252,7 +8248,7 @@ async function rhAdmConfirmStageV222(stage){
   const iso=now.toISOString();
   const date=iso.slice(0,10);
 
-  if(!confirm(`Confirmar a etapa "${cfg.label}" para ${d.nome||'este candidato'} agora?\n\nData/hora: ${now.toLocaleString('pt-BR')}`))return;
+  if(!confirm(`Confirmar a etapa "${cfg.label}" para ${d.nome||'este candidato'} agora?Data/hora: ${now.toLocaleString('pt-BR')}`))return;
 
   d[cfg.date]=date;
   d[cfg.at]=iso;
@@ -8468,15 +8464,15 @@ function rhAdvSelected(){const v=document.getElementById('rhAdvColab')?.value;re
 function rhAdvRowToData(r){return {id:r.id,dataGeracao:r.created_at,colaborador_id:r.colaborador_id,nome:r.colaborador_nome||'',matricula:r.matricula||'',funcao:r.funcao||'',setor:r.setor_equipe||'',admissao:r.admissao||'',dataOcorrencia:r.data_ocorrencia||'',hora:r.horario_ocorrencia||'',tipo:r.tipo_ocorrencia||'',reincidencia:r.reincidencia?'SIM':'NAO',local:r.local_ocorrencia||'',fatos:r.descricao_fatos||'',prerrogativa:r.fundamentacao||'',orientacao:r.orientacao_colaborador||'',obs:r.observacoes||'',responsavel:r.responsavel_aplicacao||'',rh:r.responsavel_rh||'',status:r.status||'ATIVA',cancelado_em:r.cancelado_em,cancelado_motivo:r.cancelado_motivo||''}}
 function rhAdvFillColab(){const c=rhAdvSelected();document.getElementById('rhAdvMat').value=c?String(c.matricula??c.mat??''):'';document.getElementById('rhAdvFuncao').value=c?.funcao||'';document.getElementById('rhAdvSetor').value=c?.setor_equipe||c?.setorEquipe||c?.equipe||'';document.getElementById('rhAdvAdmissao').value=rhAdvFmtDate(c?.admissao);const box=document.getElementById('rhAdvColabResumo');if(!c){box.style.display='none';box.innerHTML='';return}const cid=String(c.id??c.matricula??c.mat);const anteriores=RHADV_CACHE.filter(x=>String(x.colaborador_id)===cid&&String(x.status||'ATIVA')==='ATIVA');box.style.display='block';box.innerHTML=`<strong>Histórico disciplinar:</strong> ${anteriores.length} advertência(s) ativa(s) registrada(s)${anteriores[0]?` · última em <b>${rhAdvFmtDate(anteriores[0].data_ocorrencia)}</b>`:''}.`;if(anteriores.length>0)document.getElementById('rhAdvReincidencia').value='SIM'}
 function rhAdvCollect(){const c=rhAdvSelected();return {id:null,dataGeracao:new Date().toISOString(),colaborador_id:c?String(c.id??c.matricula??c.mat):null,nome:c?.nome||'',matricula:String(c?.matricula??c?.mat??''),funcao:c?.funcao||'',setor:c?.setor_equipe||c?.setorEquipe||c?.equipe||'',admissao:c?.admissao||'',dataOcorrencia:document.getElementById('rhAdvDataOcorrencia').value,hora:document.getElementById('rhAdvHora').value,tipo:document.getElementById('rhAdvTipo').value,reincidencia:document.getElementById('rhAdvReincidencia').value,local:document.getElementById('rhAdvLocal').value.trim(),fatos:document.getElementById('rhAdvFatos').value.trim(),prerrogativa:document.getElementById('rhAdvPrerrogativa').value.trim(),orientacao:document.getElementById('rhAdvOrientacao').value.trim(),obs:document.getElementById('rhAdvObs').value.trim(),responsavel:document.getElementById('rhAdvResponsavel').value.trim(),rh:document.getElementById('rhAdvRh').value.trim(),status:'ATIVA'}}
-function rhAdvValidate(d){const f=[];if(!d.nome)f.push('Colaborador');if(!d.dataOcorrencia)f.push('Data da ocorrência');if(!d.tipo)f.push('Tipo de ocorrência');if(!d.local)f.push('Local');if(!d.fatos)f.push('Descrição dos fatos');if(!d.prerrogativa)f.push('Prerrogativa / enquadramento');if(!d.orientacao)f.push('Orientação / conduta esperada');if(!d.responsavel)f.push('Responsável pela aplicação');if(!d.rh)f.push('RH / DP responsável');if(f.length){alert('Preencha os campos obrigatórios:\n\n• '+f.join('\n• '));return false}return true}
+function rhAdvValidate(d){const f=[];if(!d.nome)f.push('Colaborador');if(!d.dataOcorrencia)f.push('Data da ocorrência');if(!d.tipo)f.push('Tipo de ocorrência');if(!d.local)f.push('Local');if(!d.fatos)f.push('Descrição dos fatos');if(!d.prerrogativa)f.push('Prerrogativa / enquadramento');if(!d.orientacao)f.push('Orientação / conduta esperada');if(!d.responsavel)f.push('Responsável pela aplicação');if(!d.rh)f.push('RH / DP responsável');if(f.length){alert('Preencha os campos obrigatórios:• '+f.join('\n• '));return false}return true}
 function rhAdvFilters(){return {colab:document.getElementById('rhAdvFiltroColab')?.value||'',tipo:document.getElementById('rhAdvFiltroTipo')?.value||'',status:document.getElementById('rhAdvFiltroStatus')?.value??'ATIVA',ini:document.getElementById('rhAdvFiltroIni')?.value||'',fim:document.getElementById('rhAdvFiltroFim')?.value||''}}
 function rhAdvRenderHist(){const tb=document.getElementById('rhAdvHistBody');if(!tb)return;const f=rhAdvFilters();let list=RHADV_CACHE.slice();if(f.colab)list=list.filter(x=>String(x.colaborador_id)===String(f.colab));if(f.tipo)list=list.filter(x=>x.tipo_ocorrencia===f.tipo);if(f.status)list=list.filter(x=>(x.status||'ATIVA')===f.status);if(f.ini)list=list.filter(x=>String(x.data_ocorrencia||'')>=f.ini);if(f.fim)list=list.filter(x=>String(x.data_ocorrencia||'')<=f.fim);document.getElementById('rhAdvHistCountTag').textContent=list.length+' registro(s)';tb.innerHTML=list.length?list.map(x=>{const d=rhAdvRowToData(x);return `<tr><td>${rhAdvFmtDate(d.dataOcorrencia)}</td><td><strong>${String(d.nome||'').toUpperCase()}</strong></td><td>${d.matricula||'—'}</td><td>${d.tipo||'—'}</td><td>${d.reincidencia==='SIM'?'<span class="status-chip red">SIM</span>':'NÃO'}</td><td>${d.status==='CANCELADA'?'<span class="status-chip red">CANCELADA</span>':'<span class="status-chip green">ATIVA</span>'}</td><td>${d.responsavel||'—'}</td><td><button class="clear-btn" data-adv-pdf="${d.id}">📄 PDF</button> ${d.status!=='CANCELADA'?`<button class="clear-btn" data-adv-cancel="${d.id}">🚫 Cancelar</button>`:''}</td></tr>`}).join(''):'<tr><td colspan="8"><div class="empty-state">Nenhuma advertência encontrada para os filtros selecionados.</div></td></tr>';tb.querySelectorAll('[data-adv-pdf]').forEach(b=>b.onclick=()=>{const r=RHADV_CACHE.find(x=>String(x.id)===String(b.dataset.advPdf));if(r)rhAdvGerarPDF(rhAdvRowToData(r))});tb.querySelectorAll('[data-adv-cancel]').forEach(b=>b.onclick=()=>rhAdvCancelar(b.dataset.advCancel))}
 async function rhAdvLoadDb(){const sb=rhAdvSb();if(!sb){throw new Error('Supabase não inicializado.');}let q=sb.from('rh_advertencias').select('*').order('data_ocorrencia',{ascending:false}).order('created_at',{ascending:false});const obraId=window.G360_ACTIVE_OBRA_ID;if(obraId)q=q.eq('obra_id',obraId);const {data,error}=await q;if(error)throw error;RHADV_CACHE=data||[];rhAdvRenderHist();rhAdvFillColab();return RHADV_CACHE}
-async function rhAdvSalvarDb(){const d=rhAdvCollect();if(!rhAdvValidate(d))return;const sb=rhAdvSb();if(!sb)return alert('Supabase não inicializado.');const ses=(await sb.auth.getSession()).data?.session;if(!ses)return alert('Sua sessão expirou. Entre novamente no sistema.');const payload={obra_id:window.G360_ACTIVE_OBRA_ID||null,colaborador_id:d.colaborador_id,colaborador_nome:d.nome,matricula:d.matricula,funcao:d.funcao,setor_equipe:d.setor,admissao:d.admissao||null,data_ocorrencia:d.dataOcorrencia,horario_ocorrencia:d.hora||null,tipo_ocorrencia:d.tipo,reincidencia:d.reincidencia==='SIM',local_ocorrencia:d.local,descricao_fatos:d.fatos,fundamentacao:d.prerrogativa,orientacao_colaborador:d.orientacao,observacoes:d.obs||null,responsavel_aplicacao:d.responsavel,responsavel_rh:d.rh,status:'ATIVA',created_by:ses.user.id};const {error}=await sb.from('rh_advertencias').insert(payload);if(error){console.error(error);alert('Não foi possível salvar no Supabase:\n'+error.message+'\n\nConfirme se o SQL_V25_ADVERTENCIAS_SUPABASE.sql já foi executado.');return}await rhAdvLoadDb();rhAdvClear();alert('Advertência registrada no Supabase com sucesso.')}
+async function rhAdvSalvarDb(){const d=rhAdvCollect();if(!rhAdvValidate(d))return;const sb=rhAdvSb();if(!sb)return alert('Supabase não inicializado.');const ses=(await sb.auth.getSession()).data?.session;if(!ses)return alert('Sua sessão expirou. Entre novamente no sistema.');const payload={obra_id:window.G360_ACTIVE_OBRA_ID||null,colaborador_id:d.colaborador_id,colaborador_nome:d.nome,matricula:d.matricula,funcao:d.funcao,setor_equipe:d.setor,admissao:d.admissao||null,data_ocorrencia:d.dataOcorrencia,horario_ocorrencia:d.hora||null,tipo_ocorrencia:d.tipo,reincidencia:d.reincidencia==='SIM',local_ocorrencia:d.local,descricao_fatos:d.fatos,fundamentacao:d.prerrogativa,orientacao_colaborador:d.orientacao,observacoes:d.obs||null,responsavel_aplicacao:d.responsavel,responsavel_rh:d.rh,status:'ATIVA',created_by:ses.user.id};const {error}=await sb.from('rh_advertencias').insert(payload);if(error){console.error(error);alert('Não foi possível salvar no Supabase:\n'+error.message+'Confirme se o SQL_V25_ADVERTENCIAS_SUPABASE.sql já foi executado.');return}await rhAdvLoadDb();rhAdvClear();alert('Advertência registrada no Supabase com sucesso.')}
 async function rhAdvCancelar(id){const motivo=prompt('Informe o motivo do cancelamento desta advertência:');if(motivo===null)return;if(!String(motivo).trim())return alert('Informe o motivo do cancelamento.');const sb=rhAdvSb();const ses=(await sb.auth.getSession()).data?.session;if(!ses)return alert('Sessão expirada.');const {error}=await sb.from('rh_advertencias').update({status:'CANCELADA',cancelado_em:new Date().toISOString(),cancelado_por:ses.user.id,cancelado_motivo:String(motivo).trim()}).eq('id',id);if(error)return alert('Falha ao cancelar: '+error.message);await rhAdvLoadDb();alert('Advertência cancelada. O registro foi preservado para auditoria.')}
 function rhAdvGerarPDF(d){if(!d.id&&!rhAdvValidate(d))return;const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'portrait',unit:'pt',format:'a4',compress:true});const PW=doc.internal.pageSize.getWidth(),PH=doc.internal.pageSize.getHeight(),M=36,W=PW-M*2;const f=(b=false,s=9)=>{doc.setFont('helvetica',b?'bold':'normal');doc.setFontSize(s);doc.setTextColor(25,25,25)};const line=(t,x,y,w,size=9,lh=13)=>{f(false,size);const ls=doc.splitTextToSize(String(t||''),w);doc.text(ls,x,y,{lineHeightFactor:lh/size});return y+ls.length*lh};try{doc.addImage(CCL_LOGO_B64,'PNG',M,24,100,50)}catch(e){}f(true,14);doc.text('ADVERTÊNCIA DISCIPLINAR',PW/2,46,{align:'center'});f(false,8);doc.text('RH-ADV-01 · Obra 202 - Implantação Auriverde',PW/2,62,{align:'center'});if(d.status==='CANCELADA'){doc.setTextColor(170,0,0);doc.setFont('helvetica','bold');doc.setFontSize(11);doc.text('DOCUMENTO CANCELADO',PW/2,75,{align:'center'})}doc.setDrawColor(50);doc.line(M,82,PW-M,82);let y=102;f(true,9.5);doc.text('IDENTIFICAÇÃO DO COLABORADOR',M,y);y+=15;doc.autoTable({startY:y,margin:{left:M,right:M},theme:'grid',styles:{font:'helvetica',fontSize:8.4,cellPadding:5,textColor:[20,20,20],lineColor:[70,70,70]},body:[['Colaborador',String(d.nome||'').toUpperCase()],['Matrícula',d.matricula||'—'],['Função',d.funcao||'—'],['Setor / Equipe',d.setor||'—'],['Admissão',rhAdvFmtDate(d.admissao)]],columnStyles:{0:{cellWidth:100,fontStyle:'bold'},1:{cellWidth:'auto'}}});y=doc.lastAutoTable.finalY+18;f(true,9.5);doc.text('DADOS DA OCORRÊNCIA',M,y);y+=15;doc.autoTable({startY:y,margin:{left:M,right:M},theme:'grid',styles:{font:'helvetica',fontSize:8.4,cellPadding:5,textColor:[20,20,20],lineColor:[70,70,70]},body:[['Data',rhAdvFmtDate(d.dataOcorrencia)],['Horário',d.hora||'—'],['Tipo',d.tipo],['Reincidência',d.reincidencia],['Local',d.local]],columnStyles:{0:{cellWidth:100,fontStyle:'bold'},1:{cellWidth:'auto'}}});y=doc.lastAutoTable.finalY+18;f(true,9.5);doc.text('REGISTRO E FUNDAMENTAÇÃO',M,y);y+=16;f(true,8.8);doc.text('Descrição objetiva dos fatos:',M,y);y+=13;y=line(d.fatos,M,y,W,9,13)+8;f(true,8.8);doc.text('Prerrogativa / enquadramento:',M,y);y+=13;y=line(d.prerrogativa,M,y,W,9,13)+8;f(true,8.8);doc.text('Orientação / conduta esperada:',M,y);y+=13;y=line(d.orientacao,M,y,W,9,13)+8;if(d.obs){f(true,8.8);doc.text('Observações adicionais:',M,y);y+=13;y=line(d.obs,M,y,W,9,13)+8}if(d.status==='CANCELADA'){f(true,8.8);doc.setTextColor(170,0,0);doc.text('Cancelamento:',M,y);y+=13;y=line(d.cancelado_motivo||'Cancelada administrativamente.',M,y,W,8.7,12)+8}if(y>PH-155){doc.addPage();y=58}doc.setDrawColor(70);doc.line(M,y,PW-M,y);y+=22;f(false,9);y=line('O colaborador declara ter tomado ciência do conteúdo desta advertência e das orientações apresentadas. A eventual recusa de assinatura poderá ser registrada no próprio documento, sem impedir o registro administrativo da ocorrência.',M,y,W,8.7,12)+28;const colW=(W-28)/2;doc.line(M,y,M+colW,y);doc.line(M+colW+28,y,PW-M,y);f(true,8.5);doc.text('Colaborador',M+colW/2,y+13,{align:'center'});doc.text('Responsável pela aplicação',M+colW+28+colW/2,y+13,{align:'center'});f(false,8);doc.text(String(d.nome||'').toUpperCase(),M+colW/2,y+26,{align:'center'});doc.text(d.responsavel||'',M+colW+28+colW/2,y+26,{align:'center'});y+=66;doc.line(M,y,M+colW,y);doc.line(M+colW+28,y,PW-M,y);f(true,8.5);doc.text('RH / DP',M+colW/2,y+13,{align:'center'});doc.text('Testemunha (se aplicável)',M+colW+28+colW/2,y+13,{align:'center'});f(false,8);doc.text(d.rh||'',M+colW/2,y+26,{align:'center'});f(false,7.3);doc.setTextColor(100);doc.text('Documento gerado pelo painel CONSTRU-X 360º · Registro: '+(d.id||'não salvo'),M,PH-18);doc.text('Data de emissão: '+new Date().toLocaleString('pt-BR'),PW-M,PH-18,{align:'right'});doc.save(`ADVERTENCIA_${String(d.matricula||d.nome).replace(/[^A-Za-z0-9_-]+/g,'_')}_${d.dataOcorrencia}.pdf`)}
 function rhAdvClear(){['rhAdvMat','rhAdvFuncao','rhAdvSetor','rhAdvAdmissao','rhAdvHora','rhAdvLocal','rhAdvFatos','rhAdvPrerrogativa','rhAdvOrientacao','rhAdvObs','rhAdvResponsavel','rhAdvRh'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});document.getElementById('rhAdvColab').value='';document.getElementById('rhAdvTipo').value='';document.getElementById('rhAdvReincidencia').value='NAO';document.getElementById('rhAdvDataOcorrencia').value=new Date().toISOString().slice(0,10);const box=document.getElementById('rhAdvColabResumo');if(box){box.style.display='none';box.innerHTML=''}}
-async function renderRhdpAdvertencia(){const sel=document.getElementById('rhAdvColab');if(!sel)return;const cs=rhAdvColabs();const opts='<option value="">Selecione o colaborador...</option>'+cs.map(c=>`<option value="${String(c.id??c.matricula??c.mat)}">${String(c.nome||'').toUpperCase()} · ${String(c.matricula??c.mat??'')}</option>`).join('');sel.innerHTML=opts;const fs=document.getElementById('rhAdvFiltroColab');if(fs)fs.innerHTML='<option value="">Todos</option>'+cs.map(c=>`<option value="${String(c.id??c.matricula??c.mat)}">${String(c.nome||'').toUpperCase()}</option>`).join('');sel.onchange=rhAdvFillColab;document.getElementById('rhAdvTipo').onchange=()=>{const t=document.getElementById('rhAdvTipo').value;document.getElementById('rhAdvPrerrogativa').value=RHADV_TEMPLATES[t]||'';if(t)document.getElementById('rhAdvOrientacao').value='O colaborador foi orientado a corrigir imediatamente a conduta registrada, observar as normas internas e procedimentos aplicáveis e evitar a repetição da ocorrência.'};document.getElementById('rhAdvDataAtual').textContent=new Date().toLocaleDateString('pt-BR');if(!document.getElementById('rhAdvDataOcorrencia').value)document.getElementById('rhAdvDataOcorrencia').value=new Date().toISOString().slice(0,10);document.getElementById('rhAdvSalvarBtn').onclick=rhAdvSalvarDb;document.getElementById('rhAdvGerarPdfBtn').onclick=()=>rhAdvGerarPDF(rhAdvCollect());document.getElementById('rhAdvLimparBtn').onclick=rhAdvClear;['rhAdvFiltroColab','rhAdvFiltroTipo','rhAdvFiltroStatus','rhAdvFiltroIni','rhAdvFiltroFim'].forEach(id=>{const e=document.getElementById(id);if(e)e.onchange=rhAdvRenderHist});try{await rhAdvLoadDb()}catch(e){console.error(e);RHADV_CACHE=[];rhAdvRenderHist();alert('O módulo de advertências ainda não conseguiu acessar a tabela rh_advertencias no Supabase. Execute o arquivo SQL_V25_ADVERTENCIAS_SUPABASE.sql uma única vez e abra o módulo novamente.\n\nDetalhe: '+(e.message||e))}}
+async function renderRhdpAdvertencia(){const sel=document.getElementById('rhAdvColab');if(!sel)return;const cs=rhAdvColabs();const opts='<option value="">Selecione o colaborador...</option>'+cs.map(c=>`<option value="${String(c.id??c.matricula??c.mat)}">${String(c.nome||'').toUpperCase()} · ${String(c.matricula??c.mat??'')}</option>`).join('');sel.innerHTML=opts;const fs=document.getElementById('rhAdvFiltroColab');if(fs)fs.innerHTML='<option value="">Todos</option>'+cs.map(c=>`<option value="${String(c.id??c.matricula??c.mat)}">${String(c.nome||'').toUpperCase()}</option>`).join('');sel.onchange=rhAdvFillColab;document.getElementById('rhAdvTipo').onchange=()=>{const t=document.getElementById('rhAdvTipo').value;document.getElementById('rhAdvPrerrogativa').value=RHADV_TEMPLATES[t]||'';if(t)document.getElementById('rhAdvOrientacao').value='O colaborador foi orientado a corrigir imediatamente a conduta registrada, observar as normas internas e procedimentos aplicáveis e evitar a repetição da ocorrência.'};document.getElementById('rhAdvDataAtual').textContent=new Date().toLocaleDateString('pt-BR');if(!document.getElementById('rhAdvDataOcorrencia').value)document.getElementById('rhAdvDataOcorrencia').value=new Date().toISOString().slice(0,10);document.getElementById('rhAdvSalvarBtn').onclick=rhAdvSalvarDb;document.getElementById('rhAdvGerarPdfBtn').onclick=()=>rhAdvGerarPDF(rhAdvCollect());document.getElementById('rhAdvLimparBtn').onclick=rhAdvClear;['rhAdvFiltroColab','rhAdvFiltroTipo','rhAdvFiltroStatus','rhAdvFiltroIni','rhAdvFiltroFim'].forEach(id=>{const e=document.getElementById(id);if(e)e.onchange=rhAdvRenderHist});try{await rhAdvLoadDb()}catch(e){console.error(e);RHADV_CACHE=[];rhAdvRenderHist();alert('O módulo de advertências ainda não conseguiu acessar a tabela rh_advertencias no Supabase. Execute o arquivo SQL_V25_ADVERTENCIAS_SUPABASE.sql uma única vez e abra o módulo novamente.Detalhe: '+(e.message||e))}}
 
 // RH/DP — SOLICITAÇÃO DE DEMISSÃO
 // ---------------------------------------------------------------
@@ -8542,7 +8538,7 @@ function rhDemValidate(data){
   if(!data.dataDeslig) faltando.push('Data do Desligamento');
   if(!data.tipo) faltando.push('Tipo de Desligamento');
   if(faltando.length){
-    alert('Preencha os campos obrigatórios antes de continuar:\n\n• ' + faltando.join('\n• '));
+    alert('Preencha os campos obrigatórios antes de continuar:• ' + faltando.join('\n• '));
     return false;
   }
   return true;
@@ -8932,7 +8928,7 @@ function rhMovValidate(data){
   if(needSetor && !data.setorNovo) faltando.push('Novo Setor / Equipe');
   if(needObra && !data.obraNova) faltando.push('Nova Obra (C. Custo)');
   if(faltando.length){
-    alert('Preencha os campos obrigatórios antes de continuar:\n\n• ' + faltando.join('\n• '));
+    alert('Preencha os campos obrigatórios antes de continuar:• ' + faltando.join('\n• '));
     return false;
   }
   return true;
@@ -9672,7 +9668,7 @@ async function epiStockDelete(id){
   if(!item)return;
 
   const saldo=epiNum(item.saldo);
-  const msg=`Excluir definitivamente o EPI do estoque?\n\n${item.descricao||'EPI'}${item.ca?` · C.A. ${item.ca}`:''}\nSaldo atual: ${saldo.toLocaleString('pt-BR',{maximumFractionDigits:2})}\n\nEsta ação remove o cadastro do estoque e não pode ser desfeita.`;
+  const msg=`Excluir definitivamente o EPI do estoque?${item.descricao||'EPI'}${item.ca?` · C.A. ${item.ca}`:''}\nSaldo atual: ${saldo.toLocaleString('pt-BR',{maximumFractionDigits:2})}Esta ação remove o cadastro do estoque e não pode ser desfeita.`;
   if(!confirm(msg))return;
 
   if(window.g360PreviewMode){
@@ -9690,7 +9686,7 @@ async function epiStockDelete(id){
 
   const del=await sb.from('epi_estoque').delete().eq('id',id);
   if(del.error){
-    alert('Não foi possível excluir este EPI do estoque.\n\n'+del.error.message+'\n\nSe o item já possuir movimentações ou termos vinculados, o banco pode impedir a exclusão para preservar o histórico.');
+    alert('Não foi possível excluir este EPI do estoque.'+del.error.message+'Se o item já possuir movimentações ou termos vinculados, o banco pode impedir a exclusão para preservar o histórico.');
     return;
   }
 
@@ -9869,7 +9865,7 @@ async function epiDeleteTerm(id){
   try{full=await epiGetTermFull(id);}catch(e){return alert('Erro ao carregar termo: '+(e?.message||e));}
   if(!full)return alert('Termo não encontrado.');
   const nome=full.term?.colaborador_nome||'colaborador';
-  if(!confirm(`Excluir o termo de EPI salvo para ${nome}?\n\nO estoque dos EPIs deste termo será devolvido automaticamente.`))return;
+  if(!confirm(`Excluir o termo de EPI salvo para ${nome}?O estoque dos EPIs deste termo será devolvido automaticamente.`))return;
 
   if(window.g360PreviewMode){
     for(const it of full.items){
@@ -10296,7 +10292,7 @@ async function addRow(){
 }
 async function delRow(id){
   const r0=rows.find(x=>String(x.id)===String(id));
-  const desc=r0?.descricao?`\n\n${r0.descricao}\n${brl(r0.valor)}`:'';
+  const desc=r0?.descricao?`${r0.descricao}\n${brl(r0.valor)}`:'';
   if(!confirm('Excluir definitivamente esta despesa do reembolso?'+desc))return;
   const r=await sb().from('rh_reembolso_lancamentos').delete().eq('id',id);
   if(r.error)return alert(r.error.message);
@@ -11398,8 +11394,8 @@ document.getElementById('motorBetaFileInput')?.addEventListener('change', (e)=>{
           ? 'Erro ao ler a planilha: ' + colabError.message
           : 'A planilha foi lida, mas não encontrei nem uma aba de colaboradores nem uma aba de contratos reconhecível.';
         if(colabError && colabError.diagnostics && colabError.diagnostics.length){
-          msg += '\n\nCabeçalhos encontrados na 1ª linha de cada aba:\n' + colabError.diagnostics.join('\n');
-          msg += '\n\nRenomeie a coluna do nome do colaborador para algo como "NOME", ou a de contratos para incluir "FORNECEDOR" e "Nº CONTRATO", e tente novamente.';
+          msg += 'Cabeçalhos encontrados na 1ª linha de cada aba:\n' + colabError.diagnostics.join('\n');
+          msg += 'Renomeie a coluna do nome do colaborador para algo como "NOME", ou a de contratos para incluir "FORNECEDOR" e "Nº CONTRATO", e tente novamente.';
         }
         alert(msg);
         return;
@@ -11475,7 +11471,7 @@ document.getElementById('motorBetaClearCacheBtn').addEventListener('click', ()=>
     alert('Não há nenhuma atualização de planilha salva neste navegador — o painel já está mostrando a base embutida no arquivo.');
     return;
   }
-  if(!confirm('Isso vai apagar do seu navegador os dados de Colaboradores, Contratos, Fechamento de Praça e Alojamentos salvos por atualizações anteriores da planilha, e recarregar a página com a base mais recente já embutida no arquivo.\n\nSolicitações de RH e Solicitações de Contrato NÃO são afetadas.\n\nContinuar?')) return;
+  if(!confirm('Isso vai apagar do seu navegador os dados de Colaboradores, Contratos, Fechamento de Praça e Alojamentos salvos por atualizações anteriores da planilha, e recarregar a página com a base mais recente já embutida no arquivo.Solicitações de RH e Solicitações de Contrato NÃO são afetadas.Continuar?')) return;
   chavesPlanilha.forEach(k => localStorage.removeItem(k));
   location.reload();
 });
@@ -13610,13 +13606,13 @@ async function efetivarContrato(id){
   if(!sienge||!sienge.trim()) return alert('O contrato só pode ir para a base definitiva após informar o registro no Sienge.');
   const fornecedor=reqFornecedor(it), tipo=FORMS[it.type]?.label||it.type, objeto=reqObjeto(it), total=reqValorTotal(it), mensal=reqValorMensal(it);
   if(reqIsProd() && /^[0-9a-f-]{36}$/i.test(id)){
-    if(!confirm(`Confirmar inclusão no Sienge e criar ${numero.trim()} na base definitiva?\n\nFornecedor: ${fornecedor}\nObjeto: ${objeto}\nValor: R$ ${fmtMoney(total)}`)) return;
+    if(!confirm(`Confirmar inclusão no Sienge e criar ${numero.trim()} na base definitiva?Fornecedor: ${fornecedor}\nObjeto: ${objeto}\nValor: R$ ${fmtMoney(total)}`)) return;
     const sb=window.g360SupabaseClient;
     const {data,error}=await sb.rpc('promover_solicitacao_para_contrato',{p_solicitacao_id:id,p_numero_contrato:numero.trim(),p_sienge_id:sienge.trim(),p_tipo_contrato:tipo,p_objeto:objeto,p_valor_contratado:total,p_valor_mensal:mensal,p_data_inicio:reqDate(it,'ini')||null,p_data_fim:reqDate(it,'fim')||null});
     if(error){alert('Não foi possível gerar o contrato: '+error.message);return;}
     it.status='CONVERTIDO';it.numeroContrato=numero.trim();it.siengeId=sienge.trim();saveSaved(arr);showToast('Contrato '+numero.trim()+' criado na base definitiva.');setTimeout(()=>location.reload(),500);return;
   }
-  if(!confirm(`Confirmar inclusão no Sienge e criar ${numero.trim()} na base definitiva?\n\nFornecedor: ${fornecedor}\nObjeto: ${objeto}\nValor: R$ ${fmtMoney(total)}`)) return;
+  if(!confirm(`Confirmar inclusão no Sienge e criar ${numero.trim()} na base definitiva?Fornecedor: ${fornecedor}\nObjeto: ${objeto}\nValor: R$ ${fmtMoney(total)}`)) return;
   let contratos=[]; try{ contratos=JSON.parse(localStorage.getItem('painel202_contratos_override_v2'))||[]; }catch(e){}
   if(!contratos.length){ try{ contratos=JSON.parse(document.getElementById('seedContratosData').textContent)||[]; }catch(e){} }
   if(contratos.some(c=>String(c.contrato||c.codigo||'').toUpperCase()===numero.trim().toUpperCase())) return alert('Já existe um contrato com este número.');
@@ -13907,7 +13903,7 @@ window.SolContratos = {
 </script>
 <div id="printReport" class="print-only"></div>
 
-<!-- Gestão 360º · Supabase/Auth/CRUD -->
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* CONFIGURAÇÃO SUPABASE — preencha com os dados do seu projeto */
@@ -16316,7 +16312,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
   }
 
   async function toggleUser(id){const u=user(id);if(!u||u.master)return;try{await adminApi('PATCH',{user_id:id,ativo:!u.ativo});toastPerm(u.ativo?'Usuário inativado.':'Usuário ativado.');await loadAll()}catch(err){toastPerm(err.message)}}
-  async function deleteUser(id){const u=user(id);if(!u||id===currentId)return;if(!confirm(`Excluir definitivamente o usuário ${u.nome||u.email}?\n\nA conta de login, perfil e permissões serão removidos.`))return;try{await adminApi('DELETE',{user_id:id});toastPerm('Usuário excluído definitivamente.');if(editingId===id)editingId=currentId;await loadAll()}catch(err){toastPerm(err.message)}}
+  async function deleteUser(id){const u=user(id);if(!u||id===currentId)return;if(!confirm(`Excluir definitivamente o usuário ${u.nome||u.email}?A conta de login, perfil e permissões serão removidos.`))return;try{await adminApi('DELETE',{user_id:id});toastPerm('Usuário excluído definitivamente.');if(editingId===id)editingId=currentId;await loadAll()}catch(err){toastPerm(err.message)}}
   document.getElementById('g360ObrasMarcarTodas')?.addEventListener('click',()=>{
     document.querySelectorAll('#g360ObrasMultiPanel input[type="checkbox"]').forEach(c=>c.checked=true);
     refreshObrasMultiLabel();
@@ -17438,7 +17434,7 @@ async function removeMeasurement(id){
   if(!canDelete()){alert('Seu usuário não possui permissão para excluir medições.');return}
   const r=state.rows.find(x=>String(x.id)===String(id));
   if(!r){alert('Medição não encontrada.');return}
-  const ok=confirm(`Excluir ${r.contrato} de ${state.period}?\n\nEssa ação removerá somente esta medição desta competência.`);
+  const ok=confirm(`Excluir ${r.contrato} de ${state.period}?Essa ação removerá somente esta medição desta competência.`);
   if(!ok)return;
   try{
     const q=await sb().from('fechamentos_praca').delete().eq('id',id).select('id').maybeSingle();
@@ -17454,7 +17450,7 @@ async function deleteSelected(){
   if(!canDelete()){alert('Seu usuário não possui permissão para excluir medições.');return}
   const ids=[...state.selected];
   if(!ids.length){alert('Marque pelo menos uma medição com X.');return}
-  const ok=confirm(`Excluir ${ids.length} medição(ões) marcada(s) de ${state.period}?\n\nEssa ação não exclui os contratos cadastrados; remove somente as medições desta competência.`);
+  const ok=confirm(`Excluir ${ids.length} medição(ões) marcada(s) de ${state.period}?Essa ação não exclui os contratos cadastrados; remove somente as medições desta competência.`);
   if(!ok)return;
   try{
     const q=await sb().from('fechamentos_praca').delete().in('id',ids).select('id');
@@ -17467,9 +17463,9 @@ async function deleteSelected(){
 async function clearCompetence(){
   if(!canDelete()){alert('Seu usuário não possui permissão para limpar competências.');return}
   if(!state.rows.length){alert('Esta competência já está vazia.');return}
-  const first=prompt(`ATENÇÃO: isso excluirá TODAS as ${state.rows.length} medições de ${state.period}.\n\nDigite LIMPAR para continuar:`);
+  const first=prompt(`ATENÇÃO: isso excluirá TODAS as ${state.rows.length} medições de ${state.period}.Digite LIMPAR para continuar:`);
   if(first!=='LIMPAR'){return}
-  const ok=confirm(`Confirma a limpeza COMPLETA de ${state.period}?\n\nOs contratos continuam cadastrados. Somente o fechamento desta competência será apagado.`);
+  const ok=confirm(`Confirma a limpeza COMPLETA de ${state.period}?Os contratos continuam cadastrados. Somente o fechamento desta competência será apagado.`);
   if(!ok)return;
   try{
     const oid=await getObraId(),comp=periodToDate(state.period);
@@ -19105,7 +19101,7 @@ window.g360BackupV135={generate,history,authMaster};
 })();
 </script>
 
-<!-- GESTAO360 V161: remove aviso acesso controlado + resolve obra do usuario por profile/usuario_obras -->
+
 
 <script id="g360-auditoria-v178">
 (function(){
@@ -19351,7 +19347,7 @@ window.g360BackupV135={generate,history,authMaster};
 })();
 </script>
 
-<script id="g360-sesmt-estoque-robusto-v195">
+<script id="g360-sesmt-estoque-robusto-v195-js">
 (function(){
 'use strict';
 
@@ -19558,7 +19554,7 @@ async function excluirMovimentacao(id){
   if(!mov)return alert('Movimentação não encontrada.');
   const epi=mov.epi_descricao||'EPI';
   const qtd=Number(mov.quantidade||0).toLocaleString('pt-BR',{maximumFractionDigits:2});
-  if(!confirm(`Excluir esta movimentação?\n\n${mov.tipo||''} · ${epi}\nQuantidade: ${qtd}\n${mov.colaborador_nome?`Colaborador: ${mov.colaborador_nome}\n`:''}\nO saldo do estoque será recalculado automaticamente.`))return;
+  if(!confirm(`Excluir esta movimentação?${mov.tipo||''} · ${epi}\nQuantidade: ${qtd}\n${mov.colaborador_nome?`Colaborador: ${mov.colaborador_nome}\n`:''}\nO saldo do estoque será recalculado automaticamente.`))return;
 
   try{
     if(window.g360PreviewMode){
@@ -19580,7 +19576,7 @@ async function excluirMovimentacao(id){
     }
     renderEstoqueFiltrado();await loadMovs();
     try{window.g360Audit?.('estoque_epi','EXCLUIR','epi_movimentacoes',String(id),epi,{tipo:mov.tipo,quantidade:mov.quantidade,colaborador:mov.colaborador_nome||null});}catch(e){}
-  }catch(e){alert('Não foi possível excluir a movimentação.\n\n'+(e?.message||e));}
+  }catch(e){alert('Não foi possível excluir a movimentação.'+(e?.message||e));}
 }
 
 function renderMovs(){
@@ -21006,7 +21002,7 @@ function bind(){
   };
 }
 
-window.g360RenderPatrimonioV240=async function(){try{await loadBase()}catch(e){console.error(e);alert('Patrimônio: '+(e.message||e)+'\n\nExecute o SQL V240 no Supabase.')}};
+window.g360RenderPatrimonioV240=async function(){try{await loadBase()}catch(e){console.error(e);alert('Patrimônio: '+(e.message||e)+'Execute o SQL V240 no Supabase.')}};
 window.g360RenderPatrimonioItensV240=window.g360RenderPatrimonioV240;
 
 function init(){
@@ -21045,7 +21041,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 
-<!-- V246: padronização global de digitação em MAIÚSCULAS, preservando e-mail, senha, URL/link e campos técnicos -->
+
 <style id="g360-uppercase-v246-style">
 /* Exibição em maiúsculas para campos textuais do sistema. Exceções sensíveis/técnicas permanecem inalteradas. */
 input:not([type="email"]):not([type="password"]):not([type="url"]):not([data-preserve-case="true"]),
@@ -21227,7 +21223,6 @@ if(!document.getElementById('g360-fc-sug-check-v339')){
 }
 let fcSugColabs=[];
 let fcSugCargaPromise=null;
-let fcSugDbClient=null;
 function fcSugDb(){
  const client=window.g360SupabaseClient;
  if(!client)throw new Error('Cliente Supabase principal não carregado.');
@@ -21297,8 +21292,6 @@ async function gerarRelatorioSugestoesPdf(filtros){
   const baseSug=fcSugColabs.length?fcSugColabs:await fcSugCarregarColaboradores();
   // Relatório usa exclusivamente a base cadastral confirmada do módulo de sugestões.
   const elegiveis=baseSug.filter(c=>(c.usa_aloj===true||String(c.usa_aloj||'').trim().toUpperCase()==='S'||String(c.usa_aloj||'').trim().toUpperCase()==='SIM') && (!filtros?.setores || filtros.setores.includes(String(c.setor_encarregado||'NÃO INFORMADO').toUpperCase())));
-  const ids=elegiveis.map(c=>c.id).filter(Boolean);
-  // Base única confirmada: colaboradores + folga_campo_projecoes, carregadas uma única vez e mantidas em memória.
   const hist=Array.isArray(fcSugHistCache)?fcSugHistCache:[];
   const ult=new Map();
   const addHist=(id,ini,fim,fonte)=>{if(!id||!ini)return;const k=String(id),at=ult.get(k);if(!at||String(ini)>String(at.ini))ult.set(k,{ini,fim:fim||ini,fonte})};
@@ -21312,7 +21305,7 @@ async function gerarRelatorioSugestoesPdf(filtros){
    const calcSug=fcSugestaoFutura(String(base).slice(0,10),meses),ini=calcSug.data;if(!ini){pend.push([c.matricula||'—',String(c.nome||'').toUpperCase(),'ERRO NO CÁLCULO']);return}
    if(filtros?.meses?.length && !filtros.meses.includes(String(ini).slice(0,7)))return;
    const dias=meses===2?3:meses===3?5:7,fim=addDaysISO(ini,dias-1),ret=addDaysISO(fim,1);
-   linhas.push({nome:String(c.nome||'').toUpperCase(),grupo:String(c.setor_encarregado||'NÃO INFORMADO').toUpperCase(),row:[c.matricula||'—',String(c.nome||'').toUpperCase(),String(c.funcao||'—').toUpperCase(),String(c.cidade_baixada||c.cidade||'—').toUpperCase()+(c.uf_baixada?' / '+String(c.uf_baixada).toUpperCase():''),c.distancia_baixada_km??'—',`${meses}x${meses}`,fonte,fcFmtDate(ini),fcFmtDate(fim),fcFmtDate(ret)]});
+   linhas.push({nome:String(c.nome||'').toUpperCase(),grupo:String(c.setor_encarregado||'NÃO INFORMADO').toUpperCase(),row:[c.matricula||'—',String(c.nome||'').toUpperCase(),String(c.funcao||'—').toUpperCase(),fcFmtDate(c.admissao),String(c.cidade_baixada||c.cidade||'—').toUpperCase()+(c.uf_baixada?' / '+String(c.uf_baixada).toUpperCase():''),c.distancia_baixada_km??'—',`${meses}x${meses}`,fonte,fcFmtDate(ini),fcFmtDate(fim),fcFmtDate(ret)]});
   });
   linhas.sort((a,b)=>a.grupo.localeCompare(b.grupo,'pt-BR')||a.nome.localeCompare(b.nome,'pt-BR'));
   pend.sort((a,b)=>String(a[1]).localeCompare(String(b[1]),'pt-BR'));
@@ -21320,7 +21313,7 @@ async function gerarRelatorioSugestoesPdf(filtros){
   const cabecalho=()=>{try{if(typeof CCL_LOGO_B64!=='undefined')doc.addImage(CCL_LOGO_B64,'PNG',12,8,35,17)}catch(_){ }doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('RELATÓRIO DE SUGESTÃO DE BAIXADAS',PW/2,15,{align:'center'});doc.setFont('helvetica','normal');doc.setFontSize(8);const setTxt=filtros?.setores?.length?filtros.setores.join(' | '):'TODOS OS SETORES / ENCARREGADOS';const mesTxt=(filtros?.meses||[]).map(ym=>{const [y,m]=ym.split('-').map(Number);return new Date(y,m-1,1,12).toLocaleDateString('pt-BR',{month:'short',year:'numeric'}).toUpperCase()}).join(' | ');doc.text(`Obra 202 · ${setTxt}`,PW/2,21,{align:'center',maxWidth:PW-25});doc.text(`Meses: ${mesTxt} · 2x2=3 dias | 3x3=5 dias | 6x6=7 dias · 5º dia útil`,PW/2,26,{align:'center',maxWidth:PW-25});};
   cabecalho();let yAtual=31;
   const grupos=[...new Set(linhas.map(x=>x.grupo))];
-  grupos.forEach((grupo,idx)=>{const itens=linhas.filter(x=>x.grupo===grupo);if(idx>0&&yAtual>155){doc.addPage();cabecalho();yAtual=31}doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(0);doc.setFillColor(235,235,235);doc.rect(8,yAtual,PW-16,7,'F');doc.text(grupo,10,yAtual+4.8);yAtual+=9;doc.autoTable({startY:yAtual,margin:{left:8,right:8,bottom:14},head:[['MAT.','COLABORADOR','FUNÇÃO','CIDADE / UF','KM','PER.','BASE','INÍCIO','FIM','RETORNO']],body:itens.map(x=>x.row),theme:'grid',styles:{font:'helvetica',fontSize:6.2,cellPadding:1.35,textColor:[20,20,20],lineColor:[90,90,90],lineWidth:.15,valign:'middle'},headStyles:{fontStyle:'bold',fillColor:[245,197,24],textColor:[0,0,0],halign:'center'},columnStyles:{0:{cellWidth:12,halign:'center'},1:{cellWidth:43},2:{cellWidth:40},3:{cellWidth:35},4:{cellWidth:12,halign:'center'},5:{cellWidth:12,halign:'center'},6:{cellWidth:19,halign:'center'},7:{cellWidth:20,halign:'center'},8:{cellWidth:20,halign:'center'},9:{cellWidth:20,halign:'center'}},showHead:'everyPage'});yAtual=doc.lastAutoTable.finalY+6;});
+  grupos.forEach((grupo,idx)=>{const itens=linhas.filter(x=>x.grupo===grupo);if(idx>0&&yAtual>155){doc.addPage();cabecalho();yAtual=31}doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(0);doc.setFillColor(235,235,235);doc.rect(8,yAtual,PW-16,7,'F');doc.text(grupo,10,yAtual+4.8);yAtual+=9;doc.autoTable({startY:yAtual,margin:{left:8,right:8,bottom:14},head:[['MAT.','COLABORADOR','FUNÇÃO','ADMISSÃO','CIDADE / UF','KM','PER.','BASE','INÍCIO','FIM','RETORNO']],body:itens.map(x=>x.row),theme:'grid',styles:{font:'helvetica',fontSize:5.9,cellPadding:1.25,textColor:[20,20,20],lineColor:[90,90,90],lineWidth:.15,valign:'middle'},headStyles:{fontStyle:'bold',fillColor:[245,197,24],textColor:[0,0,0],halign:'center'},columnStyles:{0:{cellWidth:11,halign:'center'},1:{cellWidth:39},2:{cellWidth:34},3:{cellWidth:18,halign:'center'},4:{cellWidth:31},5:{cellWidth:11,halign:'center'},6:{cellWidth:11,halign:'center'},7:{cellWidth:18,halign:'center'},8:{cellWidth:19,halign:'center'},9:{cellWidth:19,halign:'center'},10:{cellWidth:19,halign:'center'}},showHead:'everyPage'});yAtual=doc.lastAutoTable.finalY+6;});
   if(pend.length){let y=doc.lastAutoTable.finalY+8;if(y>170){doc.addPage();y=15}doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text('PENDÊNCIAS',8,y);doc.autoTable({startY:y+3,margin:{left:8,right:8,bottom:14},head:[['MAT.','COLABORADOR','MOTIVO']],body:pend,theme:'grid',styles:{font:'helvetica',fontSize:7,cellPadding:1.8},headStyles:{fontStyle:'bold',fillColor:[230,230,230],textColor:[0,0,0]},columnStyles:{0:{cellWidth:22},1:{cellWidth:90},2:{cellWidth:'auto'}}})}
   const total=doc.internal.getNumberOfPages();for(let i=1;i<=total;i++){doc.setPage(i);doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(90);doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')} · ${linhas.length} sugestões · ${pend.length} pendências`,8,202);doc.text(`Página ${i}/${total}`,PW-8,202,{align:'right'})}
   doc.save(`RELATORIO_SUGESTAO_BAIXADAS_${new Date().toISOString().slice(0,10)}.pdf`);
@@ -21542,7 +21535,7 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
 }
 </style>
 
-<!-- GESTAO360 V162: boot unico sem reload + dashboard somente apos dados Supabase -->
+
 
 <style id="g360-sesmt-fontes-v198">
 /* V198 — padronização tipográfica da tela Estoque de EPIs.
