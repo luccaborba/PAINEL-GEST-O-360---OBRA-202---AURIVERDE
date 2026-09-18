@@ -21177,19 +21177,12 @@ function fcQuintoDiaUtilMes(isoBase,meses){
 }
 function fcSugestaoFutura(isoBase,meses){
  if(!isoBase||!meses)return {data:'',ciclos:0,baseCiclo:isoBase||''};
- const hoje=new Date();hoje.setHours(0,0,0,0);
- let baseCiclo=String(isoBase).slice(0,10),ciclos=1,data='';
- // Se a sugestão de um ciclo já passou, avança ciclos completos da periodicidade
- // até encontrar a primeira baixada que ainda não venceu.
- for(let i=0;i<240;i++){
-  data=fcQuintoDiaUtilMes(baseCiclo,meses);
-  if(!data)break;
-  const sug=new Date(data+'T00:00:00');
-  if(sug>=hoje)return {data,ciclos,baseCiclo};
-  baseCiclo=fcAddMonthsISO(baseCiclo,meses);
-  ciclos++;
- }
- return {data:'',ciclos,baseCiclo};
+ const baseCiclo=String(isoBase).slice(0,10);
+ // V350 — A sugestão pertence ao primeiro ciclo após a última folga/admissão.
+ // Não pula um ciclo apenas porque a data sugerida já passou: nesse caso o
+ // relatório deve exibi-la como ATRASADA. Ex.: JUL/2026 + 2x2 = SET/2026.
+ const data=fcQuintoDiaUtilMes(baseCiclo,meses);
+ return {data:data||'',ciclos:data?1:0,baseCiclo};
 }
 async function loadFolgaSuggestion(){
  const el=$('g360FcSugestao'),c=selectedColab();if(!el)return;
@@ -21223,6 +21216,7 @@ async function loadFolgaSuggestion(){
  }catch(e){console.error('Sugestão Folga de Campo:',e);el.textContent='Não foi possível calcular a sugestão. Verifique os dados do colaborador e o histórico de Folga de Campo.'}
 }
 
+/* V350 — Sugestão de Folga: não avança automaticamente ciclo vencido; mantém o ciclo correto como ATRASADO. */
 /* V348 — Relatório de Sugestões de Folga reconstruído do zero.
    Fonte única cadastral: public.colaboradores.
    Histórico: public.folga_campo_projecoes.
