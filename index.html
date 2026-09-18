@@ -21203,20 +21203,22 @@ async function loadFolgaSuggestion(){
   const fonte=last?.fonte||'DATA DE ADMISSÃO';
   if(!base){el.innerHTML=`<b>${esc(c.nome)}</b> · Nenhuma folga anterior localizada e data de admissão não cadastrada.`;return}
   if(!meses){el.innerHTML=`<b>${esc(c.nome)}</b> · Data-base: <b>${fcFmtDate(base)}</b> · Fonte: ${esc(fonte)} · <b>Periodicidade não cadastrada no colaborador.</b>`;return}
-  const calcSug=fcSugestaoFutura(base,meses),proxIni=calcSug.data;
-  if(!proxIni){el.innerHTML=`<b>${esc(c.nome)}</b> · Não foi possível calcular a próxima folga sugerida.`;return}
-  // Regra fixa da Folga de Campo: 2x2 = 3 dias, 3x3 = 5 dias, 6x6 = 7 dias.
-  // Regra: data-base + periodicidade completa (2/3/6 meses) e início no 5º dia útil do próprio mês resultante.
-  // Nunca replica o dia/período da folga anterior.
+  // V351 — Com histórico real, preserva o ciclo/dias da última folga e apenas soma a periodicidade.
+  // Ex.: 25/08 a 27/08 + 2x2 = 25/10 a 27/10.
+  // O 5º dia útil fica somente para quem ainda não possui histórico e usa a admissão como base.
   const diasFolga=meses===2?3:(meses===3?5:(meses===6?7:null));
   if(!diasFolga){el.innerHTML=`<b>${esc(c.nome)}</b> · Periodicidade <b>${esc(c.periodicidade_baixada||meses+' MESES')}</b> sem quantidade de dias de folga configurada.`;return}
-  const proxFim=(()=>{const d=new Date(proxIni+'T12:00:00');d.setDate(d.getDate()+diasFolga-1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`})();
+  const proxIni=last?fcAddMonthsISO(last.ini,meses):fcSugestaoFutura(base,meses).data;
+  if(!proxIni){el.innerHTML=`<b>${esc(c.nome)}</b> · Não foi possível calcular a próxima folga sugerida.`;return}
+  const proxFim=last
+    ? fcAddMonthsISO(last.fim||last.ini,meses)
+    : (()=>{const d=new Date(proxIni+'T12:00:00');d.setDate(d.getDate()+diasFolga-1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`})();
   const baseTxt=last?`Última folga considerada: <b>${fcFmtDate(last.ini)} A ${fcFmtDate(last.fim)}</b> · Fonte: ${esc(last.fonte)}`:`Nenhuma folga anterior localizada · Data-base: <b>${fcFmtDate(base)}</b> · Fonte: <b>DATA DE ADMISSÃO</b>`;
   el.innerHTML=`<b>${esc(c.nome)}</b> · ${baseTxt} · Periodicidade: <b>${esc(c.periodicidade_baixada||meses+' MESES')}</b> · Direito: <b>${diasFolga} DIAS</b> · <span style="color:#f5c518;font-weight:800">SUGESTÃO: ${fcFmtDate(proxIni)} A ${fcFmtDate(proxFim)}</span>`;
  }catch(e){console.error('Sugestão Folga de Campo:',e);el.textContent='Não foi possível calcular a sugestão. Verifique os dados do colaborador e o histórico de Folga de Campo.'}
 }
 
-/* V350 — Sugestão de Folga: não avança automaticamente ciclo vencido; mantém o ciclo correto como ATRASADO. */
+/* V351 — Sugestão de Folga: histórico preserva os dias do ciclo; admissão usa 5º dia útil. */
 /* V348 — Relatório de Sugestões de Folga reconstruído do zero.
    Fonte única cadastral: public.colaboradores.
    Histórico: public.folga_campo_projecoes.
@@ -21324,12 +21326,13 @@ function fcSugV348Pdf(dados,filtros){
    const h=dados.ult.get(String(c.id)),base=(h?.data_ini||c.admissao||'').slice(0,10);
    const fonte=h?(h.fonte||'ÚLTIMA FOLGA'):'ADMISSÃO';
    if(!base){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'SEM ADMISSÃO / HISTÓRICO']);return}
-   const sug=fcSugestaoFutura(base,regra.meses),ini=sug?.data||'';
+   // V351 — Histórico existente mantém dia inicial/final; admissão continua usando o 5º dia útil.
+   const ini=h?fcAddMonthsISO(h.data_ini,regra.meses):fcSugestaoFutura(base,regra.meses).data;
    if(!ini){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'ERRO NO CÁLCULO']);return}
    const atrasada=ini<hoje;
    const selecionada=atrasada?filtros.meses.includes('ATRASADAS'):filtros.meses.includes(ini.slice(0,7));
    if(!selecionada)return;
-   const fim=addDaysISO(ini,regra.dias-1),ret=addDaysISO(fim,1);
+   const fim=h?fcAddMonthsISO(h.data_fim||h.data_ini,regra.meses):addDaysISO(ini,regra.dias-1),ret=addDaysISO(fim,1);
    linhas.push({
      grupo,nome:String(c.nome||'').toUpperCase(),atrasada,
      row:[
