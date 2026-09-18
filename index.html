@@ -1,91 +1,91 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<!-- V334: Roteiro UF→Cidade em origem/destino + relatório de sugestões separado por Setor/Equipe -->
+<!-- V328: Folga de Campo — sugestão no 5º dia útil do próprio mês resultante da periodicidade; regra unificada no Organograma Setor/Equipe -->
+<!-- V324: Cargos e Salários — filtro instantâneo por função/cargo -->
+<!-- V323: Folga de Campo — alimentação simplificada para uma única opção IDA E VOLTA -->
+<!-- V291: Reembolsos com editar/excluir por lançamento + dashboard/login sempre no topo -->
+<!-- V288: corrige lançamento de Reembolsos restaurando rotina estável e validação de valor -->
+<!-- V285: Folga de Campo definitiva — período/retorno D+1/km, roteiro estruturado, hospedagem e termo integrado ao Supabase -->
+<!-- V284: Folga de Campo reformulada com roteiro por trechos e despesas condicionais -->
+<!-- V280: Folga de Campo DEV — data_despesa preenchida automaticamente pela competência para atender constraint do Supabase -->
+<!-- V276: Folga DEV — competências por botões + abertura por mês/ano em modal; sem select de competência -->
+<!-- V270: Reembolsos — botão INCLUIR com estado de processamento e proteção contra duplo clique -->
+<!-- V269 DEFINITIVO: boot leve de permissões + matriz revisada + novas funcionalidades patrimônio -->
+<!-- V268: Patrimônio dos Alojamentos — detecção dinâmica de MASTER para exibir/executar Excluir -->
+<!-- V267: Patrimônio dos Alojamentos — MASTER pode excluir uma alocação diretamente na tabela -->
+<!-- V266: Patrimônio dos Alojamentos — filtro principal em checkbox; remove painel duplicado de inventário; PDF/Excel sob o filtro -->
+<!-- V262: Patrimônio dos Alojamentos — downloads PDF/Excel com filtro por caixas de seleção -->
+<!-- V257: Patrimônio dos alojamentos — removido botão legado "+ Cadastrar bem"; cadastro de itens permanece no módulo próprio -->
+<!-- V254: PDF Reembolsos — nome/função em negrito; corpo das despesas normal; cabeçalho e total em negrito -->
+<!-- V253: PDF Reembolsos — rótulos NOME/FUNÇÃO em laranja; campos de conteúdo em branco -->
+<!-- V290: Correção definitiva de valores monetários no Reembolso (vírgula/ponto) + preserva V289 -->
+<!-- V289: Reembolsos — gravação/exibição em MAIÚSCULAS + PDF consolidado por competência -->
+<!-- V247: MAIÚSCULAS automáticas em campos textuais; preserva e-mail, senha, URL/link e campos técnicos -->
+<!-- V245: Corrige Forçar novo login de todos — elimina referência fora de escopo a users -->
+<!-- V325: módulos com competência abrem automaticamente na competência mais recente registrada -->
+<!-- V327: Organograma Setor/Equipe com sugestão de Folga de Campo na tela, PDF e Excel -->
+<!-- V329: Folga de Campo em fluxo modal por etapas: dados > roteiro > finalizar roteiro > despesas extras -->
 <!DOCTYPE html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<!-- V293: otimização de carregamento do módulo Reembolsos: cache por obra, consultas enxutas e evita recargas repetidas -->
+<!-- V287: PDF Folga de Campo — descrição sem espaçamento artificial e separador de trechos > -->
+<!-- V286: Folga de Campo — PDF despesas com espaçamento normalizado -->
+<!-- V279: Folga DEV — competências em caixa de seleção e tipografia dos rótulos padronizada -->
+<!-- V275: Folga Campo DEV simplificada sem Data/Fornecedor no lançamento e relatórios -->
+<!-- V283: Folga de Campo EM DEV — TERMO gera diretamente o PDF do colaborador na competência selecionada -->
+<!-- V274: Folga de Campo EM DEV — reconstruído do zero com fluxo espelhado em Reembolsos; antigo projeto ocultado; Termo de Concessão preservado -->
+<!-- V273: Folga de Campo — despesas persistidas em tabela própria no Supabase; dashboard por competência; programação preservada -->
+<!-- V272: Folga de Campo por etapas — programação por competência + pagamento de despesas por colaborador; PDF individual; sem dashboard de projeção -->
+<!-- V271: Dashboard RH por competência; Folga de Campo base AGOSTO/2026; correção Abrir nova competência -->
+<!-- V265: baseado integralmente na V262; ajuste SOMENTE visual do filtro de alojamentos -->
+<!-- V260: patrimônio — permite o mesmo item em vários alojamentos; fallback seguro quando RPC antiga bloqueia segunda alocação -->
+<!-- V259: Cadastro de Itens do Patrimônio — edição exclusiva MASTER + PDF para conferência de inventário -->
+<!-- V252: PDF reembolso sem linha vazia; altura por conteúdo -->
+<!-- V244: Reembolsos — PDF fiel ao modelo enviado; Excel com consolidado + abas individuais -->
+<!-- V242: Reembolsos — PDF individual no Resumo da Competência; Excel consolidado permanece no topo; preserva V241 -->
+<!-- V235: RH separa quadro próprio de terceiros; inativação de terceiro não conta como demissão -->
+<!-- V234: Controle de Reembolsos RH + Dashboard de despesas RH -->
+<!-- V233: Alojamentos com ciclo mensal de medição e período calculado automaticamente -->
+<!-- V232: remove Histórico do menu SESMT e move Fechamento de Praça para Contratos -->
+<!-- V230: corrige navegação do submenu Relatórios do Controle de Estoque -->
+<!-- V231: filtro por tipo nas movimentações e PDF com download direto -->
+<!-- V229: Relatórios no Controle de Estoque — Estoque Atual e Movimentações por Período -->
+<!-- V228: permissões SESMT reorganizadas e Técnico habilitado para operação de estoque -->
+<!-- V227: SESMT organizado em cascata, controle de estoque didático e histórico XLSX -->
+<!-- V226: força login individual direto e força-login de todos reparado pela RPC individual -->
+<!-- V225: Cidade/UF de baixada via IBGE, prefill da admissão e CPF com máscara/validação -->
+<!-- V224: feedback Gravando/Gravado ao salvar cadastro de Alojamentos -->
+<!-- V223: correção da validação de capacidade ao trocar colaborador de alojamento -->
+<!-- V222: aprovações da admissão por botão com data/hora, usuário e indicadores de tempo -->
+<!-- V221: monitoramento completo da tramitação das solicitações de contrato -->
+<!-- V220: restaura EMAIL acima do TELEFONE no PDF de admissão e mantém PDF sem créditos/rodapé -->
+<!-- V219: corrige Forçar Login individual/todos com RPC segura e verificação de sessão sem depender de RLS -->
+<!-- V218: remove RECONTRATÁVEL do PDF de admissão; permanece somente na demissão -->
+<!-- V217: remove telefone remanescente abaixo de RECONTRATÁVEL no PDF de demissão -->
+<!-- V216: remove rodapé/branding do PDF de admissão salvo/reimpresso -->
+<!-- V215: checkboxes do PDF/reimpressão com preenchimento branco real via jsPDF -->
+<!-- V214: quadrados/checkboxes sempre brancos, independente do fundo -->
+<!-- V213: PDFs RH limpos; demissão sem contato duplicado e sem rodapés/branding do sistema -->
+<!-- V212: UF fixa + cidades IBGE robustas e layout compacto de Cidade -->
+<!-- V210: layout Folga de Campo com UF antes da Cidade e KM/Período/Dias na mesma linha -->
+<!-- V209: Cidade/UF gerais do candidato, KM condicional à baixada e campos Email/Telefone uniformes -->
+<!-- V208: Cidade e UF da Baixada ficam sempre visíveis no formulário de admissão -->
+<!-- V207: remove indicação visual de contato cadastrado da demissão; contato permanece automático internamente -->
+<!-- V206: cidade/UF na admissão, contato da demissão puxado do colaborador e campos dark padronizados -->
+<!-- V205: admissão/demissão revisadas, contatos, baixada, metadata MP-01/MP-02 V-02 e base Supabase -->
+<!-- V204: corrige saldo contratual para considerar LANCADO e TITULO_GERADO no Fechamento de Praça -->
+<!-- V203: cadastro mestre de itens separado, código sequencial, estoque máximo, giro automático e sugestão de compra -->
+<!-- V202: corrige criação do perfil Técnico de Segurança em usuario_permissoes -->
+<!-- V200: corrige identificação da obra no inventário e movimentações SESMT -->
+<!-- V199: exclusão de movimentação por GESTOR/MASTER + usuário comum somente operação -->
+<!-- V198: padronização das fontes da tela SESMT / Estoque de EPIs -->
+<!-- V197: PDF do romaneio diário de movimentações de EPI -->
+<!-- V196: itens abaixo do mínimo + PDF + sugestão de compra no cadastro do EPI -->
+<!-- V195: SESMT robusto com estoque, movimentação diária, colaborador, mínimo e inventário -->
+<!-- V194: editar/excluir termos de EPI e editar/excluir cadastro/entrada de estoque -->
+<!-- V193: perfil TÉCNICO DE SEGURANÇA = acesso completo somente ao SESMT -->
+<!-- V192: estoque de EPI com exclusão individual; V191 preservada -->
+<!-- V191: reformulação visual do Termo de Entrega de EPIs; lógica e PDF preservados -->
+<!-- V190: reformulação visual do Termo de Responsabilidade; lógica e PDF preservados -->
+<!-- V158: remove contratosBase quebrado e protege listeners legados do fechamento -->
 <html lang="pt-BR">
 <head>
 <script>(function(){try{const v='2026-09-01-fechamento-v49-planilha-supabase';if(localStorage.getItem('g360_base_version')!==v){localStorage.removeItem('painel202_fechamentos_multi_override_v4');localStorage.removeItem('painel202_fechamentos_override_ts_v2');localStorage.removeItem('g360_medicoes_sienge_preview_v1');localStorage.setItem('g360_base_version',v)}}catch(e){}
@@ -2086,19 +2086,19 @@ html.g360-ui-ready .content-col {
 </style>
 </head>
 <body>
+<!-- V155: convite personalizado + primeiro acesso com criação de senha -->
+<!-- V154: carga resiliente de usuários/obras; usuario_permissoes legado não bloqueia perfis nativos -->
+<!-- V153: lista de usuários nunca some se usuario_obras falhar; fallback seguro + sync não destrutivo -->
+<!-- V152: seleção multiobra visível por checkboxes; sem select/dropdown de obra única -->
+<!-- V151: perfil define ações; obras definem escopo. ENGENHEIROS pode ser multiobra sem perfil adicional -->
+<!-- V150: usuários vinculados a múltiplas obras por caixa de seleção -->
+<!-- V149: perfis nativos ENGENHEIROS / RH / GESTOR -->
+<!-- V148: sessão expira por última atividade persistente + login sempre inicia no Dashboard Gerencial -->
+<!-- V146: CRUD colaboradores resolve por UUID Supabase; corrige desligamento sem matrícula -->
+<!-- V38: only Collaborators Experience cell + RH/DP Advertencia visibility -->
 
-
-
-
-
-
-
-
-
-
-
-
-
+<!-- CONSTRUX V26: Advertência RH menu permission fallback -->
+<!-- CONSTRUX V24: RH Advertência Disciplinar -->
 <div class="wrap" style="max-width:100%;padding:0;">
 
   <header class="top" style="padding:18px 28px;">
@@ -2246,7 +2246,7 @@ html.g360-ui-ready .content-col {
     <main class="content-col">
 
 
-      
+      <!-- ================= PROJETOS / OBRAS ================= -->
       <div class="view" id="view-projetosObras">
         <section class="panel">
           <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
@@ -2280,7 +2280,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      
+      <!-- ================= PROJETOS / OBRAS ================= -->
       <div class="view active" id="view-executivo">
         <section class="panel" style="margin-bottom:14px;">
           <div>
@@ -2311,20 +2311,9 @@ html.g360-ui-ready .content-col {
           <div class="panel" style="margin-top:14px;"><h2>Contratado vs. Medido por Tipo</h2><div style="height:360px;position:relative;"><canvas id="chExecContratos"></canvas></div></div>
         </section>
 
-        <section class="panel" id="g360ExecDespesasPanel">
-          <div class="g360-rh-exp-head"><div><h2>Despesas de Reembolso e Baixada</h2><div class="g360-rh-exp-sub">Consolidado financeiro das despesas registradas em Reembolsos e Folga de Campo.</div></div><span class="tag" id="g360ExecDespesasCompetencia">Competência atual</span></div>
-          <section class="kpis-4 g360-rh-exp-kpis">
-            <div class="kpi"><div class="kpi-label">REEMBOLSOS</div><div class="kpi-value" id="g360ExecKpiReemb">R$ 0,00</div><div class="kpi-sub">Competência atual</div></div>
-            <div class="kpi"><div class="kpi-label">BAIXADA / FOLGA DE CAMPO</div><div class="kpi-value" id="g360ExecKpiFolga">R$ 0,00</div><div class="kpi-sub">Competência atual</div></div>
-            <div class="kpi"><div class="kpi-label">TOTAL DESPESAS</div><div class="kpi-value" id="g360ExecKpiDespTotal">R$ 0,00</div><div class="kpi-sub">Reembolso + Baixada</div></div>
-            <div class="kpi"><div class="kpi-label">COLABORADORES</div><div class="kpi-value" id="g360ExecKpiPessoas">0</div><div class="kpi-sub">Com reembolso no mês</div></div>
-          </section>
-          <div style="height:320px;position:relative;margin-top:14px"><canvas id="chExecDespesas"></canvas></div>
-        </section>
-
       </div>
 
-      
+      <!-- ================= DASHBOARD RH / DP ================= -->
       <div class="view" id="view-rhdpDashboard">
         <section class="panel" style="margin-bottom:14px;">
           <div>
@@ -2350,7 +2339,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      
+      <!-- ================= REEMBOLSOS RH ================= -->
       <div class="view" id="view-rhdpReembolsos">
         <section class="panel g360-reemb-head">
           <div><h2>Controle de Reembolsos</h2><div class="g360-reemb-sub">Abra uma competência mensal, lance as despesas por colaborador e exporte o consolidado em Excel e o relatório individual em PDF.</div></div>
@@ -2403,7 +2392,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      
+      <!-- ================= COLABORADORES ================= -->
       <div class="view" id="view-base">
         <section class="panel" style="margin-bottom:14px;">
           <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
@@ -2459,7 +2448,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      
+      <!-- ================= ALOJAMENTO ================= -->
       <div class="view" id="view-alojamento">
         <div class="page-title">
           <span class="pt-ic">🏘️</span>
@@ -2507,9 +2496,9 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
+      <!-- ================= INVENTÁRIO GERAL DE PATRIMÔNIO ================= -->
       
-      
-      
+      <!-- ================= PATRIMÔNIO SIMPLIFICADO V240 ================= -->
       <div class="view" id="view-patrimonioInventario">
         <div class="page-title">
           <span class="pt-ic">📦</span>
@@ -2617,7 +2606,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-
+<!-- ================= ORGANOGRAMA DE SETORES ================= -->
       <div class="view" id="view-organograma">
         <div class="page-title">
           <span class="pt-ic">🗺️</span>
@@ -2649,7 +2638,7 @@ html.g360-ui-ready .content-col {
       </div>
 
 
-      
+      <!-- ================= ADITIVOS CONTRATUAIS ================= -->
       <div class="view" id="view-aditivosContratos">
         <div class="page-title">
           <span class="pt-ic">🧩</span>
@@ -2682,7 +2671,7 @@ html.g360-ui-ready .content-col {
   </section>
       </div>
 
-      
+      <!-- ================= CONTRATOS (nativo — antes era um iframe separado) ================= -->
       <div class="view" id="view-contratos">
 <div class="wrap">
 
@@ -2817,7 +2806,7 @@ html.g360-ui-ready .content-col {
 </div>
       </div>
 
-      
+      <!-- ================= FECHAMENTO DE PRAÇA (módulo próprio, lê a aba dedicada "FECHAMENTO PRAÇA") ================= -->
       <div class="view" id="view-fechamentoPraca">
         <div class="page-title">
           <span class="pt-ic">✅</span>
@@ -2885,7 +2874,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      
+      <!-- ================= RH/DP — ADMISSÃO / TRIAGEM V182 ================= -->
       <div class="view" id="view-rhdpAdmissao">
         <style>
           .adm-kpis{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px;margin-bottom:14px}
@@ -3190,7 +3179,7 @@ html.g360-ui-ready .content-col {
         </div>
       </div>
 
-      
+      <!-- ================= RH/DP — ADVERTÊNCIA DISCIPLINAR ================= -->
       <div class="view" id="view-rhdpAdvertencia">
         <div class="page-title">
           <span class="pt-ic">⚠️</span>
@@ -3283,7 +3272,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      
+      <!-- ================= RH/DP — SOLICITAÇÃO DE DEMISSÃO ================= -->
       <div class="view" id="view-rhdpDemissao">
         <div class="page-title">
           <span class="pt-ic">📤</span>
@@ -3436,7 +3425,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      
+      <!-- ================= RH/DP — MOVIMENTAÇÃO INTERNA ================= -->
       <div class="view" id="view-rhdpMovimentacao">
         <div class="page-title">
           <span class="pt-ic">🔀</span>
@@ -3571,7 +3560,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      
+      <!-- ================= CENTRAL DE ALERTAS ================= -->
       <div class="view" id="view-alertas">
         <div class="page-title">
           <span class="pt-ic">🚨</span>
@@ -3599,7 +3588,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      
+      <!-- ================= CONTROLE DE FOLGAS DE CAMPO (BAIXADA) ================= -->
       <div class="view" id="view-baixadas">
         <div class="page-title">
           <span class="pt-ic">🧳</span>
@@ -3609,7 +3598,7 @@ html.g360-ui-ready .content-col {
           </div>
         </div>
 
-                
+                <!-- V274 — NOVO PROJETO FOLGA DE CAMPO EM DEV -->
         <section class="panel g360-reemb-head fc-dev-panel">
           <div class="fc-dev-head-main"><h2>Folga de Campo</h2><div class="g360-reemb-sub">Abra a competência, selecione o colaborador, monte o roteiro por trechos e lance as demais despesas da folga.</div><div id="g360FcDevCompButtons" class="fc-dev-comp-select-box"><label>Competência<select id="g360FcDevCompSelect"><option value="">Carregando...</option></select></label></div></div>
           <div class="g360-reemb-head-actions"><button type="button" class="btn-primary" id="g360FcDevIncluirFolga">＋ Incluir Folga de Campo</button><button type="button" class="btn-primary" id="g360FcRelSugestoes" title="Gerar relatório de sugestão de baixadas">📄 Relatório de sugestões</button><button type="button" class="btn-primary" id="g360FcDevAbrirComp">＋ Abrir competência</button></div>
@@ -3626,7 +3615,7 @@ html.g360-ui-ready .content-col {
             <div class="fc-flow-progress"><span data-fc-step="1" class="active">1 · DADOS DA FOLGA</span><span data-fc-step="2">2 · ROTEIRO</span><span data-fc-step="3">3 · DESPESAS EXTRAS</span></div>
         <section class="panel g360-reemb-toolbar fc-dev-panel fc-flow-step fc-flow-step-1"><div class="g360-reemb-toolbar-grid fc-dev-toolbar-grid"><label>Colaborador<select id="g360FcDevColab"><option value="">Selecione...</option></select></label><div></div></div><div class="g360-reemb-person" id="g360FcDevPessoaResumo">Selecione um colaborador para lançar ou consultar despesas.</div></section>
         <section class="panel fc-dev-panel fc-flow-step fc-flow-step-1" id="g360FcSugestaoPanel">
-          <div class="g360-reemb-table-head"><div><h2>Sugestão automática de folga</h2><div class="g360-reemb-sub">O sistema usa a última Folga de Campo/Reembolso ou, se não houver histórico, a admissão. Após completar a periodicidade (2/3/6 meses), programa a baixada no data-base + ciclo do próprio mês em que a periodicidade se completa.</div></div></div>
+          <div class="g360-reemb-table-head"><div><h2>Sugestão automática de folga</h2><div class="g360-reemb-sub">O sistema usa a última Folga de Campo/Reembolso ou, se não houver histórico, a admissão. Após completar a periodicidade (2/3/6 meses), programa a baixada no 5º dia útil do próprio mês em que a periodicidade se completa.</div></div></div>
           <div class="g360-reemb-person" id="g360FcSugestao">Selecione um colaborador para calcular a próxima folga sugerida.</div>
         </section>
         <section class="panel fc-dev-panel fc-folga-dados-panel fc-flow-step fc-flow-step-1">
@@ -3670,7 +3659,7 @@ html.g360-ui-ready .content-col {
         </section>
           </div>
         </div>
-        <section class="panel fc-dev-panel" id="g360FcProgramacoesPanel"><div class="g360-reemb-table-head"><div><h2>Programações de Folga de Campo</h2><div class="g360-reemb-sub">Folgas cadastradas na competência selecionada. Use as ações para editar ou excluir uma programação.</div></div></div><div class="table-scroll"><table><thead><tr><th>Colaborador</th><th>Período da folga</th><th>Retorno</th><th>Cidade / UF</th><th>KM</th><th>Periodicidade</th><th>Total</th><th>Ações</th></tr></thead><tbody id="g360FcProgramacoesBody"><tr><td colspan="8"><div class="empty-state">Carregando programações...</div></td></tr></tbody></table></div></section>
+        <section class="panel fc-dev-panel" id="g360FcProgramacoesPanel"><div class="g360-reemb-table-head"><div><h2>Folgas de Campo cadastradas</h2><div class="g360-reemb-sub">Folgas cadastradas na competência selecionada. Use ✏️ Editar para alterar os dados ou 🗑 Excluir para remover a folga e suas despesas vinculadas.</div></div></div><div class="table-scroll"><table><thead><tr><th>Colaborador</th><th>Período da folga</th><th>Retorno</th><th>Cidade / UF</th><th>KM</th><th>Periodicidade</th><th>Total</th><th>Ações</th></tr></thead><tbody id="g360FcProgramacoesBody"><tr><td colspan="8"><div class="empty-state">Carregando programações...</div></td></tr></tbody></table></div></section>
         <section class="panel fc-dev-panel"><div class="g360-reemb-table-head"><div><h2>Resumo da competência</h2><div class="g360-reemb-sub">Consolidado por colaborador. 📈 relatório de despesas · 📝 Termo de Concessão de Folga de Campo.</div></div><div class="fc-dev-export-box"><span class="fc-dev-export-label">Exportar</span><button type="button" class="clear-btn fc-dev-export-icon" id="g360FcDevExcelComp" title="Excel" aria-label="Exportar Excel">📊</button></div></div><div class="table-scroll"><table><thead><tr><th class="fc-dev-summary-colab-head"><div class="fc-dev-summary-head-wrap"><span class="fc-dev-summary-export-head">Exportar</span><span class="fc-dev-summary-name-head">Colaborador</span></div></th><th>Função</th><th>Qtd. despesas</th><th>Total</th><th>Ações</th></tr></thead><tbody id="g360FcDevResumoBody"></tbody></table></div></section>
         <div id="g360FcDevCompModal" class="fc-dev-modal" aria-hidden="true">
           <div class="fc-dev-modal-card">
@@ -3694,7 +3683,7 @@ html.g360-ui-ready .content-col {
 
         <section class="kpis-4" id="kpi-baixadas" style="grid-template-columns:repeat(3,1fr);"></section>
 
-        
+        <!-- V272 — PAGAMENTO DE DESPESAS / FOLGA DE CAMPO -->
         <section class="panel g360-reemb-head" id="g360FcPayHead">
           <div>
             <h2>Pagamento de Despesas — Folga de Campo</h2>
@@ -3779,7 +3768,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      
+      <!-- ================= FORMULÁRIOS DE CONCESSÃO (Folga de Campo) ================= -->
       <div class="view" id="view-formconcessao">
         <button id="goBaixadasBtn" style="background:none;border:none;color:var(--ink-soft);font-size:12px;font-family:var(--font-display);text-transform:uppercase;letter-spacing:.03em;cursor:pointer;padding:0 0 12px;display:flex;align-items:center;gap:5px;">← Voltar para Folga de Campo</button>
         <div class="page-title">
@@ -3789,7 +3778,7 @@ html.g360-ui-ready .content-col {
             <div class="pt-sub">Construtora Centro Leste · Obra 202 — Implantação Auriverde · Comunicação e Concessão de Folga de Campo, por colaborador</div>
           </div>
         </div>
-        
+        <!-- ============ FORMULÁRIOS DE FOLGA DE CAMPO (assinatura) ============ -->
         <style>
           .fc-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
           .fc-chk{width:16px;height:16px;accent-color:var(--yellow);cursor:pointer;}
@@ -3889,7 +3878,7 @@ html.g360-ui-ready .content-col {
           </div>
         </section>
 
-        
+        <!-- Modal: novo mês -->
         <div class="fc-modal-backdrop" id="fcMonthModalBackdrop">
           <div class="fc-modal">
             <h3>Abrir nova competência — Folga de Campo</h3>
@@ -3920,7 +3909,7 @@ html.g360-ui-ready .content-col {
           </div>
         </div>
 
-        
+        <!-- Modal: folga não programada / reembolso -->
         <div class="fc-modal-backdrop" id="fcUnplannedModalBackdrop">
           <div class="fc-modal">
             <h3>Folga de campo não programada</h3>
@@ -3953,7 +3942,7 @@ html.g360-ui-ready .content-col {
           </div>
         </div>
 
-        
+        <!-- Modal: editar dados da folga de um colaborador -->
         <div class="fc-modal-backdrop" id="fcEditModalBackdrop">
           <div class="fc-modal">
             <h3 id="fcEditTitle">Editar dados da folga</h3>
@@ -3988,7 +3977,7 @@ html.g360-ui-ready .content-col {
       </div>
 
 
-      
+      <!-- ================= TERMO DE RESPONSABILIDADE ================= -->
       <div class="view" id="view-termoResponsabilidade">
         <div class="page-title tr-page-head">
           <span class="pt-ic">🧾</span>
@@ -4124,7 +4113,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      
+      <!-- ================= SESMT / ESTOQUE DE EPIs ================= -->
       <div class="view" id="view-sesmtEstoque">
         <div class="page-title sesmt-stock-title">
           <span class="pt-ic">📦</span>
@@ -4408,7 +4397,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      
+      <!-- ================= SESMT / TERMO DE ENTREGA DE EPIs ================= -->
       <div class="view" id="view-sesmtTermo">
         <div class="page-title epi-term-page-head">
           <span class="pt-ic">🦺</span>
@@ -4517,7 +4506,7 @@ html.g360-ui-ready .content-col {
         </section>
       </div>
 
-      
+      <!-- ================= SESMT / ACIDENTES DE TRABALHO ================= -->
       <div class="view" id="view-sesmt">
         <div class="page-title">
           <span class="pt-ic">🦺</span>
@@ -4560,7 +4549,7 @@ html.g360-ui-ready .content-col {
       </div>
 
 
-      
+      <!-- ================= USUÁRIOS & PERMISSÕES ================= -->
       <div class="view" id="view-backupSeguranca">
         <div class="page-title"><span class="pt-ic">🛡️</span><div><div class="pt-title">Backup &amp; Segurança</div><div class="pt-sub">Área exclusiva do Administrador Mestre.</div></div></div>
         <section class="panel">
@@ -4849,6 +4838,8 @@ function expText(c){
 let ATIVOS = [];
 let AFASTADOS_ = [];
 let DESLIGADOS = [];
+let TERCEIROS_ATIVOS = [];
+let TERCEIROS_INATIVOS = [];
 let HC_TOTAL = 0;
 function g360NormStatus(v){ return String(v||'').trim().toUpperCase(); }
 function g360TipoContrato(c){ return String(c?.tipoContrato ?? c?.tipo_contrato ?? '').trim().toUpperCase(); }
@@ -4865,6 +4856,8 @@ function refreshRhDerived(){
   // Terceiros permanecem na base operacional, porém INATIVAR terceiro NÃO é demissão.
   ATIVOS = COLABS.filter(c=>!g360IsTerceiro(c) && g360NormStatus(c.status)==='ATIVO');
   AFASTADOS_ = COLABS.filter(c=>!g360IsTerceiro(c) && g360NormStatus(c.status)==='AFASTADO');
+  TERCEIROS_ATIVOS = COLABS.filter(c=>g360IsTerceiro(c) && g360NormStatus(c.status)==='ATIVO');
+  TERCEIROS_INATIVOS = COLABS.filter(c=>g360IsTerceiro(c) && g360NormStatus(c.status)==='INATIVO');
   // Desligamento é evento exclusivo do quadro próprio. Mesmo que um terceiro legado tenha
   // data de demissão preenchida, ele não entra em demissões, turnover ou gráficos RH.
   DESLIGADOS = COLABS.filter(c=>!g360IsTerceiro(c) && !!g360DemissaoDate(c));
@@ -5289,9 +5282,6 @@ function renderExecutivo(){
 
   // Alerta executivo: contratos sem nenhum fechamento lançado nos últimos 40 dias.
   renderOverviewFechamento40();
-
-  // Despesas de Reembolso e Baixada — último bloco do Painel Gerencial.
-  try{ window.g360RhDespesasV234?.load?.(); }catch(e){ console.error('Dashboard despesas do Painel Gerencial:',e); }
 }
 
 // ---------------------------------------------------------------
@@ -6054,7 +6044,7 @@ function renderFolgaCampoForm(){
   tbody.querySelectorAll('[data-fc-remove]').forEach(btn=>{
     btn.addEventListener('click', async e=>{
       const nome=e.currentTarget.dataset.fcRemove;
-      if(!nome || !confirm(`Excluir ${nome} da competência ${fcMonthKeyToLabel(fcProj.current)}?O colaborador continuará no cadastro geral e poderá ser incluído novamente.`)) return;
+      if(!nome || !confirm(`Excluir ${nome} da competência ${fcMonthKeyToLabel(fcProj.current)}?\n\nO colaborador continuará no cadastro geral e poderá ser incluído novamente.`)) return;
       const lista=fcProj.included?.[fcProj.current];
       if(Array.isArray(lista)) fcProj.included[fcProj.current]=lista.filter(n=>n!==nome);
       if(fcProj.overrides?.[fcProj.current]) delete fcProj.overrides[fcProj.current][nome];
@@ -7573,7 +7563,7 @@ function renderColabKpis(){
 
   renderKpis('kpi-colaboradores', [
     {label:'Headcount Próprio Ativo', value: fmtInt(ATIVOS.length)},
-    
+    {label:'Terceiros Ativos', value: fmtInt(TERCEIROS_ATIVOS.length)},
     {label:'Afastados (próprios)', value: fmtInt(AFASTADOS_.length)},
     {label:'Desligados (12M)', value: fmtInt(desligados12m.length)},
     {label:'Admissões (mês atual)', value: fmtInt(admMesAtual)},
@@ -7854,7 +7844,7 @@ function rhAdmValidate(data){
     if(data.baixadaAplicavel && !data.diasFolga) faltando.push('Dias de Folga');
   }
   if(faltando.length){
-    alert('Preencha os campos obrigatórios antes de continuar:• ' + faltando.join('\n• '));
+    alert('Preencha os campos obrigatórios antes de continuar:\n\n• ' + faltando.join('\n• '));
     return false;
   }
   return true;
@@ -8262,7 +8252,7 @@ async function rhAdmConfirmStageV222(stage){
   const iso=now.toISOString();
   const date=iso.slice(0,10);
 
-  if(!confirm(`Confirmar a etapa "${cfg.label}" para ${d.nome||'este candidato'} agora?Data/hora: ${now.toLocaleString('pt-BR')}`))return;
+  if(!confirm(`Confirmar a etapa "${cfg.label}" para ${d.nome||'este candidato'} agora?\n\nData/hora: ${now.toLocaleString('pt-BR')}`))return;
 
   d[cfg.date]=date;
   d[cfg.at]=iso;
@@ -8478,15 +8468,15 @@ function rhAdvSelected(){const v=document.getElementById('rhAdvColab')?.value;re
 function rhAdvRowToData(r){return {id:r.id,dataGeracao:r.created_at,colaborador_id:r.colaborador_id,nome:r.colaborador_nome||'',matricula:r.matricula||'',funcao:r.funcao||'',setor:r.setor_equipe||'',admissao:r.admissao||'',dataOcorrencia:r.data_ocorrencia||'',hora:r.horario_ocorrencia||'',tipo:r.tipo_ocorrencia||'',reincidencia:r.reincidencia?'SIM':'NAO',local:r.local_ocorrencia||'',fatos:r.descricao_fatos||'',prerrogativa:r.fundamentacao||'',orientacao:r.orientacao_colaborador||'',obs:r.observacoes||'',responsavel:r.responsavel_aplicacao||'',rh:r.responsavel_rh||'',status:r.status||'ATIVA',cancelado_em:r.cancelado_em,cancelado_motivo:r.cancelado_motivo||''}}
 function rhAdvFillColab(){const c=rhAdvSelected();document.getElementById('rhAdvMat').value=c?String(c.matricula??c.mat??''):'';document.getElementById('rhAdvFuncao').value=c?.funcao||'';document.getElementById('rhAdvSetor').value=c?.setor_equipe||c?.setorEquipe||c?.equipe||'';document.getElementById('rhAdvAdmissao').value=rhAdvFmtDate(c?.admissao);const box=document.getElementById('rhAdvColabResumo');if(!c){box.style.display='none';box.innerHTML='';return}const cid=String(c.id??c.matricula??c.mat);const anteriores=RHADV_CACHE.filter(x=>String(x.colaborador_id)===cid&&String(x.status||'ATIVA')==='ATIVA');box.style.display='block';box.innerHTML=`<strong>Histórico disciplinar:</strong> ${anteriores.length} advertência(s) ativa(s) registrada(s)${anteriores[0]?` · última em <b>${rhAdvFmtDate(anteriores[0].data_ocorrencia)}</b>`:''}.`;if(anteriores.length>0)document.getElementById('rhAdvReincidencia').value='SIM'}
 function rhAdvCollect(){const c=rhAdvSelected();return {id:null,dataGeracao:new Date().toISOString(),colaborador_id:c?String(c.id??c.matricula??c.mat):null,nome:c?.nome||'',matricula:String(c?.matricula??c?.mat??''),funcao:c?.funcao||'',setor:c?.setor_equipe||c?.setorEquipe||c?.equipe||'',admissao:c?.admissao||'',dataOcorrencia:document.getElementById('rhAdvDataOcorrencia').value,hora:document.getElementById('rhAdvHora').value,tipo:document.getElementById('rhAdvTipo').value,reincidencia:document.getElementById('rhAdvReincidencia').value,local:document.getElementById('rhAdvLocal').value.trim(),fatos:document.getElementById('rhAdvFatos').value.trim(),prerrogativa:document.getElementById('rhAdvPrerrogativa').value.trim(),orientacao:document.getElementById('rhAdvOrientacao').value.trim(),obs:document.getElementById('rhAdvObs').value.trim(),responsavel:document.getElementById('rhAdvResponsavel').value.trim(),rh:document.getElementById('rhAdvRh').value.trim(),status:'ATIVA'}}
-function rhAdvValidate(d){const f=[];if(!d.nome)f.push('Colaborador');if(!d.dataOcorrencia)f.push('Data da ocorrência');if(!d.tipo)f.push('Tipo de ocorrência');if(!d.local)f.push('Local');if(!d.fatos)f.push('Descrição dos fatos');if(!d.prerrogativa)f.push('Prerrogativa / enquadramento');if(!d.orientacao)f.push('Orientação / conduta esperada');if(!d.responsavel)f.push('Responsável pela aplicação');if(!d.rh)f.push('RH / DP responsável');if(f.length){alert('Preencha os campos obrigatórios:• '+f.join('\n• '));return false}return true}
+function rhAdvValidate(d){const f=[];if(!d.nome)f.push('Colaborador');if(!d.dataOcorrencia)f.push('Data da ocorrência');if(!d.tipo)f.push('Tipo de ocorrência');if(!d.local)f.push('Local');if(!d.fatos)f.push('Descrição dos fatos');if(!d.prerrogativa)f.push('Prerrogativa / enquadramento');if(!d.orientacao)f.push('Orientação / conduta esperada');if(!d.responsavel)f.push('Responsável pela aplicação');if(!d.rh)f.push('RH / DP responsável');if(f.length){alert('Preencha os campos obrigatórios:\n\n• '+f.join('\n• '));return false}return true}
 function rhAdvFilters(){return {colab:document.getElementById('rhAdvFiltroColab')?.value||'',tipo:document.getElementById('rhAdvFiltroTipo')?.value||'',status:document.getElementById('rhAdvFiltroStatus')?.value??'ATIVA',ini:document.getElementById('rhAdvFiltroIni')?.value||'',fim:document.getElementById('rhAdvFiltroFim')?.value||''}}
 function rhAdvRenderHist(){const tb=document.getElementById('rhAdvHistBody');if(!tb)return;const f=rhAdvFilters();let list=RHADV_CACHE.slice();if(f.colab)list=list.filter(x=>String(x.colaborador_id)===String(f.colab));if(f.tipo)list=list.filter(x=>x.tipo_ocorrencia===f.tipo);if(f.status)list=list.filter(x=>(x.status||'ATIVA')===f.status);if(f.ini)list=list.filter(x=>String(x.data_ocorrencia||'')>=f.ini);if(f.fim)list=list.filter(x=>String(x.data_ocorrencia||'')<=f.fim);document.getElementById('rhAdvHistCountTag').textContent=list.length+' registro(s)';tb.innerHTML=list.length?list.map(x=>{const d=rhAdvRowToData(x);return `<tr><td>${rhAdvFmtDate(d.dataOcorrencia)}</td><td><strong>${String(d.nome||'').toUpperCase()}</strong></td><td>${d.matricula||'—'}</td><td>${d.tipo||'—'}</td><td>${d.reincidencia==='SIM'?'<span class="status-chip red">SIM</span>':'NÃO'}</td><td>${d.status==='CANCELADA'?'<span class="status-chip red">CANCELADA</span>':'<span class="status-chip green">ATIVA</span>'}</td><td>${d.responsavel||'—'}</td><td><button class="clear-btn" data-adv-pdf="${d.id}">📄 PDF</button> ${d.status!=='CANCELADA'?`<button class="clear-btn" data-adv-cancel="${d.id}">🚫 Cancelar</button>`:''}</td></tr>`}).join(''):'<tr><td colspan="8"><div class="empty-state">Nenhuma advertência encontrada para os filtros selecionados.</div></td></tr>';tb.querySelectorAll('[data-adv-pdf]').forEach(b=>b.onclick=()=>{const r=RHADV_CACHE.find(x=>String(x.id)===String(b.dataset.advPdf));if(r)rhAdvGerarPDF(rhAdvRowToData(r))});tb.querySelectorAll('[data-adv-cancel]').forEach(b=>b.onclick=()=>rhAdvCancelar(b.dataset.advCancel))}
 async function rhAdvLoadDb(){const sb=rhAdvSb();if(!sb){throw new Error('Supabase não inicializado.');}let q=sb.from('rh_advertencias').select('*').order('data_ocorrencia',{ascending:false}).order('created_at',{ascending:false});const obraId=window.G360_ACTIVE_OBRA_ID;if(obraId)q=q.eq('obra_id',obraId);const {data,error}=await q;if(error)throw error;RHADV_CACHE=data||[];rhAdvRenderHist();rhAdvFillColab();return RHADV_CACHE}
-async function rhAdvSalvarDb(){const d=rhAdvCollect();if(!rhAdvValidate(d))return;const sb=rhAdvSb();if(!sb)return alert('Supabase não inicializado.');const ses=(await sb.auth.getSession()).data?.session;if(!ses)return alert('Sua sessão expirou. Entre novamente no sistema.');const payload={obra_id:window.G360_ACTIVE_OBRA_ID||null,colaborador_id:d.colaborador_id,colaborador_nome:d.nome,matricula:d.matricula,funcao:d.funcao,setor_equipe:d.setor,admissao:d.admissao||null,data_ocorrencia:d.dataOcorrencia,horario_ocorrencia:d.hora||null,tipo_ocorrencia:d.tipo,reincidencia:d.reincidencia==='SIM',local_ocorrencia:d.local,descricao_fatos:d.fatos,fundamentacao:d.prerrogativa,orientacao_colaborador:d.orientacao,observacoes:d.obs||null,responsavel_aplicacao:d.responsavel,responsavel_rh:d.rh,status:'ATIVA',created_by:ses.user.id};const {error}=await sb.from('rh_advertencias').insert(payload);if(error){console.error(error);alert('Não foi possível salvar no Supabase:\n'+error.message+'Confirme se o SQL_V25_ADVERTENCIAS_SUPABASE.sql já foi executado.');return}await rhAdvLoadDb();rhAdvClear();alert('Advertência registrada no Supabase com sucesso.')}
+async function rhAdvSalvarDb(){const d=rhAdvCollect();if(!rhAdvValidate(d))return;const sb=rhAdvSb();if(!sb)return alert('Supabase não inicializado.');const ses=(await sb.auth.getSession()).data?.session;if(!ses)return alert('Sua sessão expirou. Entre novamente no sistema.');const payload={obra_id:window.G360_ACTIVE_OBRA_ID||null,colaborador_id:d.colaborador_id,colaborador_nome:d.nome,matricula:d.matricula,funcao:d.funcao,setor_equipe:d.setor,admissao:d.admissao||null,data_ocorrencia:d.dataOcorrencia,horario_ocorrencia:d.hora||null,tipo_ocorrencia:d.tipo,reincidencia:d.reincidencia==='SIM',local_ocorrencia:d.local,descricao_fatos:d.fatos,fundamentacao:d.prerrogativa,orientacao_colaborador:d.orientacao,observacoes:d.obs||null,responsavel_aplicacao:d.responsavel,responsavel_rh:d.rh,status:'ATIVA',created_by:ses.user.id};const {error}=await sb.from('rh_advertencias').insert(payload);if(error){console.error(error);alert('Não foi possível salvar no Supabase:\n'+error.message+'\n\nConfirme se o SQL_V25_ADVERTENCIAS_SUPABASE.sql já foi executado.');return}await rhAdvLoadDb();rhAdvClear();alert('Advertência registrada no Supabase com sucesso.')}
 async function rhAdvCancelar(id){const motivo=prompt('Informe o motivo do cancelamento desta advertência:');if(motivo===null)return;if(!String(motivo).trim())return alert('Informe o motivo do cancelamento.');const sb=rhAdvSb();const ses=(await sb.auth.getSession()).data?.session;if(!ses)return alert('Sessão expirada.');const {error}=await sb.from('rh_advertencias').update({status:'CANCELADA',cancelado_em:new Date().toISOString(),cancelado_por:ses.user.id,cancelado_motivo:String(motivo).trim()}).eq('id',id);if(error)return alert('Falha ao cancelar: '+error.message);await rhAdvLoadDb();alert('Advertência cancelada. O registro foi preservado para auditoria.')}
 function rhAdvGerarPDF(d){if(!d.id&&!rhAdvValidate(d))return;const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'portrait',unit:'pt',format:'a4',compress:true});const PW=doc.internal.pageSize.getWidth(),PH=doc.internal.pageSize.getHeight(),M=36,W=PW-M*2;const f=(b=false,s=9)=>{doc.setFont('helvetica',b?'bold':'normal');doc.setFontSize(s);doc.setTextColor(25,25,25)};const line=(t,x,y,w,size=9,lh=13)=>{f(false,size);const ls=doc.splitTextToSize(String(t||''),w);doc.text(ls,x,y,{lineHeightFactor:lh/size});return y+ls.length*lh};try{doc.addImage(CCL_LOGO_B64,'PNG',M,24,100,50)}catch(e){}f(true,14);doc.text('ADVERTÊNCIA DISCIPLINAR',PW/2,46,{align:'center'});f(false,8);doc.text('RH-ADV-01 · Obra 202 - Implantação Auriverde',PW/2,62,{align:'center'});if(d.status==='CANCELADA'){doc.setTextColor(170,0,0);doc.setFont('helvetica','bold');doc.setFontSize(11);doc.text('DOCUMENTO CANCELADO',PW/2,75,{align:'center'})}doc.setDrawColor(50);doc.line(M,82,PW-M,82);let y=102;f(true,9.5);doc.text('IDENTIFICAÇÃO DO COLABORADOR',M,y);y+=15;doc.autoTable({startY:y,margin:{left:M,right:M},theme:'grid',styles:{font:'helvetica',fontSize:8.4,cellPadding:5,textColor:[20,20,20],lineColor:[70,70,70]},body:[['Colaborador',String(d.nome||'').toUpperCase()],['Matrícula',d.matricula||'—'],['Função',d.funcao||'—'],['Setor / Equipe',d.setor||'—'],['Admissão',rhAdvFmtDate(d.admissao)]],columnStyles:{0:{cellWidth:100,fontStyle:'bold'},1:{cellWidth:'auto'}}});y=doc.lastAutoTable.finalY+18;f(true,9.5);doc.text('DADOS DA OCORRÊNCIA',M,y);y+=15;doc.autoTable({startY:y,margin:{left:M,right:M},theme:'grid',styles:{font:'helvetica',fontSize:8.4,cellPadding:5,textColor:[20,20,20],lineColor:[70,70,70]},body:[['Data',rhAdvFmtDate(d.dataOcorrencia)],['Horário',d.hora||'—'],['Tipo',d.tipo],['Reincidência',d.reincidencia],['Local',d.local]],columnStyles:{0:{cellWidth:100,fontStyle:'bold'},1:{cellWidth:'auto'}}});y=doc.lastAutoTable.finalY+18;f(true,9.5);doc.text('REGISTRO E FUNDAMENTAÇÃO',M,y);y+=16;f(true,8.8);doc.text('Descrição objetiva dos fatos:',M,y);y+=13;y=line(d.fatos,M,y,W,9,13)+8;f(true,8.8);doc.text('Prerrogativa / enquadramento:',M,y);y+=13;y=line(d.prerrogativa,M,y,W,9,13)+8;f(true,8.8);doc.text('Orientação / conduta esperada:',M,y);y+=13;y=line(d.orientacao,M,y,W,9,13)+8;if(d.obs){f(true,8.8);doc.text('Observações adicionais:',M,y);y+=13;y=line(d.obs,M,y,W,9,13)+8}if(d.status==='CANCELADA'){f(true,8.8);doc.setTextColor(170,0,0);doc.text('Cancelamento:',M,y);y+=13;y=line(d.cancelado_motivo||'Cancelada administrativamente.',M,y,W,8.7,12)+8}if(y>PH-155){doc.addPage();y=58}doc.setDrawColor(70);doc.line(M,y,PW-M,y);y+=22;f(false,9);y=line('O colaborador declara ter tomado ciência do conteúdo desta advertência e das orientações apresentadas. A eventual recusa de assinatura poderá ser registrada no próprio documento, sem impedir o registro administrativo da ocorrência.',M,y,W,8.7,12)+28;const colW=(W-28)/2;doc.line(M,y,M+colW,y);doc.line(M+colW+28,y,PW-M,y);f(true,8.5);doc.text('Colaborador',M+colW/2,y+13,{align:'center'});doc.text('Responsável pela aplicação',M+colW+28+colW/2,y+13,{align:'center'});f(false,8);doc.text(String(d.nome||'').toUpperCase(),M+colW/2,y+26,{align:'center'});doc.text(d.responsavel||'',M+colW+28+colW/2,y+26,{align:'center'});y+=66;doc.line(M,y,M+colW,y);doc.line(M+colW+28,y,PW-M,y);f(true,8.5);doc.text('RH / DP',M+colW/2,y+13,{align:'center'});doc.text('Testemunha (se aplicável)',M+colW+28+colW/2,y+13,{align:'center'});f(false,8);doc.text(d.rh||'',M+colW/2,y+26,{align:'center'});f(false,7.3);doc.setTextColor(100);doc.text('Documento gerado pelo painel CONSTRU-X 360º · Registro: '+(d.id||'não salvo'),M,PH-18);doc.text('Data de emissão: '+new Date().toLocaleString('pt-BR'),PW-M,PH-18,{align:'right'});doc.save(`ADVERTENCIA_${String(d.matricula||d.nome).replace(/[^A-Za-z0-9_-]+/g,'_')}_${d.dataOcorrencia}.pdf`)}
 function rhAdvClear(){['rhAdvMat','rhAdvFuncao','rhAdvSetor','rhAdvAdmissao','rhAdvHora','rhAdvLocal','rhAdvFatos','rhAdvPrerrogativa','rhAdvOrientacao','rhAdvObs','rhAdvResponsavel','rhAdvRh'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});document.getElementById('rhAdvColab').value='';document.getElementById('rhAdvTipo').value='';document.getElementById('rhAdvReincidencia').value='NAO';document.getElementById('rhAdvDataOcorrencia').value=new Date().toISOString().slice(0,10);const box=document.getElementById('rhAdvColabResumo');if(box){box.style.display='none';box.innerHTML=''}}
-async function renderRhdpAdvertencia(){const sel=document.getElementById('rhAdvColab');if(!sel)return;const cs=rhAdvColabs();const opts='<option value="">Selecione o colaborador...</option>'+cs.map(c=>`<option value="${String(c.id??c.matricula??c.mat)}">${String(c.nome||'').toUpperCase()} · ${String(c.matricula??c.mat??'')}</option>`).join('');sel.innerHTML=opts;const fs=document.getElementById('rhAdvFiltroColab');if(fs)fs.innerHTML='<option value="">Todos</option>'+cs.map(c=>`<option value="${String(c.id??c.matricula??c.mat)}">${String(c.nome||'').toUpperCase()}</option>`).join('');sel.onchange=rhAdvFillColab;document.getElementById('rhAdvTipo').onchange=()=>{const t=document.getElementById('rhAdvTipo').value;document.getElementById('rhAdvPrerrogativa').value=RHADV_TEMPLATES[t]||'';if(t)document.getElementById('rhAdvOrientacao').value='O colaborador foi orientado a corrigir imediatamente a conduta registrada, observar as normas internas e procedimentos aplicáveis e evitar a repetição da ocorrência.'};document.getElementById('rhAdvDataAtual').textContent=new Date().toLocaleDateString('pt-BR');if(!document.getElementById('rhAdvDataOcorrencia').value)document.getElementById('rhAdvDataOcorrencia').value=new Date().toISOString().slice(0,10);document.getElementById('rhAdvSalvarBtn').onclick=rhAdvSalvarDb;document.getElementById('rhAdvGerarPdfBtn').onclick=()=>rhAdvGerarPDF(rhAdvCollect());document.getElementById('rhAdvLimparBtn').onclick=rhAdvClear;['rhAdvFiltroColab','rhAdvFiltroTipo','rhAdvFiltroStatus','rhAdvFiltroIni','rhAdvFiltroFim'].forEach(id=>{const e=document.getElementById(id);if(e)e.onchange=rhAdvRenderHist});try{await rhAdvLoadDb()}catch(e){console.error(e);RHADV_CACHE=[];rhAdvRenderHist();alert('O módulo de advertências ainda não conseguiu acessar a tabela rh_advertencias no Supabase. Execute o arquivo SQL_V25_ADVERTENCIAS_SUPABASE.sql uma única vez e abra o módulo novamente.Detalhe: '+(e.message||e))}}
+async function renderRhdpAdvertencia(){const sel=document.getElementById('rhAdvColab');if(!sel)return;const cs=rhAdvColabs();const opts='<option value="">Selecione o colaborador...</option>'+cs.map(c=>`<option value="${String(c.id??c.matricula??c.mat)}">${String(c.nome||'').toUpperCase()} · ${String(c.matricula??c.mat??'')}</option>`).join('');sel.innerHTML=opts;const fs=document.getElementById('rhAdvFiltroColab');if(fs)fs.innerHTML='<option value="">Todos</option>'+cs.map(c=>`<option value="${String(c.id??c.matricula??c.mat)}">${String(c.nome||'').toUpperCase()}</option>`).join('');sel.onchange=rhAdvFillColab;document.getElementById('rhAdvTipo').onchange=()=>{const t=document.getElementById('rhAdvTipo').value;document.getElementById('rhAdvPrerrogativa').value=RHADV_TEMPLATES[t]||'';if(t)document.getElementById('rhAdvOrientacao').value='O colaborador foi orientado a corrigir imediatamente a conduta registrada, observar as normas internas e procedimentos aplicáveis e evitar a repetição da ocorrência.'};document.getElementById('rhAdvDataAtual').textContent=new Date().toLocaleDateString('pt-BR');if(!document.getElementById('rhAdvDataOcorrencia').value)document.getElementById('rhAdvDataOcorrencia').value=new Date().toISOString().slice(0,10);document.getElementById('rhAdvSalvarBtn').onclick=rhAdvSalvarDb;document.getElementById('rhAdvGerarPdfBtn').onclick=()=>rhAdvGerarPDF(rhAdvCollect());document.getElementById('rhAdvLimparBtn').onclick=rhAdvClear;['rhAdvFiltroColab','rhAdvFiltroTipo','rhAdvFiltroStatus','rhAdvFiltroIni','rhAdvFiltroFim'].forEach(id=>{const e=document.getElementById(id);if(e)e.onchange=rhAdvRenderHist});try{await rhAdvLoadDb()}catch(e){console.error(e);RHADV_CACHE=[];rhAdvRenderHist();alert('O módulo de advertências ainda não conseguiu acessar a tabela rh_advertencias no Supabase. Execute o arquivo SQL_V25_ADVERTENCIAS_SUPABASE.sql uma única vez e abra o módulo novamente.\n\nDetalhe: '+(e.message||e))}}
 
 // RH/DP — SOLICITAÇÃO DE DEMISSÃO
 // ---------------------------------------------------------------
@@ -8552,7 +8542,7 @@ function rhDemValidate(data){
   if(!data.dataDeslig) faltando.push('Data do Desligamento');
   if(!data.tipo) faltando.push('Tipo de Desligamento');
   if(faltando.length){
-    alert('Preencha os campos obrigatórios antes de continuar:• ' + faltando.join('\n• '));
+    alert('Preencha os campos obrigatórios antes de continuar:\n\n• ' + faltando.join('\n• '));
     return false;
   }
   return true;
@@ -8942,7 +8932,7 @@ function rhMovValidate(data){
   if(needSetor && !data.setorNovo) faltando.push('Novo Setor / Equipe');
   if(needObra && !data.obraNova) faltando.push('Nova Obra (C. Custo)');
   if(faltando.length){
-    alert('Preencha os campos obrigatórios antes de continuar:• ' + faltando.join('\n• '));
+    alert('Preencha os campos obrigatórios antes de continuar:\n\n• ' + faltando.join('\n• '));
     return false;
   }
   return true;
@@ -9682,7 +9672,7 @@ async function epiStockDelete(id){
   if(!item)return;
 
   const saldo=epiNum(item.saldo);
-  const msg=`Excluir definitivamente o EPI do estoque?${item.descricao||'EPI'}${item.ca?` · C.A. ${item.ca}`:''}\nSaldo atual: ${saldo.toLocaleString('pt-BR',{maximumFractionDigits:2})}Esta ação remove o cadastro do estoque e não pode ser desfeita.`;
+  const msg=`Excluir definitivamente o EPI do estoque?\n\n${item.descricao||'EPI'}${item.ca?` · C.A. ${item.ca}`:''}\nSaldo atual: ${saldo.toLocaleString('pt-BR',{maximumFractionDigits:2})}\n\nEsta ação remove o cadastro do estoque e não pode ser desfeita.`;
   if(!confirm(msg))return;
 
   if(window.g360PreviewMode){
@@ -9700,7 +9690,7 @@ async function epiStockDelete(id){
 
   const del=await sb.from('epi_estoque').delete().eq('id',id);
   if(del.error){
-    alert('Não foi possível excluir este EPI do estoque.'+del.error.message+'Se o item já possuir movimentações ou termos vinculados, o banco pode impedir a exclusão para preservar o histórico.');
+    alert('Não foi possível excluir este EPI do estoque.\n\n'+del.error.message+'\n\nSe o item já possuir movimentações ou termos vinculados, o banco pode impedir a exclusão para preservar o histórico.');
     return;
   }
 
@@ -9879,7 +9869,7 @@ async function epiDeleteTerm(id){
   try{full=await epiGetTermFull(id);}catch(e){return alert('Erro ao carregar termo: '+(e?.message||e));}
   if(!full)return alert('Termo não encontrado.');
   const nome=full.term?.colaborador_nome||'colaborador';
-  if(!confirm(`Excluir o termo de EPI salvo para ${nome}?O estoque dos EPIs deste termo será devolvido automaticamente.`))return;
+  if(!confirm(`Excluir o termo de EPI salvo para ${nome}?\n\nO estoque dos EPIs deste termo será devolvido automaticamente.`))return;
 
   if(window.g360PreviewMode){
     for(const it of full.items){
@@ -10306,7 +10296,7 @@ async function addRow(){
 }
 async function delRow(id){
   const r0=rows.find(x=>String(x.id)===String(id));
-  const desc=r0?.descricao?`${r0.descricao}\n${brl(r0.valor)}`:'';
+  const desc=r0?.descricao?`\n\n${r0.descricao}\n${brl(r0.valor)}`:'';
   if(!confirm('Excluir definitivamente esta despesa do reembolso?'+desc))return;
   const r=await sb().from('rh_reembolso_lancamentos').delete().eq('id',id);
   if(r.error)return alert(r.error.message);
@@ -10706,7 +10696,7 @@ async function init(){
 window.g360ReembolsosV234={init,refresh:()=>loadRows(true)};
 
 let g360RhDashLastLoad=0,g360RhDashLastObra=null,g360RhDashPromise=null;
-async function loadExpenseDashboard(force=false){if(!sb())return;const _oid=obraId();if(!force&&g360RhDashLastObra===_oid&&Date.now()-g360RhDashLastLoad<60000)return;if(g360RhDashPromise)return g360RhDashPromise;g360RhDashPromise=(async()=>{const oid=obraId(),today=new Date(),keys=[];for(let i=5;i>=0;i--){const d=new Date(today.getFullYear(),today.getMonth()-i,1);keys.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`)}const start=keys[0]+'-01',end=new Date(today.getFullYear(),today.getMonth()+1,1).toISOString().slice(0,10);let cq=sb().from('rh_reembolso_competencias').select('id,competencia,obra_id').gte('competencia',start).lt('competencia',end),fq=sb().from('folga_campo_despesas').select('competencia,valor,colaborador_id,obra_id').gte('competencia',start).lt('competencia',end);if(oid){cq=cq.eq('obra_id',oid);fq=fq.eq('obra_id',oid)}const [cr,fr]=await Promise.all([cq,fq]);if(cr.error||fr.error){console.warn('Despesas RH:',cr.error||fr.error);return}const comps=cr.data||[],compIds=comps.map(x=>x.id).filter(Boolean);let rr={data:[],error:null};if(compIds.length){let rq=sb().from('rh_reembolso_lancamentos').select('valor,competencia_id,colaborador_id,obra_id').in('competencia_id',compIds);if(oid)rq=rq.eq('obra_id',oid);rr=await rq}if(rr.error){console.warn('Despesas RH:',rr.error);return}const compById=new Map(comps.map(x=>[String(x.id),monthKey(x.competencia)])),rrows=(rr.data||[]).map(x=>({...x,_competencia:compById.get(String(x.competencia_id))||''})),frows=fr.data||[],cur=keys[keys.length-1],rv=rrows.filter(x=>x._competencia===cur),fv=frows.filter(x=>monthKey(x.competencia)===cur),rTotal=rv.reduce((s,x)=>s+Number(x.valor||0),0),fTotal=fv.reduce((s,x)=>s+Number(x.valor||0),0);$('g360RhDespesasCompetencia')&&($('g360RhDespesasCompetencia').textContent=compLabel(cur));$('g360ExecDespesasCompetencia')&&($('g360ExecDespesasCompetencia').textContent=compLabel(cur));$('g360RhKpiReemb')&&($('g360RhKpiReemb').textContent=brl(rTotal));$('g360ExecKpiReemb')&&($('g360ExecKpiReemb').textContent=brl(rTotal));$('g360RhKpiFolga')&&($('g360RhKpiFolga').textContent=brl(fTotal));$('g360ExecKpiFolga')&&($('g360ExecKpiFolga').textContent=brl(fTotal));$('g360RhKpiDespTotal')&&($('g360RhKpiDespTotal').textContent=brl(rTotal+fTotal));$('g360ExecKpiDespTotal')&&($('g360ExecKpiDespTotal').textContent=brl(rTotal+fTotal));const pessoas=new Set(rv.map(x=>x.colaborador_id).filter(Boolean)).size;$('g360RhKpiReembPessoas')&&($('g360RhKpiReembPessoas').textContent=pessoas);$('g360ExecKpiPessoas')&&($('g360ExecKpiPessoas').textContent=pessoas);const rSerie=keys.map(k=>rrows.filter(x=>x._competencia===k).reduce((s,x)=>s+Number(x.valor||0),0)),fSerie=keys.map(k=>frows.filter(x=>monthKey(x.competencia)===k).reduce((s,x)=>s+Number(x.valor||0),0));const valueLabels={id:'g360RhValueLabels',afterDatasetsDraw(c){const x=c.ctx;x.save();x.fillStyle='#f5f5f5';x.textAlign='center';x.textBaseline='bottom';x.font='700 11px Arial';c.data.datasets.forEach((ds,di)=>{const meta=c.getDatasetMeta(di);meta.data.forEach((bar,i)=>{const v=Number(ds.data[i]||0);if(v<=0)return;x.fillText(brl(v),bar.x,bar.y-7)})});x.restore()}};window.g360DespCharts=window.g360DespCharts||{};['chRhDespesas','chExecDespesas'].forEach(cid=>{const ctx=$(cid);if(!ctx||!window.Chart)return;try{window.g360DespCharts[cid]?.destroy?.()}catch(_){}window.g360DespCharts[cid]=new Chart(ctx,{type:'bar',data:{labels:keys.map(compLabel),datasets:[{label:'Reembolsos',data:rSerie,backgroundColor:'#f5c518',borderColor:'#f5c518'},{label:'Folga de Campo',data:fSerie,backgroundColor:'#87CEEB',borderColor:'#87CEEB'}]},plugins:[valueLabels],options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:24}},plugins:{legend:{labels:{color:'#ddd'}}},scales:{x:{ticks:{color:'#aaa'}},y:{beginAtZero:true,grace:'12%',ticks:{color:'#aaa',callback:v=>'R$ '+Number(v).toLocaleString('pt-BR')}}}}})});g360RhDashLastObra=_oid;g360RhDashLastLoad=Date.now();})().finally(()=>{g360RhDashPromise=null});return g360RhDashPromise}
+async function loadExpenseDashboard(force=false){if(!sb())return;const _oid=obraId();if(!force&&g360RhDashLastObra===_oid&&Date.now()-g360RhDashLastLoad<60000)return;if(g360RhDashPromise)return g360RhDashPromise;g360RhDashPromise=(async()=>{const oid=obraId(),today=new Date(),keys=[];for(let i=5;i>=0;i--){const d=new Date(today.getFullYear(),today.getMonth()-i,1);keys.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`)}const start=keys[0]+'-01',end=new Date(today.getFullYear(),today.getMonth()+1,1).toISOString().slice(0,10);let cq=sb().from('rh_reembolso_competencias').select('id,competencia,obra_id').gte('competencia',start).lt('competencia',end),fq=sb().from('folga_campo_despesas').select('competencia,valor,colaborador_id,obra_id').gte('competencia',start).lt('competencia',end);if(oid){cq=cq.eq('obra_id',oid);fq=fq.eq('obra_id',oid)}const [cr,fr]=await Promise.all([cq,fq]);if(cr.error||fr.error){console.warn('Despesas RH:',cr.error||fr.error);return}const comps=cr.data||[],compIds=comps.map(x=>x.id).filter(Boolean);let rr={data:[],error:null};if(compIds.length){let rq=sb().from('rh_reembolso_lancamentos').select('valor,competencia_id,colaborador_id,obra_id').in('competencia_id',compIds);if(oid)rq=rq.eq('obra_id',oid);rr=await rq}if(rr.error){console.warn('Despesas RH:',rr.error);return}const compById=new Map(comps.map(x=>[String(x.id),monthKey(x.competencia)])),rrows=(rr.data||[]).map(x=>({...x,_competencia:compById.get(String(x.competencia_id))||''})),frows=fr.data||[],cur=keys[keys.length-1],rv=rrows.filter(x=>x._competencia===cur),fv=frows.filter(x=>monthKey(x.competencia)===cur),rTotal=rv.reduce((s,x)=>s+Number(x.valor||0),0),fTotal=fv.reduce((s,x)=>s+Number(x.valor||0),0);$('g360RhDespesasCompetencia')&&($('g360RhDespesasCompetencia').textContent=compLabel(cur));$('g360RhKpiReemb')&&($('g360RhKpiReemb').textContent=brl(rTotal));$('g360RhKpiFolga')&&($('g360RhKpiFolga').textContent=brl(fTotal));$('g360RhKpiDespTotal')&&($('g360RhKpiDespTotal').textContent=brl(rTotal+fTotal));$('g360RhKpiReembPessoas')&&($('g360RhKpiReembPessoas').textContent=new Set(rv.map(x=>x.colaborador_id).filter(Boolean)).size);const ctx=$('chRhDespesas');if(!ctx||!window.Chart)return;const rSerie=keys.map(k=>rrows.filter(x=>x._competencia===k).reduce((s,x)=>s+Number(x.valor||0),0)),fSerie=keys.map(k=>frows.filter(x=>monthKey(x.competencia)===k).reduce((s,x)=>s+Number(x.valor||0),0));chart?.destroy();const valueLabels={id:'g360RhValueLabels',afterDatasetsDraw(c){const x=c.ctx;x.save();x.fillStyle='#f5f5f5';x.textAlign='center';x.textBaseline='bottom';x.font='700 11px Arial';c.data.datasets.forEach((ds,di)=>{const meta=c.getDatasetMeta(di);meta.data.forEach((bar,i)=>{const v=Number(ds.data[i]||0);if(v<=0)return;x.fillText(brl(v),bar.x,bar.y-7)})});x.restore()}};chart=new Chart(ctx,{type:'bar',data:{labels:keys.map(compLabel),datasets:[{label:'Reembolsos',data:rSerie,backgroundColor:'#f5c518',borderColor:'#f5c518'},{label:'Folga de Campo',data:fSerie,backgroundColor:'#87CEEB',borderColor:'#87CEEB'}]},plugins:[valueLabels],options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:24}},plugins:{legend:{labels:{color:'#ddd'}}},scales:{x:{ticks:{color:'#aaa'}},y:{beginAtZero:true,grace:'12%',ticks:{color:'#aaa',callback:v=>'R$ '+Number(v).toLocaleString('pt-BR')}}}}}) ;g360RhDashLastObra=_oid;g360RhDashLastLoad=Date.now();})().finally(()=>{g360RhDashPromise=null});return g360RhDashPromise}
 window.g360RhDespesasV234={load:loadExpenseDashboard,refresh:()=>loadExpenseDashboard(true)};
 })();
 </script>
@@ -11408,8 +11398,8 @@ document.getElementById('motorBetaFileInput')?.addEventListener('change', (e)=>{
           ? 'Erro ao ler a planilha: ' + colabError.message
           : 'A planilha foi lida, mas não encontrei nem uma aba de colaboradores nem uma aba de contratos reconhecível.';
         if(colabError && colabError.diagnostics && colabError.diagnostics.length){
-          msg += 'Cabeçalhos encontrados na 1ª linha de cada aba:\n' + colabError.diagnostics.join('\n');
-          msg += 'Renomeie a coluna do nome do colaborador para algo como "NOME", ou a de contratos para incluir "FORNECEDOR" e "Nº CONTRATO", e tente novamente.';
+          msg += '\n\nCabeçalhos encontrados na 1ª linha de cada aba:\n' + colabError.diagnostics.join('\n');
+          msg += '\n\nRenomeie a coluna do nome do colaborador para algo como "NOME", ou a de contratos para incluir "FORNECEDOR" e "Nº CONTRATO", e tente novamente.';
         }
         alert(msg);
         return;
@@ -11485,7 +11475,7 @@ document.getElementById('motorBetaClearCacheBtn').addEventListener('click', ()=>
     alert('Não há nenhuma atualização de planilha salva neste navegador — o painel já está mostrando a base embutida no arquivo.');
     return;
   }
-  if(!confirm('Isso vai apagar do seu navegador os dados de Colaboradores, Contratos, Fechamento de Praça e Alojamentos salvos por atualizações anteriores da planilha, e recarregar a página com a base mais recente já embutida no arquivo.Solicitações de RH e Solicitações de Contrato NÃO são afetadas.Continuar?')) return;
+  if(!confirm('Isso vai apagar do seu navegador os dados de Colaboradores, Contratos, Fechamento de Praça e Alojamentos salvos por atualizações anteriores da planilha, e recarregar a página com a base mais recente já embutida no arquivo.\n\nSolicitações de RH e Solicitações de Contrato NÃO são afetadas.\n\nContinuar?')) return;
   chavesPlanilha.forEach(k => localStorage.removeItem(k));
   location.reload();
 });
@@ -13620,13 +13610,13 @@ async function efetivarContrato(id){
   if(!sienge||!sienge.trim()) return alert('O contrato só pode ir para a base definitiva após informar o registro no Sienge.');
   const fornecedor=reqFornecedor(it), tipo=FORMS[it.type]?.label||it.type, objeto=reqObjeto(it), total=reqValorTotal(it), mensal=reqValorMensal(it);
   if(reqIsProd() && /^[0-9a-f-]{36}$/i.test(id)){
-    if(!confirm(`Confirmar inclusão no Sienge e criar ${numero.trim()} na base definitiva?Fornecedor: ${fornecedor}\nObjeto: ${objeto}\nValor: R$ ${fmtMoney(total)}`)) return;
+    if(!confirm(`Confirmar inclusão no Sienge e criar ${numero.trim()} na base definitiva?\n\nFornecedor: ${fornecedor}\nObjeto: ${objeto}\nValor: R$ ${fmtMoney(total)}`)) return;
     const sb=window.g360SupabaseClient;
     const {data,error}=await sb.rpc('promover_solicitacao_para_contrato',{p_solicitacao_id:id,p_numero_contrato:numero.trim(),p_sienge_id:sienge.trim(),p_tipo_contrato:tipo,p_objeto:objeto,p_valor_contratado:total,p_valor_mensal:mensal,p_data_inicio:reqDate(it,'ini')||null,p_data_fim:reqDate(it,'fim')||null});
     if(error){alert('Não foi possível gerar o contrato: '+error.message);return;}
     it.status='CONVERTIDO';it.numeroContrato=numero.trim();it.siengeId=sienge.trim();saveSaved(arr);showToast('Contrato '+numero.trim()+' criado na base definitiva.');setTimeout(()=>location.reload(),500);return;
   }
-  if(!confirm(`Confirmar inclusão no Sienge e criar ${numero.trim()} na base definitiva?Fornecedor: ${fornecedor}\nObjeto: ${objeto}\nValor: R$ ${fmtMoney(total)}`)) return;
+  if(!confirm(`Confirmar inclusão no Sienge e criar ${numero.trim()} na base definitiva?\n\nFornecedor: ${fornecedor}\nObjeto: ${objeto}\nValor: R$ ${fmtMoney(total)}`)) return;
   let contratos=[]; try{ contratos=JSON.parse(localStorage.getItem('painel202_contratos_override_v2'))||[]; }catch(e){}
   if(!contratos.length){ try{ contratos=JSON.parse(document.getElementById('seedContratosData').textContent)||[]; }catch(e){} }
   if(contratos.some(c=>String(c.contrato||c.codigo||'').toUpperCase()===numero.trim().toUpperCase())) return alert('Já existe um contrato com este número.');
@@ -13917,7 +13907,7 @@ window.SolContratos = {
 </script>
 <div id="printReport" class="print-only"></div>
 
-
+<!-- Gestão 360º · Supabase/Auth/CRUD -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* CONFIGURAÇÃO SUPABASE — preencha com os dados do seu projeto */
@@ -15240,6 +15230,17 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
         return;
       }
 
+      if(kind==='funcionarios'&&!edit){
+        // Após uma INCLUSÃO bem-sucedida, fecha imediatamente a tela de cadastro.
+        modal.classList.remove('open');
+        try{
+          await pullAll();
+        }catch(refreshErr){
+          console.error('[G360] Colaborador salvo; falha apenas ao atualizar a tela:',refreshErr);
+        }
+        return;
+      }
+
       if(kind==='alojamentos'){
         if(alojSaveBtn)alojSaveBtn.innerHTML='✓ Gravado';
         if(alojSaveStatus){
@@ -16326,7 +16327,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
   }
 
   async function toggleUser(id){const u=user(id);if(!u||u.master)return;try{await adminApi('PATCH',{user_id:id,ativo:!u.ativo});toastPerm(u.ativo?'Usuário inativado.':'Usuário ativado.');await loadAll()}catch(err){toastPerm(err.message)}}
-  async function deleteUser(id){const u=user(id);if(!u||id===currentId)return;if(!confirm(`Excluir definitivamente o usuário ${u.nome||u.email}?A conta de login, perfil e permissões serão removidos.`))return;try{await adminApi('DELETE',{user_id:id});toastPerm('Usuário excluído definitivamente.');if(editingId===id)editingId=currentId;await loadAll()}catch(err){toastPerm(err.message)}}
+  async function deleteUser(id){const u=user(id);if(!u||id===currentId)return;if(!confirm(`Excluir definitivamente o usuário ${u.nome||u.email}?\n\nA conta de login, perfil e permissões serão removidos.`))return;try{await adminApi('DELETE',{user_id:id});toastPerm('Usuário excluído definitivamente.');if(editingId===id)editingId=currentId;await loadAll()}catch(err){toastPerm(err.message)}}
   document.getElementById('g360ObrasMarcarTodas')?.addEventListener('click',()=>{
     document.querySelectorAll('#g360ObrasMultiPanel input[type="checkbox"]').forEach(c=>c.checked=true);
     refreshObrasMultiLabel();
@@ -17448,7 +17449,7 @@ async function removeMeasurement(id){
   if(!canDelete()){alert('Seu usuário não possui permissão para excluir medições.');return}
   const r=state.rows.find(x=>String(x.id)===String(id));
   if(!r){alert('Medição não encontrada.');return}
-  const ok=confirm(`Excluir ${r.contrato} de ${state.period}?Essa ação removerá somente esta medição desta competência.`);
+  const ok=confirm(`Excluir ${r.contrato} de ${state.period}?\n\nEssa ação removerá somente esta medição desta competência.`);
   if(!ok)return;
   try{
     const q=await sb().from('fechamentos_praca').delete().eq('id',id).select('id').maybeSingle();
@@ -17464,7 +17465,7 @@ async function deleteSelected(){
   if(!canDelete()){alert('Seu usuário não possui permissão para excluir medições.');return}
   const ids=[...state.selected];
   if(!ids.length){alert('Marque pelo menos uma medição com X.');return}
-  const ok=confirm(`Excluir ${ids.length} medição(ões) marcada(s) de ${state.period}?Essa ação não exclui os contratos cadastrados; remove somente as medições desta competência.`);
+  const ok=confirm(`Excluir ${ids.length} medição(ões) marcada(s) de ${state.period}?\n\nEssa ação não exclui os contratos cadastrados; remove somente as medições desta competência.`);
   if(!ok)return;
   try{
     const q=await sb().from('fechamentos_praca').delete().in('id',ids).select('id');
@@ -17477,9 +17478,9 @@ async function deleteSelected(){
 async function clearCompetence(){
   if(!canDelete()){alert('Seu usuário não possui permissão para limpar competências.');return}
   if(!state.rows.length){alert('Esta competência já está vazia.');return}
-  const first=prompt(`ATENÇÃO: isso excluirá TODAS as ${state.rows.length} medições de ${state.period}.Digite LIMPAR para continuar:`);
+  const first=prompt(`ATENÇÃO: isso excluirá TODAS as ${state.rows.length} medições de ${state.period}.\n\nDigite LIMPAR para continuar:`);
   if(first!=='LIMPAR'){return}
-  const ok=confirm(`Confirma a limpeza COMPLETA de ${state.period}?Os contratos continuam cadastrados. Somente o fechamento desta competência será apagado.`);
+  const ok=confirm(`Confirma a limpeza COMPLETA de ${state.period}?\n\nOs contratos continuam cadastrados. Somente o fechamento desta competência será apagado.`);
   if(!ok)return;
   try{
     const oid=await getObraId(),comp=periodToDate(state.period);
@@ -19115,7 +19116,7 @@ window.g360BackupV135={generate,history,authMaster};
 })();
 </script>
 
-
+<!-- GESTAO360 V161: remove aviso acesso controlado + resolve obra do usuario por profile/usuario_obras -->
 
 <script id="g360-auditoria-v178">
 (function(){
@@ -19361,7 +19362,7 @@ window.g360BackupV135={generate,history,authMaster};
 })();
 </script>
 
-<script id="g360-sesmt-estoque-robusto-v195-js">
+<script id="g360-sesmt-estoque-robusto-v195">
 (function(){
 'use strict';
 
@@ -19568,7 +19569,7 @@ async function excluirMovimentacao(id){
   if(!mov)return alert('Movimentação não encontrada.');
   const epi=mov.epi_descricao||'EPI';
   const qtd=Number(mov.quantidade||0).toLocaleString('pt-BR',{maximumFractionDigits:2});
-  if(!confirm(`Excluir esta movimentação?${mov.tipo||''} · ${epi}\nQuantidade: ${qtd}\n${mov.colaborador_nome?`Colaborador: ${mov.colaborador_nome}\n`:''}\nO saldo do estoque será recalculado automaticamente.`))return;
+  if(!confirm(`Excluir esta movimentação?\n\n${mov.tipo||''} · ${epi}\nQuantidade: ${qtd}\n${mov.colaborador_nome?`Colaborador: ${mov.colaborador_nome}\n`:''}\nO saldo do estoque será recalculado automaticamente.`))return;
 
   try{
     if(window.g360PreviewMode){
@@ -19590,7 +19591,7 @@ async function excluirMovimentacao(id){
     }
     renderEstoqueFiltrado();await loadMovs();
     try{window.g360Audit?.('estoque_epi','EXCLUIR','epi_movimentacoes',String(id),epi,{tipo:mov.tipo,quantidade:mov.quantidade,colaborador:mov.colaborador_nome||null});}catch(e){}
-  }catch(e){alert('Não foi possível excluir a movimentação.'+(e?.message||e));}
+  }catch(e){alert('Não foi possível excluir a movimentação.\n\n'+(e?.message||e));}
 }
 
 function renderMovs(){
@@ -21016,7 +21017,7 @@ function bind(){
   };
 }
 
-window.g360RenderPatrimonioV240=async function(){try{await loadBase()}catch(e){console.error(e);alert('Patrimônio: '+(e.message||e)+'Execute o SQL V240 no Supabase.')}};
+window.g360RenderPatrimonioV240=async function(){try{await loadBase()}catch(e){console.error(e);alert('Patrimônio: '+(e.message||e)+'\n\nExecute o SQL V240 no Supabase.')}};
 window.g360RenderPatrimonioItensV240=window.g360RenderPatrimonioV240;
 
 function init(){
@@ -21055,7 +21056,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 
-
+<!-- V246: padronização global de digitação em MAIÚSCULAS, preservando e-mail, senha, URL/link e campos técnicos -->
 <style id="g360-uppercase-v246-style">
 /* Exibição em maiúsculas para campos textuais do sistema. Exceções sensíveis/técnicas permanecem inalteradas. */
 input:not([type="email"]):not([type="password"]):not([type="url"]):not([data-preserve-case="true"]),
@@ -21175,12 +21176,19 @@ function fcQuintoDiaUtilMes(isoBase,meses){
 }
 function fcSugestaoFutura(isoBase,meses){
  if(!isoBase||!meses)return {data:'',ciclos:0,baseCiclo:isoBase||''};
- // Nova regra: a próxima sugestão é sempre a data-base + UM ciclo completo.
- // Base = última folga/baixada real; se não houver histórico, admissão.
- // Não usa 5º dia útil e não pula automaticamente ciclos vencidos.
- const baseCiclo=String(isoBase).slice(0,10);
- const data=fcAddMonthsISO(baseCiclo,Number(meses));
- return {data,ciclos:1,baseCiclo};
+ const hoje=new Date();hoje.setHours(0,0,0,0);
+ let baseCiclo=String(isoBase).slice(0,10),ciclos=1,data='';
+ // Se a sugestão de um ciclo já passou, avança ciclos completos da periodicidade
+ // até encontrar a primeira baixada que ainda não venceu.
+ for(let i=0;i<240;i++){
+  data=fcQuintoDiaUtilMes(baseCiclo,meses);
+  if(!data)break;
+  const sug=new Date(data+'T00:00:00');
+  if(sug>=hoje)return {data,ciclos,baseCiclo};
+  baseCiclo=fcAddMonthsISO(baseCiclo,meses);
+  ciclos++;
+ }
+ return {data:'',ciclos,baseCiclo};
 }
 async function loadFolgaSuggestion(){
  const el=$('g360FcSugestao'),c=selectedColab();if(!el)return;
@@ -21204,143 +21212,193 @@ async function loadFolgaSuggestion(){
   const calcSug=fcSugestaoFutura(base,meses),proxIni=calcSug.data;
   if(!proxIni){el.innerHTML=`<b>${esc(c.nome)}</b> · Não foi possível calcular a próxima folga sugerida.`;return}
   // Regra fixa da Folga de Campo: 2x2 = 3 dias, 3x3 = 5 dias, 6x6 = 7 dias.
-  // Regra: data-base + periodicidade completa (2/3/6 meses) e início no data-base + ciclo do próprio mês resultante.
+  // Regra: data-base + periodicidade completa (2/3/6 meses) e início no 5º dia útil do próprio mês resultante.
   // Nunca replica o dia/período da folga anterior.
   const diasFolga=meses===2?3:(meses===3?5:(meses===6?7:null));
   if(!diasFolga){el.innerHTML=`<b>${esc(c.nome)}</b> · Periodicidade <b>${esc(c.periodicidade_baixada||meses+' MESES')}</b> sem quantidade de dias de folga configurada.`;return}
   const proxFim=(()=>{const d=new Date(proxIni+'T12:00:00');d.setDate(d.getDate()+diasFolga-1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`})();
   const baseTxt=last?`Última folga considerada: <b>${fcFmtDate(last.ini)} A ${fcFmtDate(last.fim)}</b> · Fonte: ${esc(last.fonte)}`:`Nenhuma folga anterior localizada · Data-base: <b>${fcFmtDate(base)}</b> · Fonte: <b>DATA DE ADMISSÃO</b>`;
-  el.innerHTML=`<b>${esc(c.nome)}</b> · ${baseTxt} · Periodicidade: <b>${esc(c.periodicidade_baixada||meses+' MESES')}</b> · Direito: <b>${diasFolga} DIAS</b> · <span style="color:#f5c518;font-weight:800">SUGESTÃO: ${fcFmtDate(proxIni)} A ${fcFmtDate(proxFim)} · INÍCIO NO 5º DIA ÚTIL</span>`;
+  el.innerHTML=`<b>${esc(c.nome)}</b> · ${baseTxt} · Periodicidade: <b>${esc(c.periodicidade_baixada||meses+' MESES')}</b> · Direito: <b>${diasFolga} DIAS</b> · <span style="color:#f5c518;font-weight:800">SUGESTÃO: ${fcFmtDate(proxIni)} A ${fcFmtDate(proxFim)}</span>`;
  }catch(e){console.error('Sugestão Folga de Campo:',e);el.textContent='Não foi possível calcular a sugestão. Verifique os dados do colaborador e o histórico de Folga de Campo.'}
 }
 
-/* V339 — padrão visual dos checkboxes do filtro de Sugestões */
-if(!document.getElementById('g360-fc-sug-check-v339')){
- const st=document.createElement('style');st.id='g360-fc-sug-check-v339';st.textContent=`
-#g360FcSugFiltModal input[type="checkbox"]{appearance:none;-webkit-appearance:none;width:17px;height:17px;min-width:17px;border:1px solid #777b82;border-radius:3px;background:#17191c;cursor:pointer;display:inline-grid;place-content:center;vertical-align:middle}
-#g360FcSugFiltModal input[type="checkbox"]:checked{background:#f5c518;border-color:#f5c518}
-#g360FcSugFiltModal input[type="checkbox"]:checked::after{content:"✓";color:#111;font-size:13px;font-weight:1000;line-height:1}
-#g360FcSugFiltModal input[type="checkbox"]:disabled{opacity:.45;cursor:not-allowed}
-#g360FcSugFiltModal{font-size:12px}
-#g360FcSugFiltModal label{font-size:11px!important;line-height:1.2!important;font-weight:600}
-#g360FcSugFiltModal section>div:first-child{font-size:12px!important}
-#g360FcSugFiltModal input[type="checkbox"]{width:13px;height:13px;min-width:13px}
-#g360FcSugFiltModal input[type="checkbox"]:checked::after{font-size:9px}
-#g360FcSugFiltModal input[type="checkbox"]:checked:disabled{opacity:1;background:#f5c518;border-color:#f5c518}`;document.head.appendChild(st);
-}
-let fcSugColabs=[];
-let fcSugCargaPromise=null;
-function fcSugDb(){
- const client=window.g360SupabaseClient;
- if(!client)throw new Error('Cliente Supabase principal não carregado.');
- return client;
-}
-async function fcSugCarregarBase(){
- if(fcSugColabs.length && Array.isArray(fcSugHistCache))return {colabs:fcSugColabs,hist:fcSugHistCache};
- if(fcSugCargaPromise)return fcSugCargaPromise;
- fcSugCargaPromise=(async()=>{
-  const db=fcSugDb();
-  const oid=(typeof obraId==='function'?obraId():null);
-  let cq=db.from('funcionarios').select('id,matricula,nome,funcao,tipo_contrato,status,admissao,depto,equipe,setor_equipe,usa_aloj,cidade,cidade_baixada,uf_baixada,distancia_baixada_km,periodicidade_baixada,ult_baixada').eq('status','ATIVO').order('nome');
-  let fq=db.from('folga_campo').select('colaborador_id,data_inicio,data_fim,competencia').not('data_inicio','is',null).order('data_inicio',{ascending:false});
-  let rq=db.from('rh_reembolso_cabecalhos').select('colaborador_id,periodo_folga_inicio,periodo_folga_fim,tipo_reembolso').eq('tipo_reembolso','FOLGA_DE_CAMPO').not('periodo_folga_inicio','is',null).order('periodo_folga_inicio',{ascending:false});
-  let lq=db.from('rh_reembolso_lancamentos').select('colaborador_id,data_despesa,descricao,categoria,observacao').not('data_despesa','is',null).order('data_despesa',{ascending:false});
-  if(oid){cq=cq.eq('obra_id',oid);fq=fq.eq('obra_id',oid);rq=rq.eq('obra_id',oid);lq=lq.eq('obra_id',oid)}
-  const [cr,fr,rr,lr]=await Promise.all([cq,fq,rq,lq]);
-  if(cr.error)throw cr.error;if(fr.error)throw fr.error;if(rr.error)throw rr.error;if(lr.error)throw lr.error;
-  fcSugColabs=(cr.data||[]).filter(c=>String(c.tipo_contrato||'').trim().toUpperCase()!=='PJ').map(c=>({...c,mat:c.matricula||'',setor_encarregado:c.setor_equipe||c.equipe||c.depto||'NÃO INFORMADO'}));
-  const hist=[];
-  (fr.data||[]).forEach(x=>hist.push({colaborador_id:x.colaborador_id,data_ini:x.data_inicio,data_fim:x.data_fim||x.data_inicio,fonte:'ÚLTIMA FOLGA'}));
-  (rr.data||[]).forEach(x=>hist.push({colaborador_id:x.colaborador_id,data_ini:x.periodo_folga_inicio,data_fim:x.periodo_folga_fim||x.periodo_folga_inicio,fonte:'REEMBOLSO — FOLGA DE CAMPO'}));
-  // Alguns reembolsos antigos/importados possuem a baixada identificada no lançamento,
-  // mesmo sem cabeçalho FOLGA_DE_CAMPO. Nesses casos a própria despesa comprova a baixada.
-  const baixadaPorColab=new Map();
-  (lr.data||[]).forEach(x=>{
-    const txt=[x.descricao,x.categoria,x.observacao].filter(Boolean).join(' ').toUpperCase();
-    if(!txt.includes('BAIXADA')||!x.colaborador_id||!x.data_despesa)return;
-    const k=String(x.colaborador_id),d=String(x.data_despesa).slice(0,10),at=baixadaPorColab.get(k);
-    if(!at)baixadaPorColab.set(k,{min:d,max:d});
-    else{if(d<at.min)at.min=d;if(d>at.max)at.max=d}
-  });
-  baixadaPorColab.forEach((v,k)=>hist.push({colaborador_id:k,data_ini:v.max,data_fim:v.max,fonte:'REEMBOLSO — BAIXADA'}));
-  fcSugHistCache=hist;
-  return {colabs:fcSugColabs,hist:fcSugHistCache};
- })().finally(()=>{fcSugCargaPromise=null});
- return fcSugCargaPromise;
-}
-async function fcSugCarregarColaboradores(){
- const r=await fcSugCarregarBase();
- return r.colabs;
-}
+/* V348 — Relatório de Sugestões de Folga reconstruído do zero.
+   Fonte única cadastral: public.colaboradores.
+   Histórico: public.folga_campo_projecoes.
+   Regra: KM define periodicidade/dias; última folga lançada prevalece sobre admissão;
+   sugestão no 5º dia útil do mês resultante, avançando ciclos já vencidos. */
+let fcSugV348Cache=null;
 
-function fcProximosSeisMeses(){
- const base=new Date();base.setDate(1);
- // Inclui o mês atual. Antes começava em +1 mês, por isso SET/2026
- // desaparecia do filtro e colaboradores vencidos em setembro não eram impressos.
- return Array.from({length:6},(_,i)=>{const d=new Date(base.getFullYear(),base.getMonth()+i,1,12);const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;return {ym,label:d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'}).toUpperCase()}})
+async function fcSugV348Carregar(force=false){
+ if(!force&&fcSugV348Cache)return fcSugV348Cache;
+ const db=sb(),oid=obraId();
+ let cq=db.from('funcionarios').select('id,matricula,nome,funcao,status,tipo_contrato,admissao,depto,equipe,setor_equipe,cidade,cidade_baixada,uf_baixada,distancia_baixada_km,periodicidade_baixada,ult_baixada,prox_baixada,usa_aloj').order('nome');
+ if(oid)cq=cq.eq('obra_id',oid);
+ let fq=db.from('folga_campo').select('colaborador_id,data_inicio,data_fim,competencia').not('data_inicio','is',null).order('data_inicio',{ascending:false});
+ if(oid)fq=fq.eq('obra_id',oid);
+ let rq=db.from('rh_reembolso_cabecalhos').select('colaborador_id,periodo_folga_inicio,periodo_folga_fim,tipo_reembolso,competencia_id').eq('tipo_reembolso','FOLGA_DE_CAMPO').not('periodo_folga_inicio','is',null).order('periodo_folga_inicio',{ascending:false});
+ if(oid)rq=rq.eq('obra_id',oid);
+ let lq=db.from('rh_reembolso_lancamentos').select('colaborador_id,competencia_id,data_despesa,descricao,categoria,observacao').not('data_despesa','is',null).order('data_despesa',{ascending:false});
+ if(oid)lq=lq.eq('obra_id',oid);
+ const [cr,fr,rr,lr]=await Promise.all([cq,fq,rq,lq]);
+ if(cr.error)throw cr.error;if(fr.error)throw fr.error;if(rr.error)throw rr.error;if(lr.error)throw lr.error;
+
+ const hist=[];
+ (fr.data||[]).forEach(x=>hist.push({colaborador_id:x.colaborador_id,data_ini:String(x.data_inicio||'').slice(0,10),data_fim:String(x.data_fim||x.data_inicio||'').slice(0,10),fonte:'FOLGA DE CAMPO'}));
+ (rr.data||[]).forEach(x=>hist.push({colaborador_id:x.colaborador_id,data_ini:String(x.periodo_folga_inicio||'').slice(0,10),data_fim:String(x.periodo_folga_fim||x.periodo_folga_inicio||'').slice(0,10),fonte:'REEMBOLSO — FOLGA DE CAMPO'}));
+
+ // PDFs/importações antigas: agrupa IDA/VOLTA BAIXADA por colaborador + competência.
+ const ev=new Map();
+ (lr.data||[]).forEach(x=>{
+   const txt=[x.descricao,x.categoria,x.observacao].filter(Boolean).join(' ').toUpperCase();
+   if(!txt.includes('BAIXADA')||!x.colaborador_id||!x.data_despesa)return;
+   const d=String(x.data_despesa).slice(0,10),k=String(x.colaborador_id)+'|'+String(x.competencia_id||d.slice(0,7));
+   const a=ev.get(k);
+   if(!a)ev.set(k,{colaborador_id:x.colaborador_id,min:d,max:d});
+   else{if(d<a.min)a.min=d;if(d>a.max)a.max=d}
+ });
+ ev.forEach(x=>hist.push({colaborador_id:x.colaborador_id,data_ini:x.min,data_fim:x.max,fonte:'REEMBOLSO — BAIXADA'}));
+
+ const ult=new Map();
+ hist.filter(x=>x.colaborador_id&&x.data_ini).sort((a,b)=>String(b.data_ini).localeCompare(String(a.data_ini))).forEach(h=>{const k=String(h.colaborador_id);if(!ult.has(k))ult.set(k,h)});
+
+ const colabs=(cr.data||[]).filter(c=>{
+   const st=String(c.status||'').trim().toUpperCase();
+   const aloj=String(c.usa_aloj??'').trim().toUpperCase();
+   const tipo=String(c.tipo_contrato||'').trim().toUpperCase();
+   return !['DESLIGADO','INATIVO','ABANDONO'].includes(st)
+     && ['SIM','S','TRUE','1'].includes(aloj)
+     && !tipo.includes('PJ');
+ }).map(c=>({...c,mat:c.matricula}));
+ fcSugV348Cache={colabs,ult};return fcSugV348Cache;
 }
-async function abrirFiltrosRelatorioSugestoes(){
- const antigo=document.getElementById('g360FcSugFiltModal');if(antigo)antigo.remove();
- let baseSug=[];try{baseSug=await fcSugCarregarColaboradores()}catch(e){console.error(e);return alert('Falha ao carregar colaboradores do Folga de Campo: '+(e?.message||e))}
- const grupos=[...new Set(baseSug.filter(c=>c.usa_aloj===true||String(c.usa_aloj||'').trim().toUpperCase()==='S'||String(c.usa_aloj||'').trim().toUpperCase()==='SIM').map(c=>String(c.setor_encarregado||'NÃO INFORMADO').toUpperCase()))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
- const meses=fcProximosSeisMeses();
- const ov=document.createElement('div');ov.id='g360FcSugFiltModal';ov.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:18px';
- ov.innerHTML=`<style>#g360FcSugFiltModal label{font-size:11px!important;line-height:1.2!important;font-weight:600!important}#g360FcSugFiltModal input[type="checkbox"]{width:13px!important;height:13px!important;min-width:13px!important;accent-color:#f5c518!important;margin:0!important}#g360FcSugFiltModal section>div:first-child{font-size:12px!important}</style><div style="width:min(760px,94vw);max-height:86vh;overflow:auto;background:#202327;border:1px solid #444;border-radius:9px;padding:20px;color:#fff;box-shadow:0 18px 60px #000">
-  <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start"><div><div style="font-weight:900;font-size:18px">RELATÓRIO DE SUGESTÕES DE FOLGA</div><div style="opacity:.72;margin-top:5px">Selecione Setor / Encarregado e o mês da folga sugerida.</div></div><button type="button" id="g360FcSugFiltFechar" class="clear-btn">FECHAR</button></div>
-  <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:18px;margin-top:18px">
-   <section style="border:1px solid #3b3f45;border-radius:7px;padding:14px"><div style="font-weight:900;margin-bottom:10px">SETOR / ENCARREGADO</div><label style="display:flex;gap:8px;align-items:center;margin-bottom:10px;font-weight:800"><input type="checkbox" id="g360FcSugSetTodos" checked> TODOS</label><div id="g360FcSugSetLista" style="display:grid;gap:7px">${grupos.map((g,i)=>`<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" class="g360FcSugSet" value="${esc(g)}" disabled> ${esc(g)}</label>`).join('')}</div></section>
-   <section style="border:1px solid #3b3f45;border-radius:7px;padding:14px"><div style="font-weight:900;margin-bottom:10px">MÊS DA SUGESTÃO</div><label style="display:flex;gap:8px;align-items:center;margin-bottom:10px;font-weight:800"><input type="checkbox" id="g360FcSugMesTodos" checked> TODOS OS 6 MESES</label><div id="g360FcSugMesLista" style="display:grid;gap:7px">${meses.map(m=>`<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" class="g360FcSugMes" value="${m.ym}" disabled> ${m.label}</label>`).join('')}</div></section>
-  </div>
-  <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px"><button type="button" id="g360FcSugFiltGerar" class="primary-btn">📄 GERAR RELATÓRIO</button></div>
- </div>`;
+function fcSugV348Meses(){
+ const b=new Date();b.setDate(1);
+ return [
+   {ym:'ATRASADAS',label:'⚠ ATRASADAS'},
+   ...Array.from({length:6},(_,i)=>{
+     const d=new Date(b.getFullYear(),b.getMonth()+i,1,12);
+     return{ym:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,label:d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'}).toUpperCase()}
+   })
+ ];
+}
+function fcSugV348Grupo(c){return String(c.setor_equipe||c.equipe||c.depto||'SEM SETOR / EQUIPE').trim().toUpperCase()||'SEM SETOR / EQUIPE'}
+function fcSugV348Cidade(c){const cid=String(c.cidade_baixada||c.cidade||'—').trim().toUpperCase(),uf=String(c.uf_baixada||'').trim().toUpperCase();return uf&& !cid.endsWith(' - '+uf)&&!cid.endsWith('/ '+uf)?`${cid} / ${uf}`:cid}
+function fcSugV348Regra(km){km=Number(km);if(!Number.isFinite(km)||km<=0)return null;if(km<=500)return{meses:2,dias:3,per:'2x2'};if(km<=1000)return{meses:3,dias:5,per:'3x3'};return{meses:6,dias:7,per:'6x6'}}
+function fcSugV348AbrirFiltro(dados){
+ document.getElementById('g360FcSugV348Modal')?.remove();
+ const grupos=[...new Set(dados.colabs.map(fcSugV348Grupo))].sort((a,b)=>a.localeCompare(b,'pt-BR')),meses=fcSugV348Meses();
+ const ov=document.createElement('div');ov.id='g360FcSugV348Modal';ov.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:16px';
+ ov.innerHTML=`<style>
+ #g360FcSugV348Modal .box{width:min(720px,94vw);max-height:84vh;overflow:auto;background:#202327;border:1px solid #444;border-radius:8px;padding:16px;color:#fff;box-shadow:0 18px 60px #000;font-size:11px}
+ #g360FcSugV348Modal .title{font-size:14px;font-weight:900} #g360FcSugV348Modal .sub{font-size:10px;opacity:.7;margin-top:3px}
+ #g360FcSugV348Modal .grid{display:grid;grid-template-columns:1.25fr 1fr;gap:14px;margin-top:14px} #g360FcSugV348Modal section{border:1px solid #3b3f45;border-radius:7px;padding:11px}
+ #g360FcSugV348Modal .st{font-size:10px;font-weight:900;margin-bottom:8px} #g360FcSugV348Modal label{font-size:10px!important;line-height:1.2!important;font-weight:600!important;display:flex;gap:6px;align-items:center}
+ #g360FcSugV348Modal input[type=checkbox]{appearance:none;-webkit-appearance:none;width:12px!important;height:12px!important;min-width:12px!important;margin:0!important;border:1px solid #777b82;border-radius:2px;background:#17191c;display:inline-grid;place-content:center}
+ #g360FcSugV348Modal input[type=checkbox]:checked{background:#f5c518;border-color:#f5c518} #g360FcSugV348Modal input[type=checkbox]:checked:after{content:'✓';font-size:8px;line-height:1;color:#111;font-weight:900}
+ #g360FcSugV348Modal .list{display:grid;gap:6px;max-height:240px;overflow:auto} #g360FcSugV348Modal .gen{border:1px solid #d6aa00;background:#f5c518;color:#111;border-radius:5px;padding:8px 13px;font-size:11px;font-weight:900;cursor:pointer}
+ @media(max-width:650px){#g360FcSugV348Modal .grid{grid-template-columns:1fr}}
+ </style><div class="box"><div style="display:flex;justify-content:space-between;gap:12px"><div><div class="title">RELATÓRIO DE SUGESTÕES DE FOLGA</div><div class="sub">Fonte: base operacional DTW · ${dados.colabs.length} colaboradores elegíveis</div></div><button type="button" id="g360FcSugV348Fechar" class="clear-btn">FECHAR</button></div>
+ <div class="grid"><section><div class="st">SETOR / EQUIPE</div><label style="margin-bottom:8px"><input type="checkbox" id="g360FcSugV348SetTodos" checked> TODOS</label><div class="list">${grupos.map(g=>`<label><input type="checkbox" class="g360FcSugV348Set" value="${esc(g)}"> ${esc(g)}</label>`).join('')}</div></section>
+ <section><div class="st">MÊS DA SUGESTÃO</div><label style="margin-bottom:8px"><input type="checkbox" id="g360FcSugV348MesTodos" checked> ATRASADAS + PRÓXIMOS 6 MESES</label><div class="list">${meses.map(m=>`<label><input type="checkbox" class="g360FcSugV348Mes" value="${m.ym}"> ${m.label}</label>`).join('')}</div></section></div>
+ <div style="display:flex;justify-content:flex-end;margin-top:14px"><button type="button" id="g360FcSugV348Gerar" class="gen">📄 GERAR RELATÓRIO</button></div></div>`;
  document.body.appendChild(ov);
- const setTodos=ov.querySelector('#g360FcSugSetTodos'),sets=[...ov.querySelectorAll('.g360FcSugSet')],mesTodos=ov.querySelector('#g360FcSugMesTodos'),ms=[...ov.querySelectorAll('.g360FcSugMes')];
- setTodos.onchange=()=>{sets.forEach(x=>{x.disabled=setTodos.checked;if(setTodos.checked)x.checked=false})};
- mesTodos.onchange=()=>{ms.forEach(x=>{x.disabled=mesTodos.checked;if(mesTodos.checked)x.checked=false})};
- ov.querySelector('#g360FcSugFiltFechar').onclick=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)ov.remove()};
- ov.querySelector('#g360FcSugFiltGerar').onclick=async()=>{const setores=setTodos.checked?null:sets.filter(x=>x.checked).map(x=>x.value),mesesSel=mesTodos.checked?meses.map(x=>x.ym):ms.filter(x=>x.checked).map(x=>x.value);if(setores&&setores.length===0)return alert('Selecione pelo menos um Setor / Encarregado ou marque TODOS.');if(!mesesSel.length)return alert('Selecione pelo menos um mês ou marque TODOS OS 6 MESES.');ov.remove();await gerarRelatorioSugestoesPdf({setores,meses:mesesSel,mesesTodos:mesTodos.checked})};
+ const st=ov.querySelector('#g360FcSugV348SetTodos'),sets=[...ov.querySelectorAll('.g360FcSugV348Set')],mt=ov.querySelector('#g360FcSugV348MesTodos'),ms=[...ov.querySelectorAll('.g360FcSugV348Mes')];
+ // TODOS passa a representar seleção real: marca/desmarca todos, sem bloquear os itens individuais.
+ const marcarTodosSetores=v=>sets.forEach(x=>x.checked=v),marcarTodosMeses=v=>ms.forEach(x=>x.checked=v);
+ marcarTodosSetores(true);marcarTodosMeses(true);
+ st.onchange=()=>marcarTodosSetores(st.checked);mt.onchange=()=>marcarTodosMeses(mt.checked);
+ sets.forEach(x=>x.onchange=()=>{st.checked=sets.length>0&&sets.every(i=>i.checked)});
+ ms.forEach(x=>x.onchange=()=>{mt.checked=ms.length>0&&ms.every(i=>i.checked)});
+ ov.querySelector('#g360FcSugV348Fechar').onclick=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)ov.remove()};
+ ov.querySelector('#g360FcSugV348Gerar').onclick=()=>{const setores=sets.filter(x=>x.checked).map(x=>x.value),selMes=ms.filter(x=>x.checked).map(x=>x.value);if(!setores.length)return alert('Selecione pelo menos um Setor / Equipe.');if(!selMes.length)return alert('Selecione pelo menos um mês.');ov.remove();fcSugV348Pdf(dados,{setores,meses:selMes})};
 }
-async function gerarRelatorioSugestoes(){abrirFiltrosRelatorioSugestoes()}
-async function fcSugPrefetchHistorico(){
- try{const r=await fcSugCarregarBase();return r.hist}catch(e){console.warn('Pré-carga relatório de sugestões:',e);return []}
-}
-
-async function gerarRelatorioSugestoesPdf(filtros){
- const btn=$('g360FcRelSugestoes');
+async function gerarRelatorioSugestoes(){const btn=$('g360FcRelSugestoes');try{if(btn){btn.disabled=true;btn.textContent='⏳ Carregando...'}const d=await fcSugV348Carregar();fcSugV348AbrirFiltro(d)}catch(e){console.error('Sugestões V348:',e);alert('Falha ao carregar Relatório de Sugestões: '+(e?.message||e))}finally{if(btn){btn.disabled=false;btn.textContent='📄 Relatório de sugestões'}}}
+function fcSugV348Pdf(dados,filtros){
  try{
-  if(!window.jspdf?.jsPDF||typeof window.jspdf.jsPDF!=='function')throw new Error('Biblioteca PDF não carregada.');
-  if(btn){btn.disabled=true;btn.textContent='⏳ Gerando...'}
-  const baseSug=fcSugColabs.length?fcSugColabs:await fcSugCarregarColaboradores();
-  // Relatório usa exclusivamente a base cadastral confirmada do módulo de sugestões.
-  const elegiveis=baseSug.filter(c=>(c.usa_aloj===true||String(c.usa_aloj||'').trim().toUpperCase()==='S'||String(c.usa_aloj||'').trim().toUpperCase()==='SIM') && (!filtros?.setores || filtros.setores.includes(String(c.setor_encarregado||'NÃO INFORMADO').toUpperCase())));
-  const hist=Array.isArray(fcSugHistCache)?fcSugHistCache:[];
-  const ult=new Map();
-  const addHist=(id,ini,fim,fonte)=>{if(!id||!ini)return;const k=String(id),at=ult.get(k);if(!at||String(ini)>String(at.ini))ult.set(k,{ini,fim:fim||ini,fonte})};
-  hist.forEach(x=>addHist(x.colaborador_id,x.data_ini,x.data_fim,x.fonte||'ÚLTIMA FOLGA'));
-  const linhas=[],pend=[];
-  elegiveis.forEach(orig=>{
-   const c=orig;
-   const meses=fcPeriodicidadeMeses(c.periodicidade_baixada),last=ult.get(String(c.id)),base=last?.ini||c.ult_baixada||c.admissao||'',fonte=last?.fonte||(c.ult_baixada?'ÚLTIMA FOLGA':'ADMISSÃO');
-   if(!base){pend.push([c.matricula||'—',String(c.nome||'').toUpperCase(),'SEM DATA-BASE']);return}
-   if(!meses||![2,3,6].includes(meses)){pend.push([c.matricula||'—',String(c.nome||'').toUpperCase(),'SEM PERIODICIDADE 2x2 / 3x3 / 6x6']);return}
-   const calcSug=fcSugestaoFutura(String(base).slice(0,10),meses),ini=calcSug.data;if(!ini){pend.push([c.matricula||'—',String(c.nome||'').toUpperCase(),'ERRO NO CÁLCULO']);return}
-   if(filtros?.meses?.length && !filtros.meses.includes(String(ini).slice(0,7)))return;
-   const dias=meses===2?3:meses===3?5:7,fim=addDaysISO(ini,dias-1),ret=addDaysISO(fim,1);
-   linhas.push({nome:String(c.nome||'').toUpperCase(),grupo:String(c.setor_encarregado||'NÃO INFORMADO').toUpperCase(),row:[c.matricula||'—',String(c.nome||'').toUpperCase(),String(c.funcao||'—').toUpperCase(),fcFmtDate(c.admissao),String(c.cidade_baixada||c.cidade||'—').toUpperCase()+(c.uf_baixada?' / '+String(c.uf_baixada).toUpperCase():''),c.distancia_baixada_km??'—',`${meses}x${meses}`,fonte,fcFmtDate(ini),fcFmtDate(fim),fcFmtDate(ret),'','']});
+  if(!window.jspdf?.jsPDF)throw new Error('Biblioteca PDF não carregada.');
+  const linhas=[],pend=[],hoje=new Date().toISOString().slice(0,10),mesAtual=hoje.slice(0,7);
+  dados.colabs.forEach(c=>{
+   const grupo=fcSugV348Grupo(c);if(filtros.setores&&!filtros.setores.includes(grupo))return;
+   const regra=fcSugV348Regra(c.distancia_baixada_km);if(!regra){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'SEM KM CADASTRADO']);return}
+   const h=dados.ult.get(String(c.id)),base=(h?.data_ini||c.admissao||'').slice(0,10);
+   const fonte=h?(h.fonte||'ÚLTIMA FOLGA'):'ADMISSÃO';
+   if(!base){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'SEM ADMISSÃO / HISTÓRICO']);return}
+   const sug=fcSugestaoFutura(base,regra.meses),ini=sug?.data||'';
+   if(!ini){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'ERRO NO CÁLCULO']);return}
+   const atrasada=ini<hoje;
+   const selecionada=atrasada?filtros.meses.includes('ATRASADAS'):filtros.meses.includes(ini.slice(0,7));
+   if(!selecionada)return;
+   const fim=addDaysISO(ini,regra.dias-1),ret=addDaysISO(fim,1);
+   linhas.push({
+     grupo,nome:String(c.nome||'').toUpperCase(),atrasada,
+     row:[
+       c.mat||'—',
+       String(c.nome||'').toUpperCase(),
+       String(c.funcao||'—').toUpperCase(),
+       fcFmtDate(c.admissao),
+       fcSugV348Cidade(c),
+       Number(c.distancia_baixada_km).toLocaleString('pt-BR'),
+       regra.per,
+       fonte,
+       atrasada?'ATRASADA':'PROGRAMADA',
+       fcFmtDate(ini),
+       fcFmtDate(fim),
+       fcFmtDate(ret),
+       '',
+       ''
+     ]
+   });
   });
-  linhas.sort((a,b)=>a.grupo.localeCompare(b.grupo,'pt-BR')||a.nome.localeCompare(b.nome,'pt-BR'));
-  pend.sort((a,b)=>String(a[1]).localeCompare(String(b[1]),'pt-BR'));
+  linhas.sort((a,b)=>(b.atrasada-a.atrasada)||a.grupo.localeCompare(b.grupo,'pt-BR')||a.nome.localeCompare(b.nome,'pt-BR'));
   const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'}),PW=doc.internal.pageSize.getWidth();
-  const cabecalho=()=>{try{if(typeof CCL_LOGO_B64!=='undefined')doc.addImage(CCL_LOGO_B64,'PNG',12,8,35,17)}catch(_){ }doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('RELATÓRIO DE SUGESTÃO DE BAIXADAS',PW/2,15,{align:'center'});doc.setFont('helvetica','normal');doc.setFontSize(8);const setTxt=filtros?.setores?.length?filtros.setores.join(' | '):'TODOS OS SETORES / ENCARREGADOS';const mesTxt=(filtros?.meses||[]).map(ym=>{const [y,m]=ym.split('-').map(Number);return new Date(y,m-1,1,12).toLocaleDateString('pt-BR',{month:'short',year:'numeric'}).toUpperCase()}).join(' | ');doc.text(`Obra 202 · ${setTxt}`,PW/2,21,{align:'center',maxWidth:PW-25});doc.text(`Meses: ${mesTxt} · 2x2=3 dias | 3x3=5 dias | 6x6=7 dias · data-base + ciclo`,PW/2,26,{align:'center',maxWidth:PW-25});};
-  cabecalho();let yAtual=31;
-  const grupos=[...new Set(linhas.map(x=>x.grupo))];
-  grupos.forEach((grupo,idx)=>{const itens=linhas.filter(x=>x.grupo===grupo);if(idx>0&&yAtual>155){doc.addPage();cabecalho();yAtual=31}doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(0);doc.setFillColor(235,235,235);doc.rect(8,yAtual,PW-16,7,'F');doc.text(grupo,10,yAtual+4.8);yAtual+=9;doc.autoTable({startY:yAtual,margin:{left:8,right:8,bottom:14},head:[['MAT.','COLABORADOR','FUNÇÃO','ADMISSÃO','CIDADE / UF','KM','PER.','BASE','INÍCIO','FIM','RETORNO','SAÍDA','RETORNO']],body:itens.map(x=>x.row),theme:'grid',styles:{font:'helvetica',fontSize:5.9,cellPadding:1.25,textColor:[20,20,20],lineColor:[90,90,90],lineWidth:.15,valign:'middle'},headStyles:{fontStyle:'bold',fillColor:[245,197,24],textColor:[0,0,0],halign:'center'},columnStyles:{0:{cellWidth:10,halign:'center'},1:{cellWidth:34},2:{cellWidth:30},3:{cellWidth:17,halign:'center'},4:{cellWidth:28},5:{cellWidth:10,halign:'center'},6:{cellWidth:10,halign:'center'},7:{cellWidth:16,halign:'center'},8:{cellWidth:17,halign:'center'},9:{cellWidth:17,halign:'center'},10:{cellWidth:17,halign:'center'},11:{cellWidth:19,halign:'center'},12:{cellWidth:19,halign:'center'}},showHead:'everyPage'});yAtual=doc.lastAutoTable.finalY+6;});
-  if(pend.length){let y=doc.lastAutoTable.finalY+8;if(y>170){doc.addPage();y=15}doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text('PENDÊNCIAS',8,y);doc.autoTable({startY:y+3,margin:{left:8,right:8,bottom:14},head:[['MAT.','COLABORADOR','MOTIVO']],body:pend,theme:'grid',styles:{font:'helvetica',fontSize:7,cellPadding:1.8},headStyles:{fontStyle:'bold',fillColor:[230,230,230],textColor:[0,0,0]},columnStyles:{0:{cellWidth:22},1:{cellWidth:90},2:{cellWidth:'auto'}}})}
-  const total=doc.internal.getNumberOfPages();for(let i=1;i<=total;i++){doc.setPage(i);doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(90);doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')} · ${linhas.length} sugestões · ${pend.length} pendências`,8,202);doc.text(`Página ${i}/${total}`,PW-8,202,{align:'right'})}
+  const cab=()=>{
+    try{if(typeof CCL_LOGO_B64!=='undefined')doc.addImage(CCL_LOGO_B64,'PNG',12,8,35,17)}catch(_){}
+    doc.setTextColor(0);doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('RELATÓRIO DE SUGESTÃO DE BAIXADAS',PW/2,15,{align:'center'});
+    doc.setFont('helvetica','normal');doc.setFontSize(7.5);
+    const st=filtros.setores?.length?filtros.setores.join(' | '):'TODOS OS SETORES / ENCARREGADOS';
+    const mt=filtros.meses.map(ym=>ym==='ATRASADAS'?'ATRASADAS':(()=>{const[y,m]=ym.split('-').map(Number);return new Date(y,m-1,1,12).toLocaleDateString('pt-BR',{month:'short',year:'numeric'}).toUpperCase()})()).join(' | ');
+    doc.text(`Obra 202 · ${st}`,PW/2,21,{align:'center',maxWidth:PW-25});
+    doc.text(`Períodos: ${mt} · Regra: data-base + ciclo exato (2/3/6 meses). Baixadas vencidas permanecem como ATRASADAS até novo registro real.`,PW/2,26,{align:'center',maxWidth:PW-25});
+  };
+  cab();let y=31;const gs=[...new Set(linhas.map(x=>x.grupo))];
+  if(!linhas.length){doc.setFont('helvetica','bold');doc.setFontSize(11);doc.text('NENHUMA SUGESTÃO ENCONTRADA PARA OS FILTROS SELECIONADOS.',PW/2,45,{align:'center'})}
+  gs.forEach((g,i)=>{
+    if(i&&y>155){doc.addPage();cab();y=31}
+    const itens=linhas.filter(x=>x.grupo===g);
+    doc.setFillColor(235);doc.rect(6,y,PW-12,7,'F');doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.text(g,8,y+4.8);y+=9;
+    doc.autoTable({
+      startY:y,margin:{left:6,right:6,bottom:14},
+      head:[['MAT.','COLABORADOR','FUNÇÃO','ADMISSÃO','CIDADE / UF','KM','PER.','BASE','SITUAÇÃO','INÍCIO','FIM','RETORNO','SAÍDA','RETORNO']],
+      body:itens.map(x=>x.row),theme:'grid',
+      styles:{font:'helvetica',fontSize:5.25,cellPadding:1.05,textColor:[20,20,20],lineColor:[90,90,90],lineWidth:.12,valign:'middle'},
+      headStyles:{fontStyle:'bold',fillColor:[245,197,24],textColor:[0,0,0],halign:'center'},
+      columnStyles:{
+        0:{cellWidth:9,halign:'center'},1:{cellWidth:34},2:{cellWidth:31},3:{cellWidth:15,halign:'center'},
+        4:{cellWidth:27},5:{cellWidth:10,halign:'center'},6:{cellWidth:10,halign:'center'},7:{cellWidth:24},
+        8:{cellWidth:17,halign:'center'},9:{cellWidth:15,halign:'center'},10:{cellWidth:15,halign:'center'},
+        11:{cellWidth:15,halign:'center'},12:{cellWidth:15},13:{cellWidth:15}
+      },
+      didParseCell:data=>{
+        if(data.section==='body'&&data.column.index===8&&String(data.cell.raw)==='ATRASADA'){
+          data.cell.styles.fontStyle='bold';
+        }
+      },
+      showHead:'everyPage'
+    });y=doc.lastAutoTable.finalY+6
+  });
+  if(pend.length){
+    if(y>165){doc.addPage();y=15}
+    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text('PENDÊNCIAS CADASTRAIS',8,y);
+    doc.autoTable({startY:y+3,margin:{left:8,right:8,bottom:14},head:[['MAT.','COLABORADOR','MOTIVO']],body:pend,theme:'grid',styles:{font:'helvetica',fontSize:7,cellPadding:1.8},headStyles:{fontStyle:'bold',fillColor:[230,230,230],textColor:[0,0,0]}})
+  }
+  const total=doc.internal.getNumberOfPages();
+  for(let i=1;i<=total;i++){doc.setPage(i);doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(90);doc.text(`Fonte: DTW · funcionários + histórico real de Folga/Reembolso/Baixada · ${linhas.length} sugestões · ${pend.length} pendências`,8,202);doc.text(`Página ${i}/${total}`,PW-8,202,{align:'right'})}
   doc.save(`RELATORIO_SUGESTAO_BAIXADAS_${new Date().toISOString().slice(0,10)}.pdf`);
- }catch(e){console.error('Relatório sugestões de baixada:',e);alert('Não foi possível gerar o relatório: '+(e?.message||e))}
- finally{if(btn){btn.disabled=false;btn.textContent='📄 Relatório de sugestões'}}
+ }catch(e){console.error('PDF sugestões:',e);alert('Não foi possível gerar o relatório: '+(e?.message||e))}
 }
+async function fcSugPrefetchHistorico(){return []}
+
 async function loadMeta(){const c=selectedColab();if(!c||!currentMonth){fillMeta(null);return null}let q=sb().from('folga_campo').select('*').eq('colaborador_id',c.id).eq('competencia',compDate(currentMonth)).order('created_at',{ascending:false}).limit(1).maybeSingle();const oid=obraId();if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error)throw r.error;fillMeta(r.data||null);return r.data||null}
 function calcReturn(){const fim=$('g360FcDevDataFim')?.value||'';$('g360FcDevDataRetorno').value=fim?addDaysISO(fim,1):''}
 async function saveMeta(extra={},opts={}){const c=selectedColab();if(!currentMonth)throw new Error('Selecione uma competência.');if(!c)throw new Error('Selecione o colaborador.');const ini=$('g360FcDevDataIni').value,fim=$('g360FcDevDataFim').value,ret=fim?addDaysISO(fim,1):'',km=Number($('g360FcDevKm').value||0),ufResid=String($('g360FcDevResidUf')?.value||'').trim().toUpperCase(),cidadeResid=String($('g360FcDevResidCidade')?.value||'').trim().toUpperCase();if(!opts.allowPartial){if(!ini||!fim)throw new Error('Informe o período da baixada.');if(fim<ini)throw new Error('A data final não pode ser anterior à data inicial.');if(!(km>0))throw new Error('Informe a distância em km.');if(!ufResid||!cidadeResid)throw new Error('Informe a UF e a cidade da residência.')}const dias=ini&&fim?calcDays(ini,fim):null;const row={obra_id:obraId(),cidade_residencia:cidadeResid||null,uf_residencia:ufResid||null,colaborador_id:c.id,matricula:String(c.matricula||''),colaborador_nome:String(c.nome||'').toUpperCase(),competencia:compDate(currentMonth),data_inicio:ini||null,data_saida:ini||null,data_fim:fim||null,data_retorno:ret||null,distancia_km:km>0?km:null,dias,status:'PROGRAMADA',incluido:true,tipo_folga:'PROGRAMADA',updated_at:new Date().toISOString(),...extra};let existing=currentMeta?.id?{data:{id:currentMeta.id}}:await sb().from('folga_campo').select('id').eq('obra_id',obraId()).eq('colaborador_id',c.id).eq('competencia',compDate(currentMonth)).order('created_at',{ascending:false}).limit(1).maybeSingle();if(existing.error)throw existing.error;let r;if(existing.data?.id)r=await sb().from('folga_campo').update(row).eq('id',existing.data.id);else r=await sb().from('folga_campo').insert(row).select().single();if(r.error)throw r.error;await loadMeta();return currentMeta}
@@ -21373,7 +21431,7 @@ function exportPdfPessoa(key){const pr=rows.filter(r=>String(r.colaborador_id||r
 };
 const prep=pr.map(r=>{const d=doc.splitTextToSize(pdfDesc(r),widths[1]-10).slice(0,3),lines=Math.max(1,d.length);return{r,d,rowH:lines===1?25:(lines===2?36:47)}}),bodyH=prep.reduce((sum,x)=>sum+x.rowH,0);doc.setFillColor(...peach);doc.rect(left,tableY,fullW,headH,'FD');doc.rect(left,tableY+headH,fullW,bodyH);for(let i=1;i<xs.length-1;i++)doc.line(xs[i],tableY,xs[i],tableY+headH+bodyH);doc.setFont('helvetica','bold');doc.setFontSize(8.4);['ITEM','DESCRIÇÃO','VALOR'].forEach((h,i)=>doc.text(h,(xs[i]+xs[i+1])/2,tableY+20,{align:'center'}));doc.setFont('helvetica','normal');doc.setFontSize(bodyFont);if(typeof doc.setCharSpace==='function')doc.setCharSpace(0);let y=tableY+headH;prep.forEach(({r,d,rowH},i)=>{const cy=y+rowH/2+bodyFont*.32;if(i>0){doc.setLineWidth(.15);doc.line(left,y,left+fullW,y)}doc.text(String(i+1).padStart(2,'0'),(xs[0]+xs[1])/2,cy,{align:'center'});const ls=bodyFont+2;if(typeof doc.setCharSpace==='function')doc.setCharSpace(0);doc.text(d,xs[1]+5,cy-((d.length-1)*ls/2));doc.text('R$',xs[2]+5,cy);doc.text(fmtMoney(r.valor),xs[3]-5,cy,{align:'right'});y+=rowH});const total=pr.reduce((sum,r)=>sum+Number(r.valor||0),0),ty=tableY+headH+bodyH;doc.setLineWidth(.3);doc.rect(xs[2],ty,widths[2],28);doc.setFont('helvetica','bold');doc.text('R$',xs[2]+5,ty+18);doc.text(fmtMoney(total),xs[3]-5,ty+18,{align:'right'});doc.save(`folga_campo_${String(nome).replace(/[^A-Za-z0-9À-ÿ]+/g,'_')}_${currentMonth}.pdf`)}
 function sheetName(s,used){let n=String(s||'Pessoa').replace(/[\\\/?*\[\]:]/g,' ').replace(/\s+/g,' ').trim().slice(0,31)||'Pessoa',base=n,i=2;while(used.has(n))n=(base.slice(0,27)+' '+i++).slice(0,31);used.add(n);return n}function exportExcel(){if(!rows.length)return alert('Não há despesas nesta competência.');if(!window.XLSX?.utils)return alert('Biblioteca Excel não carregada.');const wb=XLSX.utils.book_new(),used=new Set(),groups={};rows.forEach(r=>{const k=String(r.colaborador_id||r.colaborador_nome);if(!groups[k])groups[k]={nome:r.colaborador_nome,funcao:r.funcao||'',itens:[]};groups[k].itens.push(r)});const pessoas=Object.values(groups).sort((a,b)=>String(a.nome).localeCompare(String(b.nome),'pt-BR')),geral=[['PAGAMENTO DE DESPESAS - FOLGA DE CAMPO'],[],['ORDEM','NOME COLABORADOR','FUNÇÃO','VALOR'],...pessoas.map((g,i)=>[String(i+1).padStart(2,'0'),g.nome,g.funcao,g.itens.reduce((sum,r)=>sum+Number(r.valor||0),0)])];let ws=XLSX.utils.aoa_to_sheet(geral);ws['!cols']=[{wch:10},{wch:40},{wch:34},{wch:16}];XLSX.utils.book_append_sheet(wb,ws,'RELATORIO GERAL');used.add('RELATORIO GERAL');pessoas.forEach(g=>{const itens=[...g.itens],a=[['PAGAMENTO DE DESPESAS - FOLGA DE CAMPO'],[],['NOME:',g.nome,'FUNÇÃO',g.funcao],[],['ITEM','DESCRIÇÃO','CATEGORIA','VALOR'],...itens.map((r,i)=>[String(i+1).padStart(2,'0'),r.descricao,r.categoria||'',Number(r.valor||0)])],sh=XLSX.utils.aoa_to_sheet(a);sh['!cols']=[{wch:9},{wch:70},{wch:20},{wch:16}];XLSX.utils.book_append_sheet(wb,sh,sheetName(g.nome,used))});XLSX.writeFile(wb,`PAGAMENTO_FOLGA_CAMPO_${currentMonth}.xlsx`)}
-async function init(){if(!$('g360FcDevCompButtons')||!sb())return;initFcResidUf();initFcOrigemUf();initFcDestinoUf();clearForm();try{await Promise.all([loadColabs(),loadComps('')]);fcSugPrefetchHistorico();await loadRows();await loadMeta();await loadFolgaSuggestion()}catch(e){console.error(e);alert('Falha ao carregar Folga de Campo: '+(e?.message||e))}const bind=(id,fn)=>{const el=$(id);if(el&&!el.dataset.fcdevBound){el.dataset.fcdevBound='1';el.addEventListener('click',fn)}};bind('g360FcDevAbrirComp',openCompModal);bind('g360FcDevCompConfirmar',confirmOpenComp);bind('g360FcDevCompCancelar',closeCompModal);bind('g360FcDevCompCancelarX',closeCompModal);bind('g360FcDevAdicionar',addExtra);bind('g360FcDevAddTrecho',addTrecho);bind('g360FcDevLimpar',clearForm);bind('g360FcDevExcelComp',exportExcel);bind('g360FcDevSalvarDados',saveMetaClick);bind('g360FcRelSugestoes',gerarRelatorioSugestoes);const modal=$('g360FcDevCompModal');if(modal&&!modal.dataset.fcdevBound){modal.dataset.fcdevBound='1';modal.addEventListener('click',e=>{if(e.target===modal)closeCompModal()})}const ps=$('g360FcDevColab');if(ps&&!ps.dataset.fcdevBound){ps.dataset.fcdevBound='1';ps.onchange=async()=>{render();updateTrechoResumo();await Promise.all([loadMeta(),loadFolgaSuggestion()])}};const tipo=$('g360FcDevTipoExtra');if(tipo&&!tipo.dataset.fcdevBound){tipo.dataset.fcdevBound='1';tipo.onchange=syncExtraFields};const fim=$('g360FcDevDataFim');if(fim&&!fim.dataset.fcdevBound){fim.dataset.fcdevBound='1';fim.addEventListener('change',calcReturn)};['g360FcDevOrigemCidade','g360FcDevOrigemUf','g360FcDevDestinoCidade','g360FcDevDestinoUf'].forEach(id=>{const el=$(id);if(el&&!el.dataset.fcdevBound){el.dataset.fcdevBound='1';el.addEventListener('input',updateTrechoResumo)}});const ocSel=$('g360FcDevOrigemCidade');if(ocSel&&!ocSel.dataset.fcOrigemCidadeBound){ocSel.dataset.fcOrigemCidadeBound='1';ocSel.addEventListener('change',updateTrechoResumo)};const dcSel=$('g360FcDevDestinoCidade');if(dcSel&&!dcSel.dataset.fcDestinoCidadeBound){dcSel.dataset.fcDestinoCidadeBound='1';dcSel.addEventListener('change',updateTrechoResumo)};syncExtraFields();updateTrechoResumo()}
+async function init(){if(!$('g360FcDevCompButtons')||!sb())return;initFcResidUf();initFcOrigemUf();initFcDestinoUf();clearForm();try{await Promise.all([loadColabs(),loadComps('')]);await loadRows();await loadMeta();await loadFolgaSuggestion()}catch(e){console.error(e);alert('Falha ao carregar Folga de Campo: '+(e?.message||e))}const bind=(id,fn)=>{const el=$(id);if(el&&!el.dataset.fcdevBound){el.dataset.fcdevBound='1';el.addEventListener('click',fn)}};bind('g360FcDevAbrirComp',openCompModal);bind('g360FcDevCompConfirmar',confirmOpenComp);bind('g360FcDevCompCancelar',closeCompModal);bind('g360FcDevCompCancelarX',closeCompModal);bind('g360FcDevAdicionar',addExtra);bind('g360FcDevAddTrecho',addTrecho);bind('g360FcDevLimpar',clearForm);bind('g360FcDevExcelComp',exportExcel);bind('g360FcDevSalvarDados',saveMetaClick);bind('g360FcRelSugestoes',gerarRelatorioSugestoes);const modal=$('g360FcDevCompModal');if(modal&&!modal.dataset.fcdevBound){modal.dataset.fcdevBound='1';modal.addEventListener('click',e=>{if(e.target===modal)closeCompModal()})}const ps=$('g360FcDevColab');if(ps&&!ps.dataset.fcdevBound){ps.dataset.fcdevBound='1';ps.onchange=async()=>{render();updateTrechoResumo();await Promise.all([loadMeta(),loadFolgaSuggestion()])}};const tipo=$('g360FcDevTipoExtra');if(tipo&&!tipo.dataset.fcdevBound){tipo.dataset.fcdevBound='1';tipo.onchange=syncExtraFields};const fim=$('g360FcDevDataFim');if(fim&&!fim.dataset.fcdevBound){fim.dataset.fcdevBound='1';fim.addEventListener('change',calcReturn)};['g360FcDevOrigemCidade','g360FcDevOrigemUf','g360FcDevDestinoCidade','g360FcDevDestinoUf'].forEach(id=>{const el=$(id);if(el&&!el.dataset.fcdevBound){el.dataset.fcdevBound='1';el.addEventListener('input',updateTrechoResumo)}});const ocSel=$('g360FcDevOrigemCidade');if(ocSel&&!ocSel.dataset.fcOrigemCidadeBound){ocSel.dataset.fcOrigemCidadeBound='1';ocSel.addEventListener('change',updateTrechoResumo)};const dcSel=$('g360FcDevDestinoCidade');if(dcSel&&!dcSel.dataset.fcDestinoCidadeBound){dcSel.dataset.fcDestinoCidadeBound='1';dcSel.addEventListener('change',updateTrechoResumo)};syncExtraFields();updateTrechoResumo()}
 window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRows();await loadMeta();await loadFolgaSuggestion()},exportPdfPessoa,openTermForPerson};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,0));else setTimeout(init,0);
 })();
 </script>
@@ -21477,8 +21535,12 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
  window.g360FcProgramacoesV330={load,edit,del};
 })();
 </script>
-\n<style id="g360-folga-final-v332-css">
-#g360FcProgramacoesPanel{display:none!important}
+
+<style id="g360-folga-final-v332-css">
+#g360FcProgramacoesPanel{display:block!important}
+#g360FcProgramacoesPanel .crud-row-actions{display:flex;gap:6px;align-items:center;white-space:nowrap}
+#g360FcProgramacoesPanel .crud-mini{cursor:pointer}
+#g360FcProgramacoesPanel .crud-mini.danger{font-weight:700}
 #g360FcLancModal [data-fc-step]{cursor:pointer;user-select:none}
 #g360FcLancModal [data-fc-step]:hover{border-color:var(--yellow,#f5c518)}
 </style>
@@ -21522,7 +21584,8 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
  setInterval(bind,1500);
  window.g360FolgaFinalV332={showStep,delByCid};
 })();
-</script>\n</body>
+</script>
+</body>
 </html>
 
 <style id="g360-mobile-menu-v19-fix">
@@ -21556,7 +21619,7 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
 }
 </style>
 
-
+<!-- GESTAO360 V162: boot unico sem reload + dashboard somente apos dados Supabase -->
 
 <style id="g360-sesmt-fontes-v198">
 /* V198 — padronização tipográfica da tela Estoque de EPIs.
