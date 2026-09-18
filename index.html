@@ -72,6 +72,7 @@
 <!-- V206: cidade/UF na admissão, contato da demissão puxado do colaborador e campos dark padronizados -->
 <!-- V205: admissão/demissão revisadas, contatos, baixada, metadata MP-01/MP-02 V-02 e base Supabase -->
 <!-- V204: corrige saldo contratual para considerar LANCADO e TITULO_GERADO no Fechamento de Praça -->
+<!-- V349: Folga de Campo — inclui moradores de aluguel nas sugestões via direito_baixada/usa_aloj, sem exigir alojamento cadastrado; força atualização da base ao gerar relatório -->
 <!-- V203: cadastro mestre de itens separado, código sequencial, estoque máximo, giro automático e sugestão de compra -->
 <!-- V202: corrige criação do perfil Técnico de Segurança em usuario_permissoes -->
 <!-- V200: corrige identificação da obra no inventário e movimentações SESMT -->
@@ -21232,7 +21233,7 @@ let fcSugV348Cache=null;
 async function fcSugV348Carregar(force=false){
  if(!force&&fcSugV348Cache)return fcSugV348Cache;
  const db=sb(),oid=obraId();
- let cq=db.from('funcionarios').select('id,matricula,nome,funcao,status,tipo_contrato,admissao,depto,equipe,setor_equipe,cidade,cidade_baixada,uf_baixada,distancia_baixada_km,periodicidade_baixada,ult_baixada,prox_baixada,usa_aloj').order('nome');
+ let cq=db.from('funcionarios').select('id,matricula,nome,funcao,status,tipo_contrato,admissao,depto,equipe,setor_equipe,cidade,cidade_baixada,uf_baixada,distancia_baixada_km,periodicidade_baixada,ult_baixada,prox_baixada,usa_aloj,alojamento,direito_baixada').order('nome');
  if(oid)cq=cq.eq('obra_id',oid);
  let fq=db.from('folga_campo').select('colaborador_id,data_inicio,data_fim,competencia').not('data_inicio','is',null).order('data_inicio',{ascending:false});
  if(oid)fq=fq.eq('obra_id',oid);
@@ -21265,9 +21266,14 @@ async function fcSugV348Carregar(force=false){
  const colabs=(cr.data||[]).filter(c=>{
    const st=String(c.status||'').trim().toUpperCase();
    const aloj=String(c.usa_aloj??'').trim().toUpperCase();
+   const direito=['SIM','S','TRUE','1'].includes(String(c.direito_baixada??'').trim().toUpperCase());
    const tipo=String(c.tipo_contrato||'').trim().toUpperCase();
+   // Elegível: colaborador ativo com direito de baixada. Mantém compatibilidade com
+   // cadastros antigos marcados como alojados e inclui quem mora de aluguel
+   // (usa_aloj='S' e alojamento nulo), sem exigir vínculo com imóvel cadastrado.
+   const moraFora=['SIM','S','TRUE','1'].includes(aloj) || direito;
    return !['DESLIGADO','INATIVO','ABANDONO'].includes(st)
-     && ['SIM','S','TRUE','1'].includes(aloj)
+     && moraFora
      && !tipo.includes('PJ');
  }).map(c=>({...c,mat:c.matricula}));
  fcSugV348Cache={colabs,ult};return fcSugV348Cache;
@@ -21313,7 +21319,7 @@ function fcSugV348AbrirFiltro(dados){
  ov.querySelector('#g360FcSugV348Fechar').onclick=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)ov.remove()};
  ov.querySelector('#g360FcSugV348Gerar').onclick=()=>{const setores=sets.filter(x=>x.checked).map(x=>x.value),selMes=ms.filter(x=>x.checked).map(x=>x.value);if(!setores.length)return alert('Selecione pelo menos um Setor / Equipe.');if(!selMes.length)return alert('Selecione pelo menos um mês.');ov.remove();fcSugV348Pdf(dados,{setores,meses:selMes})};
 }
-async function gerarRelatorioSugestoes(){const btn=$('g360FcRelSugestoes');try{if(btn){btn.disabled=true;btn.textContent='⏳ Carregando...'}const d=await fcSugV348Carregar();fcSugV348AbrirFiltro(d)}catch(e){console.error('Sugestões V348:',e);alert('Falha ao carregar Relatório de Sugestões: '+(e?.message||e))}finally{if(btn){btn.disabled=false;btn.textContent='📄 Relatório de sugestões'}}}
+async function gerarRelatorioSugestoes(){const btn=$('g360FcRelSugestoes');try{if(btn){btn.disabled=true;btn.textContent='⏳ Carregando...'}const d=await fcSugV348Carregar(true);fcSugV348AbrirFiltro(d)}catch(e){console.error('Sugestões V348:',e);alert('Falha ao carregar Relatório de Sugestões: '+(e?.message||e))}finally{if(btn){btn.disabled=false;btn.textContent='📄 Relatório de sugestões'}}}
 function fcSugV348Pdf(dados,filtros){
  try{
   if(!window.jspdf?.jsPDF)throw new Error('Biblioteca PDF não carregada.');
