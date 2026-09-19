@@ -21547,6 +21547,7 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
 #g360FcLancModal [data-fc-step]{cursor:pointer;user-select:none}
 #g360FcLancModal [data-fc-step]:hover{border-color:var(--yellow,#f5c518)}
 </style>
+<!-- V352: corrige botão Excluir do Resumo da Competência (regex da competência em V332) -->
 <script id="g360-folga-final-v332">
 (function(){
  'use strict';
@@ -21557,7 +21558,7 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
    document.querySelectorAll('#g360FcLancModal [data-fc-step]').forEach(el=>el.classList.toggle('active',Number(el.dataset.fcStep)===n));
    const card=$('g360FcLancModal')?.querySelector('.fc-lanc-modal-card');if(card)card.scrollTop=0;
  }
- function comp(){const v=$('g360FcDevCompSelect')?.value||'';return /^\\d{4}-\\d{2}$/.test(v)?v+'-01':''}
+ function comp(){const v=$('g360FcDevCompSelect')?.value||'';return /^\d{4}-\d{2}$/.test(v)?v+'-01':''}
  function obra(){try{return window.g360ObraAtualId?.()||window.G360_OBRA_ID||null}catch(_){return null}}
  async function delByCid(cid){
    const cp=comp(),oid=obra();if(!cp||!cid)return;
