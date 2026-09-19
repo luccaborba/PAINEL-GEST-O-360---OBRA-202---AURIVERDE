@@ -21552,7 +21552,7 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
 #g360FcLancModal [data-fc-step]{cursor:pointer;user-select:none}
 #g360FcLancModal [data-fc-step]:hover{border-color:var(--yellow,#f5c518)}
 </style>
-<!-- V352: corrige botão Excluir do Resumo da Competência (regex da competência em V332) -->
+<!-- V354: feedback visual e confirmação no Excluir da Folga de Campo -->
 <script id="g360-folga-final-v332">
 (function(){
  'use strict';
@@ -21567,11 +21567,25 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
  function obra(){try{return window.g360ObraAtualId?.()||window.G360_OBRA_ID||null}catch(_){return null}}
  async function delByCid(cid){
    const cp=comp(),oid=obra();if(!cp||!cid)return;
-   let d=sb().from('folga_campo_despesas').delete().eq('competencia',cp).eq('colaborador_id',cid);if(oid)d=d.eq('obra_id',oid);
-   const dr=await d;if(dr.error)return alert(dr.error.message);
-   let m=sb().from('folga_campo').delete().eq('competencia',cp).eq('colaborador_id',cid);if(oid)m=m.eq('obra_id',oid);
-   const mr=await m;if(mr.error)return alert(mr.error.message);
-   try{await window.g360FolgaDevV274?.refresh?.()}catch(_){}
+   const btn=document.querySelector(`[data-fc-summary-del="${CSS.escape(String(cid))}"]`);
+   const row=btn?.closest('tr');
+   const nome=row?.querySelector('.g360-reemb-resumo-nome b')?.textContent?.trim()||'este colaborador';
+   if(!confirm(`Excluir a Folga de Campo de ${nome} nesta competência?\n\nAs despesas vinculadas também serão excluídas.`))return;
+   const original=btn?.innerHTML||'🗑 Excluir';
+   try{
+     if(btn){btn.disabled=true;btn.innerHTML='⏳ Excluindo...';}
+     let d=sb().from('folga_campo_despesas').delete().eq('competencia',cp).eq('colaborador_id',cid);if(oid)d=d.eq('obra_id',oid);
+     const dr=await d;if(dr.error)throw dr.error;
+     let m=sb().from('folga_campo').delete().eq('competencia',cp).eq('colaborador_id',cid);if(oid)m=m.eq('obra_id',oid);
+     const mr=await m;if(mr.error)throw mr.error;
+     if(btn)btn.innerHTML='✓ Excluído';
+     try{await window.g360FolgaDevV274?.refresh?.()}catch(_){}
+     try{await window.g360FcProgramacoesV330?.load?.()}catch(_){}
+     alert(`Folga de Campo de ${nome} excluída com sucesso.`);
+   }catch(e){
+     if(btn){btn.disabled=false;btn.innerHTML=original;}
+     alert('Erro ao excluir Folga de Campo: '+(e?.message||e));
+   }
  }
  function bindSummary(){
    const body=$('g360FcDevResumoBody');if(!body)return;
