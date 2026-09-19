@@ -13925,17 +13925,6 @@ window.GESTAO360_CONFIG = {
   OBRA_CODIGO: "202",
   OBRA_NOME: "IMPLANTAÇÃO AURIVERDE"
 };
-// V367 — Localidades nacionais lidas diretamente do Supabase REST.
-window.g360LocalidadesRest = async function(tabela, params){
-  const cfg=window.GESTAO360_CONFIG||{};
-  const qs=new URLSearchParams(params||{});
-  const r=await fetch(cfg.SUPABASE_URL+'/rest/v1/'+tabela+'?'+qs.toString(),{
-    headers:{'apikey':cfg.SUPABASE_ANON_KEY,'Accept':'application/json'},
-    cache:'no-store'
-  });
-  if(!r.ok) throw new Error('Localidades Supabase HTTP '+r.status);
-  return await r.json();
-};
 
 </script>
 <script>
@@ -14667,7 +14656,7 @@ window.g360LocalidadesRest = async function(tabela, params){
         const m=current.match(/^(.*?)\s*[-/]\s*([A-Z]{2})$/i);
         const currentCity=m?m[1].trim():'';
         const currentUf=m?m[2].toUpperCase():'';
-        const localidadesRest=window.g360LocalidadesRest;
+        const ibgeBase='https://servicodados.ibge.gov.br/api/v1/localidades';
         const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();
 
         async function loadMunicipios(uf,preselect=''){
@@ -14675,8 +14664,11 @@ window.g360LocalidadesRest = async function(tabela, params){
           munSel.innerHTML='<option value="">Carregando cidades...</option>';
           if(!uf){munSel.innerHTML='<option value="">Selecione primeiro o estado</option>';return}
           try{
-            const rows=await localidadesRest('cidades',{select:'cidade',uf:'eq.'+String(uf).toUpperCase(),ativo:'eq.true',order:'cidade.asc'});
-            munSel.innerHTML='<option value="">Selecione a cidade</option>'+rows.map(x=>`<option value="${esc(x.cidade)}">${esc(x.cidade)}</option>`).join('');
+            const r=await fetch(`${ibgeBase}/estados/${encodeURIComponent(uf)}/municipios?orderBy=nome`,{cache:'force-cache'});
+            if(!r.ok)throw new Error('Falha ao consultar municípios');
+            const rows=await r.json();
+            if(String(uf).toUpperCase()==='DF'&&!rows.some(x=>String(x.nome||'').toUpperCase()==='TAGUATINGA'))rows.push({nome:'Taguatinga'});
+            munSel.innerHTML='<option value="">Selecione a cidade</option>'+rows.map(x=>`<option value="${esc(x.nome)}">${esc(x.nome)}</option>`).join('');
             munSel.disabled=false;
             if(preselect){
               const opt=[...munSel.options].find(o=>norm(o.value)===norm(preselect));
@@ -14691,8 +14683,10 @@ window.g360LocalidadesRest = async function(tabela, params){
 
         async function loadEstados(){
           try{
-            const rows=await localidadesRest('estados',{select:'uf,nome',ativo:'eq.true',order:'nome.asc'});
-            ufSel.innerHTML='<option value="">Selecione o estado</option>'+rows.map(x=>`<option value="${esc(x.uf)}">${esc(x.uf)} - ${esc(x.nome)}</option>`).join('');
+            const r=await fetch(`${ibgeBase}/estados?orderBy=nome`,{cache:'force-cache'});
+            if(!r.ok)throw new Error('Falha ao consultar estados');
+            const rows=await r.json();
+            ufSel.innerHTML='<option value="">Selecione o estado</option>'+rows.map(x=>`<option value="${esc(x.sigla)}">${esc(x.sigla)} - ${esc(x.nome)}</option>`).join('');
             if(currentUf && [...ufSel.options].some(o=>o.value===currentUf)){
               ufSel.value=currentUf;
               await loadMunicipios(currentUf,currentCity);
@@ -14720,7 +14714,7 @@ window.g360LocalidadesRest = async function(tabela, params){
       const baixCidadeHidden=document.getElementById('g360BaixadaCidadeValor');
       const baixUfHidden=document.getElementById('g360BaixadaUfValor');
       if(baixUf&&baixMun&&baixCidadeHidden&&baixUfHidden){
-        const localidadesRestBaix=window.g360LocalidadesRest;
+        const ibgeBaseBaix='https://servicodados.ibge.gov.br/api/v1/localidades';
         const normBaix=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();
         const currentUfBaix=String(baixUf.dataset.currentUf||baixUfHidden.value||'').trim().toUpperCase();
         const currentCityBaix=String(baixMun.dataset.currentCity||baixCidadeHidden.value||'').trim();
@@ -14734,8 +14728,11 @@ window.g360LocalidadesRest = async function(tabela, params){
             return;
           }
           try{
-            const rows=await localidadesRestBaix('cidades',{select:'cidade',uf:'eq.'+String(uf).toUpperCase(),ativo:'eq.true',order:'cidade.asc'});
-            baixMun.innerHTML='<option value="">Selecione a cidade</option>'+rows.map(x=>`<option value="${esc(x.cidade)}">${esc(x.cidade)}</option>`).join('');
+            const r=await fetch(`${ibgeBaseBaix}/estados/${encodeURIComponent(uf)}/municipios?orderBy=nome`,{cache:'force-cache'});
+            if(!r.ok)throw new Error('Falha ao consultar municípios');
+            const rows=await r.json();
+            if(String(uf).toUpperCase()==='DF'&&!rows.some(x=>String(x.nome||'').toUpperCase()==='TAGUATINGA'))rows.push({nome:'Taguatinga'});
+            baixMun.innerHTML='<option value="">Selecione a cidade</option>'+rows.map(x=>`<option value="${esc(x.nome)}">${esc(x.nome)}</option>`).join('');
             baixMun.disabled=false;
             if(preselect){
               const opt=[...baixMun.options].find(o=>normBaix(o.value)===normBaix(preselect));
@@ -14750,8 +14747,10 @@ window.g360LocalidadesRest = async function(tabela, params){
 
         async function loadBaixEstados(){
           try{
-            const rows=await localidadesRestBaix('estados',{select:'uf,nome',ativo:'eq.true',order:'nome.asc'});
-            baixUf.innerHTML='<option value="">UF...</option>'+rows.map(x=>`<option value="${esc(x.uf)}">${esc(x.uf)}</option>`).join('');
+            const r=await fetch(`${ibgeBaseBaix}/estados?orderBy=nome`,{cache:'force-cache'});
+            if(!r.ok)throw new Error('Falha ao consultar estados');
+            const rows=await r.json();
+            baixUf.innerHTML='<option value="">UF...</option>'+rows.map(x=>`<option value="${esc(x.sigla)}">${esc(x.sigla)}</option>`).join('');
             if(currentUfBaix&&[...baixUf.options].some(o=>o.value===currentUfBaix)){
               baixUf.value=currentUfBaix;
               baixUfHidden.value=currentUfBaix;
@@ -20073,7 +20072,7 @@ const UFS=[
 ['RO','Rondônia'],['RR','Roraima'],['SC','Santa Catarina'],['SP','São Paulo'],
 ['SE','Sergipe'],['TO','Tocantins']
 ];
-const CACHE='g360_supabase_rest_cidades_v367_';
+const CACHE='g360_ibge_municipios_v212_';
 
 function ufEl(){return document.getElementById('rhAdmEstado')}
 function cidadeEl(){return document.getElementById('rhAdmCidade')}
@@ -20113,10 +20112,14 @@ async function carregarCidades(sigla,selecionada=''){
   try{
     let nomes=cacheGet(CACHE+sigla);
     if(!nomes){
-      const dados=await window.g360LocalidadesRest('cidades',{select:'cidade',uf:'eq.'+String(sigla).toUpperCase(),ativo:'eq.true',order:'cidade.asc'});
-      nomes=dados.map(x=>x.cidade).filter(Boolean);
+      const url='https://servicodados.ibge.gov.br/api/v1/localidades/estados/'+encodeURIComponent(sigla)+'/municipios?orderBy=nome';
+      const resp=await fetch(url,{method:'GET',mode:'cors',cache:'default'});
+      if(!resp.ok)throw new Error('HTTP '+resp.status);
+      const dados=await resp.json();
+      nomes=dados.map(x=>x.nome).filter(Boolean);
       cacheSet(CACHE+sigla,nomes);
     }
+    if(String(sigla).toUpperCase()==='DF'&&!nomes.some(n=>String(n||'').toUpperCase()==='TAGUATINGA'))nomes.push('Taguatinga');
     cidade.innerHTML='<option value="">Selecione a cidade...</option>'+
       nomes.map(n=>`<option value="${n.replace(/"/g,'&quot;')}">${n}</option>`).join('');
     cidade.disabled=false;
@@ -21163,10 +21166,10 @@ function fillMeta(row){currentMeta=row||null;const btn=$('g360FcDevSalvarDados')
 const FC_RES_UFS=[['AC','Acre'],['AL','Alagoas'],['AP','Amapá'],['AM','Amazonas'],['BA','Bahia'],['CE','Ceará'],['DF','Distrito Federal'],['ES','Espírito Santo'],['GO','Goiás'],['MA','Maranhão'],['MT','Mato Grosso'],['MS','Mato Grosso do Sul'],['MG','Minas Gerais'],['PA','Pará'],['PB','Paraíba'],['PR','Paraná'],['PE','Pernambuco'],['PI','Piauí'],['RJ','Rio de Janeiro'],['RN','Rio Grande do Norte'],['RS','Rio Grande do Sul'],['RO','Rondônia'],['RR','Roraima'],['SC','Santa Catarina'],['SP','São Paulo'],['SE','Sergipe'],['TO','Tocantins']];
 function initFcResidUf(){const el=$('g360FcDevResidUf');if(!el)return;const cur=el.value;el.innerHTML='<option value="">UF</option>'+FC_RES_UFS.map(([u])=>`<option value="${u}">${u}</option>`).join('');if(cur)el.value=cur;if(!el.dataset.fcResidBound){el.dataset.fcResidBound='1';el.addEventListener('change',()=>loadFcResidCidades(el.value,''));}}
 function initFcOrigemUf(){const el=$('g360FcDevOrigemUf');if(!el)return;const cur=el.value;el.innerHTML='<option value="">UF</option>'+FC_RES_UFS.map(([u])=>`<option value="${u}">${u}</option>`).join('');if(cur)el.value=cur;if(!el.dataset.fcOrigemBound){el.dataset.fcOrigemBound='1';el.addEventListener('change',async()=>{await loadFcOrigemCidades(el.value,'');updateTrechoResumo()});}}
-async function loadFcOrigemCidades(uf,selecionada=''){const el=$('g360FcDevOrigemCidade');if(!el)return;if(!uf){el.disabled=true;el.innerHTML='<option value="">Selecione primeiro a UF...</option>';updateTrechoResumo();return}el.disabled=true;el.innerHTML='<option value="">Carregando cidades...</option>';try{const key='g360_fc_rota_cidades_sbrest_v367_'+uf;let nomes=null;try{nomes=JSON.parse(localStorage.getItem(key)||'null')}catch(e){}if(!Array.isArray(nomes)){const dados=await window.g360LocalidadesRest('cidades',{select:'cidade',uf:'eq.'+String(uf).toUpperCase(),ativo:'eq.true',order:'cidade.asc'});nomes=dados.map(x=>x.cidade).filter(Boolean);try{localStorage.setItem(key,JSON.stringify(nomes))}catch(e){}}el.innerHTML='<option value="">Selecione a cidade...</option>'+nomes.map(n=>{const up=String(n).toUpperCase();return `<option value="${up.replace(/"/g,'&quot;')}">${up}</option>`}).join('');el.disabled=false;if(selecionada){const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();const opt=[...el.options].find(o=>norm(o.value)===norm(selecionada));if(opt)el.value=opt.value;}updateTrechoResumo()}catch(e){console.error('IBGE cidade origem folga:',e);el.innerHTML='<option value="">Não foi possível carregar as cidades</option>';el.disabled=true;}}
+async function loadFcOrigemCidades(uf,selecionada=''){const el=$('g360FcDevOrigemCidade');if(!el)return;if(!uf){el.disabled=true;el.innerHTML='<option value="">Selecione primeiro a UF...</option>';updateTrechoResumo();return}el.disabled=true;el.innerHTML='<option value="">Carregando cidades...</option>';try{const key='g360_fc_rota_cidades_'+uf;let nomes=null;try{nomes=JSON.parse(localStorage.getItem(key)||'null')}catch(e){}if(!Array.isArray(nomes)){const r=await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${encodeURIComponent(uf)}/municipios?orderBy=nome`,{cache:'force-cache'});if(!r.ok)throw new Error('Falha ao consultar cidades');nomes=(await r.json()).map(x=>x.nome).filter(Boolean);try{localStorage.setItem(key,JSON.stringify(nomes))}catch(e){}}if(String(uf).toUpperCase()==='DF'&&!nomes.some(n=>String(n||'').toUpperCase()==='TAGUATINGA'))nomes.push('Taguatinga');el.innerHTML='<option value="">Selecione a cidade...</option>'+nomes.map(n=>{const up=String(n).toUpperCase();return `<option value="${up.replace(/"/g,'&quot;')}">${up}</option>`}).join('');el.disabled=false;if(selecionada){const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();const opt=[...el.options].find(o=>norm(o.value)===norm(selecionada));if(opt)el.value=opt.value;}updateTrechoResumo()}catch(e){console.error('IBGE cidade origem folga:',e);el.innerHTML='<option value="">Não foi possível carregar as cidades</option>';el.disabled=true;}}
 function initFcDestinoUf(){const el=$('g360FcDevDestinoUf');if(!el)return;const cur=el.value;el.innerHTML='<option value="">UF</option>'+FC_RES_UFS.map(([u])=>`<option value="${u}">${u}</option>`).join('');if(cur)el.value=cur;if(!el.dataset.fcDestinoBound){el.dataset.fcDestinoBound='1';el.addEventListener('change',async()=>{await loadFcDestinoCidades(el.value,'');updateTrechoResumo()});}}
-async function loadFcDestinoCidades(uf,selecionada=''){const el=$('g360FcDevDestinoCidade');if(!el)return;if(!uf){el.disabled=true;el.innerHTML='<option value="">Selecione primeiro a UF...</option>';updateTrechoResumo();return}el.disabled=true;el.innerHTML='<option value="">Carregando cidades...</option>';try{const key='g360_fc_dest_cidades_sbrest_v367_'+uf;let nomes=null;try{nomes=JSON.parse(localStorage.getItem(key)||'null')}catch(e){}if(!Array.isArray(nomes)){const dados=await window.g360LocalidadesRest('cidades',{select:'cidade',uf:'eq.'+String(uf).toUpperCase(),ativo:'eq.true',order:'cidade.asc'});nomes=dados.map(x=>x.cidade).filter(Boolean);try{localStorage.setItem(key,JSON.stringify(nomes))}catch(e){}}el.innerHTML='<option value="">Selecione a cidade...</option>'+nomes.map(n=>{const up=String(n).toUpperCase();return `<option value="${up.replace(/"/g,'&quot;')}">${up}</option>`}).join('');el.disabled=false;if(selecionada){const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();const opt=[...el.options].find(o=>norm(o.value)===norm(selecionada));if(opt)el.value=opt.value;}updateTrechoResumo()}catch(e){console.error('IBGE cidade destino folga:',e);el.innerHTML='<option value="">Não foi possível carregar as cidades</option>';el.disabled=true;}}
-async function loadFcResidCidades(uf,selecionada=''){const el=$('g360FcDevResidCidade');if(!el)return;if(!uf){el.disabled=true;el.innerHTML='<option value="">Selecione primeiro a UF...</option>';return}el.disabled=true;el.innerHTML='<option value="">Carregando cidades...</option>';try{const key='g360_fc_res_cidades_sbrest_v367_'+uf;let nomes=null;try{nomes=JSON.parse(localStorage.getItem(key)||'null')}catch(e){}if(!Array.isArray(nomes)){const dados=await window.g360LocalidadesRest('cidades',{select:'cidade',uf:'eq.'+String(uf).toUpperCase(),ativo:'eq.true',order:'cidade.asc'});nomes=dados.map(x=>x.cidade).filter(Boolean);try{localStorage.setItem(key,JSON.stringify(nomes))}catch(e){}}el.innerHTML='<option value="">Selecione a cidade...</option>'+nomes.map(n=>{const up=String(n).toUpperCase();return `<option value="${up.replace(/"/g,'&quot;')}">${up}</option>`}).join('');el.disabled=false;if(selecionada){const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();const opt=[...el.options].find(o=>norm(o.value)===norm(selecionada));if(opt)el.value=opt.value;}}catch(e){console.error('IBGE cidade residência folga:',e);el.innerHTML='<option value="">Não foi possível carregar as cidades</option>';el.disabled=true;}}
+async function loadFcDestinoCidades(uf,selecionada=''){const el=$('g360FcDevDestinoCidade');if(!el)return;if(!uf){el.disabled=true;el.innerHTML='<option value="">Selecione primeiro a UF...</option>';updateTrechoResumo();return}el.disabled=true;el.innerHTML='<option value="">Carregando cidades...</option>';try{const key='g360_fc_dest_cidades_'+uf;let nomes=null;try{nomes=JSON.parse(localStorage.getItem(key)||'null')}catch(e){}if(!Array.isArray(nomes)){const r=await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${encodeURIComponent(uf)}/municipios?orderBy=nome`,{cache:'force-cache'});if(!r.ok)throw new Error('Falha ao consultar cidades');nomes=(await r.json()).map(x=>x.nome).filter(Boolean);try{localStorage.setItem(key,JSON.stringify(nomes))}catch(e){}}if(String(uf).toUpperCase()==='DF'&&!nomes.some(n=>String(n||'').toUpperCase()==='TAGUATINGA'))nomes.push('Taguatinga');el.innerHTML='<option value="">Selecione a cidade...</option>'+nomes.map(n=>{const up=String(n).toUpperCase();return `<option value="${up.replace(/"/g,'&quot;')}">${up}</option>`}).join('');el.disabled=false;if(selecionada){const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();const opt=[...el.options].find(o=>norm(o.value)===norm(selecionada));if(opt)el.value=opt.value;}updateTrechoResumo()}catch(e){console.error('IBGE cidade destino folga:',e);el.innerHTML='<option value="">Não foi possível carregar as cidades</option>';el.disabled=true;}}
+async function loadFcResidCidades(uf,selecionada=''){const el=$('g360FcDevResidCidade');if(!el)return;if(!uf){el.disabled=true;el.innerHTML='<option value="">Selecione primeiro a UF...</option>';return}el.disabled=true;el.innerHTML='<option value="">Carregando cidades...</option>';try{const key='g360_fc_res_cidades_'+uf;let nomes=null;try{nomes=JSON.parse(localStorage.getItem(key)||'null')}catch(e){}if(!Array.isArray(nomes)){const r=await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${encodeURIComponent(uf)}/municipios?orderBy=nome`,{cache:'force-cache'});if(!r.ok)throw new Error('Falha ao consultar cidades');nomes=(await r.json()).map(x=>x.nome).filter(Boolean);try{localStorage.setItem(key,JSON.stringify(nomes))}catch(e){}}if(String(uf).toUpperCase()==='DF'&&!nomes.some(n=>String(n||'').toUpperCase()==='TAGUATINGA'))nomes.push('Taguatinga');el.innerHTML='<option value="">Selecione a cidade...</option>'+nomes.map(n=>{const up=String(n).toUpperCase();return `<option value="${up.replace(/"/g,'&quot;')}">${up}</option>`}).join('');el.disabled=false;if(selecionada){const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();const opt=[...el.options].find(o=>norm(o.value)===norm(selecionada));if(opt)el.value=opt.value;}}catch(e){console.error('IBGE cidade residência folga:',e);el.innerHTML='<option value="">Não foi possível carregar as cidades</option>';el.disabled=true;}}
 function fcFmtDate(v){if(!v)return'—';const d=new Date(String(v).slice(0,10)+'T12:00:00');return Number.isNaN(d.getTime())?'—':d.toLocaleDateString('pt-BR')}
 function fcAddMonthsISO(v,meses){const [y,m,d]=String(v).slice(0,10).split('-').map(Number);if(!y||!m||!d||!meses)return'';const base=new Date(y,m-1,d,12);const alvoMes=base.getMonth()+Number(meses);const dia=base.getDate();base.setDate(1);base.setMonth(alvoMes);const ultimo=new Date(base.getFullYear(),base.getMonth()+1,0).getDate();base.setDate(Math.min(dia,ultimo));return `${base.getFullYear()}-${String(base.getMonth()+1).padStart(2,'0')}-${String(base.getDate()).padStart(2,'0')}`}
 function fcPeriodicidadeMeses(txt){if(!txt)return null;const m=String(txt).match(/(\d+)\s*\/\s*(\d+)/)||String(txt).match(/(\d+)/);return m?Number(m[1]):null}
