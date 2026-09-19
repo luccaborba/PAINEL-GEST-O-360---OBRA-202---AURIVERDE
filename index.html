@@ -14667,7 +14667,6 @@ window.GESTAO360_CONFIG = {
             const r=await fetch(`${ibgeBase}/estados/${encodeURIComponent(uf)}/municipios?orderBy=nome`,{cache:'force-cache'});
             if(!r.ok)throw new Error('Falha ao consultar municípios');
             const rows=await r.json();
-            if(String(uf).toUpperCase()==='DF'&&!rows.some(x=>String(x.nome||'').toUpperCase()==='TAGUATINGA'))rows.push({nome:'Taguatinga'});
             munSel.innerHTML='<option value="">Selecione a cidade</option>'+rows.map(x=>`<option value="${esc(x.nome)}">${esc(x.nome)}</option>`).join('');
             munSel.disabled=false;
             if(preselect){
@@ -14731,7 +14730,6 @@ window.GESTAO360_CONFIG = {
             const r=await fetch(`${ibgeBaseBaix}/estados/${encodeURIComponent(uf)}/municipios?orderBy=nome`,{cache:'force-cache'});
             if(!r.ok)throw new Error('Falha ao consultar municípios');
             const rows=await r.json();
-            if(String(uf).toUpperCase()==='DF'&&!rows.some(x=>String(x.nome||'').toUpperCase()==='TAGUATINGA'))rows.push({nome:'Taguatinga'});
             baixMun.innerHTML='<option value="">Selecione a cidade</option>'+rows.map(x=>`<option value="${esc(x.nome)}">${esc(x.nome)}</option>`).join('');
             baixMun.disabled=false;
             if(preselect){
@@ -20059,7 +20057,6 @@ if(typeof oldDemRender==='function'){
 </script>
 
 
-<!-- V365: TAGUATINGA/DF adicionada de forma local aos seletores de cidade, sem alterar bootstrap -->
 <script id="g360-ibge-uf-cidades-v212">
 (function(){
 'use strict';
@@ -20118,7 +20115,6 @@ async function carregarCidades(sigla,selecionada=''){
       if(!resp.ok)throw new Error('HTTP '+resp.status);
       const dados=await resp.json();
       nomes=dados.map(x=>x.nome).filter(Boolean);
-      if(String(sigla).toUpperCase()==='DF'&&!nomes.some(n=>String(n).toUpperCase()==='TAGUATINGA'))nomes.push('Taguatinga');
       cacheSet(CACHE+sigla,nomes);
     }
     cidade.innerHTML='<option value="">Selecione a cidade...</option>'+
@@ -21167,10 +21163,10 @@ function fillMeta(row){currentMeta=row||null;const btn=$('g360FcDevSalvarDados')
 const FC_RES_UFS=[['AC','Acre'],['AL','Alagoas'],['AP','Amapá'],['AM','Amazonas'],['BA','Bahia'],['CE','Ceará'],['DF','Distrito Federal'],['ES','Espírito Santo'],['GO','Goiás'],['MA','Maranhão'],['MT','Mato Grosso'],['MS','Mato Grosso do Sul'],['MG','Minas Gerais'],['PA','Pará'],['PB','Paraíba'],['PR','Paraná'],['PE','Pernambuco'],['PI','Piauí'],['RJ','Rio de Janeiro'],['RN','Rio Grande do Norte'],['RS','Rio Grande do Sul'],['RO','Rondônia'],['RR','Roraima'],['SC','Santa Catarina'],['SP','São Paulo'],['SE','Sergipe'],['TO','Tocantins']];
 function initFcResidUf(){const el=$('g360FcDevResidUf');if(!el)return;const cur=el.value;el.innerHTML='<option value="">UF</option>'+FC_RES_UFS.map(([u])=>`<option value="${u}">${u}</option>`).join('');if(cur)el.value=cur;if(!el.dataset.fcResidBound){el.dataset.fcResidBound='1';el.addEventListener('change',()=>loadFcResidCidades(el.value,''));}}
 function initFcOrigemUf(){const el=$('g360FcDevOrigemUf');if(!el)return;const cur=el.value;el.innerHTML='<option value="">UF</option>'+FC_RES_UFS.map(([u])=>`<option value="${u}">${u}</option>`).join('');if(cur)el.value=cur;if(!el.dataset.fcOrigemBound){el.dataset.fcOrigemBound='1';el.addEventListener('change',async()=>{await loadFcOrigemCidades(el.value,'');updateTrechoResumo()});}}
-async function loadFcOrigemCidades(uf,selecionada=''){const el=$('g360FcDevOrigemCidade');if(!el)return;if(!uf){el.disabled=true;el.innerHTML='<option value="">Selecione primeiro a UF...</option>';updateTrechoResumo();return}el.disabled=true;el.innerHTML='<option value="">Carregando cidades...</option>';try{const key='g360_fc_rota_cidades_'+uf;let nomes=null;try{nomes=JSON.parse(localStorage.getItem(key)||'null')}catch(e){}if(!Array.isArray(nomes)){const r=await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${encodeURIComponent(uf)}/municipios?orderBy=nome`,{cache:'force-cache'});if(!r.ok)throw new Error('Falha ao consultar cidades');nomes=(await r.json()).map(x=>x.nome).filter(Boolean);try{localStorage.setItem(key,JSON.stringify(nomes))}catch(e){}}if(String(uf).toUpperCase()==='DF'&&!nomes.some(n=>String(n).toUpperCase()==='TAGUATINGA'))nomes.push('Taguatinga');el.innerHTML='<option value="">Selecione a cidade...</option>'+nomes.map(n=>{const up=String(n).toUpperCase();return `<option value="${up.replace(/"/g,'&quot;')}">${up}</option>`}).join('');el.disabled=false;if(selecionada){const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();const opt=[...el.options].find(o=>norm(o.value)===norm(selecionada));if(opt)el.value=opt.value;}updateTrechoResumo()}catch(e){console.error('IBGE cidade origem folga:',e);el.innerHTML='<option value="">Não foi possível carregar as cidades</option>';el.disabled=true;}}
+async function loadFcOrigemCidades(uf,selecionada=''){const el=$('g360FcDevOrigemCidade');if(!el)return;if(!uf){el.disabled=true;el.innerHTML='<option value="">Selecione primeiro a UF...</option>';updateTrechoResumo();return}el.disabled=true;el.innerHTML='<option value="">Carregando cidades...</option>';try{const key='g360_fc_rota_cidades_'+uf;let nomes=null;try{nomes=JSON.parse(localStorage.getItem(key)||'null')}catch(e){}if(!Array.isArray(nomes)){const r=await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${encodeURIComponent(uf)}/municipios?orderBy=nome`,{cache:'force-cache'});if(!r.ok)throw new Error('Falha ao consultar cidades');nomes=(await r.json()).map(x=>x.nome).filter(Boolean);try{localStorage.setItem(key,JSON.stringify(nomes))}catch(e){}}el.innerHTML='<option value="">Selecione a cidade...</option>'+nomes.map(n=>{const up=String(n).toUpperCase();return `<option value="${up.replace(/"/g,'&quot;')}">${up}</option>`}).join('');el.disabled=false;if(selecionada){const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();const opt=[...el.options].find(o=>norm(o.value)===norm(selecionada));if(opt)el.value=opt.value;}updateTrechoResumo()}catch(e){console.error('IBGE cidade origem folga:',e);el.innerHTML='<option value="">Não foi possível carregar as cidades</option>';el.disabled=true;}}
 function initFcDestinoUf(){const el=$('g360FcDevDestinoUf');if(!el)return;const cur=el.value;el.innerHTML='<option value="">UF</option>'+FC_RES_UFS.map(([u])=>`<option value="${u}">${u}</option>`).join('');if(cur)el.value=cur;if(!el.dataset.fcDestinoBound){el.dataset.fcDestinoBound='1';el.addEventListener('change',async()=>{await loadFcDestinoCidades(el.value,'');updateTrechoResumo()});}}
-async function loadFcDestinoCidades(uf,selecionada=''){const el=$('g360FcDevDestinoCidade');if(!el)return;if(!uf){el.disabled=true;el.innerHTML='<option value="">Selecione primeiro a UF...</option>';updateTrechoResumo();return}el.disabled=true;el.innerHTML='<option value="">Carregando cidades...</option>';try{const key='g360_fc_dest_cidades_'+uf;let nomes=null;try{nomes=JSON.parse(localStorage.getItem(key)||'null')}catch(e){}if(!Array.isArray(nomes)){const r=await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${encodeURIComponent(uf)}/municipios?orderBy=nome`,{cache:'force-cache'});if(!r.ok)throw new Error('Falha ao consultar cidades');nomes=(await r.json()).map(x=>x.nome).filter(Boolean);try{localStorage.setItem(key,JSON.stringify(nomes))}catch(e){}}if(String(uf).toUpperCase()==='DF'&&!nomes.some(n=>String(n).toUpperCase()==='TAGUATINGA'))nomes.push('Taguatinga');el.innerHTML='<option value="">Selecione a cidade...</option>'+nomes.map(n=>{const up=String(n).toUpperCase();return `<option value="${up.replace(/"/g,'&quot;')}">${up}</option>`}).join('');el.disabled=false;if(selecionada){const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();const opt=[...el.options].find(o=>norm(o.value)===norm(selecionada));if(opt)el.value=opt.value;}updateTrechoResumo()}catch(e){console.error('IBGE cidade destino folga:',e);el.innerHTML='<option value="">Não foi possível carregar as cidades</option>';el.disabled=true;}}
-async function loadFcResidCidades(uf,selecionada=''){const el=$('g360FcDevResidCidade');if(!el)return;if(!uf){el.disabled=true;el.innerHTML='<option value="">Selecione primeiro a UF...</option>';return}el.disabled=true;el.innerHTML='<option value="">Carregando cidades...</option>';try{const key='g360_fc_res_cidades_'+uf;let nomes=null;try{nomes=JSON.parse(localStorage.getItem(key)||'null')}catch(e){}if(!Array.isArray(nomes)){const r=await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${encodeURIComponent(uf)}/municipios?orderBy=nome`,{cache:'force-cache'});if(!r.ok)throw new Error('Falha ao consultar cidades');nomes=(await r.json()).map(x=>x.nome).filter(Boolean);try{localStorage.setItem(key,JSON.stringify(nomes))}catch(e){}}if(String(uf).toUpperCase()==='DF'&&!nomes.some(n=>String(n).toUpperCase()==='TAGUATINGA'))nomes.push('Taguatinga');el.innerHTML='<option value="">Selecione a cidade...</option>'+nomes.map(n=>{const up=String(n).toUpperCase();return `<option value="${up.replace(/"/g,'&quot;')}">${up}</option>`}).join('');el.disabled=false;if(selecionada){const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();const opt=[...el.options].find(o=>norm(o.value)===norm(selecionada));if(opt)el.value=opt.value;}}catch(e){console.error('IBGE cidade residência folga:',e);el.innerHTML='<option value="">Não foi possível carregar as cidades</option>';el.disabled=true;}}
+async function loadFcDestinoCidades(uf,selecionada=''){const el=$('g360FcDevDestinoCidade');if(!el)return;if(!uf){el.disabled=true;el.innerHTML='<option value="">Selecione primeiro a UF...</option>';updateTrechoResumo();return}el.disabled=true;el.innerHTML='<option value="">Carregando cidades...</option>';try{const key='g360_fc_dest_cidades_'+uf;let nomes=null;try{nomes=JSON.parse(localStorage.getItem(key)||'null')}catch(e){}if(!Array.isArray(nomes)){const r=await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${encodeURIComponent(uf)}/municipios?orderBy=nome`,{cache:'force-cache'});if(!r.ok)throw new Error('Falha ao consultar cidades');nomes=(await r.json()).map(x=>x.nome).filter(Boolean);try{localStorage.setItem(key,JSON.stringify(nomes))}catch(e){}}el.innerHTML='<option value="">Selecione a cidade...</option>'+nomes.map(n=>{const up=String(n).toUpperCase();return `<option value="${up.replace(/"/g,'&quot;')}">${up}</option>`}).join('');el.disabled=false;if(selecionada){const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();const opt=[...el.options].find(o=>norm(o.value)===norm(selecionada));if(opt)el.value=opt.value;}updateTrechoResumo()}catch(e){console.error('IBGE cidade destino folga:',e);el.innerHTML='<option value="">Não foi possível carregar as cidades</option>';el.disabled=true;}}
+async function loadFcResidCidades(uf,selecionada=''){const el=$('g360FcDevResidCidade');if(!el)return;if(!uf){el.disabled=true;el.innerHTML='<option value="">Selecione primeiro a UF...</option>';return}el.disabled=true;el.innerHTML='<option value="">Carregando cidades...</option>';try{const key='g360_fc_res_cidades_'+uf;let nomes=null;try{nomes=JSON.parse(localStorage.getItem(key)||'null')}catch(e){}if(!Array.isArray(nomes)){const r=await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${encodeURIComponent(uf)}/municipios?orderBy=nome`,{cache:'force-cache'});if(!r.ok)throw new Error('Falha ao consultar cidades');nomes=(await r.json()).map(x=>x.nome).filter(Boolean);try{localStorage.setItem(key,JSON.stringify(nomes))}catch(e){}}el.innerHTML='<option value="">Selecione a cidade...</option>'+nomes.map(n=>{const up=String(n).toUpperCase();return `<option value="${up.replace(/"/g,'&quot;')}">${up}</option>`}).join('');el.disabled=false;if(selecionada){const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();const opt=[...el.options].find(o=>norm(o.value)===norm(selecionada));if(opt)el.value=opt.value;}}catch(e){console.error('IBGE cidade residência folga:',e);el.innerHTML='<option value="">Não foi possível carregar as cidades</option>';el.disabled=true;}}
 function fcFmtDate(v){if(!v)return'—';const d=new Date(String(v).slice(0,10)+'T12:00:00');return Number.isNaN(d.getTime())?'—':d.toLocaleDateString('pt-BR')}
 function fcAddMonthsISO(v,meses){const [y,m,d]=String(v).slice(0,10).split('-').map(Number);if(!y||!m||!d||!meses)return'';const base=new Date(y,m-1,d,12);const alvoMes=base.getMonth()+Number(meses);const dia=base.getDate();base.setDate(1);base.setMonth(alvoMes);const ultimo=new Date(base.getFullYear(),base.getMonth()+1,0).getDate();base.setDate(Math.min(dia,ultimo));return `${base.getFullYear()}-${String(base.getMonth()+1).padStart(2,'0')}-${String(base.getDate()).padStart(2,'0')}`}
 function fcPeriodicidadeMeses(txt){if(!txt)return null;const m=String(txt).match(/(\d+)\s*\/\s*(\d+)/)||String(txt).match(/(\d+)/);return m?Number(m[1]):null}
@@ -21634,45 +21630,6 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(bind,900));else setTimeout(bind,900);
  setInterval(bind,1500);
  window.g360FolgaFinalV332={showStep,delByCid};
-})();
-</script>
-
-<!-- V363 — tela única Folgas de Campo: remove resumo visual e mantém Resumo/Termo na grade principal -->
-<style id="g360-folga-v363-css">
-#g360FcResumoCompetenciaPanel{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;margin:0!important;padding:0!important;border:0!important}
-</style>
-<script id="g360-folga-v363">
-(function(){
- 'use strict';
- const $=id=>document.getElementById(id);
- function hideResumo(){
-   const p=$('g360FcResumoCompetenciaPanel');
-   if(p){p.style.setProperty('display','none','important');p.hidden=true;}
- }
- function enhance(){
-   hideResumo();
-   const body=$('g360FcProgramacoesBody'); if(!body)return;
-   body.querySelectorAll('tr').forEach(tr=>{
-     const edit=tr.querySelector('[data-fc-prog-edit]'); if(!edit)return;
-     const cid=edit.getAttribute('data-fc-prog-edit');
-     const actions=edit.closest('.crud-row-actions')||edit.parentElement; if(!actions)return;
-     if(!actions.querySelector('[data-v363-resumo]')){
-       const b=document.createElement('button');b.type='button';b.className='fc-dev-mini-action icon-only';b.setAttribute('data-v363-resumo',cid);b.title='Resumo';b.setAttribute('aria-label','Resumo das despesas em PDF');b.textContent='📈';
-       b.onclick=()=>window.g360FolgaDevV274?.exportPdfPessoa?.(cid); actions.insertBefore(b,edit);
-     }
-     if(!actions.querySelector('[data-v363-termo]')){
-       const b=document.createElement('button');b.type='button';b.className='fc-dev-mini-action term icon-only';b.setAttribute('data-v363-termo',cid);b.title='Termo';b.setAttribute('aria-label','Termo de Concessão em PDF');b.textContent='📝';
-       b.onclick=()=>window.g360FolgaDevV274?.openTermForPerson?.(cid); actions.insertBefore(b,edit);
-     }
-   });
- }
- function bind(){
-   enhance();
-   const body=$('g360FcProgramacoesBody'); if(body&&!body.dataset.v363){body.dataset.v363='1';new MutationObserver(enhance).observe(body,{childList:true,subtree:true});}
-   const root=$('g360FolgaCampoDev')||document.body; if(root&&!root.dataset.v363){root.dataset.v363='1';new MutationObserver(hideResumo).observe(root,{childList:true,subtree:true,attributes:true,attributeFilter:['style','hidden']});}
- }
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(bind,900));else setTimeout(bind,900);
- setInterval(enhance,1500);
 })();
 </script>
 </body>
