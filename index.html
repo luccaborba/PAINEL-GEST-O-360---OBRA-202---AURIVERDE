@@ -25,6 +25,7 @@
 <!-- V327: Organograma Setor/Equipe com sugestão de Folga de Campo na tela, PDF e Excel -->
 <!-- V329: Folga de Campo em fluxo modal por etapas: dados > roteiro > finalizar roteiro > despesas extras -->
 <!DOCTYPE html>
+<!-- V355: Folga de Campo — remove bloco duplicado "Folgas de Campo cadastradas"; mantém somente Resumo da competência -->
 <!-- V293: otimização de carregamento do módulo Reembolsos: cache por obra, consultas enxutas e evita recargas repetidas -->
 <!-- V287: PDF Folga de Campo — descrição sem espaçamento artificial e separador de trechos > -->
 <!-- V286: Folga de Campo — PDF despesas com espaçamento normalizado -->
@@ -3661,7 +3662,6 @@ html.g360-ui-ready .content-col {
         </section>
           </div>
         </div>
-        <section class="panel fc-dev-panel" id="g360FcProgramacoesPanel"><div class="g360-reemb-table-head"><div><h2>Folgas de Campo cadastradas</h2><div class="g360-reemb-sub">Folgas cadastradas na competência selecionada. Use ✏️ Editar para alterar os dados ou 🗑 Excluir para remover a folga e suas despesas vinculadas.</div></div></div><div class="table-scroll"><table><thead><tr><th>Colaborador</th><th>Período da folga</th><th>Retorno</th><th>Cidade / UF</th><th>KM</th><th>Periodicidade</th><th>Total</th><th>Ações</th></tr></thead><tbody id="g360FcProgramacoesBody"><tr><td colspan="8"><div class="empty-state">Carregando programações...</div></td></tr></tbody></table></div></section>
         <section class="panel fc-dev-panel"><div class="g360-reemb-table-head"><div><h2>Resumo da competência</h2><div class="g360-reemb-sub">Consolidado por colaborador. 📈 relatório de despesas · 📝 Termo de Concessão de Folga de Campo.</div></div><div class="fc-dev-export-box"><span class="fc-dev-export-label">Exportar</span><button type="button" class="clear-btn fc-dev-export-icon" id="g360FcDevExcelComp" title="Excel" aria-label="Exportar Excel">📊</button></div></div><div class="table-scroll"><table><thead><tr><th class="fc-dev-summary-colab-head"><div class="fc-dev-summary-head-wrap"><span class="fc-dev-summary-export-head">Exportar</span><span class="fc-dev-summary-name-head">Colaborador</span></div></th><th>Função</th><th>Qtd. despesas</th><th>Total</th><th>Ações</th></tr></thead><tbody id="g360FcDevResumoBody"></tbody></table></div></section>
         <div id="g360FcDevCompModal" class="fc-dev-modal" aria-hidden="true">
           <div class="fc-dev-modal-card">
