@@ -63,6 +63,7 @@
 <!-- V216: remove rodapé/branding do PDF de admissão salvo/reimpresso -->
 <!-- V215: checkboxes do PDF/reimpressão com preenchimento branco real via jsPDF -->
 <!-- V214: quadrados/checkboxes sempre brancos, independente do fundo -->
+<!-- V353: Alojamentos — ocupados calculados pelos colaboradores ativos; campo somente leitura; rateio por imóvel na tabela principal -->
 <!-- V213: PDFs RH limpos; demissão sem contato duplicado e sem rodapés/branding do sistema -->
 <!-- V212: UF fixa + cidades IBGE robustas e layout compacto de Cidade -->
 <!-- V210: layout Folga de Campo com UF antes da Cidade e KM/Período/Dias na mesma linha -->
@@ -2469,7 +2470,7 @@ html.g360-ui-ready .content-col {
           </h2>
           <div class="table-scroll">
             <table>
-              <thead><tr><th>Contrato</th><th>Descrição</th><th>Fornecedor</th><th class="num">Valor Mensal</th><th>Capacidade</th><th>Ocupados</th><th>Ocupação</th><th>Status</th><th>Ações</th></tr></thead>
+              <thead><tr><th>Contrato</th><th>Descrição</th><th>Fornecedor</th><th class="num">Valor Mensal</th><th>Capacidade</th><th>Ocupados</th><th class="num">Rateio / Ocupante</th><th>Ocupação</th><th>Status</th><th>Ações</th></tr></thead>
               <tbody id="tableAloj"></tbody>
             </table>
           </div>
@@ -7182,11 +7183,11 @@ function exportAlojImoveisXLS(){
     ['Total de imóveis', rows.length],
     ['Gerado em', dataStr],
     [],
-    ['Contrato','Descrição','Fornecedor','Valor Mensal','Capacidade','Ocupados','Ocupação (%)'],
-    ...rows.map(a=>[a.contrato??'', a.descricao??'', a.fornecedor??'', a.valor??0, a.capacidade??'', a.ocupReal, a.capacidade? +(a.ocupReal/a.capacidade*100).toFixed(1) : '']),
+    ['Contrato','Descrição','Fornecedor','Valor Mensal','Capacidade','Ocupados','Rateio / Ocupante','Ocupação (%)'],
+    ...rows.map(a=>[a.contrato??'', a.descricao??'', a.fornecedor??'', a.valor??0, a.capacidade??'', a.ocupReal, a.ocupReal>0?Number(a.valor||0)/a.ocupReal:0, a.capacidade? +(a.ocupReal/a.capacidade*100).toFixed(1) : '']),
   ];
   const ws = XLSX.utils.aoa_to_sheet(sheetRows);
-  ws['!cols'] = [{wch:16},{wch:32},{wch:32},{wch:14},{wch:12},{wch:12},{wch:14}];
+  ws['!cols'] = [{wch:16},{wch:32},{wch:32},{wch:14},{wch:12},{wch:12},{wch:18},{wch:14}];
   XLSX.utils.book_append_sheet(wb, ws, 'Imóveis');
 
   const fname = 'imoveis_alojamento_' + new Date().toISOString().slice(0,10) + '.xlsx';
@@ -7235,8 +7236,9 @@ function renderAlojamento(){
       const barColor = pctNum >= 100 ? 'var(--red)' : (pctNum >= 85 ? 'var(--amber)' : 'var(--yellow)');
       ocupCell = `<div class="avanco-cell"><span class="bar-track"><span class="bar-fill" style="width:${Math.min(pctNum,100)}%;background:${barColor};"></span></span>${pctNum.toFixed(1)}%</div>`;
     }
-    return `<tr><td>${a.contrato}</td><td>${a.descricao}</td><td>${a.fornecedor}</td><td class="num">${fmtBRL(a.valor)}</td><td>${cap}</td><td>${ocu}</td><td>${ocupCell}</td><td><span class="badge ${a.ativo===false?'bad':'ok'}">${a.ativo===false?'INATIVO':'ATIVO'}</span></td><td class="crud-row-actions"><button type="button" class="crud-mini" onclick="g360CrudEdit('alojamentos','${encodeURIComponent(String(a.contrato))}')">✏️ Editar</button><button type="button" class="crud-mini toggle" onclick="g360CrudToggle('alojamentos','${encodeURIComponent(String(a.contrato))}')">${a.ativo===false?'▶ Ativar':'⏸ Inativar'}</button><button type="button" class="crud-mini danger" onclick="g360CrudDelete('alojamentos','${encodeURIComponent(String(a.contrato))}')">🗑</button></td></tr>`;
-  }, 'Nenhum imóvel de alojamento cadastrado.', 9);
+    const rateioAtual = ocu>0 ? Number(a.valor||0)/ocu : 0;
+    return `<tr><td>${a.contrato}</td><td>${a.descricao}</td><td>${a.fornecedor}</td><td class="num">${fmtBRL(a.valor)}</td><td>${cap}</td><td>${ocu}</td><td class="num">${ocu>0?fmtBRL(rateioAtual):'—'}</td><td>${ocupCell}</td><td><span class="badge ${a.ativo===false?'bad':'ok'}">${a.ativo===false?'INATIVO':'ATIVO'}</span></td><td class="crud-row-actions"><button type="button" class="crud-mini" onclick="g360CrudEdit('alojamentos','${encodeURIComponent(String(a.contrato))}')">✏️ Editar</button><button type="button" class="crud-mini toggle" onclick="g360CrudToggle('alojamentos','${encodeURIComponent(String(a.contrato))}')">${a.ativo===false?'▶ Ativar':'⏸ Inativar'}</button><button type="button" class="crud-mini danger" onclick="g360CrudDelete('alojamentos','${encodeURIComponent(String(a.contrato))}')">🗑</button></td></tr>`;
+  }, 'Nenhum imóvel de alojamento cadastrado.', 10);
 
   renderColabAloj();
 }
@@ -14266,7 +14268,7 @@ window.GESTAO360_CONFIG = {
     cargosSalarios:{title:'Cargos e Salários',table:'cargos_salarios',order:'funcao',fields:[['funcao','Função / Cargo','span2'],['nivel','Nível'],['salario','Salário','number'],['ativo','Ativo','','ativo-cargo']],cols:['funcao','nivel','salario','ativo']},
     funcionarios:{title:'Funcionários',table:'funcionarios',order:'nome',fields:[['matricula','Matrícula'],['cpf','CPF','','cpf-mask'],['nome','Nome','span2'],['tipo_contrato','Tipo contrato','','tipo-contrato-func'],['admissao','Admissão','date'],['venc_aso','Venc. ASO (pode informar depois)','date'],['depto','Setor','','setor-cadastro'],['setor_equipe','Setor / Equipe','','setor-equipe-master-base'],['funcao','Função / Cargo','span2','funcao-cadastro'],['nivel','Nível','','nivel-cadastro'],['status','Status','','status-func'],['obra','Obra','span2','obra-cadastro'],['jornada_tipo','Jornada / Escala','','jornada-select'],['horario_entrada','Entrada','','time'],['horario_saida','Saída','','time'],['intervalo_inicio','Início do intervalo','','time'],['intervalo_fim','Fim do intervalo','','time'],['jornada_observacao','Detalhes da jornada','span2'],['cnh','CNH'],['cat_cnh','Cat. CNH'],['venc_cnh','Venc. CNH','date'],['salario','Salário','','salario-cadastro'],['gratificacao','Gratificação','number'],['cidade','Cidade / Estado','span2','cidade-ibge'],['cidade_baixada','Cidade de Baixada','span2','cidade-baixada-ibge'],['telefone','Telefone / WhatsApp',''],['email','Email','span2'],['distancia_baixada_km','Distância da obra (km)','number'],['direito_baixada','Tem direito de baixada?','','direito-baixada'],['ult_baixada','Últ. baixada','date'],['prox_baixada','Próx. baixada','date'],['periodicidade_baixada','Periodicidade de baixada','','periodicidade-baixada'],['custo_baixada','Custo baixada (opcional)','number'],['vt','VT (opcional)','number'],['beneficios','Benefícios','number'],['usa_aloj','Usa alojamento?','','usa-aloj'],['alojamento','Alojamento','span2','aloj-select']],cols:['matricula','nome','funcao','setor_equipe','status']},
     contratos:{title:'Contratos',table:'contratos',order:'codigo',fields:[['codigo','Contrato'],['fornecedor','Fornecedor','span2'],['tipo','Tipo','span2'],['objeto','Objeto','span4','textarea'],['contrato_agua_vinculo','Contrato Água / Saneago','span2','contrato-servico-locacao:A'],['contrato_energia_vinculo','Contrato Energia / Equatorial','span2','contrato-servico-locacao:E'],['contrato_internet_vinculo','Contrato Internet','span2','contrato-servico-locacao:I'],['valor_contratado','Valor contratado','number'],['valor_medido_total','Valor medido','number'],['valor_mensal','Valor mensal','number'],['data_inicio','Início','date'],['data_fim','Fim','date'],['situacao','Situação']],cols:['codigo','fornecedor','tipo','situacao','valor_contratado']},
-    alojamentos:{title:'Alojamentos',table:'alojamentos',order:'descricao',fields:[['contrato_codigo','Contrato de locação'],['descricao','Descrição','span2'],['fornecedor','Fornecedor / Locador','span2'],['endereco','Endereço completo','span4','textarea'],['dia_inicio_medicao','Dia inicial do ciclo de medição','','dia-ciclo-medicao'],['periodo_medicao_atual','Período atual da medição','span2','periodo-medicao-readonly'],['contrato_agua','Contrato de Água','span2','contrato-servico:A'],['contrato_energia','Contrato de Energia','span2','contrato-servico:E'],['contrato_internet','Contrato de Internet','span2','contrato-servico:I'],['valor_mensal','Valor mensal','number'],['capacidade','Capacidade','number'],['ocupados','Ocupados','number'],['custo_rateado','Rateio por ocupante','number-readonly'],['status','Status']],cols:['contrato_codigo','descricao','endereco','dia_inicio_medicao','contrato_agua','contrato_energia','contrato_internet','capacidade','status']},
+    alojamentos:{title:'Alojamentos',table:'alojamentos',order:'descricao',fields:[['contrato_codigo','Contrato de locação'],['descricao','Descrição','span2'],['fornecedor','Fornecedor / Locador','span2'],['endereco','Endereço completo','span4','textarea'],['dia_inicio_medicao','Dia inicial do ciclo de medição','','dia-ciclo-medicao'],['periodo_medicao_atual','Período atual da medição','span2','periodo-medicao-readonly'],['contrato_agua','Contrato de Água','span2','contrato-servico:A'],['contrato_energia','Contrato de Energia','span2','contrato-servico:E'],['contrato_internet','Contrato de Internet','span2','contrato-servico:I'],['valor_mensal','Valor mensal','number'],['capacidade','Capacidade','number'],['ocupados','Ocupados','number-readonly'],['custo_rateado','Rateio por ocupante','number-readonly'],['status','Status']],cols:['contrato_codigo','descricao','endereco','dia_inicio_medicao','contrato_agua','contrato_energia','contrato_internet','capacidade','status']},
     patrimonio:{title:'Inventário de Patrimônio',table:'patrimonio_itens',order:'descricao',fields:[['codigo_patrimonio','Nº Patrimônio'],['tag','Tag'],['descricao','Descrição','span2'],['categoria','Categoria'],['marca','Marca'],['modelo','Modelo'],['numero_serie','Nº de série'],['alojamento_codigo','Alojamento','span2','aloj-select'],['comodo','Cômodo'],['quantidade','Quantidade','number'],['valor_unitario','Valor unitário','number'],['data_aquisicao','Data aquisição','date'],['estado_conservacao','Estado conservação'],['status','Status'],['responsavel','Responsável','span2'],['origem','Origem / fornecedor','span2'],['observacao','Observação','span4','textarea']],cols:['codigo_patrimonio','descricao','categoria','alojamento_codigo','comodo','estado_conservacao','status']},
     movimentacoes:{title:'Movimentações Patrimoniais',table:'patrimonio_movimentacoes',order:'data_movimentacao',fields:[['patrimonio_codigo','Nº Patrimônio'],['data_movimentacao','Data','date'],['tipo','Tipo'],['origem','Origem','span2'],['destino','Destino','span2'],['responsavel','Responsável','span2'],['observacao','Observação','span4','textarea']],cols:['data_movimentacao','patrimonio_codigo','tipo','origem','destino','responsavel']},
     fechamentos:{title:'Fechamento de Praça',table:'fechamentos_praca',order:'periodo',fields:[['periodo','Período (ex.: AGOSTO/2026)'],['contrato_codigo','Contrato'],['fornecedor','Fornecedor','span2'],['medido','Valor medido','number'],['status','Status'],['justificativa','Justificativa','span2']],cols:['periodo','contrato_codigo','fornecedor','medido','status']}
@@ -14847,6 +14849,9 @@ window.GESTAO360_CONFIG = {
     }
     if(kind==='alojamentos'){
       const vf=g360Form.elements.valor_mensal,of=g360Form.elements.ocupados,rf=g360Form.elements.custo_rateado;
+      const codigoAtual=String(edit?.contrato_codigo||current?.contrato_codigo||'');
+      const ocupAtual=ATIVOS.filter(c=>c.usaAloj==='S' && String(c.alojamento||'')===codigoAtual).length;
+      if(of){of.value=ocupAtual;of.readOnly=true;of.setAttribute('readonly','readonly');}
       const calc=()=>{if(rf)rf.value=(Number(of?.value||0)>0?(Number(vf?.value||0)/Number(of.value)):0).toFixed(2)};
       vf?.addEventListener('input',calc);of?.addEventListener('input',calc);calc();
 
@@ -15506,7 +15511,7 @@ if(kind==='funcionarios')await recalcAlojamentoRateios();if(kind==='funcionarios
       ['contrato','Contrato'],['fornecedor','Fornecedor','wide'],['tipo','Tipo','wide'],['objeto','Objeto','full'],['contratado','Valor contratado','number'],['medido','Valor medido','number'],['vrMensal','Valor mensal','number'],['dataInicio','Data início','date'],['dataFim','Data fim','date'],['situacao','Situação','select:ATIVO|INATIVO|PENDENTE|PARCIALMENTE MEDIDO|CONCLUÍDO|RESCINDIDO|ASSINATURAS'],['fechamento','Dia fechamento'],['justificativa','Justificativa','full']
     ]},
     alojamentos:{key:'contrato',storage:'painel202_alojamentos_override_v1',ts:'painel202_alojamentos_override_ts_v1',label:'Alojamento',fields:[
-      ['contrato','Contrato de locação'],['descricao','Descrição','wide'],['fornecedor','Fornecedor / Locador','wide'],['endereco','Endereço completo','full'],['contratoAgua','Contrato de Água','contrato-servico:A'],['contratoEnergia','Contrato de Energia','contrato-servico:E'],['contratoInternet','Contrato de Internet','contrato-servico:I'],['valor','Valor mensal','number'],['capacidade','Capacidade','number'],['ocupados','Ocupados','number'],['custoRateado','Rateio por ocupante','number-readonly'],['ativo','Status','select:true|false']
+      ['contrato','Contrato de locação'],['descricao','Descrição','wide'],['fornecedor','Fornecedor / Locador','wide'],['endereco','Endereço completo','full'],['contratoAgua','Contrato de Água','contrato-servico:A'],['contratoEnergia','Contrato de Energia','contrato-servico:E'],['contratoInternet','Contrato de Internet','contrato-servico:I'],['valor','Valor mensal','number'],['capacidade','Capacidade','number'],['ocupados','Ocupados','number-readonly'],['custoRateado','Rateio por ocupante','number-readonly'],['ativo','Status','select:true|false']
     ]}
   };
   function parseSeed(kind){
