@@ -2088,6 +2088,12 @@ html.g360-ui-ready .content-col {
 }
 .fc-folga-dados-grid label:has(#g360FcDevResidUf){max-width:none!important;padding-top:0!important;}
 </style>
+
+<style id="g360-rh-exp-kpis-v2">
+#g360RhDespesasPanel .g360-rh-exp-kpis{grid-template-columns:repeat(5,minmax(0,1fr));}
+@media(max-width:1280px){#g360RhDespesasPanel .g360-rh-exp-kpis{grid-template-columns:repeat(3,minmax(0,1fr));}}
+@media(max-width:760px){#g360RhDespesasPanel .g360-rh-exp-kpis{grid-template-columns:1fr;}}
+</style>
 </head>
 <body>
 <!-- V155: convite personalizado + primeiro acesso com criação de senha -->
@@ -2337,12 +2343,16 @@ html.g360-ui-ready .content-col {
             <div class="kpi"><div class="kpi-label">REEMBOLSOS</div><div class="kpi-value" id="g360RhKpiReemb">R$ 0,00</div><div class="kpi-sub">Competência atual</div></div>
             <div class="kpi"><div class="kpi-label">FOLGA DE CAMPO</div><div class="kpi-value" id="g360RhKpiFolga">R$ 0,00</div><div class="kpi-sub">Competência atual</div></div>
             <div class="kpi"><div class="kpi-label">TOTAL DESPESAS</div><div class="kpi-value" id="g360RhKpiDespTotal">R$ 0,00</div><div class="kpi-sub">Reembolso + Folga</div></div>
-            <div class="kpi" style="padding:0;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;">
-              <div style="padding:18px 16px;border-right:1px solid var(--border,#3a3d42);min-width:0;">
-                <div class="kpi-label">REEMBOLSOS</div><div class="kpi-value" id="g360RhKpiReembPessoas">0</div><div class="kpi-sub">Colaboradores no mês</div>
+            <div class="kpi" style="display:grid;grid-template-columns:1fr 1fr;padding:0;overflow:hidden;">
+              <div style="padding:16px 18px;min-width:0;">
+                <div class="kpi-label">REEMBOLSOS</div>
+                <div class="kpi-value" id="g360RhKpiReembPessoas">0</div>
+                <div class="kpi-sub">Colaboradores</div>
               </div>
-              <div style="padding:18px 16px;min-width:0;">
-                <div class="kpi-label">FOLGAS DE CAMPO</div><div class="kpi-value" id="g360RhKpiFolgaPessoas">0</div><div class="kpi-sub">Colaboradores no mês</div>
+              <div style="padding:16px 18px;min-width:0;border-left:1px solid var(--line);">
+                <div class="kpi-label">FOLGAS DE CAMPO</div>
+                <div class="kpi-value" id="g360RhKpiFolgaPessoas">0</div>
+                <div class="kpi-sub">Colaboradores</div>
               </div>
             </div>
           </section>
