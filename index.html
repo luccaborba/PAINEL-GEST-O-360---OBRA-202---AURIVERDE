@@ -3622,7 +3622,7 @@ html.g360-ui-ready .content-col {
                 <!-- V274 — NOVO PROJETO FOLGA DE CAMPO EM DEV -->
         <section class="panel g360-reemb-head fc-dev-panel">
           <div class="fc-dev-head-main"><h2>Folga de Campo</h2><div class="g360-reemb-sub">Abra a competência, selecione o colaborador, monte o roteiro por trechos e lance as demais despesas da folga.</div><div id="g360FcDevCompButtons" class="fc-dev-comp-select-box"><label>Competência<select id="g360FcDevCompSelect"><option value="">Carregando...</option></select></label></div></div>
-          <div class="g360-reemb-head-actions"><button type="button" class="btn-primary" id="g360FcDevIncluirFolga">＋ Incluir Folga de Campo</button><button type="button" class="btn-primary" id="g360FcRelSugestoes" title="Gerar relatório de sugestão de baixadas">📄 Relatório de sugestões</button><button type="button" class="btn-primary" id="g360FcRelSugestoes2" title="Gerar sugestões excluindo colaboradores já cadastrados na competência selecionada">📄 Sugestão 2</button><button type="button" class="btn-primary" id="g360FcDevAbrirComp">＋ Abrir competência</button></div>
+          <div class="g360-reemb-head-actions"><button type="button" class="btn-primary" id="g360FcDevIncluirFolga">＋ Incluir Folga de Campo</button><button type="button" class="btn-primary" id="g360FcRelSugestoes" title="Gerar relatório de sugestão de baixadas">📄 Relatório de sugestões</button><button type="button" class="btn-primary" id="g360FcRelSugestoes2" title="Gerar sugestões desconsiderando as folgas cadastradas na competência selecionada">📄 Sugestão 2</button><button type="button" class="btn-primary" id="g360FcDevAbrirComp">＋ Abrir competência</button></div>
         </section>
         <section class="kpis-4 g360-reemb-kpis fc-dev-panel">
           <div class="kpi"><div class="kpi-label">COMPETÊNCIA</div><div class="kpi-value" id="g360FcDevKpiComp" style="font-size:20px">—</div><div class="kpi-sub">Mês selecionado</div></div>
@@ -21268,8 +21268,8 @@ async function fcSugV348Carregar(force=false){
  if(cr.error)throw cr.error;if(fr.error)throw fr.error;if(rr.error)throw rr.error;if(lr.error)throw lr.error;
 
  const hist=[];
- (fr.data||[]).forEach(x=>hist.push({colaborador_id:x.colaborador_id,data_ini:String(x.data_inicio||'').slice(0,10),data_fim:String(x.data_fim||x.data_inicio||'').slice(0,10),fonte:'FOLGA DE CAMPO'}));
- (rr.data||[]).forEach(x=>hist.push({colaborador_id:x.colaborador_id,data_ini:String(x.periodo_folga_inicio||'').slice(0,10),data_fim:String(x.periodo_folga_fim||x.periodo_folga_inicio||'').slice(0,10),fonte:'REEMBOLSO — FOLGA DE CAMPO'}));
+ (fr.data||[]).forEach(x=>hist.push({colaborador_id:x.colaborador_id,data_ini:String(x.data_inicio||'').slice(0,10),data_fim:String(x.data_fim||x.data_inicio||'').slice(0,10),competencia:String(x.competencia||'').slice(0,7),fonte:'FOLGA DE CAMPO'}));
+ (rr.data||[]).forEach(x=>hist.push({colaborador_id:x.colaborador_id,data_ini:String(x.periodo_folga_inicio||'').slice(0,10),data_fim:String(x.periodo_folga_fim||x.periodo_folga_inicio||'').slice(0,10),competencia:String(x.periodo_folga_inicio||'').slice(0,7),fonte:'REEMBOLSO — FOLGA DE CAMPO'}));
 
  // PDFs/importações antigas: agrupa IDA/VOLTA BAIXADA por colaborador + competência.
  const ev=new Map();
@@ -21281,7 +21281,7 @@ async function fcSugV348Carregar(force=false){
    if(!a)ev.set(k,{colaborador_id:x.colaborador_id,min:d,max:d});
    else{if(d<a.min)a.min=d;if(d>a.max)a.max=d}
  });
- ev.forEach(x=>hist.push({colaborador_id:x.colaborador_id,data_ini:x.min,data_fim:x.max,fonte:'REEMBOLSO — BAIXADA'}));
+ ev.forEach(x=>hist.push({colaborador_id:x.colaborador_id,data_ini:x.min,data_fim:x.max,competencia:String(x.min||'').slice(0,7),fonte:'REEMBOLSO — BAIXADA'}));
 
  const ult=new Map();
  hist.filter(x=>x.colaborador_id&&x.data_ini).sort((a,b)=>String(b.data_ini).localeCompare(String(a.data_ini))).forEach(h=>{const k=String(h.colaborador_id);if(!ult.has(k))ult.set(k,h)});
@@ -21301,7 +21301,7 @@ async function fcSugV348Carregar(force=false){
  }).map(c=>({...c,mat:c.matricula}));
  const cadastradosPorCompetencia=new Map();
  (fr.data||[]).forEach(x=>{const comp=String(x.competencia||'').slice(0,7),cid=String(x.colaborador_id||'');if(!comp||!cid)return;if(!cadastradosPorCompetencia.has(comp))cadastradosPorCompetencia.set(comp,new Set());cadastradosPorCompetencia.get(comp).add(cid)});
- fcSugV348Cache={colabs,ult,cadastradosPorCompetencia};return fcSugV348Cache;
+ fcSugV348Cache={colabs,ult,hist,cadastradosPorCompetencia};return fcSugV348Cache;
 }
 function fcSugV348Meses(){
  const b=new Date();b.setDate(1);
@@ -21329,7 +21329,7 @@ function fcSugV348AbrirFiltro(dados){
  #g360FcSugV348Modal input[type=checkbox]:checked{background:#f5c518;border-color:#f5c518} #g360FcSugV348Modal input[type=checkbox]:checked:after{content:'✓';font-size:8px;line-height:1;color:#111;font-weight:900}
  #g360FcSugV348Modal .list{display:grid;gap:6px;max-height:240px;overflow:auto} #g360FcSugV348Modal .gen{border:1px solid #d6aa00;background:#f5c518;color:#111;border-radius:5px;padding:8px 13px;font-size:11px;font-weight:900;cursor:pointer}
  @media(max-width:650px){#g360FcSugV348Modal .grid{grid-template-columns:1fr}}
- </style><div class="box"><div style="display:flex;justify-content:space-between;gap:12px"><div><div class="title">${dados.excluirCadastradosCompetencia?'SUGESTÃO 2 — SEM CADASTRADOS NA COMPETÊNCIA':'RELATÓRIO DE SUGESTÕES DE FOLGA'}</div><div class="sub">Fonte: base operacional DTW · ${dados.colabs.length} colaboradores elegíveis${dados.excluirCadastradosCompetencia?' · exclui cadastrados em '+String(dados.competenciaExclusao||currentMonth):''}</div></div><button type="button" id="g360FcSugV348Fechar" class="clear-btn">FECHAR</button></div>
+ </style><div class="box"><div style="display:flex;justify-content:space-between;gap:12px"><div><div class="title">${dados.excluirCadastradosCompetencia?'SUGESTÃO 2 — DESCONSIDERANDO A COMPETÊNCIA':'RELATÓRIO DE SUGESTÕES DE FOLGA'}</div><div class="sub">Fonte: base operacional DTW · ${dados.colabs.length} colaboradores elegíveis${dados.excluirCadastradosCompetencia?' · ignora o histórico lançado em '+String(dados.competenciaExclusao||currentMonth):''}</div></div><button type="button" id="g360FcSugV348Fechar" class="clear-btn">FECHAR</button></div>
  <div class="grid"><section><div class="st">SETOR / EQUIPE</div><label style="margin-bottom:8px"><input type="checkbox" id="g360FcSugV348SetTodos" checked> TODOS</label><div class="list">${grupos.map(g=>`<label><input type="checkbox" class="g360FcSugV348Set" value="${esc(g)}"> ${esc(g)}</label>`).join('')}</div></section>
  <section><div class="st">MÊS DA SUGESTÃO</div><label style="margin-bottom:8px"><input type="checkbox" id="g360FcSugV348MesTodos" checked> ATRASADAS + PRÓXIMOS 6 MESES</label><div class="list">${meses.map(m=>`<label><input type="checkbox" class="g360FcSugV348Mes" value="${m.ym}"> ${m.label}</label>`).join('')}</div></section></div>
  <div style="display:flex;justify-content:flex-end;margin-top:14px"><button type="button" id="g360FcSugV348Gerar" class="gen">📄 GERAR RELATÓRIO</button></div></div>`;
@@ -21351,10 +21351,14 @@ function fcSugV348Pdf(dados,filtros){
   if(!window.jspdf?.jsPDF)throw new Error('Biblioteca PDF não carregada.');
   const linhas=[],pend=[],hoje=new Date().toISOString().slice(0,10),mesAtual=hoje.slice(0,7);
   dados.colabs.forEach(c=>{
-   if(dados.excluirCadastradosCompetencia){const comp=String(dados.competenciaExclusao||currentMonth||'').slice(0,7),set=dados.cadastradosPorCompetencia?.get(comp);if(set?.has(String(c.id)))return;}
+   
    const grupo=fcSugV348Grupo(c);if(filtros.setores&&!filtros.setores.includes(grupo))return;
    const regra=fcSugV348Regra(c.distancia_baixada_km);if(!regra){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'SEM KM CADASTRADO']);return}
-   const h=dados.ult.get(String(c.id)),base=(h?.data_ini||c.admissao||'').slice(0,10);
+   const compIgnorada=dados.excluirCadastradosCompetencia?String(dados.competenciaExclusao||currentMonth||'').slice(0,7):'';
+   const h=dados.excluirCadastradosCompetencia
+     ? (dados.hist||[]).filter(x=>String(x.colaborador_id)===String(c.id)&&String(x.competencia||x.data_ini||'').slice(0,7)!==compIgnorada).sort((a,b)=>String(b.data_ini).localeCompare(String(a.data_ini)))[0]
+     : dados.ult.get(String(c.id));
+   const base=(h?.data_ini||c.admissao||'').slice(0,10);
    const fonte=h?(h.fonte||'ÚLTIMA FOLGA'):'ADMISSÃO';
    if(!base){pend.push([c.mat||'—',String(c.nome||'').toUpperCase(),'SEM ADMISSÃO / HISTÓRICO']);return}
    // V351 — Histórico existente mantém dia inicial/final; admissão continua usando o 5º dia útil.
@@ -21392,7 +21396,7 @@ function fcSugV348Pdf(dados,filtros){
     doc.setFont('helvetica','normal');doc.setFontSize(7.5);
     const st=filtros.setores?.length?filtros.setores.join(' | '):'TODOS OS SETORES / ENCARREGADOS';
     const mt=filtros.meses.map(ym=>ym==='ATRASADAS'?'ATRASADAS':(()=>{const[y,m]=ym.split('-').map(Number);return new Date(y,m-1,1,12).toLocaleDateString('pt-BR',{month:'short',year:'numeric'}).toUpperCase()})()).join(' | ');
-    doc.text(`Obra 202 · ${st}`,PW/2,21,{align:'center',maxWidth:PW-25});
+    doc.text(`Obra 202 · ${st}`,PW/2+18,21,{align:'center',maxWidth:PW-78});
     doc.text(`Períodos: ${mt} · Regra: data-base + ciclo exato (2/3/6 meses). Baixadas vencidas permanecem como ATRASADAS até novo registro real.`,PW/2,26,{align:'center',maxWidth:PW-25});
   };
   cab();let y=31;const gs=[...new Set(linhas.map(x=>x.grupo))];
