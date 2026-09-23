@@ -21269,12 +21269,10 @@ async function fcSugV348Carregar(force=false){
    const aloj=String(c.usa_aloj??'').trim().toUpperCase();
    const direito=['SIM','S','TRUE','1'].includes(String(c.direito_baixada??'').trim().toUpperCase());
    const tipo=String(c.tipo_contrato||'').trim().toUpperCase();
-   // Elegível: colaborador ativo com direito de baixada. Mantém compatibilidade com
-   // cadastros antigos marcados como alojados e inclui quem mora de aluguel
-   // (usa_aloj='S' e alojamento nulo), sem exigir vínculo com imóvel cadastrado.
-   const moraFora=['SIM','S','TRUE','1'].includes(aloj) || direito;
+   // Elegível: somente colaborador ativo com direito de baixada = SIM/TRUE.
+   // Estar alojado, por si só, não concede direito à baixada.
    return !['DESLIGADO','INATIVO','ABANDONO'].includes(st)
-     && moraFora
+     && direito
      && !tipo.includes('PJ');
  }).map(c=>({...c,mat:c.matricula}));
  const cadastradosPorCompetencia=new Map();
