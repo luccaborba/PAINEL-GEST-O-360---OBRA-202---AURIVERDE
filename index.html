@@ -21267,15 +21267,19 @@ async function fcSugV348Carregar(force=false){
  const colabs=(cr.data||[]).filter(c=>{
    const st=String(c.status||'').trim().toUpperCase();
    const aloj=String(c.usa_aloj??'').trim().toUpperCase();
-   const direito=['SIM','S','TRUE','1'].includes(String(c.direito_baixada??'').trim().toUpperCase());
+   const direitoRaw=c.direito_baixada;
+   const direito=['SIM','S','TRUE','1'].includes(String(direitoRaw??'').trim().toUpperCase());
+   const semDireito=(direitoRaw===false)||['NAO','NÃO','N','FALSE','0'].includes(String(direitoRaw??'').trim().toUpperCase());
+   const alojado=['SIM','S','TRUE','1'].includes(aloj);
    const tipo=String(c.tipo_contrato||'').trim().toUpperCase();
-   // Elegível: colaborador ativo com direito de baixada. Mantém compatibilidade com
-   // cadastros antigos marcados como alojados e inclui quem mora de aluguel
-   // (usa_aloj='S' e alojamento nulo), sem exigir vínculo com imóvel cadastrado.
-   const moraFora=['SIM','S','TRUE','1'].includes(aloj) || direito;
+   const matricula=String(c.matricula??'').trim();
+   // Mantém a regra operacional anterior: alojados OU direito explícito entram na sugestão.
+   // Exceções: direito_baixada = false/NÃO exclui expressamente; PJ e terceiros sem matrícula não entram no relatório de baixadas.
    return !['DESLIGADO','INATIVO','ABANDONO'].includes(st)
-     && moraFora
-     && !tipo.includes('PJ');
+     && !semDireito
+     && (alojado || direito)
+     && !tipo.includes('PJ')
+     && matricula!=='';
  }).map(c=>({...c,mat:c.matricula}));
  const cadastradosPorCompetencia=new Map();
  (fr.data||[]).forEach(x=>{const comp=String(x.competencia||'').slice(0,7),cid=String(x.colaborador_id||'');if(!comp||!cid)return;if(!cadastradosPorCompetencia.has(comp))cadastradosPorCompetencia.set(comp,new Set());cadastradosPorCompetencia.get(comp).add(cid)});
@@ -21435,29 +21439,20 @@ async function fcProgDadosCompetencia(){
  const desp={};(dr.data||[]).forEach(r=>{const k=String(r.colaborador_id||'');desp[k]=(desp[k]||0)+Number(r.valor||0)});
  const cm=new Map(colabs.map(c=>[String(c.id),c]));
  const fmtPer=(a,b)=>a?(fcFmtDate(a)+(b?' a '+fcFmtDate(b):'')):'—';
- return folgas.map(f=>{const c=cm.get(String(f.colaborador_id))||{},prev=hist.find(h=>String(h.colaborador_id)===String(f.colaborador_id));const ini=f.data_inicio||f.data_saida||'',fim=f.data_fim||ini;const per=String(f.periodicidade_base||c.periodicidade_baixada||'—').toUpperCase();return {matricula:f.matricula||c.matricula||'—',nome:String(f.colaborador_nome||c.nome||'').toUpperCase(),funcao:String(c.funcao||'—').toUpperCase(),setor:String(c.setor_equipe||c.equipe||c.depto||'SEM SETOR / EQUIPE').trim().toUpperCase()||'SEM SETOR / EQUIPE',admissao:c.admissao?fcFmtDate(c.admissao):'—',cidade:[f.cidade_residencia||c.cidade_baixada||c.cidade||'',f.uf_residencia||c.uf_baixada||''].filter(Boolean).join(' - ').toUpperCase()||'—',periodo:fmtPer(ini,fim),dias:f.dias||calcDays(ini,fim)||'—',ultima:prev?fmtPer(prev.data_inicio||prev.data_saida,prev.data_fim||prev.data_inicio||prev.data_saida):'—',ideal:per,programado:fmtPer(ini,fim),obs:String(f.status||f.tipo_folga||'').toUpperCase(),valor:(desp[String(f.colaborador_id)]??Number(f.valor_reembolso||f.custo||0))};});
+ return folgas.map(f=>{const c=cm.get(String(f.colaborador_id))||{},prev=hist.find(h=>String(h.colaborador_id)===String(f.colaborador_id));const ini=f.data_inicio||f.data_saida||'',fim=f.data_fim||ini;const per=String(f.periodicidade_base||c.periodicidade_baixada||'—').toUpperCase();return {matricula:f.matricula||c.matricula||'—',nome:String(f.colaborador_nome||c.nome||'').toUpperCase(),funcao:String(c.funcao||'—').toUpperCase(),admissao:c.admissao?fcFmtDate(c.admissao):'—',cidade:[f.cidade_residencia||c.cidade_baixada||c.cidade||'',f.uf_residencia||c.uf_baixada||''].filter(Boolean).join(' - ').toUpperCase()||'—',periodo:fmtPer(ini,fim),dias:f.dias||calcDays(ini,fim)||'—',ultima:prev?fmtPer(prev.data_inicio||prev.data_saida,prev.data_fim||prev.data_inicio||prev.data_saida):'—',ideal:per,programado:fmtPer(ini,fim),obs:String(f.status||f.tipo_folga||'').toUpperCase(),valor:(desp[String(f.colaborador_id)]??Number(f.valor_reembolso||f.custo||0))};});
 }
-function fcProgAbrirFiltro(tipo,dados){
- document.getElementById('g360FcProgFiltroModal')?.remove();
- const grupos=[...new Set(dados.map(x=>x.setor||'SEM SETOR / EQUIPE'))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
- const ov=document.createElement('div');ov.id='g360FcProgFiltroModal';ov.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:16px';
- ov.innerHTML=`<style>#g360FcProgFiltroModal .box{width:min(560px,94vw);max-height:84vh;overflow:auto;background:#202327;border:1px solid #444;border-radius:8px;padding:16px;color:#fff;box-shadow:0 18px 60px #000;font-size:11px}#g360FcProgFiltroModal .title{font-size:14px;font-weight:900}#g360FcProgFiltroModal .sub{font-size:10px;opacity:.7;margin-top:3px}#g360FcProgFiltroModal section{border:1px solid #3b3f45;border-radius:7px;padding:11px;margin-top:14px}#g360FcProgFiltroModal .st{font-size:10px;font-weight:900;margin-bottom:8px}#g360FcProgFiltroModal label{font-size:10px!important;line-height:1.2!important;font-weight:600!important;display:flex;gap:6px;align-items:center}#g360FcProgFiltroModal input[type=checkbox]{appearance:none;-webkit-appearance:none;width:12px!important;height:12px!important;min-width:12px!important;margin:0!important;border:1px solid #777b82;border-radius:2px;background:#17191c;display:inline-grid;place-content:center}#g360FcProgFiltroModal input[type=checkbox]:checked{background:#f5c518;border-color:#f5c518}#g360FcProgFiltroModal input[type=checkbox]:checked:after{content:'✓';font-size:8px;line-height:1;color:#111;font-weight:900}#g360FcProgFiltroModal .list{display:grid;gap:6px;max-height:300px;overflow:auto}#g360FcProgFiltroModal .gen{border:1px solid #d6aa00;background:#f5c518;color:#111;border-radius:5px;padding:8px 13px;font-size:11px;font-weight:900;cursor:pointer}</style><div class="box"><div style="display:flex;justify-content:space-between;gap:12px"><div><div class="title">RESUMO DA COMPETÊNCIA — ${tipo.toUpperCase()}</div><div class="sub">Selecione os setores/equipes que devem constar na exportação.</div></div><button type="button" id="g360FcProgFiltroFechar" class="clear-btn">FECHAR</button></div><section><div class="st">SETOR / EQUIPE</div><label style="margin-bottom:8px"><input type="checkbox" id="g360FcProgFiltroTodos" checked> TODOS</label><div class="list">${grupos.map(g=>`<label><input type="checkbox" class="g360FcProgFiltroSet" value="${esc(g)}" checked> ${esc(g)}</label>`).join('')}</div></section><div style="display:flex;justify-content:flex-end;margin-top:14px"><button type="button" id="g360FcProgFiltroGerar" class="gen">${tipo==='pdf'?'📄':'📊'} GERAR ${tipo.toUpperCase()}</button></div></div>`;
- document.body.appendChild(ov);const todos=ov.querySelector('#g360FcProgFiltroTodos'),sets=[...ov.querySelectorAll('.g360FcProgFiltroSet')];todos.onchange=()=>sets.forEach(x=>x.checked=todos.checked);sets.forEach(x=>x.onchange=()=>{todos.checked=sets.length>0&&sets.every(i=>i.checked)});ov.querySelector('#g360FcProgFiltroFechar').onclick=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)ov.remove()};ov.querySelector('#g360FcProgFiltroGerar').onclick=()=>{const sel=sets.filter(x=>x.checked).map(x=>x.value);if(!sel.length)return alert('Selecione pelo menos um Setor / Equipe.');const filtrados=dados.filter(x=>sel.includes(x.setor));if(!filtrados.length)return alert('Nenhuma Folga de Campo encontrada para os filtros selecionados.');ov.remove();tipo==='pdf'?fcProgPdfGerar(filtrados):fcProgExcelGerar(filtrados)};
-}
-async function fcProgExcel(){try{const d=await fcProgDadosCompetencia();fcProgAbrirFiltro('excel',d)}catch(e){console.error('[Filtro resumo Excel]',e);alert('Erro ao carregar filtros: '+(e?.message||e))}}
-async function fcProgPdf(){try{const d=await fcProgDadosCompetencia();fcProgAbrirFiltro('pdf',d)}catch(e){console.error('[Filtro resumo PDF]',e);alert('Erro ao carregar filtros: '+(e?.message||e))}}
-async function fcProgExcelGerar(d){
+async function fcProgExcel(){
  try{
   if(!window.XLSX?.utils)throw new Error('Biblioteca Excel não carregada.');
-  if(!Array.isArray(d))d=await fcProgDadosCompetencia();const wb=XLSX.utils.book_new(),comp=compLabel(currentMonth),total=d.reduce((s,x)=>s+Number(x.valor||0),0);
+  const d=await fcProgDadosCompetencia(),wb=XLSX.utils.book_new(),comp=compLabel(currentMonth),total=d.reduce((s,x)=>s+Number(x.valor||0),0);
   const a=[['FORMULÁRIO DE SOLICITAÇÃO DE RECURSOS PAGO EM FOLHA P/ FOLGA DE CAMPO'],['CENTRO DE CUSTO',202,'','','','','','','','','IDENTIFIC.','VERSÃO','DATA ÚLTIMA VERSÃO'],['OBRA','IMPLANTAÇÃO AURIVERDE','','','','','','','','','SR-01','V-01',new Date().toLocaleDateString('pt-BR')],['FOLHA DE PAGTO',comp],['RELAÇÃO DE COLABORADORES'],['MATRÍCULA','NOME','FUNÇÃO','DATA ADMISSÃO','CIDADE RESIDÊNCIA','PERÍODO DE BAIXADA','DIAS DE BAIXADA','PERÍODO ÚLTIMA BAIXADA','PERÍODO IDEAL','PERÍODO PROGRAMADO','OBSERVAÇÕES','VALOR'],...d.map(x=>[x.matricula,x.nome,x.funcao,x.admissao,x.cidade,x.periodo,x.dias,x.ultima,x.ideal,x.programado,x.obs,x.valor]),['','','','','','','','','','','TOTAL',total]];
   const ws=XLSX.utils.aoa_to_sheet(a);ws['!cols']=[{wch:12},{wch:38},{wch:30},{wch:14},{wch:25},{wch:24},{wch:14},{wch:25},{wch:18},{wch:25},{wch:20},{wch:15}];ws['!merges']=[XLSX.utils.decode_range('A1:L1'),XLSX.utils.decode_range('A5:L5')];for(let r=6;r<a.length;r++){const c=XLSX.utils.encode_cell({r,c:11});if(ws[c])ws[c].z='R$ #,##0.00'}XLSX.utils.book_append_sheet(wb,ws,'PROGRAMAÇÃO DE BAIXADA');XLSX.writeFile(wb,`PROGRAMACAO_DE_BAIXADA_${currentMonth}.xlsx`);
  }catch(e){console.error('[Folga resumo Excel]',e);alert('Erro ao gerar Excel: '+(e?.message||e));}
 }
-async function fcProgPdfGerar(d){
+async function fcProgPdf(){
  try{
   if(!window.jspdf?.jsPDF)throw new Error('Biblioteca PDF não carregada.');
-  if(!Array.isArray(d))d=await fcProgDadosCompetencia();const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'}),PW=doc.internal.pageSize.getWidth(),comp=compLabel(currentMonth),total=d.reduce((s,x)=>s+Number(x.valor||0),0);
+  const d=await fcProgDadosCompetencia(),{jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'}),PW=doc.internal.pageSize.getWidth(),comp=compLabel(currentMonth),total=d.reduce((s,x)=>s+Number(x.valor||0),0);
   try{if(typeof CCL_LOGO_B64!=='undefined')doc.addImage(CCL_LOGO_B64,'PNG',10,7,30,14)}catch(_){}
   doc.setFont('helvetica','bold');doc.setFontSize(11);doc.text('FORMULÁRIO DE SOLICITAÇÃO DE RECURSOS PAGO EM FOLHA P/ FOLGA DE CAMPO',PW/2,13,{align:'center'});doc.setFontSize(7.5);doc.text('CENTRO DE CUSTO: 202',10,23);doc.text('OBRA: IMPLANTAÇÃO AURIVERDE',10,28);doc.text('FOLHA DE PAGTO: '+comp,10,33);doc.text('IDENTIFIC.: SR-01   |   VERSÃO: V-01',PW-10,23,{align:'right'});doc.setFontSize(9);doc.text('RELAÇÃO DE COLABORADORES',PW/2,40,{align:'center'});
   doc.autoTable({startY:44,margin:{left:6,right:6,bottom:14},head:[['MATRÍCULA','NOME','FUNÇÃO','ADMISSÃO','CIDADE RESIDÊNCIA','PERÍODO BAIXADA','DIAS','ÚLTIMA BAIXADA','PERÍODO IDEAL','PERÍODO PROGRAMADO','OBSERVAÇÕES','VALOR']],body:d.map(x=>[x.matricula,x.nome,x.funcao,x.admissao,x.cidade,x.periodo,x.dias,x.ultima,x.ideal,x.programado,x.obs,brl(x.valor)]),foot:[['','','','','','','','','','','TOTAL',brl(total)]],theme:'grid',styles:{font:'helvetica',fontSize:5.2,cellPadding:1.1,textColor:[15,15,15],lineColor:[70,70,70],lineWidth:.1,valign:'middle'},headStyles:{fillColor:[245,197,24],textColor:[0,0,0],fontStyle:'bold',halign:'center'},footStyles:{fillColor:[235,235,235],textColor:[0,0,0],fontStyle:'bold'},columnStyles:{0:{cellWidth:14},1:{cellWidth:34},2:{cellWidth:28},3:{cellWidth:15},4:{cellWidth:25},5:{cellWidth:24},6:{cellWidth:10,halign:'center'},7:{cellWidth:24},8:{cellWidth:17},9:{cellWidth:24},10:{cellWidth:20},11:{cellWidth:18,halign:'right'}},showHead:'everyPage'});
