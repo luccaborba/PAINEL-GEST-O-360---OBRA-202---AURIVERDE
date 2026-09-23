@@ -3622,7 +3622,7 @@ html.g360-ui-ready .content-col {
                 <!-- V274 — NOVO PROJETO FOLGA DE CAMPO EM DEV -->
         <section class="panel g360-reemb-head fc-dev-panel">
           <div class="fc-dev-head-main"><h2>Folga de Campo</h2><div class="g360-reemb-sub">Abra a competência, selecione o colaborador, monte o roteiro por trechos e lance as demais despesas da folga.</div><div id="g360FcDevCompButtons" class="fc-dev-comp-select-box"><label>Competência<select id="g360FcDevCompSelect"><option value="">Carregando...</option></select></label></div></div>
-          <div class="g360-reemb-head-actions"><button type="button" class="btn-primary" id="g360FcDevIncluirFolga">＋ Incluir Folga de Campo</button><button type="button" class="btn-primary" id="g360FcRelSugestoes" title="Gerar relatório de sugestão de baixadas">📄 Relatório de sugestões</button><button type="button" class="btn-primary" id="g360FcRelSugestoes2" title="Gerar sugestões desconsiderando as folgas cadastradas na competência selecionada">📄 Sugestão 2</button><button type="button" class="btn-primary" id="g360FcDevAbrirComp">＋ Abrir competência</button></div>
+          <div class="g360-reemb-head-actions"><button type="button" class="btn-primary" id="g360FcDevIncluirFolga">＋ Incluir Folga de Campo</button><button type="button" class="btn-primary" id="g360FcImportarSimulacao" title="Importar PDF, JPG ou PNG e analisar com IA">🤖 Importar Simulação</button><button type="button" class="btn-primary" id="g360FcRelSugestoes" title="Gerar relatório de sugestão de baixadas">📄 Relatório de sugestões</button><button type="button" class="btn-primary" id="g360FcRelSugestoes2" title="Gerar sugestões desconsiderando as folgas cadastradas na competência selecionada">📄 Sugestão 2</button><button type="button" class="btn-primary" id="g360FcDevAbrirComp">＋ Abrir competência</button></div>
         </section>
         <section class="kpis-4 g360-reemb-kpis fc-dev-panel">
           <div class="kpi"><div class="kpi-label">COMPETÊNCIA</div><div class="kpi-value" id="g360FcDevKpiComp" style="font-size:20px">—</div><div class="kpi-sub">Mês selecionado</div></div>
@@ -21267,19 +21267,15 @@ async function fcSugV348Carregar(force=false){
  const colabs=(cr.data||[]).filter(c=>{
    const st=String(c.status||'').trim().toUpperCase();
    const aloj=String(c.usa_aloj??'').trim().toUpperCase();
-   const direitoRaw=c.direito_baixada;
-   const direito=['SIM','S','TRUE','1'].includes(String(direitoRaw??'').trim().toUpperCase());
-   const semDireito=(direitoRaw===false)||['NAO','NÃO','N','FALSE','0'].includes(String(direitoRaw??'').trim().toUpperCase());
-   const alojado=['SIM','S','TRUE','1'].includes(aloj);
+   const direito=['SIM','S','TRUE','1'].includes(String(c.direito_baixada??'').trim().toUpperCase());
    const tipo=String(c.tipo_contrato||'').trim().toUpperCase();
-   const matricula=String(c.matricula??'').trim();
-   // Mantém a regra operacional anterior: alojados OU direito explícito entram na sugestão.
-   // Exceções: direito_baixada = false/NÃO exclui expressamente; PJ e terceiros sem matrícula não entram no relatório de baixadas.
+   // Elegível: colaborador ativo com direito de baixada. Mantém compatibilidade com
+   // cadastros antigos marcados como alojados e inclui quem mora de aluguel
+   // (usa_aloj='S' e alojamento nulo), sem exigir vínculo com imóvel cadastrado.
+   const moraFora=['SIM','S','TRUE','1'].includes(aloj) || direito;
    return !['DESLIGADO','INATIVO','ABANDONO'].includes(st)
-     && !semDireito
-     && (alojado || direito)
-     && !tipo.includes('PJ')
-     && matricula!=='';
+     && moraFora
+     && !tipo.includes('PJ');
  }).map(c=>({...c,mat:c.matricula}));
  const cadastradosPorCompetencia=new Map();
  (fr.data||[]).forEach(x=>{const comp=String(x.competencia||'').slice(0,7),cid=String(x.colaborador_id||'');if(!comp||!cid)return;if(!cadastradosPorCompetencia.has(comp))cadastradosPorCompetencia.set(comp,new Set());cadastradosPorCompetencia.get(comp).add(cid)});
@@ -21693,6 +21689,34 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
  window.g360FolgaFinalV332={showStep,delByCid};
 })();
 </script>
+\n<style id="g360-fc-ia-import-v1">
+#g360FcIaModal{position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:100500;display:none;align-items:center;justify-content:center;padding:18px}
+#g360FcIaModal.open{display:flex}#g360FcIaModal .fc-ia-box{width:min(860px,96vw);max-height:90vh;overflow:auto;background:#fff;color:#171717;border-radius:12px;border:1px solid #ddd;box-shadow:0 24px 70px #0006;padding:20px}
+.fc-ia-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:16px}.fc-ia-head h2{margin:0;font-size:20px}.fc-ia-sub{font-size:12px;color:#666;margin-top:4px}
+.fc-ia-drop{border:2px dashed #c9c9c9;border-radius:10px;padding:24px;text-align:center;background:#fafafa}.fc-ia-drop input{display:none}.fc-ia-file{font-size:12px;margin-top:10px;font-weight:700}
+.fc-ia-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}.fc-ia-actions button{border:0;border-radius:7px;padding:10px 14px;font-weight:800;cursor:pointer}.fc-ia-primary{background:#f5c518;color:#111}.fc-ia-secondary{background:#ececec;color:#222}
+#fcIaResult{margin-top:16px;display:none}.fc-ia-summary{background:#f7f7f7;border:1px solid #ddd;border-radius:9px;padding:12px}.fc-ia-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px}.fc-ia-table th,.fc-ia-table td{padding:8px;border-bottom:1px solid #ddd;text-align:left}.fc-ia-table th{font-weight:800}.fc-ia-status{font-size:12px;margin-top:12px}.fc-ia-error{color:#a51616;font-weight:700}
+</style>
+<div id="g360FcIaModal" aria-hidden="true"><div class="fc-ia-box"><div class="fc-ia-head"><div><h2>Importar Simulação de Passagem</h2><div class="fc-ia-sub">Envie PDF, JPG ou PNG. A IA fará a leitura e mostrará a conferência antes de qualquer Folga de Campo ser criada.</div></div><button type="button" class="fc-ia-secondary" id="fcIaClose">Fechar</button></div><div class="fc-ia-drop" id="fcIaDrop"><strong>Selecione a simulação de passagem</strong><div class="fc-ia-sub">PDF, JPG ou PNG · máximo 10 MB</div><input id="fcIaFile" type="file" accept="application/pdf,image/jpeg,image/png"><div style="margin-top:12px"><button type="button" class="fc-ia-primary" id="fcIaChoose">Escolher arquivo</button></div><div class="fc-ia-file" id="fcIaFileName">Nenhum arquivo selecionado</div></div><div class="fc-ia-status" id="fcIaStatus"></div><div id="fcIaResult"></div><div class="fc-ia-actions"><button type="button" class="fc-ia-secondary" id="fcIaCancel">Cancelar</button><button type="button" class="fc-ia-primary" id="fcIaAnalyze" disabled>Analisar com IA</button></div></div></div>
+<script id="g360-fc-ia-import-script-v1">
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);let selectedFile=null;
+const modal=$('g360FcIaModal'),file=$('fcIaFile'),status=$('fcIaStatus'),result=$('fcIaResult'),analyze=$('fcIaAnalyze');
+if(!modal||!file||!analyze)return;
+function setStatus(msg,err=false){status.textContent=msg||'';status.className='fc-ia-status'+(err?' fc-ia-error':'')}
+function reset(){selectedFile=null;file.value='';$('fcIaFileName').textContent='Nenhum arquivo selecionado';analyze.disabled=true;result.style.display='none';result.innerHTML='';setStatus('')}
+function open(){reset();modal.classList.add('open');modal.setAttribute('aria-hidden','false')}
+function close(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true')}
+$('g360FcImportarSimulacao')?.addEventListener('click',open);$('fcIaClose').onclick=close;$('fcIaCancel').onclick=close;$('fcIaChoose').onclick=()=>file.click();
+file.onchange=()=>{const f=file.files?.[0];if(!f)return reset();if(f.size>10*1024*1024){reset();return setStatus('O arquivo ultrapassa o limite de 10 MB.',true)}selectedFile=f;$('fcIaFileName').textContent=f.name;analyze.disabled=false;setStatus('Arquivo pronto para análise.')}
+function money(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+function esc(v){return String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]))}
+function render(d){const trs=(d.trechos||[]).map(t=>`<tr><td>${esc(t.ordem)}</td><td>${esc(t.origem_cidade)}${t.origem_uf?' - '+esc(t.origem_uf):''}</td><td>${esc(t.destino_cidade)}${t.destino_uf?' - '+esc(t.destino_uf):''}</td><td>${esc(t.empresa)}</td><td>${esc(t.data||'')}</td><td>${money(t.valor)}</td></tr>`).join('');const cand=(d.candidatos_colaborador||[])[0];result.innerHTML=`<div class="fc-ia-summary"><b>COLABORADOR LIDO:</b> ${esc(d.colaborador_nome||'NÃO IDENTIFICADO')}<br>${cand?`<b>LOCALIZADO NO SISTEMA:</b> ${esc(cand.nome)} · MATRÍCULA ${esc(cand.matricula||'-')} · ${esc(cand.funcao||'-')}<br>`:''}<b>TOTAL DAS PASSAGENS:</b> ${money(d.total_passagens)}</div><table class="fc-ia-table"><thead><tr><th>#</th><th>Origem</th><th>Destino</th><th>Empresa</th><th>Data</th><th>Valor</th></tr></thead><tbody>${trs||'<tr><td colspan="6">Nenhum trecho identificado.</td></tr>'}</tbody></table><div class="fc-ia-sub" style="margin-top:10px">Status: CONFERÊNCIA. Nenhuma Folga de Campo foi criada.</div>`;result.style.display='block'}
+analyze.onclick=async()=>{if(!selectedFile)return;const sb=window.g360SupabaseClient;if(!sb)return setStatus('Supabase não inicializado.',true);analyze.disabled=true;try{setStatus('Enviando documento...');const sess=(await sb.auth.getSession()).data?.session;if(!sess)throw new Error('Sua sessão expirou. Entre novamente no sistema.');let obraId=window.g360GetSelectedObra?.()?.id||window.G360_ACTIVE_OBRA_ID||null;if(!obraId){const cod=localStorage.getItem('g360_obra_ativa')||window.GESTAO360_CONFIG?.OBRA_CODIGO||'202';const ow=await sb.from('obras').select('id').eq('codigo',String(cod)).limit(1).maybeSingle();obraId=ow.data?.id||null}if(!obraId)throw new Error('Obra ativa não encontrada.');const safe=selectedFile.name.replace(/[^a-zA-Z0-9._-]+/g,'_');const path=`${obraId}/${sess.user.id}/${Date.now()}_${safe}`;const up=await sb.storage.from('folga-campo-documentos').upload(path,selectedFile,{contentType:selectedFile.type,upsert:false});if(up.error)throw up.error;const ins=await sb.from('folga_campo_importacoes').insert({obra_id:obraId,arquivo_nome:selectedFile.name,arquivo_path:path,arquivo_tipo:selectedFile.type,status:'ENVIADO',created_by:sess.user.id}).select('id').single();if(ins.error){await sb.storage.from('folga-campo-documentos').remove([path]);throw ins.error}setStatus('Documento enviado. A IA está analisando...');const fn=await sb.functions.invoke('analisar-folga-documento',{body:{importacao_id:ins.data.id}});if(fn.error)throw fn.error;if(fn.data?.error)throw new Error(fn.data.error);render(fn.data.dados_extraidos||{});setStatus('Análise concluída. Confira os dados abaixo.')}catch(e){console.error(e);setStatus('Não foi possível analisar: '+(e?.message||e),true)}finally{analyze.disabled=!selectedFile}};
+})();
+</script>
+
 </body>
 </html>
 
