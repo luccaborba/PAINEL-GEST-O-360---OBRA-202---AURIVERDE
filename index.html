@@ -21753,17 +21753,43 @@ file.onchange=()=>{const f=file.files?.[0];if(!f)return reset();if(f.size>10*102
 function normNome(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim()}
 async function resolverColaboradorIA(sb,d){
  if((d.candidatos_colaborador||[]).length||!d.colaborador_nome)return d;
- const wanted=normNome(d.colaborador_nome),first=wanted.split(' ')[0];if(!first)return d;
- const r=await sb.from('funcionarios').select('id,matricula,nome,funcao,status,obra,cidade_baixada,distancia_baixada_km,periodicidade_baixada').ilike('nome','%'+first+'%').limit(200);
- if(r.error)return d;
- const exact=(r.data||[]).filter(x=>normNome(x.nome)===wanted);
- const words=wanted.split(' ').filter(x=>x.length>2);
- const fallback=(r.data||[]).filter(x=>words.every(w=>normNome(x.nome).includes(w)));
- d.candidatos_colaborador=(exact.length?exact:fallback).slice(0,5);return d
+ const wanted=normNome(d.colaborador_nome),words=wanted.split(' ').filter(w=>w.length>=4);
+ let pool=[];
+ for(const w of words.slice(0,4)){
+  const r=await sb.from('funcionarios').select('id,matricula,nome,funcao,status,obra,cidade_baixada,distancia_baixada_km,periodicidade_baixada').ilike('nome','%'+w+'%').limit(200);
+  if(!r.error)pool.push(...(r.data||[]));
+ }
+ const uniq=[...new Map(pool.map(x=>[String(x.id),x])).values()];
+ const exact=uniq.filter(x=>normNome(x.nome)===wanted);
+ const strong=uniq.filter(x=>words.length&&words.every(w=>normNome(x.nome).includes(w)));
+ d.candidatos_colaborador=(exact.length?exact:strong).slice(0,5);
+ return d
+}
+async function carregarEscolhaManualIA(sb){
+ const r=await sb.from('funcionarios').select('id,matricula,nome,funcao,status,obra,cidade_baixada,distancia_baixada_km,periodicidade_baixada').order('nome').limit(1000);
+ if(r.error)throw r.error;
+ return (r.data||[]).filter(x=>String(x.status||'ATIVO').toUpperCase()==='ATIVO');
+}
+function aplicarEscolhaManualIA(){
+ const sel=$('fcIaManualColab');if(!sel||!sel.value||!lastData)return;
+ const opt=sel.selectedOptions?.[0];if(!opt)return;
+ const c=JSON.parse(decodeURIComponent(opt.dataset.c||''));
+ lastData.candidatos_colaborador=[c];
+ render(lastData);
+ setStatus('Colaborador selecionado manualmente. Confira os dados e clique em Confirmar e criar Folga.');
 }
 function money(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
 function esc(v){return String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]))}
-function render(d){const trs=(d.trechos||[]).map(t=>`<tr><td>${esc(t.ordem)}</td><td>${esc(t.origem_cidade)}${t.origem_uf?' - '+esc(t.origem_uf):''}</td><td>${esc(t.destino_cidade)}${t.destino_uf?' - '+esc(t.destino_uf):''}</td><td>${esc(t.empresa)}</td><td>${esc(t.data||'')}</td><td>${money(t.valor)}</td></tr>`).join('');const cand=(d.candidatos_colaborador||[])[0];const fmt=v=>{if(!v)return '-';const a=String(v).split('-');return a.length===3?`${a[2]}/${a[1]}/${a[0]}`:esc(v)};const alimentacao=Number(d.alimentacao_valor||0);const passagens=Number(d.total_passagens||0);const total=Number(d.total_geral??(passagens+alimentacao));result.innerHTML=`<div class="fc-ia-summary"><b>COLABORADOR LIDO:</b> ${esc(d.colaborador_nome||'NÃO IDENTIFICADO')}<br>${cand?`<b>LOCALIZADO NO SISTEMA:</b> ${esc(cand.nome)} · MATRÍCULA ${esc(cand.matricula||'-')} · ${esc(cand.funcao||'-')}<br>`:''}<b>ROTA PRINCIPAL:</b> ${esc(d.rota_principal||'-')}<br><b>DISTÂNCIA:</b> ${d.distancia_km!=null?esc(d.distancia_km)+' KM':'-'}<br><b>INÍCIO:</b> ${fmt(d.data_inicio)} &nbsp; <b>FIM:</b> ${fmt(d.data_fim)} &nbsp; <b>RETORNO:</b> ${fmt(d.data_retorno)}<br><b>PASSAGENS:</b> ${money(passagens)} &nbsp; <b>ALIMENTAÇÃO:</b> ${money(alimentacao)}<br><b>TOTAL GERAL:</b> ${money(total)}</div><table class="fc-ia-table"><thead><tr><th>#</th><th>Origem</th><th>Destino</th><th>Empresa</th><th>Data</th><th>Valor</th></tr></thead><tbody>${trs||'<tr><td colspan="6">Nenhum trecho identificado.</td></tr>'}</tbody></table><div class="fc-ia-sub" style="margin-top:10px">Status: CONFERÊNCIA. Nenhuma Folga de Campo foi criada.</div>`;result.style.display='block';if(confirmBtn&&cand){confirmBtn.style.display='inline-block'}}
+function render(d){const trs=(d.trechos||[]).map(t=>`<tr><td>${esc(t.ordem)}</td><td>${esc(t.origem_cidade)}${t.origem_uf?' - '+esc(t.origem_uf):''}</td><td>${esc(t.destino_cidade)}${t.destino_uf?' - '+esc(t.destino_uf):''}</td><td>${esc(t.empresa)}</td><td>${esc(t.data||'')}</td><td>${money(t.valor)}</td></tr>`).join('');const cand=(d.candidatos_colaborador||[])[0];const fmt=v=>{if(!v)return '-';const a=String(v).split('-');return a.length===3?`${a[2]}/${a[1]}/${a[0]}`:esc(v)};const alimentacao=Number(d.alimentacao_valor||0);const passagens=Number(d.total_passagens||0);const total=Number(d.total_geral??(passagens+alimentacao));result.innerHTML=`<div class="fc-ia-summary"><b>COLABORADOR LIDO:</b> ${esc(d.colaborador_nome||'NÃO IDENTIFICADO')}<br>${cand?`<b>LOCALIZADO NO SISTEMA:</b> ${esc(cand.nome)} · MATRÍCULA ${esc(cand.matricula||'-')} · ${esc(cand.funcao||'-')}<br>`:`<b style="color:#a51616">COLABORADOR NÃO LOCALIZADO AUTOMATICAMENTE.</b><br><div id="fcIaManualBox" style="margin:10px 0;padding:10px;border:1px solid #d0d0d0;border-radius:7px"><b>ESCOLHER COLABORADOR:</b><br><select id="fcIaManualColab" style="width:100%;margin-top:7px;padding:9px"><option value="">Carregando colaboradores...</option></select></div>`}<b>ROTA PRINCIPAL:</b> ${esc(d.rota_principal||'-')}<br><b>DISTÂNCIA:</b> ${d.distancia_km!=null?esc(d.distancia_km)+' KM':'-'}<br><b>INÍCIO:</b> ${fmt(d.data_inicio)} &nbsp; <b>FIM:</b> ${fmt(d.data_fim)} &nbsp; <b>RETORNO:</b> ${fmt(d.data_retorno)}<br><b>PASSAGENS:</b> ${money(passagens)} &nbsp; <b>ALIMENTAÇÃO:</b> ${money(alimentacao)}<br><b>TOTAL GERAL:</b> ${money(total)}</div><table class="fc-ia-table"><thead><tr><th>#</th><th>Origem</th><th>Destino</th><th>Empresa</th><th>Data</th><th>Valor</th></tr></thead><tbody>${trs||'<tr><td colspan="6">Nenhum trecho identificado.</td></tr>'}</tbody></table><div class="fc-ia-sub" style="margin-top:10px">Status: CONFERÊNCIA. Nenhuma Folga de Campo foi criada.</div>`;result.style.display='block';
+ if(confirmBtn)confirmBtn.style.display=cand?'inline-block':'none';
+ if(!cand){
+  const sb=window.g360SupabaseClient,sel=$('fcIaManualColab');
+  if(sb&&sel)carregarEscolhaManualIA(sb).then(lista=>{
+   sel.innerHTML='<option value="">Selecione o colaborador...</option>'+lista.map(c=>`<option value="${esc(c.id)}" data-c="${encodeURIComponent(JSON.stringify(c))}">${esc(c.matricula||'-')} · ${esc(c.nome)} · ${esc(c.funcao||'-')}</option>`).join('');
+   sel.onchange=aplicarEscolhaManualIA;
+  }).catch(e=>{sel.innerHTML='<option value="">Erro ao carregar colaboradores</option>';console.error(e)});
+ }
+}
 async function confirmarFolga(){
  const sb=window.g360SupabaseClient;if(!sb||!lastData||!lastImportId)return setStatus('Faça a análise do documento antes de confirmar.',true);
  const cand=(lastData.candidatos_colaborador||[])[0];if(!cand)return setStatus('Colaborador não localizado no sistema. Não é possível confirmar.',true);
