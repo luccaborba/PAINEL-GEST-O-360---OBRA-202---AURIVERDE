@@ -21689,7 +21689,7 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
  window.g360FolgaFinalV332={showStep,delByCid};
 })();
 </script>
-\n<style id="g360-fc-ia-import-v1">
+<style id="g360-fc-ia-import-v1">
 #g360FcIaModal{position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:100500;display:none;align-items:center;justify-content:center;padding:18px}
 #g360FcIaModal.open{display:flex}#g360FcIaModal .fc-ia-box{width:min(860px,96vw);max-height:90vh;overflow:auto;background:#fff;color:#171717;border-radius:12px;border:1px solid #ddd;box-shadow:0 24px 70px #0006;padding:20px}
 .fc-ia-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:16px}.fc-ia-head h2{margin:0;font-size:20px}.fc-ia-sub{font-size:12px;color:#666;margin-top:4px}
@@ -21726,9 +21726,9 @@ async function confirmarFolga(){
   const dias=Math.floor((new Date(fim+'T12:00:00')-new Date(ini+'T12:00:00'))/86400000)+1;
   const trechos=Array.isArray(lastData.trechos)?lastData.trechos:[];
   const alimentacao=Number(lastData.alimentacao_valor||0),passagens=Number(lastData.total_passagens||0),total=Number(lastData.total_geral??(passagens+alimentacao));
-  const destinoCidade=String(cand.cidade_baixada||trechos[0]?.destino_cidade||'').toUpperCase()||null;
+  const destinoCidade=String(cand.cidade_baixada||trechos[0]?.destino_cidade||'').toUpperCase()||null;const destinoUf=String(trechos[0]?.destino_uf||lastData.destino_uf||'').toUpperCase()||null;
   const periodicidade=Number(lastData.distancia_km)<=500?'2x2':(Number(lastData.distancia_km)<=1000?'3x3':'6x6');
-  const row={obra_id:lastObraId,colaborador_id:cand.id,matricula:String(cand.matricula||''),colaborador_nome:String(cand.nome||lastData.colaborador_nome||'').toUpperCase(),competencia,data_inicio:ini,data_saida:ini,data_fim:fim,data_retorno:ret,destino:lastData.rota_principal||destinoCidade,distancia_km:Number(lastData.distancia_km),dias,status:'PROGRAMADA',incluido:true,tipo_folga:'PROGRAMADA',custo:total,valor_reembolso:total,cidade_residencia:destinoCidade,periodicidade_base:periodicidade,dados:{origem:'IMPORTACAO_IA',importacao_id:lastImportId,arquivo:selectedFile?.name||null},created_by:sess.user.id,updated_at:new Date().toISOString()};
+  const row={obra_id:lastObraId,colaborador_id:cand.id,matricula:String(cand.matricula||''),colaborador_nome:String(cand.nome||lastData.colaborador_nome||'').toUpperCase(),competencia,data_inicio:ini,data_saida:ini,data_fim:fim,data_retorno:ret,destino:lastData.rota_principal||destinoCidade,distancia_km:Number(lastData.distancia_km),dias,status:'PROGRAMADA',incluido:true,tipo_folga:'PROGRAMADA',custo:total,valor_reembolso:total,destino_cidade:destinoCidade,destino_uf:destinoUf,cidade_residencia:destinoCidade,uf_residencia:destinoUf,periodicidade_base:periodicidade,dados:{origem:'IMPORTACAO_IA',importacao_id:lastImportId,arquivo:selectedFile?.name||null},created_by:sess.user.id,updated_at:new Date().toISOString()};
   const ins=await sb.from('folga_campo').insert(row).select('id').single();if(ins.error)throw ins.error;folgaId=ins.data.id;
   const metade=Math.ceil(trechos.length/2);
   const despesas=trechos.map((t,i)=>({obra_id:lastObraId,competencia,colaborador_id:cand.id,matricula:String(cand.matricula||''),colaborador_nome:String(cand.nome||'').toUpperCase(),funcao:cand.funcao||null,descricao:`Passagem rodoviária – Trecho ${i+1}`,data_despesa:t.data||(i<metade?ini:fim),fornecedor:t.empresa||null,categoria:'PASSAGEM RODOVIÁRIA',valor:Number(t.valor||0),tipo_despesa:'PASSAGEM_RODOVIARIA',trecho_num:i+1,origem_cidade:t.origem_cidade||null,origem_uf:t.origem_uf||null,destino_cidade:t.destino_cidade||null,destino_uf:t.destino_uf||null,created_by:sess.user.id}));
