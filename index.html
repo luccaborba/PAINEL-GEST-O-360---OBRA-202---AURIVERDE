@@ -21452,6 +21452,23 @@ async function saveMeta(extra={},opts={}){const c=selectedColab();if(!currentMon
 async function saveMetaClick(){const b=$('g360FcDevSalvarDados');try{if(b){b.disabled=true;b.textContent='⏳ Salvando...'}await saveMeta();if(b){b.textContent='✓ Salvo';await new Promise(r=>setTimeout(r,350))}}catch(e){alert(e?.message||e)}finally{if(b){b.disabled=false;b.textContent=currentMeta?.id?'💾 SALVAR ALTERAÇÕES':'💾 SALVAR DADOS DA FOLGA'}}}
 async function openTermForPerson(key){try{if(!currentMonth)return alert('Selecione uma competência.');const c=colabs.find(x=>String(x.id)===String(key))||null;const sample=rows.find(r=>String(r.colaborador_id||r.colaborador_nome)===String(key));const cid=c?.id||sample?.colaborador_id;if(!cid)return alert('Colaborador não identificado.');let q=sb().from('folga_campo').select('*').eq('colaborador_id',cid).eq('competencia',compDate(currentMonth)).order('created_at',{ascending:false}).limit(1).maybeSingle();const oid=obraId();if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error)throw r.error;const f=r.data;if(!f)return alert('Cadastre e salve o período, distância e roteiro da folga antes de gerar o Termo.');const nome=String(c?.nome||sample?.colaborador_nome||f.colaborador_nome||'').toUpperCase(),funcao=String(c?.funcao||sample?.funcao||'').toUpperCase(),mat=String(c?.matricula||sample?.matricula||f.matricula||'');const cidadeResidencia=[f.cidade_residencia,f.uf_residencia].filter(Boolean).join('-');const destino=cidadeResidencia;const dataIni=f.data_inicio||f.data_saida,dataFim=f.data_fim,retorno=f.data_retorno||addDaysISO(dataFim,1),km=Number(f.distancia_km||0),dias=f.dias||calcDays(dataIni,dataFim);if(!destino||!dataIni||!dataFim||!retorno||!(km>0))return alert('O Termo ainda está incompleto. Salve período, distância, UF e cidade da residência.');if(!window.jspdf?.jsPDF)return alert('Biblioteca PDF não carregada.');if(typeof fcDesenharFormulario!=='function')return alert('Gerador do Termo de Concessão não está disponível.');const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4'});fcDesenharFormulario(doc,{nome,mat,funcao,folga:{destino,km,dataIni,dataFim,retorno,dias}});doc.save(`Folga de Campo - ${compLabel(currentMonth).replace('/','-')} - ${nome}.pdf`)}catch(e){console.error('TERMO FOLGA:',e);alert('Não foi possível gerar o Termo de Concessão: '+(e?.message||e))}}
 
+let g360FcExportSelectedIdsV2=null,g360FcExportModeV2=null;
+async function g360FcOpenExportFilter(mode){
+ const dados=await fcProgDadosCompetencia(),modal=$('g360FcExportFilterModal'),lista=$('g360FcExportFilterLista');
+ if(!modal||!lista)throw new Error('Filtro de exportação não encontrado.');
+ g360FcExportModeV2=mode;g360FcExportSelectedIdsV2=null;
+ lista.innerHTML=dados.map(x=>`<label><input type="checkbox" data-fc-export-id="${esc(String(x._colaborador_id||''))}" checked><span><b>${esc(x.nome||'—')}</b> · ${esc(x.funcao||'—')}</span></label>`).join('');
+ modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+}
+function g360FcCloseExportFilter(){const m=$('g360FcExportFilterModal');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}}
+async function g360FcRunFilteredExport(){
+ const checks=[...document.querySelectorAll('#g360FcExportFilterLista [data-fc-export-id]:checked')];
+ if(!checks.length)return alert('Selecione pelo menos um colaborador.');
+ g360FcExportSelectedIdsV2=new Set(checks.map(x=>String(x.dataset.fcExportId)));
+ g360FcCloseExportFilter();
+ try{if(g360FcExportModeV2==='pdf')await fcProgPdf();else await fcProgExcel()}
+ finally{g360FcExportSelectedIdsV2=null;g360FcExportModeV2=null}
+}
 async function fcProgDadosCompetencia(){
  if(!currentMonth)throw new Error('Selecione uma competência.');
  const oid=obraId(),comp=compDate(currentMonth);
@@ -21466,7 +21483,9 @@ async function fcProgDadosCompetencia(){
  const desp={};(dr.data||[]).forEach(r=>{const k=String(r.colaborador_id||'');desp[k]=(desp[k]||0)+Number(r.valor||0)});
  const cm=new Map(colabs.map(c=>[String(c.id),c]));
  const fmtPer=(a,b)=>a?(fcFmtDate(a)+(b?' a '+fcFmtDate(b):'')):'—';
- return folgas.map(f=>{const c=cm.get(String(f.colaborador_id))||{},prev=hist.find(h=>String(h.colaborador_id)===String(f.colaborador_id));const ini=f.data_inicio||f.data_saida||'',fim=f.data_fim||ini;const per=String(f.periodicidade_base||c.periodicidade_baixada||'—').toUpperCase();return {matricula:f.matricula||c.matricula||'—',nome:String(f.colaborador_nome||c.nome||'').toUpperCase(),funcao:String(c.funcao||'—').toUpperCase(),admissao:c.admissao?fcFmtDate(c.admissao):'—',cidade:[f.cidade_residencia||c.cidade_baixada||c.cidade||'',f.uf_residencia||c.uf_baixada||''].filter(Boolean).join(' - ').toUpperCase()||'—',periodo:fmtPer(ini,fim),dias:f.dias||calcDays(ini,fim)||'—',ultima:prev?fmtPer(prev.data_inicio||prev.data_saida,prev.data_fim||prev.data_inicio||prev.data_saida):'—',ideal:per,programado:fmtPer(ini,fim),obs:String(f.status||f.tipo_folga||'').toUpperCase(),valor:(desp[String(f.colaborador_id)]??Number(f.valor_reembolso||f.custo||0))};});
+ let saida=folgas.map(f=>{const c=cm.get(String(f.colaborador_id))||{},prev=hist.find(h=>String(h.colaborador_id)===String(f.colaborador_id));const ini=f.data_inicio||f.data_saida||'',fim=f.data_fim||ini;const per=String(f.periodicidade_base||c.periodicidade_baixada||'—').toUpperCase();return {_colaborador_id:String(f.colaborador_id||''),matricula:f.matricula||c.matricula||'—',nome:String(f.colaborador_nome||c.nome||'').toUpperCase(),funcao:String(c.funcao||'—').toUpperCase(),admissao:c.admissao?fcFmtDate(c.admissao):'—',cidade:[f.cidade_residencia||c.cidade_baixada||c.cidade||'',f.uf_residencia||c.uf_baixada||''].filter(Boolean).join(' - ').toUpperCase()||'—',periodo:fmtPer(ini,fim),dias:f.dias||calcDays(ini,fim)||'—',ultima:prev?fmtPer(prev.data_inicio||prev.data_saida,prev.data_fim||prev.data_inicio||prev.data_saida):'—',ideal:per,programado:fmtPer(ini,fim),obs:String(f.status||f.tipo_folga||'').toUpperCase(),valor:(desp[String(f.colaborador_id)]??Number(f.valor_reembolso||f.custo||0))};});
+ if(g360FcExportSelectedIdsV2)saida=saida.filter(x=>g360FcExportSelectedIdsV2.has(String(x._colaborador_id)));
+ return saida;
 }
 async function fcProgExcel(){
  try{
