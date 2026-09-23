@@ -21267,12 +21267,16 @@ async function fcSugV348Carregar(force=false){
  const colabs=(cr.data||[]).filter(c=>{
    const st=String(c.status||'').trim().toUpperCase();
    const aloj=String(c.usa_aloj??'').trim().toUpperCase();
-   const direito=['SIM','S','TRUE','1'].includes(String(c.direito_baixada??'').trim().toUpperCase());
+   const direitoRaw=c.direito_baixada;
+   const direito=['SIM','S','TRUE','1'].includes(String(direitoRaw??'').trim().toUpperCase());
+   const semDireito=(direitoRaw===false)||['NAO','NÃO','N','FALSE','0'].includes(String(direitoRaw??'').trim().toUpperCase());
+   const alojado=['SIM','S','TRUE','1'].includes(aloj);
    const tipo=String(c.tipo_contrato||'').trim().toUpperCase();
-   // Elegível: somente colaborador ativo com direito de baixada = SIM/TRUE.
-   // Estar alojado, por si só, não concede direito à baixada.
+   // Mantém a regra operacional anterior: alojados OU direito explícito entram na sugestão.
+   // Exceção: direito_baixada = false/NÃO exclui expressamente o colaborador, mesmo se alojado.
    return !['DESLIGADO','INATIVO','ABANDONO'].includes(st)
-     && direito
+     && !semDireito
+     && (alojado || direito)
      && !tipo.includes('PJ');
  }).map(c=>({...c,mat:c.matricula}));
  const cadastradosPorCompetencia=new Map();
