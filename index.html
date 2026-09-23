@@ -3689,7 +3689,7 @@ html.g360-ui-ready .content-col {
         <section class="panel fc-dev-panel" id="g360FcResumoCompetenciaPanel" style="display:none!important"><div class="g360-reemb-table-head"><div><h2>Resumo da competência</h2><div class="g360-reemb-sub">Consolidado por colaborador. 📈 relatório de despesas · 📝 Termo de Concessão de Folga de Campo.</div></div><div class="fc-dev-export-box"><span class="fc-dev-export-label">Exportar</span><button type="button" class="clear-btn fc-dev-export-icon" id="g360FcDevExcelComp" title="Excel" aria-label="Exportar Excel">📊</button></div></div><div class="table-scroll"><table><thead><tr><th class="fc-dev-summary-colab-head"><div class="fc-dev-summary-head-wrap"><span class="fc-dev-summary-export-head">Exportar</span><span class="fc-dev-summary-name-head">Colaborador</span></div></th><th>Função</th><th>Qtd. despesas</th><th>Total</th><th>Ações</th></tr></thead><tbody id="g360FcDevResumoBody"></tbody></table></div></section>
         <div id="g360FcExportFilterModal" class="fc-dev-modal" aria-hidden="true">
  <div class="fc-dev-modal-card" style="max-width:720px">
-  <div class="fc-dev-modal-head"><div><h3>Filtrar exportação</h3><p>Selecione os colaboradores que deseja incluir no resumo da competência.</p></div><button type="button" class="clear-btn" id="g360FcExportFilterX">Fechar</button></div>
+  <div class="fc-dev-modal-head"><div><h3>Filtrar exportação</h3><p>Selecione os Setores / Equipes que deseja incluir no resumo da competência.</p></div><button type="button" class="clear-btn" id="g360FcExportFilterX">Fechar</button></div>
   <div style="display:flex;gap:8px;margin:12px 0"><button type="button" class="clear-btn" id="g360FcExportTodos">Selecionar todos</button><button type="button" class="clear-btn" id="g360FcExportNenhum">Limpar seleção</button></div>
   <div id="g360FcExportFilterLista" style="max-height:390px;overflow:auto;border:1px solid #3b3e44;border-radius:8px;padding:8px"></div>
   <div class="g360-reemb-form-actions"><button type="button" class="clear-btn" id="g360FcExportCancelar">Cancelar</button><button type="button" class="btn-primary" id="g360FcExportGerar">Gerar arquivo</button></div>
@@ -21452,22 +21452,23 @@ async function saveMeta(extra={},opts={}){const c=selectedColab();if(!currentMon
 async function saveMetaClick(){const b=$('g360FcDevSalvarDados');try{if(b){b.disabled=true;b.textContent='⏳ Salvando...'}await saveMeta();if(b){b.textContent='✓ Salvo';await new Promise(r=>setTimeout(r,350))}}catch(e){alert(e?.message||e)}finally{if(b){b.disabled=false;b.textContent=currentMeta?.id?'💾 SALVAR ALTERAÇÕES':'💾 SALVAR DADOS DA FOLGA'}}}
 async function openTermForPerson(key){try{if(!currentMonth)return alert('Selecione uma competência.');const c=colabs.find(x=>String(x.id)===String(key))||null;const sample=rows.find(r=>String(r.colaborador_id||r.colaborador_nome)===String(key));const cid=c?.id||sample?.colaborador_id;if(!cid)return alert('Colaborador não identificado.');let q=sb().from('folga_campo').select('*').eq('colaborador_id',cid).eq('competencia',compDate(currentMonth)).order('created_at',{ascending:false}).limit(1).maybeSingle();const oid=obraId();if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error)throw r.error;const f=r.data;if(!f)return alert('Cadastre e salve o período, distância e roteiro da folga antes de gerar o Termo.');const nome=String(c?.nome||sample?.colaborador_nome||f.colaborador_nome||'').toUpperCase(),funcao=String(c?.funcao||sample?.funcao||'').toUpperCase(),mat=String(c?.matricula||sample?.matricula||f.matricula||'');const cidadeResidencia=[f.cidade_residencia,f.uf_residencia].filter(Boolean).join('-');const destino=cidadeResidencia;const dataIni=f.data_inicio||f.data_saida,dataFim=f.data_fim,retorno=f.data_retorno||addDaysISO(dataFim,1),km=Number(f.distancia_km||0),dias=f.dias||calcDays(dataIni,dataFim);if(!destino||!dataIni||!dataFim||!retorno||!(km>0))return alert('O Termo ainda está incompleto. Salve período, distância, UF e cidade da residência.');if(!window.jspdf?.jsPDF)return alert('Biblioteca PDF não carregada.');if(typeof fcDesenharFormulario!=='function')return alert('Gerador do Termo de Concessão não está disponível.');const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4'});fcDesenharFormulario(doc,{nome,mat,funcao,folga:{destino,km,dataIni,dataFim,retorno,dias}});doc.save(`Folga de Campo - ${compLabel(currentMonth).replace('/','-')} - ${nome}.pdf`)}catch(e){console.error('TERMO FOLGA:',e);alert('Não foi possível gerar o Termo de Concessão: '+(e?.message||e))}}
 
-let g360FcExportSelectedIdsV2=null,g360FcExportModeV2=null;
+let g360FcExportSetoresV3=null,g360FcExportModeV2=null;
 async function g360FcOpenExportFilter(mode){
  const dados=await fcProgDadosCompetencia(),modal=$('g360FcExportFilterModal'),lista=$('g360FcExportFilterLista');
  if(!modal||!lista)throw new Error('Filtro de exportação não encontrado.');
- g360FcExportModeV2=mode;g360FcExportSelectedIdsV2=null;
- lista.innerHTML=dados.map(x=>`<label><input type="checkbox" data-fc-export-id="${esc(String(x._colaborador_id||''))}" checked><span><b>${esc(x.nome||'—')}</b> · ${esc(x.funcao||'—')}</span></label>`).join('');
+ g360FcExportModeV2=mode;g360FcExportSetoresV3=null;
+ const setores=[...new Set(dados.map(x=>String(x.setor_equipe||'SEM SETOR / EQUIPE').trim().toUpperCase()))].sort((x,y)=>x.localeCompare(y,'pt-BR'));
+ lista.innerHTML=setores.map(v=>`<label><input type="checkbox" data-fc-export-setor="${esc(v)}" checked><span><b>${esc(v)}</b></span></label>`).join('');
  modal.classList.add('open');modal.setAttribute('aria-hidden','false');
 }
 function g360FcCloseExportFilter(){const m=$('g360FcExportFilterModal');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}}
 async function g360FcRunFilteredExport(){
- const checks=[...document.querySelectorAll('#g360FcExportFilterLista [data-fc-export-id]:checked')];
- if(!checks.length)return alert('Selecione pelo menos um colaborador.');
- g360FcExportSelectedIdsV2=new Set(checks.map(x=>String(x.dataset.fcExportId)));
+ const checks=[...document.querySelectorAll('#g360FcExportFilterLista [data-fc-export-setor]:checked')];
+ if(!checks.length)return alert('Selecione pelo menos um Setor / Equipe.');
+ g360FcExportSetoresV3=new Set(checks.map(x=>String(x.dataset.fcExportSetor)));
  g360FcCloseExportFilter();
  try{if(g360FcExportModeV2==='pdf')await fcProgPdf();else await fcProgExcel()}
- finally{g360FcExportSelectedIdsV2=null;g360FcExportModeV2=null}
+ finally{g360FcExportSetoresV3=null;g360FcExportModeV2=null}
 }
 async function fcProgDadosCompetencia(){
  if(!currentMonth)throw new Error('Selecione uma competência.');
@@ -21483,8 +21484,8 @@ async function fcProgDadosCompetencia(){
  const desp={};(dr.data||[]).forEach(r=>{const k=String(r.colaborador_id||'');desp[k]=(desp[k]||0)+Number(r.valor||0)});
  const cm=new Map(colabs.map(c=>[String(c.id),c]));
  const fmtPer=(a,b)=>a?(fcFmtDate(a)+(b?' a '+fcFmtDate(b):'')):'—';
- let saida=folgas.map(f=>{const c=cm.get(String(f.colaborador_id))||{},prev=hist.find(h=>String(h.colaborador_id)===String(f.colaborador_id));const ini=f.data_inicio||f.data_saida||'',fim=f.data_fim||ini;const per=String(f.periodicidade_base||c.periodicidade_baixada||'—').toUpperCase();return {_colaborador_id:String(f.colaborador_id||''),matricula:f.matricula||c.matricula||'—',nome:String(f.colaborador_nome||c.nome||'').toUpperCase(),funcao:String(c.funcao||'—').toUpperCase(),admissao:c.admissao?fcFmtDate(c.admissao):'—',cidade:[f.cidade_residencia||c.cidade_baixada||c.cidade||'',f.uf_residencia||c.uf_baixada||''].filter(Boolean).join(' - ').toUpperCase()||'—',periodo:fmtPer(ini,fim),dias:f.dias||calcDays(ini,fim)||'—',ultima:prev?fmtPer(prev.data_inicio||prev.data_saida,prev.data_fim||prev.data_inicio||prev.data_saida):'—',ideal:per,programado:fmtPer(ini,fim),obs:String(f.status||f.tipo_folga||'').toUpperCase(),valor:(desp[String(f.colaborador_id)]??Number(f.valor_reembolso||f.custo||0))};});
- if(g360FcExportSelectedIdsV2)saida=saida.filter(x=>g360FcExportSelectedIdsV2.has(String(x._colaborador_id)));
+ let saida=folgas.map(f=>{const c=cm.get(String(f.colaborador_id))||{},prev=hist.find(h=>String(h.colaborador_id)===String(f.colaborador_id));const ini=f.data_inicio||f.data_saida||'',fim=f.data_fim||ini;const per=String(f.periodicidade_base||c.periodicidade_baixada||'—').toUpperCase();return {_colaborador_id:String(f.colaborador_id||''),setor_equipe:String(c.setor_equipe||c.equipe||c.depto||'SEM SETOR / EQUIPE').trim().toUpperCase(),matricula:f.matricula||c.matricula||'—',nome:String(f.colaborador_nome||c.nome||'').toUpperCase(),funcao:String(c.funcao||'—').toUpperCase(),admissao:c.admissao?fcFmtDate(c.admissao):'—',cidade:[f.cidade_residencia||c.cidade_baixada||c.cidade||'',f.uf_residencia||c.uf_baixada||''].filter(Boolean).join(' - ').toUpperCase()||'—',periodo:fmtPer(ini,fim),dias:f.dias||calcDays(ini,fim)||'—',ultima:prev?fmtPer(prev.data_inicio||prev.data_saida,prev.data_fim||prev.data_inicio||prev.data_saida):'—',ideal:per,programado:fmtPer(ini,fim),obs:String(f.status||f.tipo_folga||'').toUpperCase(),valor:(desp[String(f.colaborador_id)]??Number(f.valor_reembolso||f.custo||0))};});
+ if(g360FcExportSetoresV3)saida=saida.filter(x=>g360FcExportSetoresV3.has(String(x.setor_equipe||'SEM SETOR / EQUIPE')));
  return saida;
 }
 async function fcProgExcel(){
