@@ -3654,7 +3654,7 @@ html.g360-ui-ready .content-col {
                 <!-- V274 — NOVO PROJETO FOLGA DE CAMPO EM DEV -->
         <section class="panel g360-reemb-head fc-dev-panel">
           <div class="fc-dev-head-main"><h2>Folga de Campo</h2><div class="g360-reemb-sub">Abra a competência, selecione o colaborador, monte o roteiro por trechos e lance as demais despesas da folga.</div><div id="g360FcDevCompButtons" class="fc-dev-comp-select-box"><label>Competência<select id="g360FcDevCompSelect"><option value="">Carregando...</option></select></label></div></div>
-          <div class="g360-reemb-head-actions"><button type="button" class="btn-primary" id="g360FcDevIncluirFolga">＋ Incluir Folga de Campo</button><button type="button" class="btn-primary" id="g360FcImportarSimulacao" title="Importar PDF, JPG ou PNG e analisar com IA">🤖 Importar Simulação</button><button type="button" class="btn-primary" id="g360FcRelSugestoes" title="Gerar relatório de sugestão de baixadas">📄 Relatório de sugestões</button><button type="button" class="btn-primary" id="g360FcRelSugestoes2" title="Gerar sugestões desconsiderando as folgas cadastradas na competência selecionada">📄 Sugestão 2</button><button type="button" class="btn-primary" id="g360FcDevAbrirComp">＋ Abrir competência</button></div>
+          <div class="g360-reemb-head-actions"><button type="button" class="btn-primary" id="g360FcDevIncluirFolga">＋ Incluir Folga de Campo</button><button type="button" class="btn-primary" id="g360FcRelSugestoes" title="Gerar relatório de sugestão de baixadas">📄 Relatório de sugestões</button><button type="button" class="btn-primary" id="g360FcDevAbrirComp">＋ Abrir competência</button></div>
         </section>
         <section class="kpis-4 g360-reemb-kpis fc-dev-panel">
           <div class="kpi"><div class="kpi-label">COMPETÊNCIA</div><div class="kpi-value" id="g360FcDevKpiComp" style="font-size:20px">—</div><div class="kpi-sub">Mês selecionado</div></div>
@@ -21547,7 +21547,7 @@ function fcSugV348AbrirFiltro(dados){
  #g360FcSugV348Modal input[type=checkbox]:checked{background:#f5c518;border-color:#f5c518} #g360FcSugV348Modal input[type=checkbox]:checked:after{content:'✓';font-size:8px;line-height:1;color:#111;font-weight:900}
  #g360FcSugV348Modal .list{display:grid;gap:6px;max-height:240px;overflow:auto} #g360FcSugV348Modal .gen{border:1px solid #d6aa00;background:#f5c518;color:#111;border-radius:5px;padding:8px 13px;font-size:11px;font-weight:900;cursor:pointer}
  @media(max-width:650px){#g360FcSugV348Modal .grid{grid-template-columns:1fr}}
- </style><div class="box"><div style="display:flex;justify-content:space-between;gap:12px"><div><div class="title">${dados.excluirCadastradosCompetencia?'SUGESTÃO 2 — DESCONSIDERANDO A COMPETÊNCIA':'RELATÓRIO DE SUGESTÕES DE FOLGA'}</div><div class="sub">Fonte: base operacional DTW · ${dados.colabs.length} colaboradores elegíveis${dados.excluirCadastradosCompetencia?' · ignora o histórico lançado em '+String(dados.competenciaExclusao||currentMonth):''}</div></div><button type="button" id="g360FcSugV348Fechar" class="clear-btn">FECHAR</button></div>
+ </style><div class="box"><div style="display:flex;justify-content:space-between;gap:12px"><div><div class="title">RELATÓRIO DE SUGESTÕES DE FOLGA</div><div class="sub">Fonte: base operacional DTW · ${dados.colabs.length} colaboradores elegíveis</div></div><button type="button" id="g360FcSugV348Fechar" class="clear-btn">FECHAR</button></div>
  <div class="grid"><section><div class="st">SETOR / EQUIPE</div><label style="margin-bottom:8px"><input type="checkbox" id="g360FcSugV348SetTodos" checked> TODOS</label><div class="list">${grupos.map(g=>`<label><input type="checkbox" class="g360FcSugV348Set" value="${esc(g)}"> ${esc(g)}</label>`).join('')}</div></section>
  <section><div class="st">MÊS DA SUGESTÃO</div><label style="margin-bottom:8px"><input type="checkbox" id="g360FcSugV348MesTodos" checked> ATRASADAS + PRÓXIMOS 6 MESES</label><div class="list">${meses.map(m=>`<label><input type="checkbox" class="g360FcSugV348Mes" value="${m.ym}"> ${m.label}</label>`).join('')}</div></section></div>
  <div style="display:flex;justify-content:flex-end;margin-top:14px"><button type="button" id="g360FcSugV348Gerar" class="gen">📄 GERAR RELATÓRIO</button></div></div>`;
@@ -21563,7 +21563,6 @@ function fcSugV348AbrirFiltro(dados){
  ov.querySelector('#g360FcSugV348Gerar').onclick=()=>{const setores=sets.filter(x=>x.checked).map(x=>x.value),selMes=ms.filter(x=>x.checked).map(x=>x.value);if(!setores.length)return alert('Selecione pelo menos um Setor / Equipe.');if(!selMes.length)return alert('Selecione pelo menos um mês.');ov.remove();fcSugV348Pdf(dados,{setores,meses:selMes})};
 }
 async function gerarRelatorioSugestoes(){const btn=$('g360FcRelSugestoes');try{if(btn){btn.disabled=true;btn.textContent='⏳ Carregando...'}const d=await fcSugV348Carregar(true);d.excluirCadastradosCompetencia=false;fcSugV348AbrirFiltro(d)}catch(e){console.error('Sugestões V348:',e);alert('Falha ao carregar Relatório de Sugestões: '+(e?.message||e))}finally{if(btn){btn.disabled=false;btn.textContent='📄 Relatório de sugestões'}}}
-async function gerarRelatorioSugestoes2(){const btn=$('g360FcRelSugestoes2');try{if(!currentMonth)return alert('Selecione uma competência.');if(btn){btn.disabled=true;btn.textContent='⏳ Carregando...'}const d=await fcSugV348Carregar(true);d.excluirCadastradosCompetencia=true;d.competenciaExclusao=currentMonth;fcSugV348AbrirFiltro(d)}catch(e){console.error('Sugestão 2:',e);alert('Falha ao carregar Sugestão 2: '+(e?.message||e))}finally{if(btn){btn.disabled=false;btn.textContent='📄 Sugestão 2'}}}
 function fcSugV348Pdf(dados,filtros){
  try{
   if(!window.jspdf?.jsPDF)throw new Error('Biblioteca PDF não carregada.');
@@ -21990,8 +21989,8 @@ async function exportPdfPessoa(key,returnBytes=false){const pr=rows.filter(r=>St
 };
 const prep=pr.map(r=>{const d=doc.splitTextToSize(pdfDesc(r),widths[1]-10).slice(0,3),lines=Math.max(1,d.length);return{r,d,rowH:lines===1?25:(lines===2?36:47)}}),bodyH=prep.reduce((sum,x)=>sum+x.rowH,0);doc.setFillColor(...peach);doc.rect(left,tableY,fullW,headH,'FD');doc.rect(left,tableY+headH,fullW,bodyH);for(let i=1;i<xs.length-1;i++)doc.line(xs[i],tableY,xs[i],tableY+headH+bodyH);doc.setFont('helvetica','bold');doc.setFontSize(8.4);['ITEM','DESCRIÇÃO','VALOR'].forEach((h,i)=>doc.text(h,(xs[i]+xs[i+1])/2,tableY+20,{align:'center'}));doc.setFont('helvetica','normal');doc.setFontSize(bodyFont);if(typeof doc.setCharSpace==='function')doc.setCharSpace(0);let y=tableY+headH;prep.forEach(({r,d,rowH},i)=>{const cy=y+rowH/2+bodyFont*.32;if(i>0){doc.setLineWidth(.15);doc.line(left,y,left+fullW,y)}doc.text(String(i+1).padStart(2,'0'),(xs[0]+xs[1])/2,cy,{align:'center'});const ls=bodyFont+2;if(typeof doc.setCharSpace==='function')doc.setCharSpace(0);doc.text(d,xs[1]+5,cy-((d.length-1)*ls/2));doc.text('R$',xs[2]+5,cy);doc.text(fmtMoney(r.valor),xs[3]-5,cy,{align:'right'});y+=rowH});const total=pr.reduce((sum,r)=>sum+Number(r.valor||0),0),ty=tableY+headH+bodyH;doc.setLineWidth(.3);doc.rect(xs[2],ty,widths[2],28);doc.setFont('helvetica','bold');doc.text('R$',xs[2]+5,ty+18);doc.text(fmtMoney(total),xs[3]-5,ty+18,{align:'right'});if(returnBytes)return doc.output('arraybuffer');doc.save(`folga_campo_${String(nome).replace(/[^A-Za-z0-9À-ÿ]+/g,'_')}_${currentMonth}.pdf`)}
 function sheetName(s,used){let n=String(s||'Pessoa').replace(/[\\\/?*\[\]:]/g,' ').replace(/\s+/g,' ').trim().slice(0,31)||'Pessoa',base=n,i=2;while(used.has(n))n=(base.slice(0,27)+' '+i++).slice(0,31);used.add(n);return n}function exportExcel(){if(!rows.length)return alert('Não há despesas nesta competência.');if(!window.XLSX?.utils)return alert('Biblioteca Excel não carregada.');const wb=XLSX.utils.book_new(),used=new Set(),groups={};rows.forEach(r=>{const k=String(r.colaborador_id||r.colaborador_nome);if(!groups[k])groups[k]={nome:r.colaborador_nome,funcao:r.funcao||'',itens:[]};groups[k].itens.push(r)});const pessoas=Object.values(groups).sort((a,b)=>String(a.nome).localeCompare(String(b.nome),'pt-BR')),geral=[['DETALHAMENTO DE DESPESAS - FOLGA DE CAMPO'],[],['ORDEM','NOME COLABORADOR','FUNÇÃO','VALOR'],...pessoas.map((g,i)=>[String(i+1).padStart(2,'0'),g.nome,g.funcao,g.itens.reduce((sum,r)=>sum+Number(r.valor||0),0)])];let ws=XLSX.utils.aoa_to_sheet(geral);ws['!cols']=[{wch:10},{wch:40},{wch:34},{wch:16}];XLSX.utils.book_append_sheet(wb,ws,'RELATORIO GERAL');used.add('RELATORIO GERAL');pessoas.forEach(g=>{const itens=[...g.itens],a=[['DETALHAMENTO DE DESPESAS - FOLGA DE CAMPO'],[],['NOME:',g.nome,'FUNÇÃO',g.funcao],[],['ITEM','DESCRIÇÃO','CATEGORIA','VALOR'],...itens.map((r,i)=>[String(i+1).padStart(2,'0'),r.descricao,r.categoria||'',Number(r.valor||0)])],sh=XLSX.utils.aoa_to_sheet(a);sh['!cols']=[{wch:9},{wch:70},{wch:20},{wch:16}];XLSX.utils.book_append_sheet(wb,sh,sheetName(g.nome,used))});XLSX.writeFile(wb,`PAGAMENTO_FOLGA_CAMPO_${currentMonth}.xlsx`)}
-async function init(){if(!$('g360FcDevCompButtons')||!sb())return;initFcResidUf();initFcOrigemUf();initFcDestinoUf();clearForm();try{await Promise.all([loadColabs(),loadComps('')]);await loadRows();await loadMeta();await loadFolgaSuggestion()}catch(e){console.error(e);alert('Falha ao carregar Folga de Campo: '+(e?.message||e))}setTimeout(()=>window.g360FcProgramacoesV330?.init?.(),0);const bind=(id,fn)=>{const el=$(id);if(el&&!el.dataset.fcdevBound){el.dataset.fcdevBound='1';el.addEventListener('click',fn)}};bind('g360FcDevAbrirComp',openCompModal);bind('g360FcDevCompConfirmar',confirmOpenComp);bind('g360FcDevCompCancelar',closeCompModal);bind('g360FcDevCompCancelarX',closeCompModal);bind('g360FcDevAdicionar',addExtra);bind('g360FcDevAddTrecho',addTrecho);bind('g360FcDevLimpar',clearForm);bind('g360FcDevExcelComp',exportExcel);bind('g360FcProgExcelComp',()=>g360FcOpenExportFilter('excel'));bind('g360FcProgPdfComp',()=>g360FcOpenExportFilter('pdf'));bind('g360FcFormularioFinal',g360FcFormularioFinal);bind('g360FcTodosTermos',g360FcTodosTermos);bind('g360FcExportFilterX',g360FcCloseExportFilter);bind('g360FcExportCancelar',g360FcCloseExportFilter);bind('g360FcExportTodos',()=>document.querySelectorAll('#g360FcExportFilterLista input[type="checkbox"]').forEach(x=>x.checked=true));bind('g360FcExportNenhum',()=>document.querySelectorAll('#g360FcExportFilterLista input[type="checkbox"]').forEach(x=>x.checked=false));bind('g360FcExportGerar',g360FcRunFilteredExport);bind('g360FcDevSalvarDados',saveMetaClick);bind('g360FcRelSugestoes',gerarRelatorioSugestoes);bind('g360FcRelSugestoes2',gerarRelatorioSugestoes2);const modal=$('g360FcDevCompModal');if(modal&&!modal.dataset.fcdevBound){modal.dataset.fcdevBound='1';modal.addEventListener('click',e=>{if(e.target===modal)closeCompModal()})}const ps=$('g360FcDevColab');if(ps&&!ps.dataset.fcdevBound){ps.dataset.fcdevBound='1';ps.onchange=async()=>{render();updateTrechoResumo();await Promise.all([loadMeta(),loadFolgaSuggestion()])}};const tipo=$('g360FcDevTipoExtra');if(tipo&&!tipo.dataset.fcdevBound){tipo.dataset.fcdevBound='1';tipo.onchange=syncExtraFields};const fim=$('g360FcDevDataFim');if(fim&&!fim.dataset.fcdevBound){fim.dataset.fcdevBound='1';fim.addEventListener('change',calcReturn)};['g360FcDevOrigemCidade','g360FcDevOrigemUf','g360FcDevDestinoCidade','g360FcDevDestinoUf'].forEach(id=>{const el=$(id);if(el&&!el.dataset.fcdevBound){el.dataset.fcdevBound='1';el.addEventListener('input',updateTrechoResumo)}});const ocSel=$('g360FcDevOrigemCidade');if(ocSel&&!ocSel.dataset.fcOrigemCidadeBound){ocSel.dataset.fcOrigemCidadeBound='1';ocSel.addEventListener('change',updateTrechoResumo)};const dcSel=$('g360FcDevDestinoCidade');if(dcSel&&!dcSel.dataset.fcDestinoCidadeBound){dcSel.dataset.fcDestinoCidadeBound='1';dcSel.addEventListener('change',updateTrechoResumo)};syncExtraFields();updateTrechoResumo()}
-window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRows();await loadMeta();await loadFolgaSuggestion()},exportPdfPessoa,openTermForPerson};/* PERFORMANCE: inicialização somente ao abrir Folga pelo menu */
+async function init(){if(!$('g360FcDevCompButtons')||!sb())return;initFcResidUf();initFcOrigemUf();initFcDestinoUf();clearForm();try{await Promise.all([loadColabs(),loadComps('')]);await loadRows();await loadMeta();await loadFolgaSuggestion()}catch(e){console.error(e);alert('Falha ao carregar Folga de Campo: '+(e?.message||e))}setTimeout(()=>window.g360FcProgramacoesV330?.init?.(),0);const bind=(id,fn)=>{const el=$(id);if(el&&!el.dataset.fcdevBound){el.dataset.fcdevBound='1';el.addEventListener('click',fn)}};bind('g360FcDevAbrirComp',openCompModal);bind('g360FcDevCompConfirmar',confirmOpenComp);bind('g360FcDevCompCancelar',closeCompModal);bind('g360FcDevCompCancelarX',closeCompModal);bind('g360FcDevAdicionar',addExtra);bind('g360FcDevAddTrecho',addTrecho);bind('g360FcDevLimpar',clearForm);bind('g360FcDevExcelComp',exportExcel);bind('g360FcProgExcelComp',()=>g360FcOpenExportFilter('excel'));bind('g360FcProgPdfComp',()=>g360FcOpenExportFilter('pdf'));bind('g360FcFormularioFinal',g360FcFormularioFinal);bind('g360FcTodosTermos',g360FcTodosTermos);bind('g360FcExportFilterX',g360FcCloseExportFilter);bind('g360FcExportCancelar',g360FcCloseExportFilter);bind('g360FcExportTodos',()=>document.querySelectorAll('#g360FcExportFilterLista input[type="checkbox"]').forEach(x=>x.checked=true));bind('g360FcExportNenhum',()=>document.querySelectorAll('#g360FcExportFilterLista input[type="checkbox"]').forEach(x=>x.checked=false));bind('g360FcExportGerar',g360FcRunFilteredExport);bind('g360FcDevSalvarDados',saveMetaClick);bind('g360FcRelSugestoes',gerarRelatorioSugestoes);const modal=$('g360FcDevCompModal');if(modal&&!modal.dataset.fcdevBound){modal.dataset.fcdevBound='1';modal.addEventListener('click',e=>{if(e.target===modal)closeCompModal()})}const ps=$('g360FcDevColab');if(ps&&!ps.dataset.fcdevBound){ps.dataset.fcdevBound='1';ps.onchange=async()=>{render();updateTrechoResumo();await Promise.all([loadMeta(),loadFolgaSuggestion()])}};const tipo=$('g360FcDevTipoExtra');if(tipo&&!tipo.dataset.fcdevBound){tipo.dataset.fcdevBound='1';tipo.onchange=syncExtraFields};const fim=$('g360FcDevDataFim');if(fim&&!fim.dataset.fcdevBound){fim.dataset.fcdevBound='1';fim.addEventListener('change',calcReturn)};['g360FcDevOrigemCidade','g360FcDevOrigemUf','g360FcDevDestinoCidade','g360FcDevDestinoUf'].forEach(id=>{const el=$(id);if(el&&!el.dataset.fcdevBound){el.dataset.fcdevBound='1';el.addEventListener('input',updateTrechoResumo)}});const ocSel=$('g360FcDevOrigemCidade');if(ocSel&&!ocSel.dataset.fcOrigemCidadeBound){ocSel.dataset.fcOrigemCidadeBound='1';ocSel.addEventListener('change',updateTrechoResumo)};const dcSel=$('g360FcDevDestinoCidade');if(dcSel&&!dcSel.dataset.fcDestinoCidadeBound){dcSel.dataset.fcDestinoCidadeBound='1';dcSel.addEventListener('change',updateTrechoResumo)};syncExtraFields();updateTrechoResumo()}
+window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRows();await loadMeta();await loadFolgaSuggestion()},exportPdfPessoa,openTermForPerson,anexarTermoAssinado:g360FcAnexarTermoAssinado};/* PERFORMANCE: inicialização somente ao abrir Folga pelo menu */
 })();
 </script>
 
@@ -22077,7 +22076,7 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
   const rows=r.data||[]; body.innerHTML=rows.length?rows.map(x=>{const per=periodicidadeById(x.colaborador_id)||'—';return `<tr><td><b>${esc(x.colaborador_nome||'—')}</b></td><td>${fmt(x.data_inicio)} a ${fmt(x.data_fim)}</td><td>${fmt(x.data_retorno)}</td><td>${esc([x.cidade_residencia,x.uf_residencia].filter(Boolean).join(' / ')||'—')}</td><td>${x.distancia_km??'—'}</td><td>${esc(per)}</td><td><b>${brl(totals[String(x.colaborador_id)]||0)}</b></td><td><div class="crud-row-actions"><button type="button" class="fc-dev-mini-action icon-only" data-fc-prog-pdf="${esc(x.colaborador_id)}" title="Resumo" aria-label="Resumo das despesas em PDF">📈</button><button type="button" class="fc-dev-mini-action term icon-only" data-fc-prog-termo="${esc(x.colaborador_id)}" title="Gerar Termo" aria-label="Termo de Concessão em PDF">📝</button><button type="button" class="fc-dev-mini-action icon-only" data-fc-prog-termo-assinado="${esc(x.colaborador_id)}" data-fc-folga-id="${esc(x.id)}" title="Anexar Termo Assinado em PDF" aria-label="Anexar Termo Assinado">📎</button><button type="button" class="crud-mini" data-fc-prog-edit="${esc(x.colaborador_id)}">✏️ Editar</button><button type="button" class="crud-mini danger" data-fc-prog-del="${esc(x.id)}" data-fc-prog-colab="${esc(x.colaborador_id)}">🗑 Excluir</button></div></td></tr>`}).join(''):'<tr><td colspan="8"><div class="empty-state">Nenhuma programação nesta competência.</div></td></tr>';
   body.querySelectorAll('[data-fc-prog-pdf]').forEach(b=>b.onclick=()=>window.g360FolgaDevV274?.exportPdfPessoa?.(b.dataset.fcProgPdf));
   body.querySelectorAll('[data-fc-prog-termo]').forEach(b=>b.onclick=()=>window.g360FolgaDevV274?.openTermForPerson?.(b.dataset.fcProgTermo));
-  body.querySelectorAll('[data-fc-prog-termo-assinado]').forEach(b=>b.onclick=()=>g360FcAnexarTermoAssinado(b.dataset.fcProgTermoAssinado,b.dataset.fcFolgaId,b));
+  body.querySelectorAll('[data-fc-prog-termo-assinado]').forEach(b=>b.onclick=()=>window.g360FolgaDevV274?.anexarTermoAssinado?.(b.dataset.fcProgTermoAssinado,b.dataset.fcFolgaId,b));
   body.querySelectorAll('[data-fc-prog-edit]').forEach(b=>b.onclick=()=>edit(b.dataset.fcProgEdit));
   body.querySelectorAll('[data-fc-prog-del]').forEach(b=>b.onclick=()=>del(b.dataset.fcProgDel,b.dataset.fcProgColab));
   })();
@@ -22178,161 +22177,6 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
  window.g360FolgaFinalV332={showStep,delByCid};
 })();
 </script>
-<style id="g360-fc-ia-import-v1">
-#g360FcIaModal{position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:100500;display:none;align-items:center;justify-content:center;padding:18px}
-#g360FcIaModal.open{display:flex}
-#g360FcIaBusy{position:fixed;inset:0;z-index:100650;display:none;align-items:center;justify-content:center;background:rgba(8,10,13,.78);backdrop-filter:blur(2px)}
-#g360FcIaBusy.open{display:flex}
-#g360FcIaBusy .busy-card{min-width:300px;max-width:88vw;padding:24px 28px;border:1px solid #3a3d43;border-radius:12px;background:#1d2024;color:#fff;text-align:center;box-shadow:0 20px 70px #0009;font-weight:800}
-#g360FcIaBusy .busy-spin{width:34px;height:34px;margin:0 auto 13px;border:4px solid #4a4d52;border-top-color:#f5c518;border-radius:50%;animation:g360FcIaSpin .8s linear infinite}
-#g360FcIaBusy .busy-sub{margin-top:7px;font-size:11px;font-weight:500;color:#bfc2c7}
-@keyframes g360FcIaSpin{to{transform:rotate(360deg)}}
-#g360FcIaModal .fc-ia-box{width:min(860px,96vw);max-height:90vh;overflow:auto;background:#fff;color:#171717;border-radius:12px;border:1px solid #ddd;box-shadow:0 24px 70px #0006;padding:20px}
-.fc-ia-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:16px}.fc-ia-head h2{margin:0;font-size:20px}.fc-ia-sub{font-size:12px;color:#666;margin-top:4px}
-.fc-ia-drop{border:2px dashed #c9c9c9;border-radius:10px;padding:24px;text-align:center;background:#fafafa}.fc-ia-drop input{display:none}.fc-ia-file{font-size:12px;margin-top:10px;font-weight:700}
-.fc-ia-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}.fc-ia-actions button{border:0;border-radius:7px;padding:10px 14px;font-weight:800;cursor:pointer}.fc-ia-primary{background:#f5c518;color:#111}.fc-ia-secondary{background:#ececec;color:#222}
-#fcIaResult{margin-top:16px;display:none}.fc-ia-summary{background:#f7f7f7;border:1px solid #ddd;border-radius:9px;padding:12px}.fc-ia-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px}.fc-ia-table th,.fc-ia-table td{padding:8px;border-bottom:1px solid #ddd;text-align:left}.fc-ia-table th{font-weight:800}.fc-ia-status{font-size:12px;margin-top:12px}.fc-ia-error{color:#a51616;font-weight:700}
-</style>
-<div id="g360FcIaModal" aria-hidden="true"><div class="fc-ia-box"><div class="fc-ia-head"><div><h2>Importar Simulação de Passagem</h2><div class="fc-ia-sub">Envie PDF, JPG ou PNG. A IA fará a leitura e mostrará a conferência antes de qualquer Folga de Campo ser criada.</div></div><button type="button" class="fc-ia-secondary" id="fcIaClose">Fechar</button></div><div class="fc-ia-drop" id="fcIaDrop"><strong>Selecione a simulação de passagem</strong><div class="fc-ia-sub">PDF, JPG ou PNG · máximo 10 MB</div><input id="fcIaFile" type="file" accept="application/pdf,image/jpeg,image/png"><div style="margin-top:12px"><button type="button" class="fc-ia-primary" id="fcIaChoose">Escolher arquivo</button></div><div class="fc-ia-file" id="fcIaFileName">Nenhum arquivo selecionado</div></div><div class="fc-ia-status" id="fcIaStatus"></div><div id="fcIaResult"></div><div class="fc-ia-actions"><button type="button" class="fc-ia-secondary" id="fcIaCancel">Cancelar</button><button type="button" class="fc-ia-primary" id="fcIaConfirm" style="display:none;background:#169447;color:#fff">✓ Confirmar e criar Folga</button><button type="button" class="fc-ia-primary" id="fcIaAnalyze" disabled>Analisar com IA</button></div></div></div>
-<div id="g360FcIaBusy" aria-hidden="true"><div class="busy-card"><div class="busy-spin"></div><div id="g360FcIaBusyText">FINALIZANDO FOLGA DE CAMPO...</div><div class="busy-sub">Aguarde. Salvando a Folga, despesas e vínculo da importação.</div></div></div>
-<script id="g360-fc-ia-import-script-v1">
-(()=>{
-'use strict';
-const $=id=>document.getElementById(id);let selectedFile=null,lastData=null,lastImportId=null,lastObraId=null;
-const modal=$('g360FcIaModal'),file=$('fcIaFile'),status=$('fcIaStatus'),result=$('fcIaResult'),analyze=$('fcIaAnalyze'),confirmBtn=$('fcIaConfirm');
-if(!modal||!file||!analyze)return;
-function setStatus(msg,err=false){status.textContent=msg||'';status.className='fc-ia-status'+(err?' fc-ia-error':'')}
-function reset(){selectedFile=null;lastData=null;lastImportId=null;lastObraId=null;file.value='';$('fcIaFileName').textContent='Nenhum arquivo selecionado';analyze.disabled=true;if(confirmBtn){confirmBtn.style.display='none';confirmBtn.disabled=false;confirmBtn.textContent='✓ Confirmar e criar Folga'}result.style.display='none';result.innerHTML='';setStatus('')}
-function open(){reset();modal.classList.add('open');modal.setAttribute('aria-hidden','false')}
-function close(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true')}
-function setBusy(on,msg){const b=$('g360FcIaBusy'),t=$('g360FcIaBusyText');if(t&&msg)t.textContent=msg;if(b){b.classList.toggle('open',!!on);b.setAttribute('aria-hidden',on?'false':'true')}}
-function closeWholeFolgaFlow(){
- close();
- const parent=$('g360FcLancModal');if(parent){parent.classList.remove('open');parent.setAttribute('aria-hidden','true')}
- try{document.body.style.overflow=''}catch(_){}
-}
-$('g360FcImportarSimulacao')?.addEventListener('click',open);$('fcIaClose').onclick=close;$('fcIaCancel').onclick=close;$('fcIaChoose').onclick=()=>file.click();
-file.onchange=()=>{const f=file.files?.[0];if(!f)return reset();if(f.size>10*1024*1024){reset();return setStatus('O arquivo ultrapassa o limite de 10 MB.',true)}selectedFile=f;$('fcIaFileName').textContent=f.name;analyze.disabled=false;setStatus('Arquivo pronto para análise.')}
-function normNome(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim()}
-async function resolverColaboradorIA(sb,d){
- if((d.candidatos_colaborador||[]).length||!d.colaborador_nome)return d;
- const wanted=normNome(d.colaborador_nome),words=wanted.split(' ').filter(w=>w.length>=4);
- let pool=[];
- for(const w of words.slice(0,4)){
-  const r=await sb.from('funcionarios').select('id,matricula,nome,funcao,status,obra,cidade_baixada,distancia_baixada_km,periodicidade_baixada').ilike('nome','%'+w+'%').limit(200);
-  if(!r.error)pool.push(...(r.data||[]));
- }
- const uniq=[...new Map(pool.map(x=>[String(x.id),x])).values()];
- const exact=uniq.filter(x=>normNome(x.nome)===wanted);
- const strong=uniq.filter(x=>words.length&&words.every(w=>normNome(x.nome).includes(w)));
- d.candidatos_colaborador=(exact.length?exact:strong).slice(0,5);
- return d
-}
-async function carregarEscolhaManualIA(sb){
- const r=await sb.from('funcionarios').select('id,matricula,nome,funcao,status,obra,cidade_baixada,distancia_baixada_km,periodicidade_baixada').order('nome').limit(1000);
- if(r.error)throw r.error;
- return (r.data||[]).filter(x=>String(x.status||'ATIVO').toUpperCase()==='ATIVO');
-}
-function aplicarEscolhaManualIA(){
- const sel=$('fcIaManualColab');if(!sel||!sel.value||!lastData)return;
- const opt=sel.selectedOptions?.[0];if(!opt)return;
- const c=JSON.parse(decodeURIComponent(opt.dataset.c||''));
- lastData.candidatos_colaborador=[c];
- render(lastData);
- setStatus('Colaborador selecionado manualmente. Confira os dados e clique em Confirmar e criar Folga.');
-}
-function money(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-function esc(v){return String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]))}
-function render(d){const trs=(d.trechos||[]).map(t=>`<tr><td>${esc(t.ordem)}</td><td>${esc(t.origem_cidade)}${t.origem_uf?' - '+esc(t.origem_uf):''}</td><td>${esc(t.destino_cidade)}${t.destino_uf?' - '+esc(t.destino_uf):''}</td><td>${esc(t.empresa)}</td><td>${esc(t.data||'')}</td><td>${money(t.valor)}</td></tr>`).join('');const cand=(d.candidatos_colaborador||[])[0];const fmt=v=>{if(!v)return '-';const a=String(v).split('-');return a.length===3?`${a[2]}/${a[1]}/${a[0]}`:esc(v)};const alimentacao=Number(d.alimentacao_valor||0);const passagens=Number(d.total_passagens||0);const total=Number(d.total_geral??(passagens+alimentacao));result.innerHTML=`<div class="fc-ia-summary"><b>COLABORADOR LIDO:</b> ${esc(d.colaborador_nome||'NÃO IDENTIFICADO')}<br>${cand?`<b>LOCALIZADO NO SISTEMA:</b> ${esc(cand.nome)} · MATRÍCULA ${esc(cand.matricula||'-')} · ${esc(cand.funcao||'-')}<br>`:`<b style="color:#a51616">COLABORADOR NÃO LOCALIZADO AUTOMATICAMENTE.</b><br><div id="fcIaManualBox" style="margin:10px 0;padding:10px;border:1px solid #d0d0d0;border-radius:7px"><b>ESCOLHER COLABORADOR:</b><br><select id="fcIaManualColab" style="width:100%;margin-top:7px;padding:9px"><option value="">Carregando colaboradores...</option></select></div>`}<b>ROTA PRINCIPAL:</b> ${esc(d.rota_principal||'-')}<br><b>DISTÂNCIA:</b> ${d.distancia_km!=null?esc(d.distancia_km)+' KM':'-'}<br><b>INÍCIO:</b> ${fmt(d.data_inicio)} &nbsp; <b>FIM:</b> ${fmt(d.data_fim)} &nbsp; <b>RETORNO:</b> ${fmt(d.data_retorno)}<br><b>PASSAGENS:</b> ${money(passagens)} &nbsp; <b>ALIMENTAÇÃO:</b> ${money(alimentacao)}<br><b>TOTAL GERAL:</b> ${money(total)}</div><table class="fc-ia-table"><thead><tr><th>#</th><th>Origem</th><th>Destino</th><th>Empresa</th><th>Data</th><th>Valor</th></tr></thead><tbody>${trs||'<tr><td colspan="6">Nenhum trecho identificado.</td></tr>'}</tbody></table><div class="fc-ia-sub" style="margin-top:10px">Status: CONFERÊNCIA. Nenhuma Folga de Campo foi criada.</div>`;result.style.display='block';
- if(confirmBtn)confirmBtn.style.display=cand?'inline-block':'none';
- if(!cand){
-  const sb=window.g360SupabaseClient,sel=$('fcIaManualColab');
-  if(sb&&sel)carregarEscolhaManualIA(sb).then(lista=>{
-   sel.innerHTML='<option value="">Selecione o colaborador...</option>'+lista.map(c=>`<option value="${esc(c.id)}" data-c="${encodeURIComponent(JSON.stringify(c))}">${esc(c.matricula||'-')} · ${esc(c.nome)} · ${esc(c.funcao||'-')}</option>`).join('');
-   sel.onchange=aplicarEscolhaManualIA;
-  }).catch(e=>{sel.innerHTML='<option value="">Erro ao carregar colaboradores</option>';console.error(e)});
- }
-}
-async function confirmarFolga(){
- const sb=window.g360SupabaseClient;if(!sb||!lastData||!lastImportId)return setStatus('Faça a análise do documento antes de confirmar.',true);
- const cand=(lastData.candidatos_colaborador||[])[0];if(!cand)return setStatus('Colaborador não localizado no sistema. Não é possível confirmar.',true);
- const comp=$('g360FcDevCompSelect')?.value||'';if(!/^\d{4}-\d{2}$/.test(comp))return setStatus('Selecione uma competência válida na Folga de Campo antes de confirmar.',true);
- if(!lastData.data_inicio||!lastData.data_fim||!lastData.data_retorno||!(Number(lastData.distancia_km)>0))return setStatus('Faltam período, retorno ou KM. Confira o documento antes de confirmar.',true);
- confirmBtn.disabled=true;confirmBtn.textContent='Criando...';setBusy(true,'FINALIZANDO FOLGA DE CAMPO...');
- let folgaId=null;
- try{
-  const sess=(await sb.auth.getSession()).data?.session;if(!sess)throw new Error('Sua sessão expirou. Entre novamente no sistema.');
-  const competencia=comp+'-01',ini=lastData.data_inicio,fim=lastData.data_fim,ret=lastData.data_retorno;
-  const dias=Math.floor((new Date(fim+'T12:00:00')-new Date(ini+'T12:00:00'))/86400000)+1;
-  const trechos=Array.isArray(lastData.trechos)?lastData.trechos:[];
-  const alimentacao=Number(lastData.alimentacao_valor||0),passagens=Number(lastData.total_passagens||0),total=Number(lastData.total_geral??(passagens+alimentacao));
-  const destinoCidade=String(cand.cidade_baixada||trechos[0]?.destino_cidade||'').toUpperCase()||null;const destinoUf=String(trechos[0]?.destino_uf||lastData.destino_uf||'').toUpperCase()||null;
-  const periodicidade=Number(lastData.distancia_km)<=500?'2x2':(Number(lastData.distancia_km)<=1000?'3x3':'6x6');
-  const row={obra_id:lastObraId,colaborador_id:cand.id,matricula:String(cand.matricula||''),colaborador_nome:String(cand.nome||lastData.colaborador_nome||'').toUpperCase(),competencia,data_inicio:ini,data_saida:ini,data_fim:fim,data_retorno:ret,destino:lastData.rota_principal||destinoCidade,distancia_km:Number(lastData.distancia_km),dias,status:'PROGRAMADA',incluido:true,tipo_folga:'PROGRAMADA',custo:total,valor_reembolso:total,destino_cidade:destinoCidade,destino_uf:destinoUf,cidade_residencia:destinoCidade,uf_residencia:destinoUf,periodicidade_base:periodicidade,dados:{origem:'IMPORTACAO_IA',importacao_id:lastImportId,arquivo:selectedFile?.name||null},created_by:sess.user.id,updated_at:new Date().toISOString()};
-  const ins=await sb.from('folga_campo').insert(row).select('id').single();if(ins.error)throw ins.error;folgaId=ins.data.id;
-  const metade=Math.ceil(trechos.length/2);
-  const despesas=trechos.map((t,i)=>({obra_id:lastObraId,competencia,colaborador_id:cand.id,matricula:String(cand.matricula||''),colaborador_nome:String(cand.nome||'').toUpperCase(),funcao:cand.funcao||null,descricao:`PASSAGEM RODOVIÁRIA - TRECHO ${i+1} - ${String(t.origem_cidade||'').toUpperCase()}/${String(t.origem_uf||'').toUpperCase()} > ${String(t.destino_cidade||'').toUpperCase()}/${String(t.destino_uf||'').toUpperCase()}`,data_despesa:t.data||(i<metade?ini:fim),fornecedor:t.empresa||null,categoria:'PASSAGEM RODOVIÁRIA',valor:Number(t.valor||0),tipo_despesa:'PASSAGEM_RODOVIARIA',trecho_num:i+1,origem_cidade:t.origem_cidade||null,origem_uf:t.origem_uf||null,destino_cidade:t.destino_cidade||null,destino_uf:t.destino_uf||null,created_by:sess.user.id}));
-  if(alimentacao>0)despesas.push({obra_id:lastObraId,competencia,colaborador_id:cand.id,matricula:String(cand.matricula||''),colaborador_nome:String(cand.nome||'').toUpperCase(),funcao:cand.funcao||null,descricao:'ALIMENTAÇÃO IDA E VOLTA',data_despesa:ini,fornecedor:null,categoria:'ALIMENTAÇÃO',valor:alimentacao,tipo_despesa:'ALIMENTACAO',created_by:sess.user.id});
-  const di=await sb.from('folga_campo_despesas').insert(despesas);if(di.error)throw di.error;
-  const up=await sb.from('folga_campo_importacoes').update({status:'PROCESSADO',colaborador_id:cand.id,folga_campo_id:folgaId,updated_at:new Date().toISOString()}).eq('id',lastImportId);if(up.error)throw up.error;
-  setStatus(`Folga criada com sucesso na competência ${comp}. ${despesas.length} despesa(s) lançada(s).`);
-  confirmBtn.style.display='none';analyze.style.display='none';
-  setBusy(false);closeWholeFolgaFlow();
-  // Atualiza a listagem depois que o fluxo já foi fechado; não prende o usuário esperando a consulta.
-  setTimeout(()=>{try{window.g360FcProgramacoesV330?.load?.(true)}catch(_){}},60);
- }catch(e){
-  console.error(e);
-  if(folgaId){try{await sb.from('folga_campo_despesas').delete().eq('colaborador_id',cand.id).eq('competencia',comp+'-01').eq('obra_id',lastObraId);await sb.from('folga_campo').delete().eq('id',folgaId)}catch(_){}}
-  setBusy(false);setStatus('Não foi possível criar a Folga: '+(e?.message||e),true);confirmBtn.disabled=false;confirmBtn.textContent='✓ Confirmar e criar Folga';
- }
-}
-if(confirmBtn)confirmBtn.onclick=confirmarFolga;
-analyze.onclick=async()=>{if(!selectedFile)return;const sb=window.g360SupabaseClient;if(!sb)return setStatus('Supabase não inicializado.',true);analyze.disabled=true;try{setStatus('Enviando documento...');const sess=(await sb.auth.getSession()).data?.session;if(!sess)throw new Error('Sua sessão expirou. Entre novamente no sistema.');let obraId=window.g360GetSelectedObra?.()?.id||window.G360_ACTIVE_OBRA_ID||null;if(!obraId){const cod=localStorage.getItem('g360_obra_ativa')||window.GESTAO360_CONFIG?.OBRA_CODIGO||'202';const ow=await sb.from('obras').select('id').eq('codigo',String(cod)).limit(1).maybeSingle();obraId=ow.data?.id||null}if(!obraId)throw new Error('Obra ativa não encontrada.');const safe=selectedFile.name.replace(/[^a-zA-Z0-9._-]+/g,'_');const path=`${obraId}/${sess.user.id}/${Date.now()}_${safe}`;const up=await sb.storage.from('folga-campo-documentos').upload(path,selectedFile,{contentType:selectedFile.type,upsert:false});if(up.error)throw up.error;const ins=await sb.from('folga_campo_importacoes').insert({obra_id:obraId,arquivo_nome:selectedFile.name,arquivo_path:path,arquivo_tipo:selectedFile.type,status:'ENVIADO',created_by:sess.user.id}).select('id').single();if(ins.error){await sb.storage.from('folga-campo-documentos').remove([path]);throw ins.error}setStatus('Documento enviado. A IA está analisando...');const fn=await sb.functions.invoke('analisar-folga-documento',{body:{importacao_id:ins.data.id}});if(fn.error)throw fn.error;if(fn.data?.error)throw new Error(fn.data.error);lastImportId=ins.data.id;lastObraId=obraId;lastData=fn.data.dados_extraidos||{};lastData=await resolverColaboradorIA(sb,lastData);render(lastData);setStatus('Análise concluída. Confira os dados abaixo e clique em Confirmar e criar Folga.')}catch(e){console.error(e);setStatus('Não foi possível analisar: '+(e?.message||e),true)}finally{analyze.disabled=!selectedFile}};
-})();
-</script>
-
-<!-- G360 BUILD VEICULOS RELATORIOS V2 2026-09-24 -->
-
-<style id="g360-fc-cotacao-ia-v1">
-#g360FcCotIaModal{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:100700;display:none;align-items:center;justify-content:center;padding:18px}
-#g360FcCotIaModal.open{display:flex}
-#g360FcCotIaModal .fc-cot-box{width:min(980px,97vw);max-height:92vh;overflow:auto;background:#fff;color:#171717;border-radius:12px;border:1px solid #ddd;box-shadow:0 24px 70px #0007;padding:20px}
-.fc-cot-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:14px}
-.fc-cot-head h2{margin:0;font-size:20px}.fc-cot-sub{font-size:12px;color:#666;margin-top:4px}
-.fc-cot-paste{border:2px dashed #c8c8c8;border-radius:10px;padding:20px;background:#fafafa;text-align:center;outline:none}
-.fc-cot-paste:focus{border-color:#f5c518;box-shadow:0 0 0 3px rgba(245,197,24,.18)}
-.fc-cot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-top:12px}
-.fc-cot-shot{border:1px solid #ddd;border-radius:8px;padding:7px;background:#fff;position:relative}
-.fc-cot-shot img{width:100%;height:150px;object-fit:contain;background:#f5f5f5;border-radius:5px}
-.fc-cot-shot button{position:absolute;right:10px;top:10px;border:0;border-radius:5px;background:#a51616;color:#fff;cursor:pointer;padding:5px 7px;font-weight:800}
-.fc-cot-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:15px}
-.fc-cot-actions button{border:0;border-radius:7px;padding:10px 14px;font-weight:800;cursor:pointer}
-.fc-cot-primary{background:#f5c518;color:#111}.fc-cot-secondary{background:#ececec;color:#222}.fc-cot-success{background:#169447;color:#fff}
-#fcCotPreview{display:none;margin-top:15px}.fc-cot-summary{border:1px solid #ddd;border-radius:8px;background:#f8f8f8;padding:12px;font-size:13px;line-height:1.6}
-.fc-cot-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px}.fc-cot-table th,.fc-cot-table td{border-bottom:1px solid #ddd;padding:8px;text-align:left}
-.fc-cot-status{font-size:12px;margin-top:10px;font-weight:700}.fc-cot-error{color:#a51616}
-.fc-cot-mini{border:1px solid #d0d0d0!important;background:#fff!important;color:#222!important}
-
-
-.fc-route-mode-box{display:flex;gap:8px;align-items:center;margin:4px 0 16px;padding:10px;border:1px solid #35383e;border-radius:7px;background:#181a1e}
-.fc-route-mode{border:1px solid #474b52;background:#25282d;color:#ddd;border-radius:6px;padding:10px 14px;font-weight:900;cursor:pointer;font-size:11px;letter-spacing:.25px}
-.fc-route-mode.active{border-color:#f5c518;color:#111;background:#f5c518}
-.fc-route-mode.ai{border-color:#f5c518;color:#f5c518;background:rgba(245,197,24,.06)}
-.fc-route-mode.ai:hover{background:#f5c518;color:#111}
-
-.fc-cotacao-start{border-color:#f5c518!important;background:#f5c518!important;color:#111!important;font-weight:900!important;white-space:nowrap}
-.fc-cotacao-start:hover{filter:brightness(1.06)}
-</style>
-<div id="g360FcCotIaModal" aria-hidden="true">
- <div class="fc-cot-box">
-  <div class="fc-cot-head"><div><h2>Cotação IA · Folga de Campo</h2><div class="fc-cot-sub" id="fcCotPessoa">Cole os recortes das cotações. A IA lê os trechos e o sistema calcula a alimentação pela distância da Folga.</div></div><button type="button" class="fc-cot-secondary" id="fcCotClose">Fechar</button></div>
-  <div class="fc-cot-paste" id="fcCotPaste" tabindex="0"><b>📋 CLIQUE AQUI E COLE OS PRINTS COM CTRL+V</b><div class="fc-cot-sub">Use Win + Shift + S para recortar a cotação e depois Ctrl+V. Pode colar vários recortes.</div><div style="margin-top:10px"><button type="button" class="fc-cot-primary" id="fcCotChoose">Escolher imagens</button><input id="fcCotFiles" type="file" accept="image/png,image/jpeg" multiple style="display:none"></div></div>
-  <div class="fc-cot-grid" id="fcCotGrid"></div>
-  <div class="fc-cot-status" id="fcCotStatus"></div>
-  <div id="fcCotPreview"></div>
-  <div class="fc-cot-actions"><button type="button" class="fc-cot-secondary" id="fcCotCancel">Cancelar</button><button type="button" class="fc-cot-success" id="fcCotConfirm" style="display:none">✓ Confirmar, lançar e salvar simulação</button><button type="button" class="fc-cot-primary" id="fcCotAnalyze" disabled>✨ Analisar com IA</button></div>
- </div>
-</div>
 <script id="g360-fc-cotacao-ia-script-v1">
 (()=>{
 'use strict';
