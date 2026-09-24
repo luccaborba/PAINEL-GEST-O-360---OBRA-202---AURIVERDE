@@ -21932,4 +21932,34 @@ table:has(#ctrTableBody) th:nth-child(7) {
   white-space: nowrap !important;
   min-width: 72px !important;
 }
+
+/* G360 — ajuste fino Base de Contratos:
+   reduz TIPO e reserva espaço real para MEDIDO/SALDO sem quebra */
+table:has(#ctrTableBody) {
+  table-layout: auto !important;
+  min-width: 1320px !important;
+}
+table:has(#ctrTableBody) th:nth-child(3),
+#ctrTableBody td:nth-child(3) {
+  width: 135px !important;
+  max-width: 135px !important;
+  min-width: 115px !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+table:has(#ctrTableBody) th:nth-child(4),
+#ctrTableBody td:nth-child(4) {
+  min-width: 125px !important;
+  white-space: nowrap !important;
+}
+table:has(#ctrTableBody) th:nth-child(5),
+#ctrTableBody td:nth-child(5),
+table:has(#ctrTableBody) th:nth-child(6),
+#ctrTableBody td:nth-child(6) {
+  width: 132px !important;
+  min-width: 132px !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+}
 </style>
