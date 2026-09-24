@@ -9570,7 +9570,7 @@ async function trPdf(){
   if(!window.jspdf)return alert('Biblioteca de PDF não carregada.');
 
   const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({orientation:'landscape',unit:'pt',format:'a4',compress:true});
+  const doc=new jsPDF({orientation:'portrait',unit:'pt',format:'a4',compress:true});
   const PW=doc.internal.pageSize.getWidth(), PH=doc.internal.pageSize.getHeight();
   const M=34, contentW=PW-M*2;
   const clean=v=>String(v??'').trim(), brDate=v=>trFmtDate(v)||'';
@@ -22152,15 +22152,11 @@ async function generateSimulationPdf(){
  const f=ctx.folga,km=Number(f.distancia_km||0),alimentacao=foodByKm(km);
  const dt=v=>{if(!v)return '—';const d=new Date(String(v).slice(0,10)+'T12:00:00');return Number.isNaN(d.getTime())?'—':d.toLocaleDateString('pt-BR')};
  const rota=()=>{
-   const ts=Array.isArray(extracted?.trechos)?extracted.trechos:[];
-   if(ts.length){
-     const a=ts[0],b=ts[ts.length-1];
-     const o=[a.origem_cidade,a.origem_uf].filter(Boolean).join('-');
-     const d=[a.destino_cidade,a.destino_uf].filter(Boolean).join('-');
-     if(o&&d)return `${o} > ${d}`;
-   }
-   const oc=[f.origem_cidade,f.origem_uf].filter(Boolean).join('-'),dc=[f.destino_cidade||f.cidade_residencia,f.destino_uf||f.uf_residencia].filter(Boolean).join('-');
-   return oc&&dc?`${oc} > ${dc}`:(extracted?.rota_principal||'ROTA NÃO IDENTIFICADA');
+   // A rota exibida no PDF vem EXCLUSIVAMENTE dos dados cadastrados na Folga.
+   // A IA interpreta os bilhetes somente para criar os trechos/despesas.
+   const oc=[f.origem_cidade,f.origem_uf].filter(Boolean).join('-');
+   const dc=[f.destino_cidade||f.cidade_residencia,f.destino_uf||f.uf_residencia].filter(Boolean).join('-');
+   return oc&&dc?`${oc} > ${dc}`:'ROTA NÃO IDENTIFICADA';
  };
  doc.setTextColor(10,10,10);doc.setFont('helvetica','bold');
  doc.setFontSize(15);doc.text(`SIMULAÇÃO DE VALORES DE PASSAGEM – ${String(ctx.nome||f.colaborador_nome||'').toUpperCase()}`,W/2,28,{align:'center'});
