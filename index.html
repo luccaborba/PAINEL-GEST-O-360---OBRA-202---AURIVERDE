@@ -22034,13 +22034,21 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
 </script>
 <style id="g360-fc-ia-import-v1">
 #g360FcIaModal{position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:100500;display:none;align-items:center;justify-content:center;padding:18px}
-#g360FcIaModal.open{display:flex}#g360FcIaModal .fc-ia-box{width:min(860px,96vw);max-height:90vh;overflow:auto;background:#fff;color:#171717;border-radius:12px;border:1px solid #ddd;box-shadow:0 24px 70px #0006;padding:20px}
+#g360FcIaModal.open{display:flex}
+#g360FcIaBusy{position:fixed;inset:0;z-index:100650;display:none;align-items:center;justify-content:center;background:rgba(8,10,13,.78);backdrop-filter:blur(2px)}
+#g360FcIaBusy.open{display:flex}
+#g360FcIaBusy .busy-card{min-width:300px;max-width:88vw;padding:24px 28px;border:1px solid #3a3d43;border-radius:12px;background:#1d2024;color:#fff;text-align:center;box-shadow:0 20px 70px #0009;font-weight:800}
+#g360FcIaBusy .busy-spin{width:34px;height:34px;margin:0 auto 13px;border:4px solid #4a4d52;border-top-color:#f5c518;border-radius:50%;animation:g360FcIaSpin .8s linear infinite}
+#g360FcIaBusy .busy-sub{margin-top:7px;font-size:11px;font-weight:500;color:#bfc2c7}
+@keyframes g360FcIaSpin{to{transform:rotate(360deg)}}
+#g360FcIaModal .fc-ia-box{width:min(860px,96vw);max-height:90vh;overflow:auto;background:#fff;color:#171717;border-radius:12px;border:1px solid #ddd;box-shadow:0 24px 70px #0006;padding:20px}
 .fc-ia-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:16px}.fc-ia-head h2{margin:0;font-size:20px}.fc-ia-sub{font-size:12px;color:#666;margin-top:4px}
 .fc-ia-drop{border:2px dashed #c9c9c9;border-radius:10px;padding:24px;text-align:center;background:#fafafa}.fc-ia-drop input{display:none}.fc-ia-file{font-size:12px;margin-top:10px;font-weight:700}
 .fc-ia-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}.fc-ia-actions button{border:0;border-radius:7px;padding:10px 14px;font-weight:800;cursor:pointer}.fc-ia-primary{background:#f5c518;color:#111}.fc-ia-secondary{background:#ececec;color:#222}
 #fcIaResult{margin-top:16px;display:none}.fc-ia-summary{background:#f7f7f7;border:1px solid #ddd;border-radius:9px;padding:12px}.fc-ia-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px}.fc-ia-table th,.fc-ia-table td{padding:8px;border-bottom:1px solid #ddd;text-align:left}.fc-ia-table th{font-weight:800}.fc-ia-status{font-size:12px;margin-top:12px}.fc-ia-error{color:#a51616;font-weight:700}
 </style>
 <div id="g360FcIaModal" aria-hidden="true"><div class="fc-ia-box"><div class="fc-ia-head"><div><h2>Importar Simulação de Passagem</h2><div class="fc-ia-sub">Envie PDF, JPG ou PNG. A IA fará a leitura e mostrará a conferência antes de qualquer Folga de Campo ser criada.</div></div><button type="button" class="fc-ia-secondary" id="fcIaClose">Fechar</button></div><div class="fc-ia-drop" id="fcIaDrop"><strong>Selecione a simulação de passagem</strong><div class="fc-ia-sub">PDF, JPG ou PNG · máximo 10 MB</div><input id="fcIaFile" type="file" accept="application/pdf,image/jpeg,image/png"><div style="margin-top:12px"><button type="button" class="fc-ia-primary" id="fcIaChoose">Escolher arquivo</button></div><div class="fc-ia-file" id="fcIaFileName">Nenhum arquivo selecionado</div></div><div class="fc-ia-status" id="fcIaStatus"></div><div id="fcIaResult"></div><div class="fc-ia-actions"><button type="button" class="fc-ia-secondary" id="fcIaCancel">Cancelar</button><button type="button" class="fc-ia-primary" id="fcIaConfirm" style="display:none;background:#169447;color:#fff">✓ Confirmar e criar Folga</button><button type="button" class="fc-ia-primary" id="fcIaAnalyze" disabled>Analisar com IA</button></div></div></div>
+<div id="g360FcIaBusy" aria-hidden="true"><div class="busy-card"><div class="busy-spin"></div><div id="g360FcIaBusyText">FINALIZANDO FOLGA DE CAMPO...</div><div class="busy-sub">Aguarde. Salvando a Folga, despesas e vínculo da importação.</div></div></div>
 <script id="g360-fc-ia-import-script-v1">
 (()=>{
 'use strict';
@@ -22051,6 +22059,12 @@ function setStatus(msg,err=false){status.textContent=msg||'';status.className='f
 function reset(){selectedFile=null;lastData=null;lastImportId=null;lastObraId=null;file.value='';$('fcIaFileName').textContent='Nenhum arquivo selecionado';analyze.disabled=true;if(confirmBtn){confirmBtn.style.display='none';confirmBtn.disabled=false;confirmBtn.textContent='✓ Confirmar e criar Folga'}result.style.display='none';result.innerHTML='';setStatus('')}
 function open(){reset();modal.classList.add('open');modal.setAttribute('aria-hidden','false')}
 function close(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true')}
+function setBusy(on,msg){const b=$('g360FcIaBusy'),t=$('g360FcIaBusyText');if(t&&msg)t.textContent=msg;if(b){b.classList.toggle('open',!!on);b.setAttribute('aria-hidden',on?'false':'true')}}
+function closeWholeFolgaFlow(){
+ close();
+ const parent=$('g360FcLancModal');if(parent){parent.classList.remove('open');parent.setAttribute('aria-hidden','true')}
+ try{document.body.style.overflow=''}catch(_){}
+}
 $('g360FcImportarSimulacao')?.addEventListener('click',open);$('fcIaClose').onclick=close;$('fcIaCancel').onclick=close;$('fcIaChoose').onclick=()=>file.click();
 file.onchange=()=>{const f=file.files?.[0];if(!f)return reset();if(f.size>10*1024*1024){reset();return setStatus('O arquivo ultrapassa o limite de 10 MB.',true)}selectedFile=f;$('fcIaFileName').textContent=f.name;analyze.disabled=false;setStatus('Arquivo pronto para análise.')}
 function normNome(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim()}
@@ -22098,7 +22112,7 @@ async function confirmarFolga(){
  const cand=(lastData.candidatos_colaborador||[])[0];if(!cand)return setStatus('Colaborador não localizado no sistema. Não é possível confirmar.',true);
  const comp=$('g360FcDevCompSelect')?.value||'';if(!/^\d{4}-\d{2}$/.test(comp))return setStatus('Selecione uma competência válida na Folga de Campo antes de confirmar.',true);
  if(!lastData.data_inicio||!lastData.data_fim||!lastData.data_retorno||!(Number(lastData.distancia_km)>0))return setStatus('Faltam período, retorno ou KM. Confira o documento antes de confirmar.',true);
- confirmBtn.disabled=true;confirmBtn.textContent='Criando...';
+ confirmBtn.disabled=true;confirmBtn.textContent='Criando...';setBusy(true,'FINALIZANDO FOLGA DE CAMPO...');
  let folgaId=null;
  try{
   const sess=(await sb.auth.getSession()).data?.session;if(!sess)throw new Error('Sua sessão expirou. Entre novamente no sistema.');
@@ -22117,12 +22131,13 @@ async function confirmarFolga(){
   const up=await sb.from('folga_campo_importacoes').update({status:'PROCESSADO',colaborador_id:cand.id,folga_campo_id:folgaId,updated_at:new Date().toISOString()}).eq('id',lastImportId);if(up.error)throw up.error;
   setStatus(`Folga criada com sucesso na competência ${comp}. ${despesas.length} despesa(s) lançada(s).`);
   confirmBtn.style.display='none';analyze.style.display='none';
-  try{await window.g360FcProgramacoesV330?.load?.(true)}catch(_){}
-  setTimeout(()=>close(),250);
+  setBusy(false);closeWholeFolgaFlow();
+  // Atualiza a listagem depois que o fluxo já foi fechado; não prende o usuário esperando a consulta.
+  setTimeout(()=>{try{window.g360FcProgramacoesV330?.load?.(true)}catch(_){}},60);
  }catch(e){
   console.error(e);
   if(folgaId){try{await sb.from('folga_campo_despesas').delete().eq('colaborador_id',cand.id).eq('competencia',comp+'-01').eq('obra_id',lastObraId);await sb.from('folga_campo').delete().eq('id',folgaId)}catch(_){}}
-  setStatus('Não foi possível criar a Folga: '+(e?.message||e),true);confirmBtn.disabled=false;confirmBtn.textContent='✓ Confirmar e criar Folga';
+  setBusy(false);setStatus('Não foi possível criar a Folga: '+(e?.message||e),true);confirmBtn.disabled=false;confirmBtn.textContent='✓ Confirmar e criar Folga';
  }
 }
 if(confirmBtn)confirmBtn.onclick=confirmarFolga;
