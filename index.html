@@ -21683,48 +21683,69 @@ async function openTermForPerson(key,returnBytes=false){
   if(!destino||!dataIni||!dataFim||!retorno||!(km>0))return alert('O Termo ainda está incompleto. Confira período, distância, UF e cidade em DADOS DA FOLGA.');
   if(!window.jspdf?.jsPDF)return alert('Biblioteca PDF não carregada.');
 
-  const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'}),PW=doc.internal.pageSize.getWidth(),ML=18,MR=18,CW=PW-ML-MR;
-  let y=18;
+  const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'}),PW=doc.internal.pageSize.getWidth(),ML=27,MR=24,CW=PW-ML-MR;
+  let y=35;
   const fmtD=v=>v?new Date(String(v).slice(0,10)+'T12:00:00').toLocaleDateString('pt-BR'):'—';
-  const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-  const total=despesas.reduce((a,x)=>a+Number(x.valor||0),0);
+  const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const hoje=new Date(),dataExt=`Crixás - GO, ${String(hoje.getDate()).padStart(2,'0')} de ${meses[hoje.getMonth()]} de ${hoje.getFullYear()}`;
+  const qtdDias=Number(dias||0);
+  const diasExt={1:'um',2:'dois',3:'três',4:'quatro',5:'cinco',6:'seis',7:'sete',8:'oito',9:'nove',10:'dez'}[qtdDias]||String(qtdDias);
 
-  doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('COMUNICAÇÃO E CONCESSÃO DE FOLGA DE CAMPO',PW/2,y,{align:'center'});y+=8;
-  doc.setDrawColor(245,197,24);doc.setLineWidth(.8);doc.line(ML,y,PW-MR,y);y+=9;
+  // Modelo oficial: sem qualquer detalhamento de despesas.
+  doc.setFont('helvetica','bold');doc.setTextColor(70);doc.setFontSize(13);
+  doc.text('CONSTRUTORA',PW-43,21,{align:'center'});
+  doc.setFontSize(18);doc.text('CENTRO LESTE',PW-43,28,{align:'center'});
+  doc.setTextColor(30);doc.setFontSize(12.2);
+  doc.text('COMUNICAÇÃO E CONCESSÃO DE FOLGA DE CAMPO',PW/2,y,{align:'center'});y+=22;
 
-  const field=(lab,val)=>{doc.setFont('helvetica','bold');doc.setFontSize(9.2);doc.text(lab,ML,y);const lw=doc.getTextWidth(lab)+2;doc.setFont('helvetica','normal');const ls=doc.splitTextToSize(String(val||'—'),Math.max(25,CW-lw));doc.text(ls,ML+lw,y);y+=Math.max(6,ls.length*4.2)};
-  field('Empregado(a):',nome);field('Matrícula:',mat||'—');field('Cargo:',funcao||'—');
-  field('Destino da Folga:',destino.toUpperCase());field('Distância da Obra:',`${km.toLocaleString('pt-BR')} km`);
-  field('Período:',`${fmtD(dataIni)} a ${fmtD(dataFim)}`);field('Retorno ao Trabalho:',fmtD(retorno));field('Dias de Folga:',dias);
+  const linha=(rotulo,valor,opts={})=>{
+    doc.setFont('helvetica','bold');doc.setFontSize(10.5);doc.setTextColor(55);
+    doc.text(rotulo,ML,y);
+    const x=ML+doc.getTextWidth(rotulo)+1.2;
+    doc.setFont('helvetica',opts.bold?'bold':'normal');doc.setTextColor(65);
+    const ls=doc.splitTextToSize(String(valor||'—'),PW-MR-x);
+    doc.text(ls,x,y);y+=Math.max(6,ls.length*5);
+  };
+
+  linha('Empregado(a):',nome);
+  linha('Matrícula:',mat||'—');
+  linha('Obra/Unidade:','Obra 202 – Implantação Auriverde');
+  linha('Cargo:',funcao||'—');
+  y+=4;
+  linha('Cidade Residência Informado:',destino.toUpperCase());
+  y+=4;
+  linha('Distância da Obra:',`${km.toLocaleString('pt-BR')}km`);
   y+=4;
 
-  doc.setFont('helvetica','normal');doc.setFontSize(9.2);
-  const txt=`Comunicamos a concessão de ${String(dias).padStart(2,'0')} dia(s) corrido(s) de Folga de Campo para Visita Familiar, considerando a distância informada entre a residência e o local da obra. As despesas vinculadas a esta concessão estão discriminadas abaixo.`;
-  const lines=doc.splitTextToSize(txt,CW);doc.text(lines,ML,y);y+=lines.length*4.5+6;
+  doc.setFont('helvetica','normal');doc.setFontSize(10.4);doc.setTextColor(70);
+  const comunicado=`Nos termos da Cláusula Vigésima Sexta da Convenção Coletiva de Trabalho vigente, comunicamos a concessão de ${String(qtdDias).padStart(2,'0')} (${diasExt}) dias corridos de Folga de Campo para Visita Familiar, em razão de residência superior a 500 km do local da obra.`;
+  const cl=doc.splitTextToSize(comunicado,CW);doc.text(cl,ML,y,{align:'justify',maxWidth:CW});y+=cl.length*5+6;
 
-  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text('DESPESAS DA FOLGA DE CAMPO',ML,y);y+=5;
-  const x=[ML,ML+12,ML+132,PW-MR],headH=8;
-  doc.setFillColor(245,197,24);doc.rect(x[0],y,CW,headH,'F');doc.setDrawColor(50);doc.rect(x[0],y,CW,headH);
-  [x[1],x[2]].forEach(xx=>doc.line(xx,y,xx,y+headH));doc.setFontSize(8.2);doc.text('ITEM',(x[0]+x[1])/2,y+5.3,{align:'center'});doc.text('DESCRIÇÃO',x[1]+2,y+5.3);doc.text('VALOR',x[3]-2,y+5.3,{align:'right'});y+=headH;
-  doc.setFont('helvetica','normal');doc.setFontSize(7.8);
-  despesas.forEach((d,i)=>{
-    const desc=String(d.descricao||d.categoria||'DESPESA').toUpperCase();
-    const ls=doc.splitTextToSize(desc,x[2]-x[1]-4);const rh=Math.max(8,ls.length*3.7+3);
-    if(y+rh>267){doc.addPage();y=18}
-    doc.rect(x[0],y,CW,rh);[x[1],x[2]].forEach(xx=>doc.line(xx,y,xx,y+rh));
-    doc.text(String(i+1).padStart(2,'0'),(x[0]+x[1])/2,y+rh/2+1,{align:'center'});doc.text(ls,x[1]+2,y+4.7);doc.text(money(d.valor),x[3]-2,y+rh/2+1,{align:'right'});y+=rh;
-  });
-  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.rect(x[2],y,x[3]-x[2],8);doc.text(`TOTAL: ${money(total)}`,x[3]-2,y+5.4,{align:'right'});y+=16;
+  doc.setFont('helvetica','normal');doc.text('Período da Folga:',ML,y);y+=6;
+  linha('Início:',fmtD(dataIni));
+  y+=3;
+  linha('Fim:',fmtD(dataFim));
+  y+=7;
+  linha('Retorno ao Trabalho:',fmtD(retorno),{bold:true});
+  y+=5;
 
-  if(y>235){doc.addPage();y=25}
-  doc.setFont('helvetica','normal');doc.setFontSize(9);
-  const decl='O empregado declara estar ciente das datas, destino e despesas acima informados e compromete-se a retornar às suas atividades na data estipulada.';
-  const dl=doc.splitTextToSize(decl,CW);doc.text(dl,ML,y);y+=dl.length*4.5+13;
-  doc.text(`Crixás - GO, ${new Date().toLocaleDateString('pt-BR')}`,ML,y);y+=24;
-  doc.setDrawColor(90);doc.line(ML+8,y,ML+78,y);doc.line(PW-MR-78,y,PW-MR-8,y);
-  doc.setFontSize(8);doc.text('Assinatura do Empregado(a)',ML+43,y+5,{align:'center'});doc.text('Gestor da Obra',PW-MR-43,y+5,{align:'center'});
+  doc.setFont('helvetica','normal');doc.setFontSize(10.4);
+  const decl='O empregado declara estar ciente das datas acima informadas e compromete-se a retornar às suas atividades na data estipulada.';
+  const dl=doc.splitTextToSize(decl,CW);doc.text(dl,ML,y);y+=dl.length*5+14;
 
-  if(returnBytes)return doc.output('arraybuffer');doc.save(`Termo_Folga_de_Campo_${nome.replace(/[^A-Za-z0-9À-ÿ]+/g,'_')}_${currentMonth}.pdf`);
+  doc.text(dataExt,ML,y);y+=31;
+
+  const cx=PW/2;
+  doc.setDrawColor(90);doc.setLineWidth(.25);
+  doc.line(cx-31,y,cx+31,y);
+  doc.setFontSize(9.5);doc.text('Assinatura do Empregado(a)',cx,y+5,{align:'center'});
+  y+=29;
+  doc.line(cx-31,y,cx+31,y);
+  doc.text('Gestor da Obra',cx,y+5,{align:'center'});
+  doc.setFont('helvetica','normal');doc.text('CONSTRUTORA CENTRO LESTE SA',cx,y+11,{align:'center'});
+
+  if(returnBytes)return doc.output('arraybuffer');
+  doc.save(`Termo_Folga_de_Campo_${nome.replace(/[^A-Za-z0-9À-ÿ]+/g,'_')}_${currentMonth}.pdf`);
  }catch(e){console.error('TERMO FOLGA:',e);if(returnBytes)throw e;alert('Não foi possível gerar o Termo de Concessão: '+(e?.message||e))}
 }
 
