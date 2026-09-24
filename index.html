@@ -20840,7 +20840,9 @@ function boot(){
   wireCascade();applyAccess();wireReportsV229();
   const b=$('sesmtHistoricoExcel');
   if(b&&!b.dataset.v227){b.dataset.v227='1';b.addEventListener('click',exportHistoryExcel)}
-  new MutationObserver(()=>{wireCascade();applyAccess();wireReportsV229()}).observe(document.body,{childList:true,subtree:true});
+  // PERFORMANCE: o antigo observer executava três rotinas em QUALQUER mudança do DOM do sistema.
+  // A inicialização acima já cobre o módulo; mudanças posteriores são tratadas pelos próprios controles.
+
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
@@ -21915,8 +21917,14 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
  function comp(){const v=$('g360FcDevCompSelect')?.value||'';return /^\d{4}-\d{2}$/.test(v)?v+'-01':''}
  function obra(){try{return window.g360ObraAtualId?.()||window.G360_OBRA_ID||null}catch(_){return null}}
  function periodicidadeById(id){const sel=$('g360FcDevColab');const opt=[...(sel?.options||[])].find(o=>String(o.value)===String(id));return opt?.dataset?.periodicidade||''}
- async function load(){
+ let g360FcLoadPromise=null,g360FcLoadStamp=0,g360FcLoadKey='';
+ async function load(force=false){
   const body=$('g360FcProgramacoesBody'); if(!body||!sb())return; const cp=comp(); if(!cp){body.innerHTML='<tr><td colspan="8"><div class="empty-state">Selecione uma competência.</div></td></tr>';return}
+  const oid0=obra(),key=String(oid0||'')+'|'+cp,now=Date.now();
+  if(!force&&g360FcLoadPromise)return g360FcLoadPromise;
+  if(!force&&g360FcLoadKey===key&&now-g360FcLoadStamp<900)return;
+  g360FcLoadKey=key;g360FcLoadStamp=now;
+  g360FcLoadPromise=(async()=>{
   let q=sb().from('folga_campo').select('*').eq('competencia',cp).order('colaborador_nome'); const oid=obra(); if(oid)q=q.eq('obra_id',oid);
   let dq=sb().from('folga_campo_despesas').select('colaborador_id,valor').eq('competencia',cp); if(oid)dq=dq.eq('obra_id',oid);
   const [r,d]=await Promise.all([q,dq]); if(r.error){body.innerHTML='<tr><td colspan="8"><div class="empty-state">'+esc(r.error.message)+'</div></td></tr>';return}
@@ -21926,6 +21934,8 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
   body.querySelectorAll('[data-fc-prog-termo]').forEach(b=>b.onclick=()=>window.g360FolgaDevV274?.openTermForPerson?.(b.dataset.fcProgTermo));
   body.querySelectorAll('[data-fc-prog-edit]').forEach(b=>b.onclick=()=>edit(b.dataset.fcProgEdit));
   body.querySelectorAll('[data-fc-prog-del]').forEach(b=>b.onclick=()=>del(b.dataset.fcProgDel,b.dataset.fcProgColab));
+  })();
+  try{return await g360FcLoadPromise}finally{g360FcLoadPromise=null}
  }
  async function edit(cid){
   const sel=$('g360FcDevColab'); if(!sel)return;
@@ -21946,12 +21956,14 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
   let d=sb().from('folga_campo_despesas').delete().eq('competencia',cp).eq('colaborador_id',cid); if(oid)d=d.eq('obra_id',oid); const dr=await d; if(dr.error)return alert(dr.error.message);
   const mr=await sb().from('folga_campo').delete().eq('id',id); if(mr.error)return alert(mr.error.message);
   document.querySelector(`[data-fc-prog-del="${CSS.escape(String(id))}"]`)?.closest('tr')?.remove();
-  await load();
+  document.querySelector(`[data-fc-summary-del="${CSS.escape(String(cid))}"]`)?.closest('tr')?.remove();
+  // Sem recarga imediata: as duas linhas já foram removidas da interface.
  }
  function bind(){
   const inc=$('g360FcDevIncluirFolga'); if(inc&&!inc.dataset.v330){inc.dataset.v330='1';inc.addEventListener('click',()=>{if(document.activeElement===inc){$('g360FcLancTitulo')&&($('g360FcLancTitulo').textContent='Incluir Folga de Campo');$('g360FcLancSubtitulo')&&($('g360FcLancSubtitulo').textContent='Preencha os dados, finalize o roteiro e depois informe as despesas extras.')}})}
   const cs=$('g360FcDevCompSelect');if(cs&&!cs.dataset.v330){cs.dataset.v330='1';cs.addEventListener('change',()=>setTimeout(load,250))}
-  const body=$('g360FcDevResumoBody');if(body&&!body.dataset.v330perf){body.dataset.v330perf='1';let t;new MutationObserver(()=>{clearTimeout(t);t=setTimeout(load,120)}).observe(body,{childList:true,subtree:true})}
+  // PERFORMANCE: não observar a grade de resumo para chamar Supabase novamente.
+  // Alterações de Folga atualizam explicitamente as grades uma única vez.
   load();
  }
  window.g360FcProgramacoesV330={init:bind,load,edit,del};
@@ -21993,7 +22005,7 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
      let m=sb().from('folga_campo').delete().eq('competencia',cp).eq('colaborador_id',cid);if(oid)m=m.eq('obra_id',oid);
      const mr=await m;if(mr.error)throw mr.error;
      if(btn)btn.innerHTML='✓ Excluído';
-     try{await window.g360FcProgramacoesV330?.load?.()}catch(_){}
+     try{await window.g360FcProgramacoesV330?.load?.(true)}catch(_){}
      alert(`Folga de Campo de ${nome} excluída com sucesso.`);
    }catch(e){
      if(btn){btn.disabled=false;btn.innerHTML=original;}
@@ -22105,7 +22117,7 @@ async function confirmarFolga(){
   const up=await sb.from('folga_campo_importacoes').update({status:'PROCESSADO',colaborador_id:cand.id,folga_campo_id:folgaId,updated_at:new Date().toISOString()}).eq('id',lastImportId);if(up.error)throw up.error;
   setStatus(`Folga criada com sucesso na competência ${comp}. ${despesas.length} despesa(s) lançada(s).`);
   confirmBtn.style.display='none';analyze.style.display='none';
-  try{await window.g360FcProgramacoesV330?.load?.()}catch(_){}
+  try{await window.g360FcProgramacoesV330?.load?.(true)}catch(_){}
   setTimeout(()=>close(),250);
  }catch(e){
   console.error(e);
@@ -22282,11 +22294,12 @@ confirmBtn.onclick=async()=>{
   const di=await client.from('folga_campo_despesas').insert(despesas);if(di.error)throw di.error;
   const pdf=await generateSimulationPdf(),pdfName=`SIMULACAO_DE_PASSAGEM_${String(ctx.nome).replace(/[^A-Za-z0-9À-ÿ]+/g,'_')}.pdf`,pdfPath=`${f.obra_id}/${sess.user.id}/${Date.now()}_${pdfName.replace(/[^A-Za-z0-9._-]+/g,'_')}`;
   const pu=await client.storage.from('folga-campo-documentos').upload(pdfPath,new Blob([pdf],{type:'application/pdf'}),{contentType:'application/pdf',upsert:false});if(pu.error)throw pu.error;
-  const novoTotal=(await client.from('folga_campo_despesas').select('valor').eq('obra_id',f.obra_id).eq('competencia',comp).eq('colaborador_id',f.colaborador_id)).data?.reduce((a,x)=>a+Number(x.valor||0),0)||extracted._total;
+  // Evita uma consulta extra logo após inserir: o total já está disponível localmente.
+  const novoTotal=despesas.reduce((a,x)=>a+Number(x.valor||0),0);
   const fu=await client.from('folga_campo').update({custo:novoTotal,valor_reembolso:novoTotal,updated_at:new Date().toISOString()}).eq('id',f.id);if(fu.error)throw fu.error;
   const iu=await client.from('folga_campo_importacoes').update({status:'PROCESSADO',simulacao_pdf_path:pdfPath,simulacao_pdf_nome:pdfName,dados_extraidos:{...extracted,regra_alimentacao:Number(f.distancia_km)>1000?'15+40+40 IDA + 15+40+40 VOLTA':'15+40 IDA + 15+40 VOLTA'},updated_at:new Date().toISOString()}).eq('id',importId);if(iu.error)throw iu.error;
   setStatus(`Concluído: ${ts.length} passagem(ns) + alimentação ${brl(extracted._alimentacao)}. Simulação PDF salva.`);confirmBtn.style.display='none';
-  try{await window.g360FcProgramacoesV330?.load?.()}catch(_){}
+  try{await window.g360FcProgramacoesV330?.load?.(true)}catch(_){}
   setTimeout(()=>close(),350);
  }catch(e){console.error(e);setStatus('Erro ao confirmar: '+(e?.message||e),true);confirmBtn.disabled=false;confirmBtn.textContent='✓ Confirmar, lançar e salvar simulação'}
 };
