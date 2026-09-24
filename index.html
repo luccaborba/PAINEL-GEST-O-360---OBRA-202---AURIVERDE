@@ -3678,8 +3678,12 @@ html.g360-ui-ready .content-col {
           <div class="g360-reemb-form-actions"><button type="button" class="btn-primary" id="g360FcDevSalvarDados">CONTINUAR PARA ROTEIRO →</button></div>
         </section>
         <section class="panel fc-dev-panel fc-route-panel fc-flow-step fc-flow-step-2" style="display:none">
-          <div class="g360-reemb-table-head"><div><h2>Roteiro da folga</h2><div class="g360-reemb-sub">Cada trecho gera uma despesa de passagem rodoviária. Ao incluir um trecho, o destino passa automaticamente a ser a origem do próximo.</div></div></div>
-          <div class="fc-route-grid">
+          <div class="g360-reemb-table-head"><div><h2>Roteiro da folga</h2><div class="g360-reemb-sub">Escolha como deseja lançar as passagens. Pela Cotação IA, cole os prints e o sistema lê e lança o roteiro automaticamente.</div></div></div>
+          <div class="fc-route-mode-box" id="g360FcRouteModeBox">
+            <button type="button" class="fc-route-mode active" id="g360FcRouteManual">✍ LANÇAR MANUALMENTE</button>
+            <button type="button" class="fc-route-mode ai" id="g360FcRouteAI">✨ COTAÇÃO IA</button>
+          </div>
+          <div class="fc-route-grid" id="g360FcRouteManualFields">
             <label class="fc-uf-field">UF origem<select id="g360FcDevOrigemUf"><option value="">UF</option></select></label>
             <label>Cidade origem<select id="g360FcDevOrigemCidade" disabled><option value="">Selecione primeiro a UF...</option></select></label>
             <label class="fc-uf-field">UF destino<select id="g360FcDevDestinoUf"><option value="">UF</option></select></label>
@@ -21824,8 +21828,7 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
   const ff=$('g360FcDevFinalizarFolga');if(ff&&!ff.dataset.flowBound){ff.dataset.flowBound='1';ff.onclick=()=>{closeFlow();try{window.scrollTo({top:$('g360FcDevResumoBody')?.closest('section')?.offsetTop||0,behavior:'smooth'})}catch(_){}}}
  }
  document.addEventListener('DOMContentLoaded',()=>setTimeout(bind,800));
- setInterval(bind,1500);
-})();
+ })();
 </script>
 
 <script id="g360-folga-programacoes-v330">
@@ -21942,7 +21945,6 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
    const body=$('g360FcDevResumoBody');if(body&&!body.dataset.v332obs){body.dataset.v332obs='1';new MutationObserver(bindSummary).observe(body,{childList:true,subtree:true})}
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(bind,900));else setTimeout(bind,900);
- setInterval(bind,1500);
  window.g360FolgaFinalV332={showStep,delByCid};
 })();
 </script>
@@ -22066,6 +22068,13 @@ analyze.onclick=async()=>{if(!selectedFile)return;const sb=window.g360SupabaseCl
 .fc-cot-status{font-size:12px;margin-top:10px;font-weight:700}.fc-cot-error{color:#a51616}
 .fc-cot-mini{border:1px solid #d0d0d0!important;background:#fff!important;color:#222!important}
 
+
+.fc-route-mode-box{display:flex;gap:8px;align-items:center;margin:4px 0 16px;padding:10px;border:1px solid #35383e;border-radius:7px;background:#181a1e}
+.fc-route-mode{border:1px solid #474b52;background:#25282d;color:#ddd;border-radius:6px;padding:10px 14px;font-weight:900;cursor:pointer;font-size:11px;letter-spacing:.25px}
+.fc-route-mode.active{border-color:#f5c518;color:#111;background:#f5c518}
+.fc-route-mode.ai{border-color:#f5c518;color:#f5c518;background:rgba(245,197,24,.06)}
+.fc-route-mode.ai:hover{background:#f5c518;color:#111}
+
 .fc-cotacao-start{border-color:#f5c518!important;background:#f5c518!important;color:#111!important;font-weight:900!important;white-space:nowrap}
 .fc-cotacao-start:hover{filter:brightness(1.06)}
 </style>
@@ -22096,11 +22105,14 @@ paste.addEventListener('paste',e=>{const fs=[...(e.clipboardData?.files||[])];if
 $('fcCotChoose').onclick=()=>$('fcCotFiles').click();$('fcCotFiles').onchange=e=>addFiles(e.target.files||[]);
 function open(key){
  reset();
+ const sel=$('g360FcDevColab');
+ const selectedKey=key||sel?.value;
+ if(!selectedKey){alert('Selecione o colaborador em DADOS DA FOLGA antes de usar a Cotação IA.');return}
  const rows=window.g360FolgaDevV274?.getRows?.()||[];
- const all=window.g360FolgaDevV274?.getProgramacoes?.()||[];
- ctx={key:String(key)};
- const row=rows.find(r=>String(r.colaborador_id||r.colaborador_nome)===String(key));
- ctx.nome=row?.colaborador_nome||'COLABORADOR';ctx.funcao=row?.funcao||'';
+ ctx={key:String(selectedKey)};
+ const opt=[...(sel?.options||[])].find(o=>String(o.value)===String(selectedKey));
+ const row=rows.find(r=>String(r.colaborador_id||r.colaborador_nome)===String(selectedKey));
+ ctx.nome=row?.colaborador_nome||opt?.textContent?.trim()||'COLABORADOR';ctx.funcao=row?.funcao||opt?.dataset?.funcao||'';
  $('fcCotPessoa').innerHTML=`<b>${esc(ctx.nome)}</b> · Cole os recortes das cotações. A IA lerá os trechos e a alimentação será calculada automaticamente pela distância cadastrada na Folga.`;
  modal.classList.add('open');modal.setAttribute('aria-hidden','false');setTimeout(()=>paste.focus(),80);
 }
@@ -22209,24 +22221,41 @@ confirmBtn.onclick=async()=>{
  }catch(e){console.error(e);setStatus('Erro ao confirmar: '+(e?.message||e),true);confirmBtn.disabled=false;confirmBtn.textContent='✓ Confirmar, lançar e salvar simulação'}
 };
 
+
+function bindRouteChoice(){
+ const manual=$('g360FcRouteManual'),ai=$('g360FcRouteAI'),fields=$('g360FcRouteManualFields'),finish=$('g360FcDevFinalizarRoteiro');
+ if(!manual||!ai||manual.dataset.cotBound)return;
+ manual.dataset.cotBound=ai.dataset.cotBound='1';
+ manual.onclick=()=>{manual.classList.add('active');ai.classList.remove('active');if(fields)fields.style.display='grid';if(finish)finish.style.display='inline-flex'};
+ ai.onclick=()=>{
+   ai.classList.add('active');manual.classList.remove('active');
+   if(fields)fields.style.display='none';
+   if(finish)finish.style.display='none';
+   open($('g360FcDevColab')?.value);
+ };
+}
+setTimeout(bindRouteChoice,700);
+const fcRouteModal=$('g360FcLancModal');if(fcRouteModal)new MutationObserver(bindRouteChoice).observe(fcRouteModal,{attributes:true,attributeFilter:['class']});
+
 function bindRows(){
  // Botões principais: aparecem na tabela "Folgas de Campo cadastradas / Programações",
  // mesmo antes de existir qualquer despesa para o colaborador.
  document.querySelectorAll('#g360FcProgramacoesBody tr').forEach(tr=>{
   const base=tr.querySelector('[data-fc-prog-pdf]');if(!base)return;
   const key=base.dataset.fcProgPdf,wrap=base.closest('.crud-row-actions');if(!wrap||wrap.querySelector('[data-fc-cotacao]'))return;
-  const q=document.createElement('button');q.type='button';q.className='crud-mini fc-cotacao-start';q.dataset.fcCotacao=key;q.title='Iniciar Cotação IA';q.innerHTML='🖼️ Cotação IA';q.onclick=()=>open(key);
   const sim=document.createElement('button');sim.type='button';sim.className='fc-dev-mini-action icon-only fc-cot-mini';sim.dataset.fcSimulacao=key;sim.title='Abrir simulação de passagem salva';sim.textContent='📄';sim.onclick=()=>downloadLatest(key);
-  wrap.insertBefore(q,wrap.firstChild);wrap.insertBefore(sim,q.nextSibling);
+  wrap.insertBefore(sim,wrap.firstChild);
  });
  // Também mantém atalhos no resumo de despesas, quando houver lançamentos.
  document.querySelectorAll('#g360FcDevResumoBody tr').forEach(tr=>{
   const base=tr.querySelector('[data-fcdev-pdf]');if(!base)return;const key=base.dataset.fcdevPdf,wrap=base.closest('.fc-dev-row-actions');if(!wrap||wrap.querySelector('[data-fc-cotacao]'))return;
-  const q=document.createElement('button');q.type='button';q.className='fc-dev-mini-action icon-only fc-cot-mini';q.dataset.fcCotacao=key;q.title='Iniciar Cotação IA';q.textContent='🖼️';q.onclick=()=>open(key);wrap.appendChild(q);
   const sim=document.createElement('button');sim.type='button';sim.className='fc-dev-mini-action icon-only fc-cot-mini';sim.dataset.fcSimulacao=key;sim.title='Abrir simulação de passagem salva';sim.textContent='📄';sim.onclick=()=>downloadLatest(key);wrap.appendChild(sim);
  });
 }
-setInterval(bindRows,1200);setTimeout(bindRows,500);
+setTimeout(bindRows,500);
+const fcCotProgBody=$('g360FcProgramacoesBody'),fcCotResumoBody=$('g360FcDevResumoBody');
+if(fcCotProgBody)new MutationObserver(()=>bindRows()).observe(fcCotProgBody,{childList:true});
+if(fcCotResumoBody)new MutationObserver(()=>bindRows()).observe(fcCotResumoBody,{childList:true});
 window.g360FcCotacaoIA={open,downloadLatest};
 })();
 </script>
