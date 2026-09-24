@@ -22065,6 +22065,9 @@ analyze.onclick=async()=>{if(!selectedFile)return;const sb=window.g360SupabaseCl
 .fc-cot-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px}.fc-cot-table th,.fc-cot-table td{border-bottom:1px solid #ddd;padding:8px;text-align:left}
 .fc-cot-status{font-size:12px;margin-top:10px;font-weight:700}.fc-cot-error{color:#a51616}
 .fc-cot-mini{border:1px solid #d0d0d0!important;background:#fff!important;color:#222!important}
+
+.fc-cotacao-start{border-color:#f5c518!important;background:#f5c518!important;color:#111!important;font-weight:900!important;white-space:nowrap}
+.fc-cotacao-start:hover{filter:brightness(1.06)}
 </style>
 <div id="g360FcCotIaModal" aria-hidden="true">
  <div class="fc-cot-box">
@@ -22186,10 +22189,20 @@ confirmBtn.onclick=async()=>{
 };
 
 function bindRows(){
+ // Botões principais: aparecem na tabela "Folgas de Campo cadastradas / Programações",
+ // mesmo antes de existir qualquer despesa para o colaborador.
+ document.querySelectorAll('#g360FcProgramacoesBody tr').forEach(tr=>{
+  const base=tr.querySelector('[data-fc-prog-pdf]');if(!base)return;
+  const key=base.dataset.fcProgPdf,wrap=base.closest('.crud-row-actions');if(!wrap||wrap.querySelector('[data-fc-cotacao]'))return;
+  const q=document.createElement('button');q.type='button';q.className='crud-mini fc-cotacao-start';q.dataset.fcCotacao=key;q.title='Iniciar Cotação IA';q.innerHTML='🖼️ Cotação IA';q.onclick=()=>open(key);
+  const sim=document.createElement('button');sim.type='button';sim.className='fc-dev-mini-action icon-only fc-cot-mini';sim.dataset.fcSimulacao=key;sim.title='Abrir simulação de passagem salva';sim.textContent='📄';sim.onclick=()=>downloadLatest(key);
+  wrap.insertBefore(q,wrap.firstChild);wrap.insertBefore(sim,q.nextSibling);
+ });
+ // Também mantém atalhos no resumo de despesas, quando houver lançamentos.
  document.querySelectorAll('#g360FcDevResumoBody tr').forEach(tr=>{
   const base=tr.querySelector('[data-fcdev-pdf]');if(!base)return;const key=base.dataset.fcdevPdf,wrap=base.closest('.fc-dev-row-actions');if(!wrap||wrap.querySelector('[data-fc-cotacao]'))return;
-  const q=document.createElement('button');q.type='button';q.className='fc-dev-mini-action icon-only fc-cot-mini';q.dataset.fcCotacao=key;q.title='Colar cotações e analisar com IA';q.textContent='🖼️';q.onclick=()=>open(key);wrap.appendChild(q);
-  const p=document.createElement('button');p.type='button';p.className='fc-dev-mini-action icon-only fc-cot-mini';p.dataset.fcSimulacao=key;p.title='Abrir simulação de passagem salva';p.textContent='📄';p.onclick=()=>downloadLatest(key);wrap.appendChild(p);
+  const q=document.createElement('button');q.type='button';q.className='fc-dev-mini-action icon-only fc-cot-mini';q.dataset.fcCotacao=key;q.title='Iniciar Cotação IA';q.textContent='🖼️';q.onclick=()=>open(key);wrap.appendChild(q);
+  const sim=document.createElement('button');sim.type='button';sim.className='fc-dev-mini-action icon-only fc-cot-mini';sim.dataset.fcSimulacao=key;sim.title='Abrir simulação de passagem salva';sim.textContent='📄';sim.onclick=()=>downloadLatest(key);wrap.appendChild(sim);
  });
 }
 setInterval(bindRows,1200);setTimeout(bindRows,500);
