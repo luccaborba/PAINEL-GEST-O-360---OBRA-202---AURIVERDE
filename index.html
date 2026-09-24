@@ -11891,8 +11891,8 @@ function exportContratosPDF(){
 
   doc.autoTable({
     startY: 108,
-    head: [['Contrato','Fornecedor','Tipo','Regime','Valor mensal','Contratado','Medido','Saldo','Avanço','Situação']],
-    body: list.map(r=>[r.contrato, r.fornecedor, r.tipo, r.regimeMedicao||'—', r.vrMensal==null?'—':fmtBRL(r.vrMensal), fmtBRL(r.contratado), fmtBRL(r.medido), fmtBRL(r.saldo), r.avanco.toFixed(0)+'%', r.situacao]),
+    head: [['Contrato','Fornecedor','Tipo','Placa','Regime','Valor mensal','Contratado','Medido','Saldo','Avanço','Situação']],
+    body: list.map(r=>[r.contrato, r.fornecedor, r.tipo, r.placa||'—', r.regimeMedicao||'—', r.vrMensal==null?'—':fmtBRL(r.vrMensal), fmtBRL(r.contratado), fmtBRL(r.medido), fmtBRL(r.saldo), r.avanco.toFixed(0)+'%', r.situacao]),
     styles:{ fontSize:8, cellPadding:4 },
     headStyles:{ fillColor:[31,56,100], textColor:255 },
     alternateRowStyles:{ fillColor:[245,245,245] },
@@ -11917,11 +11917,11 @@ function exportContratosXLS(){
     ['Total de contratos', list.length],
     ['Gerado em', dataStr],
     [],
-    ['Contrato','Fornecedor','Objeto','Tipo','Regime','Valor mensal','Contratado','Medido','Saldo','Avanço (%)','Situação'],
-    ...list.map(r=>[r.contrato, r.fornecedor, r.objeto, r.tipo, r.regimeMedicao||'', r.vrMensal==null?'':r.vrMensal, r.contratado, r.medido, r.saldo, r.avanco, r.situacao]),
+    ['Contrato','Fornecedor','Objeto','Tipo','Placa','Regime','Valor mensal','Contratado','Medido','Saldo','Avanço (%)','Situação'],
+    ...list.map(r=>[r.contrato, r.fornecedor, r.objeto, r.tipo, r.placa||'', r.regimeMedicao||'', r.vrMensal==null?'':r.vrMensal, r.contratado, r.medido, r.saldo, r.avanco, r.situacao]),
   ];
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:24},{wch:32},{wch:44},{wch:26},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:12},{wch:18}];
+  ws['!cols'] = [{wch:24},{wch:32},{wch:44},{wch:26},{wch:13},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:12},{wch:18}];
   XLSX.utils.book_append_sheet(wb, ws, 'Contratos');
 
   const fname = 'painel_contratos_' + new Date().toISOString().slice(0,10) + '.xlsx';
@@ -14070,7 +14070,7 @@ window.GESTAO360_CONFIG = {
     }
     window.G360_ACTIVE_OBRA_ID=obraId;
     const [f,c,a,fp,sols,anxs,fol,reg]=await Promise.all([
-      sb.from('funcionarios').select('*').eq('obra_id',obraId).order('nome'), sb.from('vw_contratos_saldo').select('*').eq('obra_id',obraId).order('codigo'), sb.from('alojamentos').select('*').eq('obra_id',obraId).order('descricao'), sb.from('fechamentos_praca').select('*').eq('obra_id',obraId).order('competencia').order('contrato_codigo'), sb.from('solicitacoes_contrato').select('*').eq('obra_id',obraId).order('created_at',{ascending:false}), sb.from('solicitacao_contrato_anexos').select('*').order('created_at',{ascending:true}), sb.from('folga_campo').select('*').eq('obra_id',obraId).order('competencia').order('colaborador_nome'), sb.from('contratos').select('id,regime_medicao').eq('obra_id',obraId)
+      sb.from('funcionarios').select('*').eq('obra_id',obraId).order('nome'), sb.from('vw_contratos_saldo').select('*').eq('obra_id',obraId).order('codigo'), sb.from('alojamentos').select('*').eq('obra_id',obraId).order('descricao'), sb.from('fechamentos_praca').select('*').eq('obra_id',obraId).order('competencia').order('contrato_codigo'), sb.from('solicitacoes_contrato').select('*').eq('obra_id',obraId).order('created_at',{ascending:false}), sb.from('solicitacao_contrato_anexos').select('*').order('created_at',{ascending:true}), sb.from('folga_campo').select('*').eq('obra_id',obraId).order('competencia').order('colaborador_nome'), sb.from('contratos').select('id,regime_medicao,placa').eq('obra_id',obraId)
     ]);
     for(const x of [f,c,a,fp,sols,anxs,fol,reg]) if(x.error) throw x.error;
 
@@ -14112,7 +14112,8 @@ window.GESTAO360_CONFIG = {
     });
     window.G360_RH_LIVE_ROWS = fRows.map(r=>({id:r.id,matricula:r.matricula,nome:r.nome,tipo_contrato:r.tipo_contrato,status:r.status,demissao:(r.demissao ?? r.data_demissao ?? r['demissão'] ?? null)}));
     const regimeMap=new Map((reg.data||[]).map(x=>[String(x.id),x.regime_medicao||null]));
-    const col=fRows.map(snakeToColab), con=(c.data||[]).map(r=>({...mapContrato(r),regimeMedicao:regimeMap.get(String(r.id))||null})), alo=(a.data||[]).map(mapAloj);
+    const placaMap=new Map((reg.data||[]).map(x=>[String(x.id),x.placa||null]));
+    const col=fRows.map(snakeToColab), con=(c.data||[]).map(r=>({...mapContrato(r),regimeMedicao:regimeMap.get(String(r.id))||null,placa:placaMap.get(String(r.id))||null})), alo=(a.data||[]).map(mapAloj);
     // A fonte viva do RH passa a ser o retorno atual do Supabase nesta própria execução.
     // Assim Headcount, Desligados e Admissões x Demissões não dependem do reload/cache para atualizar.
     COLABS.length=0; col.forEach(x=>COLABS.push(x));
