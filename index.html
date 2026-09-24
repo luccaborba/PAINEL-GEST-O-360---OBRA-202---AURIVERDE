@@ -22157,8 +22157,7 @@ analyze.onclick=async()=>{if(!selectedFile)return;const sb=window.g360SupabaseCl
   <div class="fc-cot-grid" id="fcCotGrid"></div>
   <div class="fc-cot-status" id="fcCotStatus"></div>
   <div id="fcCotPreview"></div>
-  <input type="file" id="fcCotReadyPdf" accept="application/pdf" style="display:none">
-<div class="fc-cot-actions"><button type="button" class="fc-cot-secondary" id="fcCotCancel">Cancelar</button><button type="button" class="fc-cot-secondary" id="fcCotImportReady">📄 IMPORTAR SIMULAÇÃO PRONTA</button><button type="button" class="fc-cot-success" id="fcCotConfirm" style="display:none">✓ Confirmar, lançar e salvar simulação</button><button type="button" class="fc-cot-primary" id="fcCotAnalyze" disabled>✨ Analisar com IA</button></div>
+  <div class="fc-cot-actions"><button type="button" class="fc-cot-secondary" id="fcCotCancel">Cancelar</button><button type="button" class="fc-cot-success" id="fcCotConfirm" style="display:none">✓ Confirmar, lançar e salvar simulação</button><button type="button" class="fc-cot-primary" id="fcCotAnalyze" disabled>✨ Analisar com IA</button></div>
  </div>
 </div>
 <script id="g360-fc-cotacao-ia-script-v1">
@@ -22261,85 +22260,6 @@ async function downloadLatest(key){
   const sg=await client.storage.from('folga-campo-documentos').createSignedUrl(r.data.simulacao_pdf_path,120);if(sg.error)throw sg.error;const a=document.createElement('a');a.href=sg.data.signedUrl;a.target='_blank';a.rel='noopener';a.click();
  }catch(e){console.error(e);alert('Erro ao abrir simulação: '+(e?.message||e))}
 }
-
-async function buildReadySimulationPdf(sourceFile,folga){
- if(!window.PDFLib?.PDFDocument)throw new Error('Biblioteca PDF-Lib não carregada.');
- const {PDFDocument,StandardFonts,rgb}=window.PDFLib;
- const src=await PDFDocument.load(await sourceFile.arrayBuffer());
- if(!src.getPageCount())throw new Error('O PDF enviado não possui páginas.');
- const out=await PDFDocument.create(),font=await out.embedFont(StandardFonts.Helvetica),bold=await out.embedFont(StandardFonts.HelveticaBold);
- const A4W=595.28,A4H=841.89,margin=20,headerBottom=95;
- const fmt=v=>{if(!v)return '—';const d=new Date(String(v).slice(0,10)+'T12:00:00');return Number.isNaN(d.getTime())?'—':d.toLocaleDateString('pt-BR')};
- const km=Number(folga.distancia_km||0),food=foodByKm(km);
- const origem=`${String(folga.origem_cidade||'CRIXÁS').toUpperCase()}-${String(folga.origem_uf||'GO').toUpperCase()}`;
- const dc=String(folga.cidade_residencia||folga.destino_cidade||'').toUpperCase(),du=String(folga.uf_residencia||folga.destino_uf||'').toUpperCase();
- const destino=[dc,du].filter(Boolean).join('-');
- if(!destino)throw new Error('UF/Cidade da Folga não estão preenchidas.');
- const nome=String(folga.colaborador_nome||ctx?.nome||'').toUpperCase();
- const center=(page,text,y,size,f=bold)=>page.drawText(text,{x:(A4W-f.widthOfTextAtSize(text,size))/2,y,size,font:f,color:rgb(0.04,0.04,0.04)});
- const firstSrc=src.getPage(0),sw=firstSrc.getWidth(),sh=firstSrc.getHeight();
- // Despreza o cabeçalho da simulação antiga. Mantém somente a região dos trechos/cotações.
- // O recorte começa aproximadamente 128 pt abaixo do topo da página antiga.
- const cutTop=Math.min(145,sh*.19),bodyH=sh-cutTop;
- const embedded=await out.embedPage(firstSrc,{left:0,bottom:0,right:sw,top:bodyH});
- const page=out.addPage([A4W,A4H]);
- center(page,`SIMULAÇÃO DE VALORES DE PASSAGEM – ${nome}`,A4H-28,14);
- center(page,`${origem} > ${destino} – ${km.toLocaleString('pt-BR')}KM   /   REFEIÇÃO IDA E VOLTA ${brl(food)}`,A4H-50,10.5);
- const d1=`INÍCIO: ${fmt(folga.data_inicio||folga.data_saida)}`,d2=`FIM: ${fmt(folga.data_fim)}`,d3=`RETORNO TRABALHO: ${fmt(folga.data_retorno)}`;
- page.drawText(d1,{x:36,y:A4H-72,size:10,font:bold});center(page,d2,A4H-72,10);page.drawText(d3,{x:A4W-36-bold.widthOfTextAtSize(d3,10),y:A4H-72,size:10,font:bold});
- const availW=A4W-margin*2,availH=headerBottom?A4H-headerBottom-margin:A4H-115;
- const scale=Math.min(availW/sw,availH/bodyH);
- const dw=sw*scale,dh=bodyH*scale;
- page.drawPage(embedded,{x:(A4W-dw)/2,y:margin,width:dw,height:dh});
- // Páginas adicionais são preservadas integralmente, caso existam.
- for(let i=1;i<src.getPageCount();i++){
-   const sp=src.getPage(i),ew=sp.getWidth(),eh=sp.getHeight(),ep=await out.embedPage(sp);
-   const np=out.addPage([A4W,A4H]),sc=Math.min((A4W-margin*2)/ew,(A4H-margin*2)/eh);
-   np.drawPage(ep,{x:(A4W-ew*sc)/2,y:(A4H-eh*sc)/2,width:ew*sc,height:eh*sc});
- }
- return await out.save();
-}
-async function importReadySimulation(file){
- if(!file||file.type!=='application/pdf')throw new Error('Selecione um arquivo PDF.');
- const client=sb();if(!client)throw new Error('Supabase não inicializado.');
- const sess=(await client.auth.getSession()).data?.session;if(!sess)throw new Error('Sessão expirada.');
- const folga=await findFolga();ctx.folga=folga;ctx.nome=folga.colaborador_nome||ctx.nome;
- setStatus('Adaptando a simulação pronta aos dados atuais da Folga...');
- const adapted=await buildReadySimulationPdf(file,folga);
- const safeOriginal=file.name.replace(/[^A-Za-z0-9._-]+/g,'_');
- const stamp=Date.now(),base=`${folga.obra_id}/${sess.user.id}`;
- const originalPath=`${base}/${stamp}_ORIGINAL_${safeOriginal}`;
- const pdfName=`SIMULACAO_DE_PASSAGEM_${String(folga.colaborador_nome||ctx.nome).replace(/[^A-Za-z0-9À-ÿ]+/g,'_')}.pdf`;
- const pdfPath=`${base}/${stamp}_${pdfName.replace(/[^A-Za-z0-9._-]+/g,'_')}`;
- const up1=await client.storage.from('folga-campo-documentos').upload(originalPath,file,{contentType:'application/pdf',upsert:false});if(up1.error)throw up1.error;
- const blob=new Blob([adapted],{type:'application/pdf'});
- const up2=await client.storage.from('folga-campo-documentos').upload(pdfPath,blob,{contentType:'application/pdf',upsert:false});
- if(up2.error){await client.storage.from('folga-campo-documentos').remove([originalPath]);throw up2.error}
- const ins=await client.from('folga_campo_importacoes').insert({
-   obra_id:folga.obra_id,colaborador_id:folga.colaborador_id,folga_campo_id:folga.id,
-   arquivo_nome:file.name,arquivo_path:originalPath,arquivo_tipo:'application/pdf',
-   status:'PROCESSADO',modo:'SIMULACAO_PRONTA',simulacao_pdf_path:pdfPath,simulacao_pdf_nome:pdfName,
-   dados_extraidos:{origem:'SIMULACAO_PRONTA',observacao:'Cabeçalho recriado com os dados da Folga; conteúdo antigo utilizado somente como trechos/cotações.'},
-   created_by:sess.user.id
- }).select('id').single();
- if(ins.error){await client.storage.from('folga-campo-documentos').remove([originalPath,pdfPath]);throw ins.error}
- setStatus('Simulação pronta salva. O cabeçalho foi atualizado pelos Dados da Folga e os trechos do PDF foram preservados.');
- const sg=await client.storage.from('folga-campo-documentos').createSignedUrl(pdfPath,120);
- if(!sg.error&&sg.data?.signedUrl){const a=document.createElement('a');a.href=sg.data.signedUrl;a.target='_blank';a.rel='noopener';a.click()}
- return ins.data;
-}
-const readyInput=$('fcCotReadyPdf'),readyBtn=$('fcCotImportReady');
-if(readyBtn&&readyInput){
- readyBtn.onclick=()=>readyInput.click();
- readyInput.onchange=async()=>{
-   const f=readyInput.files?.[0];if(!f)return;
-   readyBtn.disabled=true;readyBtn.textContent='⏳ ADAPTANDO...';
-   try{await importReadySimulation(f)}
-   catch(e){console.error(e);setStatus('Não foi possível importar a simulação pronta: '+(e?.message||e),true)}
-   finally{readyBtn.disabled=false;readyBtn.textContent='📄 IMPORTAR SIMULAÇÃO PRONTA';readyInput.value=''}
- };
-}
-
 analyze.onclick=async()=>{
  if(!shots.length)return;analyze.disabled=true;confirmBtn.style.display='none';
  try{
