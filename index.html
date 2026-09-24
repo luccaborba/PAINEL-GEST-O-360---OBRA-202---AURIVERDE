@@ -2818,10 +2818,25 @@ html.g360-ui-ready .content-col {
   </div>
 
   <div id="viewVeiculos" style="display:none;">
-<div class="panel">
-      <h2>Vencimento Mensal — Locação de Veículos <span class="tag">Dia de pagamento recorrente</span></h2>
-      <div class="expiring-list" id="veiculosDueList"></div>
-    </div>
+    <section class="panel">
+      <div class="filters" style="margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+        <strong style="margin-right:auto;">LOCAÇÃO DE VEÍCULOS — CONTRATOS ATIVOS</strong>
+        <button type="button" class="clear-btn" id="veiculosExportPdfBtn">📄 Exportar PDF</button>
+        <button type="button" class="clear-btn" id="veiculosExportXlsBtn">📊 Exportar Excel</button>
+        <span class="count-badge" id="veiculosCountBadge"></span>
+      </div>
+      <div class="table-scroll">
+        <table class="g360-veiculos-table">
+          <thead><tr>
+            <th>Contrato</th><th>Fornecedor</th><th>Placa</th><th>Regime</th>
+            <th class="num">Valor mensal</th><th class="num">Contratado</th>
+            <th class="num">Medido</th><th class="num">Saldo</th><th>Avanço</th><th>Situação</th>
+          </tr></thead>
+          <tbody id="veiculosTableBody"></tbody>
+        </table>
+      </div>
+      <div style="font-size:11px;color:var(--ink-soft);margin-top:10px;">Exibindo somente contratos de LOCAÇÃO DE VEÍCULOS com situação PENDENTE ou PARCIALMENTE MEDIDO.</div>
+    </section>
   </div>
 
   <div id="viewSolicitacoes" style="display:none;">
@@ -5579,23 +5594,10 @@ function exportBaixadasPDF(){
     startY: 108,
     head: [['Mat.','Nome','Função','Equipe','Periodicidade','Próxima Baixada','Custo por Baixada','Custo Mensal Equiv.']],
     body: rows.map(l=>[l.mat??'', l.nome, l.funcao??'', l.equipe??'', l.periodicidadeBaixada??'única', fmtDate(l.proxBaixada), l.custoBaixada!=null?fmtBRL(l.custoBaixada):'—', l.custoMensal!=null?fmtBRL(l.custoMensal):'a definir']),
-    styles:{ fontSize:7.4, cellPadding:2.6, overflow:'linebreak', valign:'middle' },
-    headStyles:{ fillColor:[31,56,100], textColor:255, fontSize:7.2, cellPadding:2.4 },
+    styles:{ fontSize:8, cellPadding:4 },
+    headStyles:{ fillColor:[31,56,100], textColor:255 },
     alternateRowStyles:{ fillColor:[245,245,245] },
-    columnStyles:{
-      0:{cellWidth:57},
-      1:{cellWidth:185},
-      2:{cellWidth:90},
-      3:{cellWidth:48},
-      4:{cellWidth:50},
-      5:{cellWidth:58, overflow:'visible'},
-      6:{cellWidth:62, overflow:'visible'},
-      7:{cellWidth:60, overflow:'visible'},
-      8:{cellWidth:60, overflow:'visible'},
-      9:{cellWidth:43, overflow:'visible'},
-      10:{cellWidth:88}
-    },
-    margin:{ left:18, right:18 },
+    margin:{ left:30, right:30 },
   });
 
   const fname = 'folga_de_campo_' + new Date().toISOString().slice(0,10) + '.pdf';
@@ -11882,6 +11884,73 @@ function exportContext(){
   const dataStr = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   return { filtroStr, dataStr };
 }
+
+function getVeiculosAtivos(){
+  const permitidas=new Set(['PENDENTE','PARCIALMENTE MEDIDO']);
+  return (RAW_DATA||[]).filter(r=>{
+    const tipo=String(r.tipo||'').trim().toUpperCase();
+    const sit=String(r.situacao||r.status||'').trim().toUpperCase();
+    return tipo==='LOCAÇÃO DE VEÍCULOS' && permitidas.has(sit);
+  }).sort((a,b)=>String(a.contrato||'').localeCompare(String(b.contrato||''),'pt-BR'));
+}
+function renderVeiculosTable(){
+  const list=getVeiculosAtivos();
+  const tb=document.getElementById('veiculosTableBody');
+  const badge=document.getElementById('veiculosCountBadge');
+  if(badge) badge.textContent=`${list.length} contrato${list.length===1?'':'s'} ativo${list.length===1?'':'s'}`;
+  if(!tb) return;
+  if(!list.length){ tb.innerHTML='<tr><td colspan="10" class="empty-state">Nenhum contrato ativo de locação de veículos.</td></tr>'; return; }
+  tb.innerHTML=list.map(r=>`<tr>
+    <td>${r.contrato||'—'}</td><td>${r.fornecedor||'—'}</td><td>${r.placa||'—'}</td>
+    <td>${r.regimeMedicao||'—'}</td><td class="num">${r.vrMensal==null?'—':fmtBRL(r.vrMensal)}</td>
+    <td class="num">${fmtBRL(r.contratado)}</td><td class="num">${fmtBRL(r.medido)}</td>
+    <td class="num">${fmtBRL(r.saldo)}</td><td>${Number(r.avanco||0).toFixed(0)}%</td><td>${r.situacao||'—'}</td>
+  </tr>`).join('');
+}
+function exportVeiculosPDF(){
+  const list=getVeiculosAtivos();
+  const { jsPDF }=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
+  const pageW=doc.internal.pageSize.getWidth();
+  doc.setFillColor(20,21,23); doc.rect(0,0,pageW,60,'F');
+  doc.setTextColor(245,197,24); doc.setFont('helvetica','bold'); doc.setFontSize(16);
+  doc.text('Contratos Ativos — Locação de Veículos',24,27);
+  doc.setTextColor(230,230,230); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  doc.text('Construtora Centro Leste · Obra 202 — Implantação Auriverde',24,44);
+  doc.setTextColor(20,20,20); doc.setFontSize(9);
+  doc.text(`Situação: PENDENTE / PARCIALMENTE MEDIDO · Total: ${list.length}`,24,82);
+  doc.autoTable({
+    startY:96,
+    head:[['Contrato','Fornecedor','Placa','Regime','Valor mensal','Contratado','Medido','Saldo','Avanço','Situação']],
+    body:list.map(r=>[r.contrato,r.fornecedor,r.placa||'—',r.regimeMedicao||'—',r.vrMensal==null?'—':fmtBRL(r.vrMensal),fmtBRL(r.contratado),fmtBRL(r.medido),fmtBRL(r.saldo),Number(r.avanco||0).toFixed(0)+'%',r.situacao]),
+    styles:{fontSize:6.6,cellPadding:2.2,valign:'middle'},
+    headStyles:{fillColor:[31,56,100],textColor:255,fontSize:6.5,cellPadding:2},
+    alternateRowStyles:{fillColor:[245,245,245]},
+    columnStyles:{
+      0:{cellWidth:58},1:{cellWidth:176},2:{cellWidth:50},3:{cellWidth:55},
+      4:{cellWidth:62},5:{cellWidth:64},6:{cellWidth:61},7:{cellWidth:61},
+      8:{cellWidth:43},9:{cellWidth:92}
+    },
+    margin:{left:20,right:20}
+  });
+  addPdfCredits(doc);
+  doc.save('contratos_veiculos_ativos_'+new Date().toISOString().slice(0,10)+'.pdf');
+}
+function exportVeiculosXLS(){
+  const list=getVeiculosAtivos();
+  const rows=[
+    ['Contratos Ativos — Locação de Veículos'],
+    ['Construtora Centro Leste · Obra 202 — Implantação Auriverde'],
+    ['Situação','PENDENTE / PARCIALMENTE MEDIDO'],
+    [],
+    ['Contrato','Fornecedor','Placa','Regime','Valor mensal','Contratado','Medido','Saldo','Avanço (%)','Situação'],
+    ...list.map(r=>[r.contrato,r.fornecedor,r.placa||'',r.regimeMedicao||'',r.vrMensal==null?'':r.vrMensal,r.contratado,r.medido,r.saldo,r.avanco,r.situacao])
+  ];
+  const wb=XLSX.utils.book_new(), ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:18},{wch:38},{wch:12},{wch:15},{wch:15},{wch:15},{wch:15},{wch:15},{wch:12},{wch:24}];
+  XLSX.utils.book_append_sheet(wb,ws,'Veículos Ativos');
+  XLSX.writeFile(wb,'contratos_veiculos_ativos_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
 function exportContratosPDF(){
   const list = getSorted(getFiltered());
   const { filtroStr, dataStr } = exportContext();
@@ -11904,8 +11973,8 @@ function exportContratosPDF(){
 
   doc.autoTable({
     startY: 108,
-    head: [['Contrato','Fornecedor','Tipo','Placa','Regime','Valor mensal','Contratado','Medido','Saldo','Avanço','Situação']],
-    body: list.map(r=>[r.contrato, r.fornecedor, r.tipo, r.placa||'—', r.regimeMedicao||'—', r.vrMensal==null?'—':fmtBRL(r.vrMensal), fmtBRL(r.contratado), fmtBRL(r.medido), fmtBRL(r.saldo), r.avanco.toFixed(0)+'%', r.situacao]),
+    head: [['Contrato','Fornecedor','Tipo','Contratado','Medido','Saldo','Avanço','Situação']],
+    body: list.map(r=>[r.contrato, r.fornecedor, r.tipo, fmtBRL(r.contratado), fmtBRL(r.medido), fmtBRL(r.saldo), r.avanco.toFixed(0)+'%', r.situacao]),
     styles:{ fontSize:8, cellPadding:4 },
     headStyles:{ fillColor:[31,56,100], textColor:255 },
     alternateRowStyles:{ fillColor:[245,245,245] },
@@ -11930,11 +11999,11 @@ function exportContratosXLS(){
     ['Total de contratos', list.length],
     ['Gerado em', dataStr],
     [],
-    ['Contrato','Fornecedor','Objeto','Tipo','Placa','Regime','Valor mensal','Contratado','Medido','Saldo','Avanço (%)','Situação'],
-    ...list.map(r=>[r.contrato, r.fornecedor, r.objeto, r.tipo, r.placa||'', r.regimeMedicao||'', r.vrMensal==null?'':r.vrMensal, r.contratado, r.medido, r.saldo, r.avanco, r.situacao]),
+    ['Contrato','Fornecedor','Objeto','Tipo','Contratado','Medido','Saldo','Avanço (%)','Situação'],
+    ...list.map(r=>[r.contrato, r.fornecedor, r.objeto, r.tipo, r.contratado, r.medido, r.saldo, r.avanco, r.situacao]),
   ];
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:24},{wch:32},{wch:44},{wch:26},{wch:13},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:12},{wch:18}];
+  ws['!cols'] = [{wch:24},{wch:32},{wch:44},{wch:26},{wch:14},{wch:14},{wch:14},{wch:12},{wch:18}];
   XLSX.utils.book_append_sheet(wb, ws, 'Contratos');
 
   const fname = 'painel_contratos_' + new Date().toISOString().slice(0,10) + '.xlsx';
@@ -11942,6 +12011,8 @@ function exportContratosXLS(){
 }
 document.getElementById('exportPdfBtn').addEventListener('click', exportContratosPDF);
 document.getElementById('exportXlsBtn').addEventListener('click', exportContratosXLS);
+document.getElementById('veiculosExportPdfBtn')?.addEventListener('click', exportVeiculosPDF);
+document.getElementById('veiculosExportXlsBtn')?.addEventListener('click', exportVeiculosXLS);
 
 // ---- caixa de seleção de tipos no gráfico "Contratado vs. Medido por Tipo" ----
 const tipoFilterList = document.getElementById('tipoFilterList');
@@ -12365,7 +12436,7 @@ function render(){
   safe(()=>renderCharts(filtered), 'gráficos');
   safe(()=>renderExpiring(filtered), 'vencendo em breve');
   safe(()=>renderDueList(IMOVEIS_DATA, 'imoveisDueList', ['RESCINDIDO'], 'Nenhum contrato de locação de imóvel ativo.'), 'vencimento imóveis');
-  safe(()=>renderDueList(VEICULOS_DATA, 'veiculosDueList', ['RESCINDIDO','CONCLUÍDO'], 'Nenhum contrato de locação de veículo ativo.'), 'vencimento veículos');
+  safe(()=>renderVeiculosTable(), 'contratos de veículos');
   safe(()=>renderTable(sorted), 'tabela de contratos');
   safe(()=>renderFaturas(), 'faturas');
   safe(()=>renderFaturas(), 'faturas');
@@ -12375,7 +12446,7 @@ function showView(view){
   refreshRawDataFromAuthoritativeStore();
   syncContractSubmodulesFromRaw();
   if(view==='imoveis') renderDueList(IMOVEIS_DATA, 'imoveisDueList', ['RESCINDIDO'], 'Nenhum contrato de locação de imóvel ativo.');
-  if(view==='veiculos') renderDueList(VEICULOS_DATA, 'veiculosDueList', ['RESCINDIDO','CONCLUÍDO'], 'Nenhum contrato de locação de veículo ativo.');
+  if(view==='veiculos') renderVeiculosTable();
   document.querySelectorAll('.side-link[data-view="contratos"]').forEach(x=>x.classList.toggle('active',(x.dataset.contractSubview||'dashboard')===view));
   const main=document.getElementById('viewDashboard');
   const dash=document.getElementById('contractDashboardOnly');
@@ -21862,6 +21933,7 @@ analyze.onclick=async()=>{if(!selectedFile)return;const sb=window.g360SupabaseCl
 })();
 </script>
 
+<!-- G360 BUILD VEICULOS RELATORIOS V2 2026-09-24 -->
 </body>
 </html>
 
@@ -21923,56 +21995,9 @@ analyze.onclick=async()=>{if(!selectedFile)return;const sb=window.g360SupabaseCl
 #view-sesmtEstoque .sesmt-card-head h2{font-size:16px!important}
 #view-sesmtEstoque .kpi-value{font-size:24px!important}
 
-/* G360 — Base de Contratos: não quebrar valores monetários em duas linhas */
-#ctrTableBody td:nth-child(4),
-#ctrTableBody td:nth-child(5),
-#ctrTableBody td:nth-child(6) {
-  white-space: nowrap !important;
-  min-width: 118px !important;
-}
-#ctrTableBody td:nth-child(7) {
-  white-space: nowrap !important;
-  min-width: 72px !important;
-}
-
-table:has(#ctrTableBody) th:nth-child(4),
-table:has(#ctrTableBody) th:nth-child(5),
-table:has(#ctrTableBody) th:nth-child(6) {
-  white-space: nowrap !important;
-  min-width: 118px !important;
-}
-table:has(#ctrTableBody) th:nth-child(7) {
-  white-space: nowrap !important;
-  min-width: 72px !important;
-}
-
-/* G360 — ajuste fino Base de Contratos:
-   reduz TIPO e reserva espaço real para MEDIDO/SALDO sem quebra */
-table:has(#ctrTableBody) {
-  table-layout: auto !important;
-  min-width: 1320px !important;
-}
-table:has(#ctrTableBody) th:nth-child(3),
-#ctrTableBody td:nth-child(3) {
-  width: 135px !important;
-  max-width: 135px !important;
-  min-width: 115px !important;
-  white-space: normal !important;
-  overflow-wrap: anywhere !important;
-}
-table:has(#ctrTableBody) th:nth-child(4),
-#ctrTableBody td:nth-child(4) {
-  min-width: 125px !important;
-  white-space: nowrap !important;
-}
-table:has(#ctrTableBody) th:nth-child(5),
-#ctrTableBody td:nth-child(5),
-table:has(#ctrTableBody) th:nth-child(6),
-#ctrTableBody td:nth-child(6) {
-  width: 132px !important;
-  min-width: 132px !important;
-  white-space: nowrap !important;
-  word-break: keep-all !important;
-  overflow-wrap: normal !important;
-}
+/* G360 — submódulo Veículos */
+.g360-veiculos-table{min-width:1180px!important;}
+.g360-veiculos-table th,.g360-veiculos-table td{font-size:11px!important;padding:8px 7px!important;}
+.g360-veiculos-table th:nth-child(n+3),.g360-veiculos-table td:nth-child(n+3){white-space:nowrap!important;}
+.g360-veiculos-table th:nth-child(2),.g360-veiculos-table td:nth-child(2){min-width:230px;}
 </style>
