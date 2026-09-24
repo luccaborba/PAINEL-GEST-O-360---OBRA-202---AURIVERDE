@@ -21909,4 +21909,27 @@ analyze.onclick=async()=>{if(!selectedFile)return;const sb=window.g360SupabaseCl
 #view-sesmtEstoque .pt-title,
 #view-sesmtEstoque .sesmt-card-head h2{font-size:16px!important}
 #view-sesmtEstoque .kpi-value{font-size:24px!important}
+
+/* G360 — Base de Contratos: não quebrar valores monetários em duas linhas */
+#ctrTableBody td:nth-child(4),
+#ctrTableBody td:nth-child(5),
+#ctrTableBody td:nth-child(6) {
+  white-space: nowrap !important;
+  min-width: 118px !important;
+}
+#ctrTableBody td:nth-child(7) {
+  white-space: nowrap !important;
+  min-width: 72px !important;
+}
+
+table:has(#ctrTableBody) th:nth-child(4),
+table:has(#ctrTableBody) th:nth-child(5),
+table:has(#ctrTableBody) th:nth-child(6) {
+  white-space: nowrap !important;
+  min-width: 118px !important;
+}
+table:has(#ctrTableBody) th:nth-child(7) {
+  white-space: nowrap !important;
+  min-width: 72px !important;
+}
 </style>
