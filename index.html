@@ -21692,7 +21692,7 @@ async function openTermForPerson(key){
   doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('COMUNICAÇÃO E CONCESSÃO DE FOLGA DE CAMPO',PW/2,y,{align:'center'});y+=8;
   doc.setDrawColor(245,197,24);doc.setLineWidth(.8);doc.line(ML,y,PW-MR,y);y+=9;
 
-  const field=(lab,val)=>{doc.setFont('helvetica','bold');doc.setFontSize(9.2);doc.text(lab,ML,y);const lw=doc.getTextWidth(lab)+2;doc.setFont('helvetica','normal');doc.text(String(val||'—'),ML+lw,y);y+=6};
+  const field=(lab,val)=>{doc.setFont('helvetica','bold');doc.setFontSize(9.2);doc.text(lab,ML,y);const lw=doc.getTextWidth(lab)+2;doc.setFont('helvetica','normal');const ls=doc.splitTextToSize(String(val||'—'),Math.max(25,CW-lw));doc.text(ls,ML+lw,y);y+=Math.max(6,ls.length*4.2)};
   field('Empregado(a):',nome);field('Matrícula:',mat||'—');field('Cargo:',funcao||'—');
   field('Destino da Folga:',destino.toUpperCase());field('Distância da Obra:',`${km.toLocaleString('pt-BR')} km`);
   field('Período:',`${fmtD(dataIni)} a ${fmtD(dataFim)}`);field('Retorno ao Trabalho:',fmtD(retorno));field('Dias de Folga:',dias);
@@ -22259,14 +22259,22 @@ async function generateSimulationPdf(){
    return dc?`${oc} > ${dc}`:'ROTA NÃO IDENTIFICADA';
  };
  doc.setTextColor(10,10,10);doc.setFont('helvetica','bold');
- doc.setFontSize(15);doc.text(`SIMULAÇÃO DE VALORES DE PASSAGEM – ${String(ctx.nome||f.colaborador_nome||'').toUpperCase()}`,W/2,28,{align:'center'});
- doc.setFontSize(11.5);doc.text(`${String(rota()).toUpperCase()} – ${km?km.toLocaleString('pt-BR')+'KM':'KM NÃO INFORMADO'}   /   REFEIÇÃO IDA E VOLTA ${brl(alimentacao)}`,W/2,49,{align:'center'});
+ doc.setFontSize(15);
+ const simTitulo=`SIMULAÇÃO DE VALORES DE PASSAGEM – ${String(ctx.nome||f.colaborador_nome||'').toUpperCase()}`;
+ const simTituloLinhas=doc.splitTextToSize(simTitulo,W-M*2);
+ doc.text(simTituloLinhas,W/2,28,{align:'center'});
+ const titleExtra=Math.max(0,simTituloLinhas.length-1)*17;
  doc.setFontSize(11.5);
- const infoY=70;
+ const rotaTexto=`${String(rota()).toUpperCase()} – ${km?km.toLocaleString('pt-BR')+'KM':'KM NÃO INFORMADO'}   /   REFEIÇÃO IDA E VOLTA ${brl(alimentacao)}`;
+ const rotaLinhas=doc.splitTextToSize(rotaTexto,W-M*2);
+ const rotaY=49+titleExtra;doc.text(rotaLinhas,W/2,rotaY,{align:'center'});
+ const rotaExtra=Math.max(0,rotaLinhas.length-1)*13;
+ doc.setFontSize(11.5);
+ const infoY=70+titleExtra+rotaExtra;
  doc.text(`INÍCIO: ${dt(f.data_inicio||f.data_saida)}`,W*.18,infoY,{align:'center'});
  doc.text(`FIM: ${dt(f.data_fim)}`,W*.50,infoY,{align:'center'});
  doc.text(`RETORNO TRABALHO: ${dt(f.data_retorno)}`,W*.82,infoY,{align:'center'});
- let y=88;
+ let y=88+titleExtra+rotaExtra;
  for(let i=0;i<shots.length;i++){
    const data=await new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=rej;fr.readAsDataURL(shots[i].file)});
    const img=new Image();await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=data});
@@ -22302,6 +22310,9 @@ analyze.onclick=async()=>{
 };
 confirmBtn.onclick=async()=>{
  if(!extracted||!importId)return;confirmBtn.disabled=true;confirmBtn.textContent='Salvando...';
+ const busy=document.getElementById('g360FcIaBusy'),busyText=document.getElementById('g360FcIaBusyText');
+ if(busyText)busyText.textContent='FINALIZANDO FOLGA DE CAMPO...';
+ if(busy){busy.classList.add('open');busy.setAttribute('aria-hidden','false')}
  try{
   const client=sb(),sess=(await client.auth.getSession()).data?.session;if(!sess)throw new Error('Sessão expirada.');const f=extracted._folga,ts=extracted.trechos||[],comp=f.competencia;
   const despesas=ts.map((t,i)=>({obra_id:f.obra_id,competencia:comp,colaborador_id:f.colaborador_id,matricula:f.matricula||'',colaborador_nome:f.colaborador_nome,funcao:ctx.funcao||null,descricao:`PASSAGEM RODOVIÁRIA - TRECHO ${i+1} - ${String(t.origem_cidade||'').toUpperCase()}/${String(t.origem_uf||'').toUpperCase()} > ${String(t.destino_cidade||'').toUpperCase()}/${String(t.destino_uf||'').toUpperCase()}`,data_despesa:t.data||f.data_inicio,fornecedor:t.empresa||null,categoria:'PASSAGEM RODOVIÁRIA',valor:Number(t.valor||0),tipo_despesa:'PASSAGEM_RODOVIARIA',trecho_num:i+1,origem_cidade:t.origem_cidade||null,origem_uf:t.origem_uf||null,destino_cidade:t.destino_cidade||null,destino_uf:t.destino_uf||null,created_by:sess.user.id}));
@@ -22314,9 +22325,18 @@ confirmBtn.onclick=async()=>{
   const fu=await client.from('folga_campo').update({custo:novoTotal,valor_reembolso:novoTotal,updated_at:new Date().toISOString()}).eq('id',f.id);if(fu.error)throw fu.error;
   const iu=await client.from('folga_campo_importacoes').update({status:'PROCESSADO',simulacao_pdf_path:pdfPath,simulacao_pdf_nome:pdfName,dados_extraidos:{...extracted,regra_alimentacao:Number(f.distancia_km)>1000?'15+40+40 IDA + 15+40+40 VOLTA':'15+40 IDA + 15+40 VOLTA'},updated_at:new Date().toISOString()}).eq('id',importId);if(iu.error)throw iu.error;
   setStatus(`Concluído: ${ts.length} passagem(ns) + alimentação ${brl(extracted._alimentacao)}. Simulação PDF salva.`);confirmBtn.style.display='none';
-  try{await window.g360FcProgramacoesV330?.load?.(true)}catch(_){}
-  setTimeout(()=>close(),350);
- }catch(e){console.error(e);setStatus('Erro ao confirmar: '+(e?.message||e),true);confirmBtn.disabled=false;confirmBtn.textContent='✓ Confirmar, lançar e salvar simulação'}
+  // Fecha primeiro TODAS as janelas do fluxo. A atualização da lista acontece depois, sem bloquear o usuário.
+  close();
+  const parent=document.getElementById('g360FcLancModal');
+  if(parent){parent.classList.remove('open');parent.setAttribute('aria-hidden','true')}
+  try{document.body.style.overflow=''}catch(_){}
+  if(busy){busy.classList.remove('open');busy.setAttribute('aria-hidden','true')}
+  setTimeout(()=>{try{window.g360FcProgramacoesV330?.load?.(true)}catch(_){}},80);
+ }catch(e){
+  console.error(e);
+  if(busy){busy.classList.remove('open');busy.setAttribute('aria-hidden','true')}
+  setStatus('Erro ao confirmar: '+(e?.message||e),true);confirmBtn.disabled=false;confirmBtn.textContent='✓ Confirmar, lançar e salvar simulação'
+ }
 };
 
 
@@ -22340,13 +22360,13 @@ function bindRows(){
  // mesmo antes de existir qualquer despesa para o colaborador.
  document.querySelectorAll('#g360FcProgramacoesBody tr').forEach(tr=>{
   const base=tr.querySelector('[data-fc-prog-pdf]');if(!base)return;
-  const key=base.dataset.fcProgPdf,wrap=base.closest('.crud-row-actions');if(!wrap||wrap.querySelector('[data-fc-cotacao]'))return;
+  const key=base.dataset.fcProgPdf,wrap=base.closest('.crud-row-actions');if(!wrap||wrap.querySelector('[data-fc-simulacao]'))return;
   const sim=document.createElement('button');sim.type='button';sim.className='fc-dev-mini-action icon-only fc-cot-mini';sim.dataset.fcSimulacao=key;sim.title='Abrir simulação de passagem salva';sim.textContent='📄';sim.onclick=()=>downloadLatest(key);
   wrap.insertBefore(sim,wrap.firstChild);
  });
  // Também mantém atalhos no resumo de despesas, quando houver lançamentos.
  document.querySelectorAll('#g360FcDevResumoBody tr').forEach(tr=>{
-  const base=tr.querySelector('[data-fcdev-pdf]');if(!base)return;const key=base.dataset.fcdevPdf,wrap=base.closest('.fc-dev-row-actions');if(!wrap||wrap.querySelector('[data-fc-cotacao]'))return;
+  const base=tr.querySelector('[data-fcdev-pdf]');if(!base)return;const key=base.dataset.fcdevPdf,wrap=base.closest('.fc-dev-row-actions');if(!wrap||wrap.querySelector('[data-fc-simulacao]'))return;
   const sim=document.createElement('button');sim.type='button';sim.className='fc-dev-mini-action icon-only fc-cot-mini';sim.dataset.fcSimulacao=key;sim.title='Abrir simulação de passagem salva';sim.textContent='📄';sim.onclick=()=>downloadLatest(key);wrap.appendChild(sim);
  });
 }
