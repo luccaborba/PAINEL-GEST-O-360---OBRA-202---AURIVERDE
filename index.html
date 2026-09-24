@@ -10532,7 +10532,7 @@ function exportPdfCompetencia(){
   });
 
   doc.autoTable({
-    startY:infoY+infoH,
+    startY:infoY+infoH+12,
     margin:{left:M,right:M,bottom:30},
     head:[['ITEM','COLABORADOR','FUNÇÃO','LANÇAMENTOS','TOTAL']],
     body:data.map((g,i)=>[
@@ -10563,9 +10563,9 @@ function exportPdfCompetencia(){
     columnStyles:{
       0:{cellWidth:42,halign:'center'},
       1:{cellWidth:278},
-      2:{cellWidth:246},
-      3:{cellWidth:88,halign:'center'},
-      4:{cellWidth:112,halign:'right'}
+      2:{cellWidth:245},
+      3:{cellWidth:90,halign:'center'},
+      4:{cellWidth:134,halign:'right'}
     },
     didParseCell:(hook)=>{
       if(hook.section==='body' && hook.column.index===4) hook.cell.styles.fontStyle='bold';
