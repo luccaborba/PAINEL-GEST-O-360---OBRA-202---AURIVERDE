@@ -21890,7 +21890,7 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
   document.querySelectorAll('#g360FcLancModal [data-fc-step]').forEach(el=>el.classList.toggle('active',Number(el.dataset.fcStep)===n));
   const card=$('g360FcLancModal')?.querySelector('.fc-lanc-modal-card'); if(card) card.scrollTop=0;
  }
- function openFlow(){const m=$('g360FcLancModal');if(!m)return;const form=document.querySelector('#g360FcLancModal .fc-flow-step-3 .g360-reemb-form-grid');if(form)form.style.display='';const add=$('g360FcDevAdicionar');if(add)add.style.display='';const clear=$('g360FcDevLimpar');if(clear)clear.style.display='';m.classList.add('open');m.setAttribute('aria-hidden','false');showStep(1);setTimeout(()=>{try{$('g360FcDevColab')?.focus()}catch(_){}},50)}
+ function openFlow(){const m=$('g360FcLancModal');if(!m)return;const form=document.querySelector('#g360FcLancModal .fc-flow-step-3 .g360-reemb-form-grid');if(form)form.style.display='';const add=$('g360FcDevAdicionar');if(add)add.style.display='';const clear=$('g360FcDevLimpar');if(clear)clear.style.display='';/* NOVA INCLUSAO SEMPRE COMECA EM BRANCO */const sel=$('g360FcDevColab');if(sel){sel.value='';sel.dispatchEvent(new Event('change',{bubbles:true}))}const titulo=$('g360FcLancTitulo');if(titulo)titulo.textContent='Incluir Folga de Campo';const subt=$('g360FcLancSubtitulo');if(subt)subt.textContent='Preencha os dados, finalize o roteiro e depois informe as despesas extras.';const manual=$('g360FcRouteManual'),ai=$('g360FcRouteAI'),fields=$('g360FcRouteManualFields'),finish=$('g360FcDevFinalizarRoteiro');if(manual)manual.classList.add('active');if(ai)ai.classList.remove('active');if(fields)fields.style.display='grid';if(finish)finish.style.display='inline-flex';m.classList.add('open');m.setAttribute('aria-hidden','false');showStep(1);setTimeout(()=>{try{sel?.focus()}catch(_){}},50)}
  function closeFlow(){const m=$('g360FcLancModal');if(!m)return;m.classList.remove('open');m.setAttribute('aria-hidden','true')}
  function bind(){
   const inc=$('g360FcDevIncluirFolga');if(inc&&!inc.dataset.flowBound){inc.dataset.flowBound='1';inc.onclick=openFlow}
@@ -22197,7 +22197,7 @@ if(!modal)return;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const brl=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 function setStatus(t,e=false){status.textContent=t||'';status.className='fc-cot-status'+(e?' fc-cot-error':'')}
-function reset(){shots.forEach(x=>{try{URL.revokeObjectURL(x.url)}catch(_){}});shots=[];ctx=null;extracted=null;importId=null;compositeFile=null;grid.innerHTML='';preview.innerHTML='';preview.style.display='none';confirmBtn.style.display='none';analyze.disabled=true;setStatus('')}
+function reset(){shots.forEach(x=>{try{URL.revokeObjectURL(x.url)}catch(_){}});shots=[];ctx=null;extracted=null;importId=null;compositeFile=null;grid.innerHTML='';preview.innerHTML='';preview.style.display='none';confirmBtn.style.display='none';confirmBtn.disabled=false;confirmBtn.textContent='✓ Confirmar, lançar e salvar simulação';analyze.disabled=true;analyze.textContent='✨ Analisar com IA';setStatus('')}
 function renderShots(){grid.innerHTML=shots.map((x,i)=>`<div class="fc-cot-shot"><img src="${x.url}" alt="Cotação ${i+1}"><button type="button" data-cot-del="${i}">✕</button><div class="fc-cot-sub">RECORTE ${i+1}</div></div>`).join('');grid.querySelectorAll('[data-cot-del]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.cotDel);try{URL.revokeObjectURL(shots[i].url)}catch(_){};shots.splice(i,1);renderShots();analyze.disabled=!shots.length})}
 function addFiles(files){[...files].filter(f=>/^image\/(png|jpeg)$/.test(f.type)).forEach(f=>shots.push({file:f,url:URL.createObjectURL(f)}));renderShots();analyze.disabled=!shots.length;if(shots.length)setStatus(`${shots.length} recorte(s) pronto(s) para análise.`)}
 paste.addEventListener('paste',e=>{const fs=[...(e.clipboardData?.files||[])];if(fs.length){e.preventDefault();addFiles(fs);return}const items=[...(e.clipboardData?.items||[])];const imgs=items.filter(x=>x.type.startsWith('image/')).map(x=>x.getAsFile()).filter(Boolean);if(imgs.length){e.preventDefault();addFiles(imgs)}});
@@ -22325,6 +22325,8 @@ confirmBtn.onclick=async()=>{
   const fu=await client.from('folga_campo').update({custo:novoTotal,valor_reembolso:novoTotal,updated_at:new Date().toISOString()}).eq('id',f.id);if(fu.error)throw fu.error;
   const iu=await client.from('folga_campo_importacoes').update({status:'PROCESSADO',simulacao_pdf_path:pdfPath,simulacao_pdf_nome:pdfName,dados_extraidos:{...extracted,regra_alimentacao:Number(f.distancia_km)>1000?'15+40+40 IDA + 15+40+40 VOLTA':'15+40 IDA + 15+40 VOLTA'},updated_at:new Date().toISOString()}).eq('id',importId);if(iu.error)throw iu.error;
   setStatus(`Concluído: ${ts.length} passagem(ns) + alimentação ${brl(extracted._alimentacao)}. Simulação PDF salva.`);confirmBtn.style.display='none';
+  // Limpa o estado da Cotação IA para permitir o próximo colaborador sem relogar.
+  reset();
   // Fecha primeiro TODAS as janelas do fluxo. A atualização da lista acontece depois, sem bloquear o usuário.
   close();
   const parent=document.getElementById('g360FcLancModal');
