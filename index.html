@@ -10588,7 +10588,7 @@ async function exportPdfCompetencia(returnBytes=false){
   if(returnBytes)return doc.output('arraybuffer');
   doc.save(`REEMBOLSOS_COMPETENCIA_${monthKey(currentComp.competencia)}.pdf`);
 }
-function exportPdfPessoa(targetKey){
+async function exportPdfPessoa(targetKey,returnBytes=false){
   const key=String(targetKey||'').trim();
   let c=null,pr=[];
   if(key){
