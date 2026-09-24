@@ -21651,7 +21651,79 @@ async function loadMeta(){const c=selectedColab();if(!c||!currentMonth){fillMeta
 function calcReturn(){const fim=$('g360FcDevDataFim')?.value||'';$('g360FcDevDataRetorno').value=fim?addDaysISO(fim,1):''}
 async function saveMeta(extra={},opts={}){const c=selectedColab();if(!currentMonth)throw new Error('Selecione uma competência.');if(!c)throw new Error('Selecione o colaborador.');const ini=$('g360FcDevDataIni').value,fim=$('g360FcDevDataFim').value,ret=fim?addDaysISO(fim,1):'',km=Number($('g360FcDevKm').value||0),ufResid=String($('g360FcDevResidUf')?.value||'').trim().toUpperCase(),cidadeResid=String($('g360FcDevResidCidade')?.value||'').trim().toUpperCase();if(!opts.allowPartial){if(!ini||!fim)throw new Error('Informe o período da baixada.');if(fim<ini)throw new Error('A data final não pode ser anterior à data inicial.');if(!(km>0))throw new Error('Informe a distância em km.');if(!ufResid||!cidadeResid)throw new Error('Informe a UF e a cidade da residência.')}const dias=ini&&fim?calcDays(ini,fim):null;const row={obra_id:obraId(),cidade_residencia:cidadeResid||null,uf_residencia:ufResid||null,colaborador_id:c.id,matricula:String(c.matricula||''),colaborador_nome:String(c.nome||'').toUpperCase(),competencia:compDate(currentMonth),data_inicio:ini||null,data_saida:ini||null,data_fim:fim||null,data_retorno:ret||null,distancia_km:km>0?km:null,dias,status:'PROGRAMADA',incluido:true,tipo_folga:'PROGRAMADA',updated_at:new Date().toISOString(),...extra};let existing=currentMeta?.id?{data:{id:currentMeta.id}}:await sb().from('folga_campo').select('id').eq('obra_id',obraId()).eq('colaborador_id',c.id).eq('competencia',compDate(currentMonth)).order('created_at',{ascending:false}).limit(1).maybeSingle();if(existing.error)throw existing.error;let r;if(existing.data?.id)r=await sb().from('folga_campo').update(row).eq('id',existing.data.id);else r=await sb().from('folga_campo').insert(row).select().single();if(r.error)throw r.error;await loadMeta();return currentMeta}
 async function saveMetaClick(){const b=$('g360FcDevSalvarDados');try{if(b){b.disabled=true;b.textContent='⏳ Salvando...'}await saveMeta();if(b){b.textContent='✓ Salvo';await new Promise(r=>setTimeout(r,350))}}catch(e){alert(e?.message||e)}finally{if(b){b.disabled=false;b.textContent=currentMeta?.id?'💾 SALVAR ALTERAÇÕES':'💾 SALVAR DADOS DA FOLGA'}}}
-async function openTermForPerson(key){try{if(!currentMonth)return alert('Selecione uma competência.');const c=colabs.find(x=>String(x.id)===String(key))||null;const sample=rows.find(r=>String(r.colaborador_id||r.colaborador_nome)===String(key));const cid=c?.id||sample?.colaborador_id;if(!cid)return alert('Colaborador não identificado.');let q=sb().from('folga_campo').select('*').eq('colaborador_id',cid).eq('competencia',compDate(currentMonth)).order('created_at',{ascending:false}).limit(1).maybeSingle();const oid=obraId();if(oid)q=q.eq('obra_id',oid);const r=await q;if(r.error)throw r.error;const f=r.data;if(!f)return alert('Cadastre e salve o período, distância e roteiro da folga antes de gerar o Termo.');const nome=String(c?.nome||sample?.colaborador_nome||f.colaborador_nome||'').toUpperCase(),funcao=String(c?.funcao||sample?.funcao||'').toUpperCase(),mat=String(c?.matricula||sample?.matricula||f.matricula||'');const cidadeResidencia=[f.cidade_residencia,f.uf_residencia].filter(Boolean).join('-');const destino=cidadeResidencia;const dataIni=f.data_inicio||f.data_saida,dataFim=f.data_fim,retorno=f.data_retorno||addDaysISO(dataFim,1),km=Number(f.distancia_km||0),dias=f.dias||calcDays(dataIni,dataFim);if(!destino||!dataIni||!dataFim||!retorno||!(km>0))return alert('O Termo ainda está incompleto. Salve período, distância, UF e cidade da residência.');if(!window.jspdf?.jsPDF)return alert('Biblioteca PDF não carregada.');if(typeof fcDesenharFormulario!=='function')return alert('Gerador do Termo de Concessão não está disponível.');const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4'});fcDesenharFormulario(doc,{nome,mat,funcao,folga:{destino,km,dataIni,dataFim,retorno,dias}});doc.save(`Folga de Campo - ${compLabel(currentMonth).replace('/','-')} - ${nome}.pdf`)}catch(e){console.error('TERMO FOLGA:',e);alert('Não foi possível gerar o Termo de Concessão: '+(e?.message||e))}}
+async function openTermForPerson(key){
+ try{
+  if(!currentMonth)return alert('Selecione uma competência.');
+  const c=colabs.find(x=>String(x.id)===String(key))||null;
+  const sample=rows.find(r=>String(r.colaborador_id||r.colaborador_nome)===String(key));
+  const cid=c?.id||sample?.colaborador_id;
+  if(!cid)return alert('Colaborador não identificado.');
+
+  const oid=obraId(),comp=compDate(currentMonth);
+  let fq=sb().from('folga_campo').select('*').eq('colaborador_id',cid).eq('competencia',comp).order('created_at',{ascending:false}).limit(1);
+  if(oid)fq=fq.eq('obra_id',oid);
+  const fr=await fq.maybeSingle();if(fr.error)throw fr.error;
+  const f=fr.data;if(!f)return alert('Folga de Campo não localizada nesta competência.');
+
+  // O Termo passa a buscar as despesas diretamente do banco, e não do estado da tela.
+  let dq=sb().from('folga_campo_despesas').select('*').eq('colaborador_id',cid).eq('competencia',comp).order('trecho_num',{ascending:true,nullsFirst:false}).order('created_at',{ascending:true});
+  if(oid)dq=dq.eq('obra_id',oid);
+  const dr=await dq;if(dr.error)throw dr.error;
+  const despesas=dr.data||[];
+
+  const nome=String(c?.nome||sample?.colaborador_nome||f.colaborador_nome||'').toUpperCase();
+  const funcao=String(c?.funcao||sample?.funcao||'').toUpperCase();
+  const mat=String(c?.matricula||sample?.matricula||f.matricula||'');
+  const destino=[f.cidade_residencia||f.destino_cidade,f.uf_residencia||f.destino_uf].filter(Boolean).join('-');
+  const dataIni=f.data_inicio||f.data_saida,dataFim=f.data_fim,retorno=f.data_retorno||addDaysISO(dataFim,1);
+  const km=Number(f.distancia_km||0),dias=f.dias||calcDays(dataIni,dataFim);
+  if(!destino||!dataIni||!dataFim||!retorno||!(km>0))return alert('O Termo ainda está incompleto. Confira período, distância, UF e cidade em DADOS DA FOLGA.');
+  if(!window.jspdf?.jsPDF)return alert('Biblioteca PDF não carregada.');
+
+  const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'}),PW=doc.internal.pageSize.getWidth(),ML=18,MR=18,CW=PW-ML-MR;
+  let y=18;
+  const fmtD=v=>v?new Date(String(v).slice(0,10)+'T12:00:00').toLocaleDateString('pt-BR'):'—';
+  const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const total=despesas.reduce((a,x)=>a+Number(x.valor||0),0);
+
+  doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('COMUNICAÇÃO E CONCESSÃO DE FOLGA DE CAMPO',PW/2,y,{align:'center'});y+=8;
+  doc.setDrawColor(245,197,24);doc.setLineWidth(.8);doc.line(ML,y,PW-MR,y);y+=9;
+
+  const field=(lab,val)=>{doc.setFont('helvetica','bold');doc.setFontSize(9.2);doc.text(lab,ML,y);const lw=doc.getTextWidth(lab)+2;doc.setFont('helvetica','normal');doc.text(String(val||'—'),ML+lw,y);y+=6};
+  field('Empregado(a):',nome);field('Matrícula:',mat||'—');field('Cargo:',funcao||'—');
+  field('Destino da Folga:',destino.toUpperCase());field('Distância da Obra:',`${km.toLocaleString('pt-BR')} km`);
+  field('Período:',`${fmtD(dataIni)} a ${fmtD(dataFim)}`);field('Retorno ao Trabalho:',fmtD(retorno));field('Dias de Folga:',dias);
+  y+=4;
+
+  doc.setFont('helvetica','normal');doc.setFontSize(9.2);
+  const txt=`Comunicamos a concessão de ${String(dias).padStart(2,'0')} dia(s) corrido(s) de Folga de Campo para Visita Familiar, considerando a distância informada entre a residência e o local da obra. As despesas vinculadas a esta concessão estão discriminadas abaixo.`;
+  const lines=doc.splitTextToSize(txt,CW);doc.text(lines,ML,y);y+=lines.length*4.5+6;
+
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text('DESPESAS DA FOLGA DE CAMPO',ML,y);y+=5;
+  const x=[ML,ML+12,ML+132,PW-MR],headH=8;
+  doc.setFillColor(245,197,24);doc.rect(x[0],y,CW,headH,'F');doc.setDrawColor(50);doc.rect(x[0],y,CW,headH);
+  [x[1],x[2]].forEach(xx=>doc.line(xx,y,xx,y+headH));doc.setFontSize(8.2);doc.text('ITEM',(x[0]+x[1])/2,y+5.3,{align:'center'});doc.text('DESCRIÇÃO',x[1]+2,y+5.3);doc.text('VALOR',x[3]-2,y+5.3,{align:'right'});y+=headH;
+  doc.setFont('helvetica','normal');doc.setFontSize(7.8);
+  despesas.forEach((d,i)=>{
+    const desc=String(d.descricao||d.categoria||'DESPESA').toUpperCase();
+    const ls=doc.splitTextToSize(desc,x[2]-x[1]-4);const rh=Math.max(8,ls.length*3.7+3);
+    if(y+rh>267){doc.addPage();y=18}
+    doc.rect(x[0],y,CW,rh);[x[1],x[2]].forEach(xx=>doc.line(xx,y,xx,y+rh));
+    doc.text(String(i+1).padStart(2,'0'),(x[0]+x[1])/2,y+rh/2+1,{align:'center'});doc.text(ls,x[1]+2,y+4.7);doc.text(money(d.valor),x[3]-2,y+rh/2+1,{align:'right'});y+=rh;
+  });
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.rect(x[2],y,x[3]-x[2],8);doc.text(`TOTAL: ${money(total)}`,x[3]-2,y+5.4,{align:'right'});y+=16;
+
+  if(y>235){doc.addPage();y=25}
+  doc.setFont('helvetica','normal');doc.setFontSize(9);
+  const decl='O empregado declara estar ciente das datas, destino e despesas acima informados e compromete-se a retornar às suas atividades na data estipulada.';
+  const dl=doc.splitTextToSize(decl,CW);doc.text(dl,ML,y);y+=dl.length*4.5+13;
+  doc.text(`Crixás - GO, ${new Date().toLocaleDateString('pt-BR')}`,ML,y);y+=24;
+  doc.setDrawColor(90);doc.line(ML+8,y,ML+78,y);doc.line(PW-MR-78,y,PW-MR-8,y);
+  doc.setFontSize(8);doc.text('Assinatura do Empregado(a)',ML+43,y+5,{align:'center'});doc.text('Gestor da Obra',PW-MR-43,y+5,{align:'center'});
+
+  doc.save(`Termo_Folga_de_Campo_${nome.replace(/[^A-Za-z0-9À-ÿ]+/g,'_')}_${currentMonth}.pdf`);
+ }catch(e){console.error('TERMO FOLGA:',e);alert('Não foi possível gerar o Termo de Concessão: '+(e?.message||e))}
+}
 
 let g360FcExportSetoresV3=null,g360FcExportModeV2=null;
 async function g360FcOpenExportFilter(mode){
@@ -22085,7 +22157,8 @@ analyze.onclick=async()=>{if(!selectedFile)return;const sb=window.g360SupabaseCl
   <div class="fc-cot-grid" id="fcCotGrid"></div>
   <div class="fc-cot-status" id="fcCotStatus"></div>
   <div id="fcCotPreview"></div>
-  <div class="fc-cot-actions"><button type="button" class="fc-cot-secondary" id="fcCotCancel">Cancelar</button><button type="button" class="fc-cot-success" id="fcCotConfirm" style="display:none">✓ Confirmar, lançar e salvar simulação</button><button type="button" class="fc-cot-primary" id="fcCotAnalyze" disabled>✨ Analisar com IA</button></div>
+  <input type="file" id="fcCotReadyPdf" accept="application/pdf" style="display:none">
+<div class="fc-cot-actions"><button type="button" class="fc-cot-secondary" id="fcCotCancel">Cancelar</button><button type="button" class="fc-cot-secondary" id="fcCotImportReady">📄 IMPORTAR SIMULAÇÃO PRONTA</button><button type="button" class="fc-cot-success" id="fcCotConfirm" style="display:none">✓ Confirmar, lançar e salvar simulação</button><button type="button" class="fc-cot-primary" id="fcCotAnalyze" disabled>✨ Analisar com IA</button></div>
  </div>
 </div>
 <script id="g360-fc-cotacao-ia-script-v1">
@@ -22188,6 +22261,85 @@ async function downloadLatest(key){
   const sg=await client.storage.from('folga-campo-documentos').createSignedUrl(r.data.simulacao_pdf_path,120);if(sg.error)throw sg.error;const a=document.createElement('a');a.href=sg.data.signedUrl;a.target='_blank';a.rel='noopener';a.click();
  }catch(e){console.error(e);alert('Erro ao abrir simulação: '+(e?.message||e))}
 }
+
+async function buildReadySimulationPdf(sourceFile,folga){
+ if(!window.PDFLib?.PDFDocument)throw new Error('Biblioteca PDF-Lib não carregada.');
+ const {PDFDocument,StandardFonts,rgb}=window.PDFLib;
+ const src=await PDFDocument.load(await sourceFile.arrayBuffer());
+ if(!src.getPageCount())throw new Error('O PDF enviado não possui páginas.');
+ const out=await PDFDocument.create(),font=await out.embedFont(StandardFonts.Helvetica),bold=await out.embedFont(StandardFonts.HelveticaBold);
+ const A4W=595.28,A4H=841.89,margin=20,headerBottom=95;
+ const fmt=v=>{if(!v)return '—';const d=new Date(String(v).slice(0,10)+'T12:00:00');return Number.isNaN(d.getTime())?'—':d.toLocaleDateString('pt-BR')};
+ const km=Number(folga.distancia_km||0),food=foodByKm(km);
+ const origem=`${String(folga.origem_cidade||'CRIXÁS').toUpperCase()}-${String(folga.origem_uf||'GO').toUpperCase()}`;
+ const dc=String(folga.cidade_residencia||folga.destino_cidade||'').toUpperCase(),du=String(folga.uf_residencia||folga.destino_uf||'').toUpperCase();
+ const destino=[dc,du].filter(Boolean).join('-');
+ if(!destino)throw new Error('UF/Cidade da Folga não estão preenchidas.');
+ const nome=String(folga.colaborador_nome||ctx?.nome||'').toUpperCase();
+ const center=(page,text,y,size,f=bold)=>page.drawText(text,{x:(A4W-f.widthOfTextAtSize(text,size))/2,y,size,font:f,color:rgb(0.04,0.04,0.04)});
+ const firstSrc=src.getPage(0),sw=firstSrc.getWidth(),sh=firstSrc.getHeight();
+ // Despreza o cabeçalho da simulação antiga. Mantém somente a região dos trechos/cotações.
+ // O recorte começa aproximadamente 128 pt abaixo do topo da página antiga.
+ const cutTop=Math.min(145,sh*.19),bodyH=sh-cutTop;
+ const embedded=await out.embedPage(firstSrc,{left:0,bottom:0,right:sw,top:bodyH});
+ const page=out.addPage([A4W,A4H]);
+ center(page,`SIMULAÇÃO DE VALORES DE PASSAGEM – ${nome}`,A4H-28,14);
+ center(page,`${origem} > ${destino} – ${km.toLocaleString('pt-BR')}KM   /   REFEIÇÃO IDA E VOLTA ${brl(food)}`,A4H-50,10.5);
+ const d1=`INÍCIO: ${fmt(folga.data_inicio||folga.data_saida)}`,d2=`FIM: ${fmt(folga.data_fim)}`,d3=`RETORNO TRABALHO: ${fmt(folga.data_retorno)}`;
+ page.drawText(d1,{x:36,y:A4H-72,size:10,font:bold});center(page,d2,A4H-72,10);page.drawText(d3,{x:A4W-36-bold.widthOfTextAtSize(d3,10),y:A4H-72,size:10,font:bold});
+ const availW=A4W-margin*2,availH=headerBottom?A4H-headerBottom-margin:A4H-115;
+ const scale=Math.min(availW/sw,availH/bodyH);
+ const dw=sw*scale,dh=bodyH*scale;
+ page.drawPage(embedded,{x:(A4W-dw)/2,y:margin,width:dw,height:dh});
+ // Páginas adicionais são preservadas integralmente, caso existam.
+ for(let i=1;i<src.getPageCount();i++){
+   const sp=src.getPage(i),ew=sp.getWidth(),eh=sp.getHeight(),ep=await out.embedPage(sp);
+   const np=out.addPage([A4W,A4H]),sc=Math.min((A4W-margin*2)/ew,(A4H-margin*2)/eh);
+   np.drawPage(ep,{x:(A4W-ew*sc)/2,y:(A4H-eh*sc)/2,width:ew*sc,height:eh*sc});
+ }
+ return await out.save();
+}
+async function importReadySimulation(file){
+ if(!file||file.type!=='application/pdf')throw new Error('Selecione um arquivo PDF.');
+ const client=sb();if(!client)throw new Error('Supabase não inicializado.');
+ const sess=(await client.auth.getSession()).data?.session;if(!sess)throw new Error('Sessão expirada.');
+ const folga=await findFolga();ctx.folga=folga;ctx.nome=folga.colaborador_nome||ctx.nome;
+ setStatus('Adaptando a simulação pronta aos dados atuais da Folga...');
+ const adapted=await buildReadySimulationPdf(file,folga);
+ const safeOriginal=file.name.replace(/[^A-Za-z0-9._-]+/g,'_');
+ const stamp=Date.now(),base=`${folga.obra_id}/${sess.user.id}`;
+ const originalPath=`${base}/${stamp}_ORIGINAL_${safeOriginal}`;
+ const pdfName=`SIMULACAO_DE_PASSAGEM_${String(folga.colaborador_nome||ctx.nome).replace(/[^A-Za-z0-9À-ÿ]+/g,'_')}.pdf`;
+ const pdfPath=`${base}/${stamp}_${pdfName.replace(/[^A-Za-z0-9._-]+/g,'_')}`;
+ const up1=await client.storage.from('folga-campo-documentos').upload(originalPath,file,{contentType:'application/pdf',upsert:false});if(up1.error)throw up1.error;
+ const blob=new Blob([adapted],{type:'application/pdf'});
+ const up2=await client.storage.from('folga-campo-documentos').upload(pdfPath,blob,{contentType:'application/pdf',upsert:false});
+ if(up2.error){await client.storage.from('folga-campo-documentos').remove([originalPath]);throw up2.error}
+ const ins=await client.from('folga_campo_importacoes').insert({
+   obra_id:folga.obra_id,colaborador_id:folga.colaborador_id,folga_campo_id:folga.id,
+   arquivo_nome:file.name,arquivo_path:originalPath,arquivo_tipo:'application/pdf',
+   status:'PROCESSADO',modo:'SIMULACAO_PRONTA',simulacao_pdf_path:pdfPath,simulacao_pdf_nome:pdfName,
+   dados_extraidos:{origem:'SIMULACAO_PRONTA',observacao:'Cabeçalho recriado com os dados da Folga; conteúdo antigo utilizado somente como trechos/cotações.'},
+   created_by:sess.user.id
+ }).select('id').single();
+ if(ins.error){await client.storage.from('folga-campo-documentos').remove([originalPath,pdfPath]);throw ins.error}
+ setStatus('Simulação pronta salva. O cabeçalho foi atualizado pelos Dados da Folga e os trechos do PDF foram preservados.');
+ const sg=await client.storage.from('folga-campo-documentos').createSignedUrl(pdfPath,120);
+ if(!sg.error&&sg.data?.signedUrl){const a=document.createElement('a');a.href=sg.data.signedUrl;a.target='_blank';a.rel='noopener';a.click()}
+ return ins.data;
+}
+const readyInput=$('fcCotReadyPdf'),readyBtn=$('fcCotImportReady');
+if(readyBtn&&readyInput){
+ readyBtn.onclick=()=>readyInput.click();
+ readyInput.onchange=async()=>{
+   const f=readyInput.files?.[0];if(!f)return;
+   readyBtn.disabled=true;readyBtn.textContent='⏳ ADAPTANDO...';
+   try{await importReadySimulation(f)}
+   catch(e){console.error(e);setStatus('Não foi possível importar a simulação pronta: '+(e?.message||e),true)}
+   finally{readyBtn.disabled=false;readyBtn.textContent='📄 IMPORTAR SIMULAÇÃO PRONTA';readyInput.value=''}
+ };
+}
+
 analyze.onclick=async()=>{
  if(!shots.length)return;analyze.disabled=true;confirmBtn.style.display='none';
  try{
