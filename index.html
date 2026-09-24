@@ -5579,10 +5579,23 @@ function exportBaixadasPDF(){
     startY: 108,
     head: [['Mat.','Nome','Função','Equipe','Periodicidade','Próxima Baixada','Custo por Baixada','Custo Mensal Equiv.']],
     body: rows.map(l=>[l.mat??'', l.nome, l.funcao??'', l.equipe??'', l.periodicidadeBaixada??'única', fmtDate(l.proxBaixada), l.custoBaixada!=null?fmtBRL(l.custoBaixada):'—', l.custoMensal!=null?fmtBRL(l.custoMensal):'a definir']),
-    styles:{ fontSize:8, cellPadding:4 },
-    headStyles:{ fillColor:[31,56,100], textColor:255 },
+    styles:{ fontSize:7.4, cellPadding:2.6, overflow:'linebreak', valign:'middle' },
+    headStyles:{ fillColor:[31,56,100], textColor:255, fontSize:7.2, cellPadding:2.4 },
     alternateRowStyles:{ fillColor:[245,245,245] },
-    margin:{ left:30, right:30 },
+    columnStyles:{
+      0:{cellWidth:57},
+      1:{cellWidth:185},
+      2:{cellWidth:90},
+      3:{cellWidth:48},
+      4:{cellWidth:50},
+      5:{cellWidth:58, overflow:'visible'},
+      6:{cellWidth:62, overflow:'visible'},
+      7:{cellWidth:60, overflow:'visible'},
+      8:{cellWidth:60, overflow:'visible'},
+      9:{cellWidth:43, overflow:'visible'},
+      10:{cellWidth:88}
+    },
+    margin:{ left:18, right:18 },
   });
 
   const fname = 'folga_de_campo_' + new Date().toISOString().slice(0,10) + '.pdf';
