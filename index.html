@@ -3711,7 +3711,7 @@ html.g360-ui-ready .content-col {
         </section>
           </div>
         </div>
-        <section class="panel fc-dev-panel" id="g360FcProgramacoesPanel"><div class="g360-reemb-table-head"><div><h2>Folgas de Campo cadastradas</h2><div class="g360-reemb-sub">Folgas cadastradas na competência selecionada. Use ✏️ Editar para alterar os dados ou 🗑 Excluir para remover a folga e suas despesas vinculadas.</div></div><div class="fc-dev-export-box" style="display:flex;flex-direction:column;align-items:flex-end;gap:7px"><span class="fc-dev-export-label" style="font-weight:800">RESUMO DA COMPETÊNCIA</span><div style="display:flex;gap:8px"><button type="button" class="btn-primary" id="g360FcProgPdfComp" title="Gerar PDF do Resumo da Competência">PDF</button><button type="button" class="btn-primary" id="g360FcProgExcelComp" title="Gerar Excel do Resumo da Competência">EXCEL</button></div></div></div><div class="table-scroll"><table><thead><tr><th>Colaborador</th><th>Período da folga</th><th>Retorno</th><th>Cidade / UF</th><th>KM</th><th>Periodicidade</th><th>Total</th><th>Ações</th></tr></thead><tbody id="g360FcProgramacoesBody"><tr><td colspan="8"><div class="empty-state">Carregando programações...</div></td></tr></tbody></table></div></section>
+        <section class="panel fc-dev-panel" id="g360FcProgramacoesPanel"><div class="g360-reemb-table-head"><div><h2>Folgas de Campo cadastradas</h2><div class="g360-reemb-sub">Folgas cadastradas na competência selecionada. Use ✏️ Editar para alterar os dados ou 🗑 Excluir para remover a folga e suas despesas vinculadas.</div></div><div class="fc-dev-export-box" style="display:flex;flex-direction:column;align-items:flex-end;gap:7px"><span class="fc-dev-export-label" style="font-weight:800">RESUMO DA COMPETÊNCIA</span><div style="display:flex;gap:8px"><button type="button" class="btn-primary" id="g360FcProgPdfComp" title="Gerar PDF do Resumo da Competência">PDF</button><button type="button" class="btn-primary" id="g360FcProgExcelComp" title="Gerar Excel do Resumo da Competência">EXCEL</button><button type="button" class="btn-primary" id="g360FcFormularioFinal" title="Geral + Resumo + Simulação + Termo assinado, por funcionário">FORMULÁRIO FINAL</button><button type="button" class="btn-primary" id="g360FcTodosTermos" title="Gerar todos os Termos de Concessão sem assinatura para coleta de assinaturas">TODOS OS TERMOS</button></div></div></div><div class="table-scroll"><table><thead><tr><th>Colaborador</th><th>Período da folga</th><th>Retorno</th><th>Cidade / UF</th><th>KM</th><th>Periodicidade</th><th>Total</th><th>Ações</th></tr></thead><tbody id="g360FcProgramacoesBody"><tr><td colspan="8"><div class="empty-state">Carregando programações...</div></td></tr></tbody></table></div></section>
         <section class="panel fc-dev-panel" id="g360FcResumoCompetenciaPanel" style="display:none!important"><div class="g360-reemb-table-head"><div><h2>Resumo da competência</h2><div class="g360-reemb-sub">Consolidado por colaborador. 📈 relatório de despesas · 📝 Termo de Concessão de Folga de Campo.</div></div><div class="fc-dev-export-box"><span class="fc-dev-export-label">Exportar</span><button type="button" class="clear-btn fc-dev-export-icon" id="g360FcDevExcelComp" title="Excel" aria-label="Exportar Excel">📊</button></div></div><div class="table-scroll"><table><thead><tr><th class="fc-dev-summary-colab-head"><div class="fc-dev-summary-head-wrap"><span class="fc-dev-summary-export-head">Exportar</span><span class="fc-dev-summary-name-head">Colaborador</span></div></th><th>Função</th><th>Qtd. despesas</th><th>Total</th><th>Ações</th></tr></thead><tbody id="g360FcDevResumoBody"></tbody></table></div></section>
         <div id="g360FcExportFilterModal" class="fc-dev-modal" aria-hidden="true">
  <div class="fc-dev-modal-card" style="max-width:720px">
@@ -21654,7 +21654,7 @@ async function loadMeta(){const c=selectedColab();if(!c||!currentMonth){fillMeta
 function calcReturn(){const fim=$('g360FcDevDataFim')?.value||'';$('g360FcDevDataRetorno').value=fim?addDaysISO(fim,1):''}
 async function saveMeta(extra={},opts={}){const c=selectedColab();if(!currentMonth)throw new Error('Selecione uma competência.');if(!c)throw new Error('Selecione o colaborador.');const ini=$('g360FcDevDataIni').value,fim=$('g360FcDevDataFim').value,ret=fim?addDaysISO(fim,1):'',km=Number($('g360FcDevKm').value||0),ufResid=String($('g360FcDevResidUf')?.value||'').trim().toUpperCase(),cidadeResid=String($('g360FcDevResidCidade')?.value||'').trim().toUpperCase();if(!opts.allowPartial){if(!ini||!fim)throw new Error('Informe o período da baixada.');if(fim<ini)throw new Error('A data final não pode ser anterior à data inicial.');if(!(km>0))throw new Error('Informe a distância em km.');if(!ufResid||!cidadeResid)throw new Error('Informe a UF e a cidade da residência.')}const dias=ini&&fim?calcDays(ini,fim):null;const row={obra_id:obraId(),cidade_residencia:cidadeResid||null,uf_residencia:ufResid||null,colaborador_id:c.id,matricula:String(c.matricula||''),colaborador_nome:String(c.nome||'').toUpperCase(),competencia:compDate(currentMonth),data_inicio:ini||null,data_saida:ini||null,data_fim:fim||null,data_retorno:ret||null,distancia_km:km>0?km:null,dias,status:'PROGRAMADA',incluido:true,tipo_folga:'PROGRAMADA',updated_at:new Date().toISOString(),...extra};let existing=currentMeta?.id?{data:{id:currentMeta.id}}:await sb().from('folga_campo').select('id').eq('obra_id',obraId()).eq('colaborador_id',c.id).eq('competencia',compDate(currentMonth)).order('created_at',{ascending:false}).limit(1).maybeSingle();if(existing.error)throw existing.error;let r;if(existing.data?.id)r=await sb().from('folga_campo').update(row).eq('id',existing.data.id);else r=await sb().from('folga_campo').insert(row).select().single();if(r.error)throw r.error;await loadMeta();return currentMeta}
 async function saveMetaClick(){const b=$('g360FcDevSalvarDados');try{if(b){b.disabled=true;b.textContent='⏳ Salvando...'}await saveMeta();if(b){b.textContent='✓ Salvo';await new Promise(r=>setTimeout(r,350))}}catch(e){alert(e?.message||e)}finally{if(b){b.disabled=false;b.textContent=currentMeta?.id?'💾 SALVAR ALTERAÇÕES':'💾 SALVAR DADOS DA FOLGA'}}}
-async function openTermForPerson(key){
+async function openTermForPerson(key,returnBytes=false){
  try{
   if(!currentMonth)return alert('Selecione uma competência.');
   const c=colabs.find(x=>String(x.id)===String(key))||null;
@@ -21724,8 +21724,8 @@ async function openTermForPerson(key){
   doc.setDrawColor(90);doc.line(ML+8,y,ML+78,y);doc.line(PW-MR-78,y,PW-MR-8,y);
   doc.setFontSize(8);doc.text('Assinatura do Empregado(a)',ML+43,y+5,{align:'center'});doc.text('Gestor da Obra',PW-MR-43,y+5,{align:'center'});
 
-  doc.save(`Termo_Folga_de_Campo_${nome.replace(/[^A-Za-z0-9À-ÿ]+/g,'_')}_${currentMonth}.pdf`);
- }catch(e){console.error('TERMO FOLGA:',e);alert('Não foi possível gerar o Termo de Concessão: '+(e?.message||e))}
+  if(returnBytes)return doc.output('arraybuffer');doc.save(`Termo_Folga_de_Campo_${nome.replace(/[^A-Za-z0-9À-ÿ]+/g,'_')}_${currentMonth}.pdf`);
+ }catch(e){console.error('TERMO FOLGA:',e);if(returnBytes)throw e;alert('Não foi possível gerar o Termo de Concessão: '+(e?.message||e))}
 }
 
 let g360FcExportSetoresV3=null,g360FcExportModeV2=null;
@@ -21772,15 +21772,137 @@ async function fcProgExcel(){
   const ws=XLSX.utils.aoa_to_sheet(a);ws['!cols']=[{wch:12},{wch:38},{wch:30},{wch:14},{wch:25},{wch:24},{wch:14},{wch:25},{wch:18},{wch:25},{wch:20},{wch:15}];ws['!merges']=[XLSX.utils.decode_range('A1:L1'),XLSX.utils.decode_range('A5:L5')];for(let r=6;r<a.length;r++){const c=XLSX.utils.encode_cell({r,c:11});if(ws[c])ws[c].z='R$ #,##0.00'}XLSX.utils.book_append_sheet(wb,ws,'PROGRAMAÇÃO DE BAIXADA');XLSX.writeFile(wb,`PROGRAMACAO_DE_BAIXADA_${currentMonth}.xlsx`);
  }catch(e){console.error('[Folga resumo Excel]',e);alert('Erro ao gerar Excel: '+(e?.message||e));}
 }
-async function fcProgPdf(){
+async function fcProgPdf(returnBytes=false){
  try{
   if(!window.jspdf?.jsPDF)throw new Error('Biblioteca PDF não carregada.');
   const d=await fcProgDadosCompetencia(),{jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'}),PW=doc.internal.pageSize.getWidth(),comp=compLabel(currentMonth),total=d.reduce((s,x)=>s+Number(x.valor||0),0);
   try{if(typeof CCL_LOGO_B64!=='undefined')doc.addImage(CCL_LOGO_B64,'PNG',10,7,30,14)}catch(_){}
   doc.setFont('helvetica','bold');doc.setFontSize(11);doc.text('FORMULÁRIO DE SOLICITAÇÃO DE RECURSOS PAGO EM FOLHA P/ FOLGA DE CAMPO',PW/2,13,{align:'center'});doc.setFontSize(7.5);doc.text('CENTRO DE CUSTO: 202',10,23);doc.text('OBRA: IMPLANTAÇÃO AURIVERDE',10,28);doc.text('FOLHA DE PAGTO: '+comp,10,33);doc.text('IDENTIFIC.: SR-01   |   VERSÃO: V-01',PW-10,23,{align:'right'});doc.setFontSize(9);doc.text('RELAÇÃO DE COLABORADORES',PW/2,40,{align:'center'});
   doc.autoTable({startY:44,margin:{left:6,right:6,bottom:14},head:[['MATRÍCULA','NOME','FUNÇÃO','ADMISSÃO','CIDADE RESIDÊNCIA','PERÍODO BAIXADA','DIAS','ÚLTIMA BAIXADA','PERÍODO IDEAL','PERÍODO PROGRAMADO','OBSERVAÇÕES','VALOR']],body:d.map(x=>[x.matricula,x.nome,x.funcao,x.admissao,x.cidade,x.periodo,x.dias,x.ultima,x.ideal,x.programado,x.obs,brl(x.valor)]),foot:[['','','','','','','','','','','TOTAL',brl(total)]],theme:'grid',styles:{font:'helvetica',fontSize:5.2,cellPadding:1.1,textColor:[15,15,15],lineColor:[70,70,70],lineWidth:.1,valign:'middle'},headStyles:{fillColor:[245,197,24],textColor:[0,0,0],fontStyle:'bold',halign:'center'},footStyles:{fillColor:[235,235,235],textColor:[0,0,0],fontStyle:'bold'},columnStyles:{0:{cellWidth:14},1:{cellWidth:34},2:{cellWidth:28},3:{cellWidth:15},4:{cellWidth:25},5:{cellWidth:24},6:{cellWidth:10,halign:'center'},7:{cellWidth:24},8:{cellWidth:17},9:{cellWidth:24},10:{cellWidth:20},11:{cellWidth:18,halign:'right'}},showHead:'everyPage'});
-  doc.save(`PROGRAMACAO_DE_BAIXADA_${currentMonth}.pdf`);
+  if(returnBytes)return doc.output('arraybuffer');doc.save(`PROGRAMACAO_DE_BAIXADA_${currentMonth}.pdf`);
  }catch(e){console.error('[Folga resumo PDF]',e);alert('Erro ao gerar PDF: '+(e?.message||e));}
+}
+
+async function g360FcAnexarTermoAssinado(colaboradorId,folgaId,btn){
+ try{
+  if(!currentMonth)return alert('Selecione uma competência.');
+  const input=document.createElement('input');input.type='file';input.accept='application/pdf';input.style.display='none';document.body.appendChild(input);
+  input.onchange=async()=>{
+   const file=input.files?.[0];if(!file){input.remove();return}
+   const old=btn?.textContent||'📎';
+   try{
+    if(file.type!=='application/pdf')throw new Error('O Termo Assinado deve estar em PDF.');
+    if(file.size>50*1024*1024)throw new Error('O PDF ultrapassa 50 MB.');
+    if(btn){btn.disabled=true;btn.textContent='⏳'}
+    const client=sb(),sess=(await client.auth.getSession()).data?.session;if(!sess)throw new Error('Sessão expirada.');
+    const oid=obraId(),comp=compDate(currentMonth);
+    const safe=file.name.replace(/[^A-Za-z0-9._-]+/g,'_'),path=`${oid}/${colaboradorId}/${Date.now()}_${safe}`;
+    const up=await client.storage.from('folga-campo-termos-assinados').upload(path,file,{contentType:'application/pdf',upsert:false});if(up.error)throw up.error;
+    const ins=await client.from('folga_campo_termos_assinados').insert({
+      obra_id:oid,folga_campo_id:folgaId,colaborador_id:colaboradorId,competencia:comp,
+      arquivo_nome:file.name,arquivo_path:path,arquivo_tipo:'application/pdf',arquivo_tamanho:file.size,created_by:sess.user.id
+    });
+    if(ins.error){await client.storage.from('folga-campo-termos-assinados').remove([path]);throw ins.error}
+    if(btn){btn.textContent='✅';btn.title='Termo assinado anexado. Clique para substituir por outro PDF.'}
+    alert('Termo assinado anexado com sucesso.');
+   }catch(e){console.error('[TERMO ASSINADO]',e);alert('Erro ao anexar Termo Assinado: '+(e?.message||e));if(btn)btn.textContent=old}
+   finally{if(btn)btn.disabled=false;input.remove()}
+  };
+  input.click();
+ }catch(e){console.error(e);alert(e?.message||e)}
+}
+
+
+async function g360FcTodosTermos(){
+ const btn=$('g360FcTodosTermos'),label=btn?.textContent||'TODOS OS TERMOS';
+ try{
+  if(!currentMonth)throw new Error('Selecione uma competência.');
+  if(!window.PDFLib?.PDFDocument)throw new Error('Biblioteca PDF-Lib não carregada.');
+  const client=sb(),oid=obraId(),comp=compDate(currentMonth);
+  if(btn){btn.disabled=true;btn.textContent='PREPARANDO...'}
+  let q=client.from('folga_campo').select('id,colaborador_id,colaborador_nome').eq('competencia',comp).order('colaborador_nome');
+  if(oid)q=q.eq('obra_id',oid);
+  const r=await q;if(r.error)throw r.error;
+  const folgas=(r.data||[]).filter(x=>x.colaborador_id);
+  if(!folgas.length)throw new Error('Não há Folgas de Campo cadastradas nesta competência.');
+
+  const finalPdf=await PDFLib.PDFDocument.create();
+  for(let i=0;i<folgas.length;i++){
+   const f=folgas[i];
+   if(btn)btn.textContent=`${i+1}/${folgas.length} · ${String(f.colaborador_nome||'TERMO').split(' ')[0]}`;
+   const bytes=await openTermForPerson(String(f.colaborador_id),true);
+   if(!bytes)throw new Error(`Não foi possível gerar o termo de ${f.colaborador_nome}.`);
+   const src=await PDFLib.PDFDocument.load(bytes),pages=await finalPdf.copyPages(src,src.getPageIndices());
+   pages.forEach(pg=>finalPdf.addPage(pg));
+  }
+  if(btn)btn.textContent='FINALIZANDO...';
+  const bytes=await finalPdf.save(),blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=`TODOS_OS_TERMOS_FOLGA_DE_CAMPO_${currentMonth}.pdf`;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
+ }catch(e){console.error('[TODOS OS TERMOS]',e);alert('Erro ao gerar TODOS OS TERMOS:\n'+(e?.message||e))}
+ finally{if(btn){btn.disabled=false;btn.textContent=label}}
+}
+
+async function g360FcFormularioFinal(){
+ const btn=$('g360FcFormularioFinal'),label=btn?.textContent||'FORMULÁRIO FINAL';
+ try{
+  if(!currentMonth)throw new Error('Selecione uma competência.');
+  if(!window.PDFLib?.PDFDocument)throw new Error('Biblioteca PDF-Lib não carregada.');
+  const client=sb(),oid=obraId(),comp=compDate(currentMonth);
+  if(btn){btn.disabled=true;btn.textContent='VERIFICANDO...'}
+
+  let fq=client.from('folga_campo').select('id,colaborador_id,colaborador_nome').eq('competencia',comp).order('colaborador_nome');
+  if(oid)fq=fq.eq('obra_id',oid);
+  const fr=await fq;if(fr.error)throw fr.error;
+  const folgas=(fr.data||[]).filter(x=>x.colaborador_id);
+  if(!folgas.length)throw new Error('Não há Folgas de Campo cadastradas nesta competência.');
+
+  const ids=folgas.map(x=>x.id);
+  let iq=client.from('folga_campo_importacoes').select('folga_campo_id,simulacao_pdf_path,created_at').in('folga_campo_id',ids).not('simulacao_pdf_path','is',null).order('created_at',{ascending:false});
+  if(oid)iq=iq.eq('obra_id',oid);
+  const ir=await iq;if(ir.error)throw ir.error;
+  const sim=new Map();(ir.data||[]).forEach(x=>{if(x.simulacao_pdf_path&&!sim.has(String(x.folga_campo_id)))sim.set(String(x.folga_campo_id),x.simulacao_pdf_path)});
+
+  let tq=client.from('folga_campo_termos_assinados').select('folga_campo_id,arquivo_path,created_at').in('folga_campo_id',ids).order('created_at',{ascending:false});
+  if(oid)tq=tq.eq('obra_id',oid);
+  const tr=await tq;if(tr.error)throw tr.error;
+  const termos=new Map();(tr.data||[]).forEach(x=>{if(x.arquivo_path&&!termos.has(String(x.folga_campo_id)))termos.set(String(x.folga_campo_id),x.arquivo_path)});
+
+  const faltas=[];
+  folgas.forEach(f=>{const m=[];if(!sim.has(String(f.id)))m.push('simulação');if(!termos.has(String(f.id)))m.push('termo assinado');if(m.length)faltas.push(`${f.colaborador_nome}: ${m.join(' e ')}`)});
+  if(faltas.length)throw new Error('FORMULÁRIO FINAL incompleto.\n\n'+faltas.join('\n'));
+
+  const finalPdf=await PDFLib.PDFDocument.create();
+  async function append(bytes){
+   const src=await PDFLib.PDFDocument.load(bytes),pages=await finalPdf.copyPages(src,src.getPageIndices());
+   pages.forEach(pg=>finalPdf.addPage(pg));
+  }
+  async function storagePdf(bucket,path,nome){
+   const d=await client.storage.from(bucket).download(path);
+   if(d.error)throw new Error(`Não foi possível carregar ${nome}: ${d.error.message}`);
+   return await d.data.arrayBuffer();
+  }
+
+  // 1º: relatório GERAL da competência.
+  if(btn)btn.textContent='GERAL...';
+  await append(await fcProgPdf(true));
+
+  // Depois, em ordem alfabética: RESUMO + SIMULAÇÃO + TERMO ASSINADO.
+  for(let i=0;i<folgas.length;i++){
+   const f=folgas[i],key=String(f.colaborador_id),nome=String(f.colaborador_nome||'COLABORADOR').toUpperCase();
+   if(btn)btn.textContent=`${i+1}/${folgas.length} · RESUMO`;
+   const resumo=await exportPdfPessoa(key,true);if(!resumo)throw new Error(`Resumo não localizado para ${nome}.`);await append(resumo);
+   if(btn)btn.textContent=`${i+1}/${folgas.length} · SIMULAÇÃO`;
+   await append(await storagePdf('folga-campo-documentos',sim.get(String(f.id)),`a simulação de ${nome}`));
+   if(btn)btn.textContent=`${i+1}/${folgas.length} · TERMO`;
+   await append(await storagePdf('folga-campo-termos-assinados',termos.get(String(f.id)),`o Termo Assinado de ${nome}`));
+  }
+
+  if(btn)btn.textContent='FINALIZANDO...';
+  const bytes=await finalPdf.save(),blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=`FORMULARIO_FINAL_FOLGA_DE_CAMPO_${currentMonth}.pdf`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+ }catch(e){console.error('[FORMULÁRIO FINAL]',e);alert('Erro ao gerar FORMULÁRIO FINAL:\n'+(e?.message||e))}
+ finally{if(btn){btn.disabled=false;btn.textContent=label}}
 }
 
 function openCompModal(){const m=$('g360FcDevCompModal');if(!m)return;const now=new Date(),next=currentMonth&&/^\d{4}-\d{2}$/.test(currentMonth)?(()=>{let[y,mo]=currentMonth.split('-').map(Number);mo++;if(mo>12){mo=1;y++}return[y,String(mo).padStart(2,'0')]})():[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0')];$('g360FcDevCompMes').value=next[1];$('g360FcDevCompAno').value=next[0];m.classList.add('open');m.setAttribute('aria-hidden','false')}
@@ -21843,9 +21965,9 @@ async function exportPdfPessoa(key,returnBytes=false){const pr=rows.filter(r=>St
   if(n&&oc&&dc) return `PASSAGEM RODOVIÁRIA - TRECHO ${n} - ${oc}${ou?'/'+ou:''} > ${dc}${du?'/'+du:''}`;
   return String(r.descricao||'').replace(/\s*!['’]?\s*/g,' > ').replace(/\s*[→➜➡]\s*/g,' > ').replace(/\s+/g,' ').trim().toUpperCase();
 };
-const prep=pr.map(r=>{const d=doc.splitTextToSize(pdfDesc(r),widths[1]-10).slice(0,3),lines=Math.max(1,d.length);return{r,d,rowH:lines===1?25:(lines===2?36:47)}}),bodyH=prep.reduce((sum,x)=>sum+x.rowH,0);doc.setFillColor(...peach);doc.rect(left,tableY,fullW,headH,'FD');doc.rect(left,tableY+headH,fullW,bodyH);for(let i=1;i<xs.length-1;i++)doc.line(xs[i],tableY,xs[i],tableY+headH+bodyH);doc.setFont('helvetica','bold');doc.setFontSize(8.4);['ITEM','DESCRIÇÃO','VALOR'].forEach((h,i)=>doc.text(h,(xs[i]+xs[i+1])/2,tableY+20,{align:'center'}));doc.setFont('helvetica','normal');doc.setFontSize(bodyFont);if(typeof doc.setCharSpace==='function')doc.setCharSpace(0);let y=tableY+headH;prep.forEach(({r,d,rowH},i)=>{const cy=y+rowH/2+bodyFont*.32;if(i>0){doc.setLineWidth(.15);doc.line(left,y,left+fullW,y)}doc.text(String(i+1).padStart(2,'0'),(xs[0]+xs[1])/2,cy,{align:'center'});const ls=bodyFont+2;if(typeof doc.setCharSpace==='function')doc.setCharSpace(0);doc.text(d,xs[1]+5,cy-((d.length-1)*ls/2));doc.text('R$',xs[2]+5,cy);doc.text(fmtMoney(r.valor),xs[3]-5,cy,{align:'right'});y+=rowH});const total=pr.reduce((sum,r)=>sum+Number(r.valor||0),0),ty=tableY+headH+bodyH;doc.setLineWidth(.3);doc.rect(xs[2],ty,widths[2],28);doc.setFont('helvetica','bold');doc.text('R$',xs[2]+5,ty+18);doc.text(fmtMoney(total),xs[3]-5,ty+18,{align:'right'});doc.save(`folga_campo_${String(nome).replace(/[^A-Za-z0-9À-ÿ]+/g,'_')}_${currentMonth}.pdf`)}
+const prep=pr.map(r=>{const d=doc.splitTextToSize(pdfDesc(r),widths[1]-10).slice(0,3),lines=Math.max(1,d.length);return{r,d,rowH:lines===1?25:(lines===2?36:47)}}),bodyH=prep.reduce((sum,x)=>sum+x.rowH,0);doc.setFillColor(...peach);doc.rect(left,tableY,fullW,headH,'FD');doc.rect(left,tableY+headH,fullW,bodyH);for(let i=1;i<xs.length-1;i++)doc.line(xs[i],tableY,xs[i],tableY+headH+bodyH);doc.setFont('helvetica','bold');doc.setFontSize(8.4);['ITEM','DESCRIÇÃO','VALOR'].forEach((h,i)=>doc.text(h,(xs[i]+xs[i+1])/2,tableY+20,{align:'center'}));doc.setFont('helvetica','normal');doc.setFontSize(bodyFont);if(typeof doc.setCharSpace==='function')doc.setCharSpace(0);let y=tableY+headH;prep.forEach(({r,d,rowH},i)=>{const cy=y+rowH/2+bodyFont*.32;if(i>0){doc.setLineWidth(.15);doc.line(left,y,left+fullW,y)}doc.text(String(i+1).padStart(2,'0'),(xs[0]+xs[1])/2,cy,{align:'center'});const ls=bodyFont+2;if(typeof doc.setCharSpace==='function')doc.setCharSpace(0);doc.text(d,xs[1]+5,cy-((d.length-1)*ls/2));doc.text('R$',xs[2]+5,cy);doc.text(fmtMoney(r.valor),xs[3]-5,cy,{align:'right'});y+=rowH});const total=pr.reduce((sum,r)=>sum+Number(r.valor||0),0),ty=tableY+headH+bodyH;doc.setLineWidth(.3);doc.rect(xs[2],ty,widths[2],28);doc.setFont('helvetica','bold');doc.text('R$',xs[2]+5,ty+18);doc.text(fmtMoney(total),xs[3]-5,ty+18,{align:'right'});if(returnBytes)return doc.output('arraybuffer');doc.save(`folga_campo_${String(nome).replace(/[^A-Za-z0-9À-ÿ]+/g,'_')}_${currentMonth}.pdf`)}
 function sheetName(s,used){let n=String(s||'Pessoa').replace(/[\\\/?*\[\]:]/g,' ').replace(/\s+/g,' ').trim().slice(0,31)||'Pessoa',base=n,i=2;while(used.has(n))n=(base.slice(0,27)+' '+i++).slice(0,31);used.add(n);return n}function exportExcel(){if(!rows.length)return alert('Não há despesas nesta competência.');if(!window.XLSX?.utils)return alert('Biblioteca Excel não carregada.');const wb=XLSX.utils.book_new(),used=new Set(),groups={};rows.forEach(r=>{const k=String(r.colaborador_id||r.colaborador_nome);if(!groups[k])groups[k]={nome:r.colaborador_nome,funcao:r.funcao||'',itens:[]};groups[k].itens.push(r)});const pessoas=Object.values(groups).sort((a,b)=>String(a.nome).localeCompare(String(b.nome),'pt-BR')),geral=[['DETALHAMENTO DE DESPESAS - FOLGA DE CAMPO'],[],['ORDEM','NOME COLABORADOR','FUNÇÃO','VALOR'],...pessoas.map((g,i)=>[String(i+1).padStart(2,'0'),g.nome,g.funcao,g.itens.reduce((sum,r)=>sum+Number(r.valor||0),0)])];let ws=XLSX.utils.aoa_to_sheet(geral);ws['!cols']=[{wch:10},{wch:40},{wch:34},{wch:16}];XLSX.utils.book_append_sheet(wb,ws,'RELATORIO GERAL');used.add('RELATORIO GERAL');pessoas.forEach(g=>{const itens=[...g.itens],a=[['DETALHAMENTO DE DESPESAS - FOLGA DE CAMPO'],[],['NOME:',g.nome,'FUNÇÃO',g.funcao],[],['ITEM','DESCRIÇÃO','CATEGORIA','VALOR'],...itens.map((r,i)=>[String(i+1).padStart(2,'0'),r.descricao,r.categoria||'',Number(r.valor||0)])],sh=XLSX.utils.aoa_to_sheet(a);sh['!cols']=[{wch:9},{wch:70},{wch:20},{wch:16}];XLSX.utils.book_append_sheet(wb,sh,sheetName(g.nome,used))});XLSX.writeFile(wb,`PAGAMENTO_FOLGA_CAMPO_${currentMonth}.xlsx`)}
-async function init(){if(!$('g360FcDevCompButtons')||!sb())return;initFcResidUf();initFcOrigemUf();initFcDestinoUf();clearForm();try{await Promise.all([loadColabs(),loadComps('')]);await loadRows();await loadMeta();await loadFolgaSuggestion()}catch(e){console.error(e);alert('Falha ao carregar Folga de Campo: '+(e?.message||e))}setTimeout(()=>window.g360FcProgramacoesV330?.init?.(),0);const bind=(id,fn)=>{const el=$(id);if(el&&!el.dataset.fcdevBound){el.dataset.fcdevBound='1';el.addEventListener('click',fn)}};bind('g360FcDevAbrirComp',openCompModal);bind('g360FcDevCompConfirmar',confirmOpenComp);bind('g360FcDevCompCancelar',closeCompModal);bind('g360FcDevCompCancelarX',closeCompModal);bind('g360FcDevAdicionar',addExtra);bind('g360FcDevAddTrecho',addTrecho);bind('g360FcDevLimpar',clearForm);bind('g360FcDevExcelComp',exportExcel);bind('g360FcProgExcelComp',()=>g360FcOpenExportFilter('excel'));bind('g360FcProgPdfComp',()=>g360FcOpenExportFilter('pdf'));bind('g360FcExportFilterX',g360FcCloseExportFilter);bind('g360FcExportCancelar',g360FcCloseExportFilter);bind('g360FcExportTodos',()=>document.querySelectorAll('#g360FcExportFilterLista input[type="checkbox"]').forEach(x=>x.checked=true));bind('g360FcExportNenhum',()=>document.querySelectorAll('#g360FcExportFilterLista input[type="checkbox"]').forEach(x=>x.checked=false));bind('g360FcExportGerar',g360FcRunFilteredExport);bind('g360FcDevSalvarDados',saveMetaClick);bind('g360FcRelSugestoes',gerarRelatorioSugestoes);bind('g360FcRelSugestoes2',gerarRelatorioSugestoes2);const modal=$('g360FcDevCompModal');if(modal&&!modal.dataset.fcdevBound){modal.dataset.fcdevBound='1';modal.addEventListener('click',e=>{if(e.target===modal)closeCompModal()})}const ps=$('g360FcDevColab');if(ps&&!ps.dataset.fcdevBound){ps.dataset.fcdevBound='1';ps.onchange=async()=>{render();updateTrechoResumo();await Promise.all([loadMeta(),loadFolgaSuggestion()])}};const tipo=$('g360FcDevTipoExtra');if(tipo&&!tipo.dataset.fcdevBound){tipo.dataset.fcdevBound='1';tipo.onchange=syncExtraFields};const fim=$('g360FcDevDataFim');if(fim&&!fim.dataset.fcdevBound){fim.dataset.fcdevBound='1';fim.addEventListener('change',calcReturn)};['g360FcDevOrigemCidade','g360FcDevOrigemUf','g360FcDevDestinoCidade','g360FcDevDestinoUf'].forEach(id=>{const el=$(id);if(el&&!el.dataset.fcdevBound){el.dataset.fcdevBound='1';el.addEventListener('input',updateTrechoResumo)}});const ocSel=$('g360FcDevOrigemCidade');if(ocSel&&!ocSel.dataset.fcOrigemCidadeBound){ocSel.dataset.fcOrigemCidadeBound='1';ocSel.addEventListener('change',updateTrechoResumo)};const dcSel=$('g360FcDevDestinoCidade');if(dcSel&&!dcSel.dataset.fcDestinoCidadeBound){dcSel.dataset.fcDestinoCidadeBound='1';dcSel.addEventListener('change',updateTrechoResumo)};syncExtraFields();updateTrechoResumo()}
+async function init(){if(!$('g360FcDevCompButtons')||!sb())return;initFcResidUf();initFcOrigemUf();initFcDestinoUf();clearForm();try{await Promise.all([loadColabs(),loadComps('')]);await loadRows();await loadMeta();await loadFolgaSuggestion()}catch(e){console.error(e);alert('Falha ao carregar Folga de Campo: '+(e?.message||e))}setTimeout(()=>window.g360FcProgramacoesV330?.init?.(),0);const bind=(id,fn)=>{const el=$(id);if(el&&!el.dataset.fcdevBound){el.dataset.fcdevBound='1';el.addEventListener('click',fn)}};bind('g360FcDevAbrirComp',openCompModal);bind('g360FcDevCompConfirmar',confirmOpenComp);bind('g360FcDevCompCancelar',closeCompModal);bind('g360FcDevCompCancelarX',closeCompModal);bind('g360FcDevAdicionar',addExtra);bind('g360FcDevAddTrecho',addTrecho);bind('g360FcDevLimpar',clearForm);bind('g360FcDevExcelComp',exportExcel);bind('g360FcProgExcelComp',()=>g360FcOpenExportFilter('excel'));bind('g360FcProgPdfComp',()=>g360FcOpenExportFilter('pdf'));bind('g360FcFormularioFinal',g360FcFormularioFinal);bind('g360FcTodosTermos',g360FcTodosTermos);bind('g360FcExportFilterX',g360FcCloseExportFilter);bind('g360FcExportCancelar',g360FcCloseExportFilter);bind('g360FcExportTodos',()=>document.querySelectorAll('#g360FcExportFilterLista input[type="checkbox"]').forEach(x=>x.checked=true));bind('g360FcExportNenhum',()=>document.querySelectorAll('#g360FcExportFilterLista input[type="checkbox"]').forEach(x=>x.checked=false));bind('g360FcExportGerar',g360FcRunFilteredExport);bind('g360FcDevSalvarDados',saveMetaClick);bind('g360FcRelSugestoes',gerarRelatorioSugestoes);bind('g360FcRelSugestoes2',gerarRelatorioSugestoes2);const modal=$('g360FcDevCompModal');if(modal&&!modal.dataset.fcdevBound){modal.dataset.fcdevBound='1';modal.addEventListener('click',e=>{if(e.target===modal)closeCompModal()})}const ps=$('g360FcDevColab');if(ps&&!ps.dataset.fcdevBound){ps.dataset.fcdevBound='1';ps.onchange=async()=>{render();updateTrechoResumo();await Promise.all([loadMeta(),loadFolgaSuggestion()])}};const tipo=$('g360FcDevTipoExtra');if(tipo&&!tipo.dataset.fcdevBound){tipo.dataset.fcdevBound='1';tipo.onchange=syncExtraFields};const fim=$('g360FcDevDataFim');if(fim&&!fim.dataset.fcdevBound){fim.dataset.fcdevBound='1';fim.addEventListener('change',calcReturn)};['g360FcDevOrigemCidade','g360FcDevOrigemUf','g360FcDevDestinoCidade','g360FcDevDestinoUf'].forEach(id=>{const el=$(id);if(el&&!el.dataset.fcdevBound){el.dataset.fcdevBound='1';el.addEventListener('input',updateTrechoResumo)}});const ocSel=$('g360FcDevOrigemCidade');if(ocSel&&!ocSel.dataset.fcOrigemCidadeBound){ocSel.dataset.fcOrigemCidadeBound='1';ocSel.addEventListener('change',updateTrechoResumo)};const dcSel=$('g360FcDevDestinoCidade');if(dcSel&&!dcSel.dataset.fcDestinoCidadeBound){dcSel.dataset.fcDestinoCidadeBound='1';dcSel.addEventListener('change',updateTrechoResumo)};syncExtraFields();updateTrechoResumo()}
 window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRows();await loadMeta();await loadFolgaSuggestion()},exportPdfPessoa,openTermForPerson};/* PERFORMANCE: inicialização somente ao abrir Folga pelo menu */
 })();
 </script>
@@ -21929,9 +22051,10 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
   let dq=sb().from('folga_campo_despesas').select('colaborador_id,valor').eq('competencia',cp); if(oid)dq=dq.eq('obra_id',oid);
   const [r,d]=await Promise.all([q,dq]); if(r.error){body.innerHTML='<tr><td colspan="8"><div class="empty-state">'+esc(r.error.message)+'</div></td></tr>';return}
   const totals={}; (d.data||[]).forEach(x=>totals[String(x.colaborador_id)]=(totals[String(x.colaborador_id)]||0)+Number(x.valor||0));
-  const rows=r.data||[]; body.innerHTML=rows.length?rows.map(x=>{const per=periodicidadeById(x.colaborador_id)||'—';return `<tr><td><b>${esc(x.colaborador_nome||'—')}</b></td><td>${fmt(x.data_inicio)} a ${fmt(x.data_fim)}</td><td>${fmt(x.data_retorno)}</td><td>${esc([x.cidade_residencia,x.uf_residencia].filter(Boolean).join(' / ')||'—')}</td><td>${x.distancia_km??'—'}</td><td>${esc(per)}</td><td><b>${brl(totals[String(x.colaborador_id)]||0)}</b></td><td><div class="crud-row-actions"><button type="button" class="fc-dev-mini-action icon-only" data-fc-prog-pdf="${esc(x.colaborador_id)}" title="Resumo" aria-label="Resumo das despesas em PDF">📈</button><button type="button" class="fc-dev-mini-action term icon-only" data-fc-prog-termo="${esc(x.colaborador_id)}" title="Termo" aria-label="Termo de Concessão em PDF">📝</button><button type="button" class="crud-mini" data-fc-prog-edit="${esc(x.colaborador_id)}">✏️ Editar</button><button type="button" class="crud-mini danger" data-fc-prog-del="${esc(x.id)}" data-fc-prog-colab="${esc(x.colaborador_id)}">🗑 Excluir</button></div></td></tr>`}).join(''):'<tr><td colspan="8"><div class="empty-state">Nenhuma programação nesta competência.</div></td></tr>';
+  const rows=r.data||[]; body.innerHTML=rows.length?rows.map(x=>{const per=periodicidadeById(x.colaborador_id)||'—';return `<tr><td><b>${esc(x.colaborador_nome||'—')}</b></td><td>${fmt(x.data_inicio)} a ${fmt(x.data_fim)}</td><td>${fmt(x.data_retorno)}</td><td>${esc([x.cidade_residencia,x.uf_residencia].filter(Boolean).join(' / ')||'—')}</td><td>${x.distancia_km??'—'}</td><td>${esc(per)}</td><td><b>${brl(totals[String(x.colaborador_id)]||0)}</b></td><td><div class="crud-row-actions"><button type="button" class="fc-dev-mini-action icon-only" data-fc-prog-pdf="${esc(x.colaborador_id)}" title="Resumo" aria-label="Resumo das despesas em PDF">📈</button><button type="button" class="fc-dev-mini-action term icon-only" data-fc-prog-termo="${esc(x.colaborador_id)}" title="Gerar Termo" aria-label="Termo de Concessão em PDF">📝</button><button type="button" class="fc-dev-mini-action icon-only" data-fc-prog-termo-assinado="${esc(x.colaborador_id)}" data-fc-folga-id="${esc(x.id)}" title="Anexar Termo Assinado em PDF" aria-label="Anexar Termo Assinado">📎</button><button type="button" class="crud-mini" data-fc-prog-edit="${esc(x.colaborador_id)}">✏️ Editar</button><button type="button" class="crud-mini danger" data-fc-prog-del="${esc(x.id)}" data-fc-prog-colab="${esc(x.colaborador_id)}">🗑 Excluir</button></div></td></tr>`}).join(''):'<tr><td colspan="8"><div class="empty-state">Nenhuma programação nesta competência.</div></td></tr>';
   body.querySelectorAll('[data-fc-prog-pdf]').forEach(b=>b.onclick=()=>window.g360FolgaDevV274?.exportPdfPessoa?.(b.dataset.fcProgPdf));
   body.querySelectorAll('[data-fc-prog-termo]').forEach(b=>b.onclick=()=>window.g360FolgaDevV274?.openTermForPerson?.(b.dataset.fcProgTermo));
+  body.querySelectorAll('[data-fc-prog-termo-assinado]').forEach(b=>b.onclick=()=>g360FcAnexarTermoAssinado(b.dataset.fcProgTermoAssinado,b.dataset.fcFolgaId,b));
   body.querySelectorAll('[data-fc-prog-edit]').forEach(b=>b.onclick=()=>edit(b.dataset.fcProgEdit));
   body.querySelectorAll('[data-fc-prog-del]').forEach(b=>b.onclick=()=>del(b.dataset.fcProgDel,b.dataset.fcProgColab));
   })();
