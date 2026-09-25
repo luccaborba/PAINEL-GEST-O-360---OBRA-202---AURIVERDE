@@ -145,6 +145,7 @@ try{window.g360PrimeiroAcessoPendente()}catch(_){}})();</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs" type="module" id="g360PdfJsModule"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><style>
   :root{
@@ -3716,7 +3717,7 @@ html.g360-ui-ready .content-col {
         </section>
           </div>
         </div>
-        <section class="panel fc-dev-panel" id="g360FcProgramacoesPanel"><div class="g360-reemb-table-head"><div><h2>Folgas de Campo cadastradas</h2><div class="g360-reemb-sub">Folgas cadastradas na competência selecionada. Use ✏️ Editar para alterar os dados ou 🗑 Excluir para remover a folga e suas despesas vinculadas.</div></div><div class="fc-dev-export-box" style="display:flex;flex-direction:column;align-items:flex-end;gap:7px"><span class="fc-dev-export-label" style="font-weight:800">RESUMO DA COMPETÊNCIA</span><div style="display:flex;gap:8px"><button type="button" class="btn-primary" id="g360FcProgPdfComp" title="Gerar PDF do Resumo da Competência">PDF</button><button type="button" class="btn-primary" id="g360FcProgExcelComp" title="Gerar Excel do Resumo da Competência">EXCEL</button><button type="button" class="btn-primary" id="g360FcFormularioFinal" title="Geral + Resumo + Simulação + Termo assinado, por funcionário">FORMULÁRIO FINAL</button><button type="button" class="btn-primary" id="g360FcTodosTermos" title="Gerar todos os Termos de Concessão sem assinatura para coleta de assinaturas">TODOS OS TERMOS</button></div></div></div><div class="table-scroll"><table><thead><tr><th>Colaborador</th><th>Período da folga</th><th>Retorno</th><th>Cidade / UF</th><th>KM</th><th>Periodicidade</th><th>Total</th><th>Ações</th></tr></thead><tbody id="g360FcProgramacoesBody"><tr><td colspan="8"><div class="empty-state">Carregando programações...</div></td></tr></tbody></table></div></section>
+        <section class="panel fc-dev-panel" id="g360FcProgramacoesPanel"><div class="g360-reemb-table-head"><div><h2>Folgas de Campo cadastradas</h2><div class="g360-reemb-sub">Folgas cadastradas na competência selecionada. Use ✏️ Editar para alterar os dados ou 🗑 Excluir para remover a folga e suas despesas vinculadas.</div></div><div class="fc-dev-export-box" style="display:flex;flex-direction:column;align-items:flex-end;gap:7px"><span class="fc-dev-export-label" style="font-weight:800">RESUMO DA COMPETÊNCIA</span><div style="display:flex;gap:8px"><button type="button" class="btn-primary" id="g360FcProgPdfComp" title="Gerar PDF do Resumo da Competência">PDF</button><button type="button" class="btn-primary" id="g360FcProgExcelComp" title="Gerar Excel do Resumo da Competência">EXCEL</button><button type="button" class="btn-primary" id="g360FcFormularioFinal" title="Geral + Resumo + Simulação + Termo assinado, por funcionário">FORMULÁRIO FINAL</button><button type="button" class="btn-primary" id="g360FcTodosTermos" title="Gerar todos os Termos de Concessão sem assinatura para coleta de assinaturas">TODOS OS TERMOS</button><button type="button" class="btn-primary" id="g360FcImportarTermosLote" title="Enviar um único PDF com todos os termos assinados e separar por colaborador com IA">📎 IMPORTAR TERMOS ASSINADOS</button></div></div></div><div class="table-scroll"><table><thead><tr><th>Colaborador</th><th>Período da folga</th><th>Retorno</th><th>Cidade / UF</th><th>KM</th><th>Periodicidade</th><th>Total</th><th>Ações</th></tr></thead><tbody id="g360FcProgramacoesBody"><tr><td colspan="8"><div class="empty-state">Carregando programações...</div></td></tr></tbody></table></div></section>
         <section class="panel fc-dev-panel" id="g360FcResumoCompetenciaPanel" style="display:none!important"><div class="g360-reemb-table-head"><div><h2>Resumo da competência</h2><div class="g360-reemb-sub">Consolidado por colaborador. 📈 relatório de despesas · 📝 Termo de Concessão de Folga de Campo.</div></div><div class="fc-dev-export-box"><span class="fc-dev-export-label">Exportar</span><button type="button" class="clear-btn fc-dev-export-icon" id="g360FcDevExcelComp" title="Excel" aria-label="Exportar Excel">📊</button></div></div><div class="table-scroll"><table><thead><tr><th class="fc-dev-summary-colab-head"><div class="fc-dev-summary-head-wrap"><span class="fc-dev-summary-export-head">Exportar</span><span class="fc-dev-summary-name-head">Colaborador</span></div></th><th>Função</th><th>Qtd. despesas</th><th>Total</th><th>Ações</th></tr></thead><tbody id="g360FcDevResumoBody"></tbody></table></div></section>
         <div id="g360FcExportFilterModal" class="fc-dev-modal" aria-hidden="true">
  <div class="fc-dev-modal-card" style="max-width:720px">
@@ -21865,6 +21866,86 @@ async function g360FcTodosTermos(){
  finally{if(btn){btn.disabled=false;btn.textContent=label}}
 }
 
+
+let g360FcTlState={file:null,pdfBytes:null,pages:[],folgas:[],loteId:null};
+function g360FcTlOpen(){
+ const m=$('g360FcTermosLoteModal');if(!m)return;
+ g360FcTlState={file:null,pdfBytes:null,pages:[],folgas:[],loteId:null};
+ $('g360FcTlFile').value='';$('g360FcTlFileName').textContent='';$('g360FcTlStatus').textContent='Aguardando arquivo.';$('g360FcTlPreview').innerHTML='';
+ $('g360FcTlAnalyze').disabled=true;$('g360FcTlConfirm').style.display='none';m.classList.add('open');m.setAttribute('aria-hidden','false');
+}
+function g360FcTlClose(){const m=$('g360FcTermosLoteModal');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}}
+async function g360FcTlPdfToImages(bytes){
+ // PDF.js module is imported dynamically because the page uses classic scripts elsewhere.
+ const pdfjs=await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs');
+ pdfjs.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs';
+ const pdf=await pdfjs.getDocument({data:new Uint8Array(bytes)}).promise,out=[];
+ for(let i=1;i<=pdf.numPages;i++){
+  $('g360FcTlStatus').textContent=`Preparando página ${i} de ${pdf.numPages}...`;
+  const pg=await pdf.getPage(i),vp=pg.getViewport({scale:1.55}),cv=document.createElement('canvas'),cx=cv.getContext('2d');
+  cv.width=Math.ceil(vp.width);cv.height=Math.ceil(vp.height);await pg.render({canvasContext:cx,viewport:vp}).promise;
+  out.push(cv.toDataURL('image/jpeg',.82));
+ }
+ return out;
+}
+async function g360FcTlAnalyze(){
+ const file=g360FcTlState.file;if(!file)return;
+ const btn=$('g360FcTlAnalyze');
+ try{
+  btn.disabled=true;btn.textContent='⏳ IDENTIFICANDO...';$('g360FcTlStatus').textContent='Carregando colaboradores da competência...';
+  const client=sb(),oid=obraId(),comp=compDate(currentMonth);
+  let fq=client.from('folga_campo').select('id,colaborador_id,colaborador_nome,matricula').eq('competencia',comp).order('colaborador_nome');if(oid)fq=fq.eq('obra_id',oid);
+  const fr=await fq;if(fr.error)throw fr.error;
+  const folgas=fr.data||[];if(!folgas.length)throw new Error('Não há Folgas de Campo nesta competência.');
+  g360FcTlState.folgas=folgas;
+  const bytes=await file.arrayBuffer();g360FcTlState.pdfBytes=bytes;
+  const images=await g360FcTlPdfToImages(bytes);
+  $('g360FcTlStatus').textContent='IA identificando nome e matrícula em cada página...';
+  const payload={images:images.map((x,i)=>({pagina:i+1,data_url:x})),colaboradores:folgas.map(f=>({id:f.colaborador_id,nome:f.colaborador_nome,matricula:f.matricula}))};
+  const inv=await client.functions.invoke('identificar-termos-folga-lote',{body:payload});if(inv.error)throw inv.error;
+  if(inv.data?.error)throw new Error(inv.data.error);
+  const pages=Array.isArray(inv.data?.paginas)?inv.data.paginas:[];g360FcTlState.pages=pages;
+  const opts=folgas.map(f=>`<option value="${esc(f.colaborador_id)}">${esc(f.colaborador_nome)}${f.matricula?' · '+esc(f.matricula):''}</option>`).join('');
+  $('g360FcTlPreview').innerHTML=`<table class="fc-tl-table"><thead><tr><th>PÁGINA</th><th>LEITURA IA</th><th>COLABORADOR</th><th>CONFIANÇA</th></tr></thead><tbody>${images.map((_,i)=>{
+   const p=pages.find(x=>Number(x.pagina)===i+1)||{},id=p.colaborador_id||'',conf=Number(p.confianca||0),ok=id&&conf>=.75;
+   return `<tr><td>${i+1}</td><td>${esc(p.nome_lido||'Não identificado')}${p.matricula_lida?'<br>Matrícula: '+esc(p.matricula_lida):''}</td><td><select data-tl-page="${i+1}"><option value="">— NÃO VINCULAR —</option>${opts}</select></td><td class="${ok?'fc-tl-ok':'fc-tl-warn'}">${Math.round(conf*100)}%</td></tr>`
+  }).join('')}</tbody></table>`;
+  images.forEach((_,i)=>{const p=pages.find(x=>Number(x.pagina)===i+1)||{},sel=document.querySelector(`[data-tl-page="${i+1}"]`);if(sel&&p.colaborador_id)sel.value=String(p.colaborador_id)});
+  $('g360FcTlStatus').textContent=`${images.length} página(s) analisada(s). Confira os vínculos antes de confirmar.`;$('g360FcTlConfirm').style.display='';
+ }catch(e){console.error('[TERMOS LOTE IA]',e);$('g360FcTlStatus').textContent='Erro: '+(e?.message||e)}
+ finally{btn.disabled=false;btn.textContent='✨ IDENTIFICAR COM IA'}
+}
+async function g360FcTlConfirm(){
+ const btn=$('g360FcTlConfirm');
+ try{
+  const client=sb(),oid=obraId(),comp=compDate(currentMonth),file=g360FcTlState.file,bytes=g360FcTlState.pdfBytes,folgas=g360FcTlState.folgas;
+  if(!file||!bytes)throw new Error('Arquivo não carregado.');
+  const sels=[...document.querySelectorAll('[data-tl-page]')],chosen=sels.map(x=>({pagina:Number(x.dataset.tlPage),colaborador_id:x.value})).filter(x=>x.colaborador_id);
+  if(!chosen.length)throw new Error('Nenhuma página vinculada.');
+  const dup=chosen.map(x=>x.colaborador_id).filter((x,i,a)=>a.indexOf(x)!==i);if(dup.length)throw new Error('Há mais de uma página vinculada ao mesmo colaborador. Ajuste a conferência antes de continuar.');
+  btn.disabled=true;btn.textContent='⏳ ANEXANDO...';
+  const sess=(await client.auth.getSession()).data?.session;if(!sess)throw new Error('Sessão expirada.');
+  const safe=file.name.replace(/[^A-Za-z0-9._-]+/g,'_'),originalPath=`${oid}/lotes/${Date.now()}_${safe}`;
+  const originalBlob=new Blob([bytes],{type:'application/pdf'});
+  const up0=await client.storage.from('folga-campo-termos-assinados').upload(originalPath,originalBlob,{contentType:'application/pdf',upsert:false});if(up0.error)throw up0.error;
+  const li=await client.from('folga_campo_termos_lote_importacoes').insert({obra_id:oid,competencia:comp,arquivo_nome:file.name,arquivo_path:originalPath,arquivo_tipo:'application/pdf',arquivo_tamanho:file.size,status:'PROCESSANDO',created_by:sess.user.id}).select('id').single();
+  if(li.error)throw li.error;g360FcTlState.loteId=li.data.id;
+  const source=await PDFLib.PDFDocument.load(bytes),result=[];
+  for(let i=0;i<chosen.length;i++){
+   const c=chosen[i],f=folgas.find(x=>String(x.colaborador_id)===String(c.colaborador_id));if(!f)continue;
+   $('g360FcTlStatus').textContent=`Anexando ${i+1} de ${chosen.length}: ${f.colaborador_nome}...`;
+   const one=await PDFLib.PDFDocument.create(),[pg]=await one.copyPages(source,[c.pagina-1]);one.addPage(pg);const oneBytes=await one.save();
+   const path=`${oid}/${f.colaborador_id}/${Date.now()}_P${c.pagina}_TERMO_ASSINADO.pdf`;
+   const up=await client.storage.from('folga-campo-termos-assinados').upload(path,new Blob([oneBytes],{type:'application/pdf'}),{contentType:'application/pdf',upsert:false});if(up.error)throw up.error;
+   const ins=await client.from('folga_campo_termos_assinados').insert({obra_id:oid,folga_campo_id:f.id,colaborador_id:f.colaborador_id,competencia:comp,arquivo_nome:`TERMO_ASSINADO_${f.colaborador_nome}.pdf`,arquivo_path:path,arquivo_tipo:'application/pdf',arquivo_tamanho:oneBytes.length,created_by:sess.user.id});
+   if(ins.error){await client.storage.from('folga-campo-termos-assinados').remove([path]);throw ins.error}
+   result.push({pagina:c.pagina,colaborador_id:f.colaborador_id,colaborador_nome:f.colaborador_nome,arquivo_path:path});
+  }
+  await client.from('folga_campo_termos_lote_importacoes').update({status:'PROCESSADO',resultado:{vinculados:result,total_paginas:source.getPageCount()}}).eq('id',li.data.id);
+  $('g360FcTlStatus').textContent=`Concluído: ${result.length} termo(s) assinado(s) anexado(s).`;btn.textContent='✓ CONCLUÍDO';
+  setTimeout(()=>g360FcTlClose(),900);
+ }catch(e){console.error('[TERMOS LOTE CONFIRMAR]',e);alert('Erro ao anexar termos: '+(e?.message||e));btn.disabled=false;btn.textContent='✓ CONFIRMAR E ANEXAR'}
+}
 async function g360FcFormularioFinal(){
  const btn=$('g360FcFormularioFinal'),label=btn?.textContent||'FORMULÁRIO FINAL';
  try{
@@ -21989,7 +22070,7 @@ async function exportPdfPessoa(key,returnBytes=false){const pr=rows.filter(r=>St
 };
 const prep=pr.map(r=>{const d=doc.splitTextToSize(pdfDesc(r),widths[1]-10).slice(0,3),lines=Math.max(1,d.length);return{r,d,rowH:lines===1?25:(lines===2?36:47)}}),bodyH=prep.reduce((sum,x)=>sum+x.rowH,0);doc.setFillColor(...peach);doc.rect(left,tableY,fullW,headH,'FD');doc.rect(left,tableY+headH,fullW,bodyH);for(let i=1;i<xs.length-1;i++)doc.line(xs[i],tableY,xs[i],tableY+headH+bodyH);doc.setFont('helvetica','bold');doc.setFontSize(8.4);['ITEM','DESCRIÇÃO','VALOR'].forEach((h,i)=>doc.text(h,(xs[i]+xs[i+1])/2,tableY+20,{align:'center'}));doc.setFont('helvetica','normal');doc.setFontSize(bodyFont);if(typeof doc.setCharSpace==='function')doc.setCharSpace(0);let y=tableY+headH;prep.forEach(({r,d,rowH},i)=>{const cy=y+rowH/2+bodyFont*.32;if(i>0){doc.setLineWidth(.15);doc.line(left,y,left+fullW,y)}doc.text(String(i+1).padStart(2,'0'),(xs[0]+xs[1])/2,cy,{align:'center'});const ls=bodyFont+2;if(typeof doc.setCharSpace==='function')doc.setCharSpace(0);doc.text(d,xs[1]+5,cy-((d.length-1)*ls/2));doc.text('R$',xs[2]+5,cy);doc.text(fmtMoney(r.valor),xs[3]-5,cy,{align:'right'});y+=rowH});const total=pr.reduce((sum,r)=>sum+Number(r.valor||0),0),ty=tableY+headH+bodyH;doc.setLineWidth(.3);doc.rect(xs[2],ty,widths[2],28);doc.setFont('helvetica','bold');doc.text('R$',xs[2]+5,ty+18);doc.text(fmtMoney(total),xs[3]-5,ty+18,{align:'right'});if(returnBytes)return doc.output('arraybuffer');doc.save(`folga_campo_${String(nome).replace(/[^A-Za-z0-9À-ÿ]+/g,'_')}_${currentMonth}.pdf`)}
 function sheetName(s,used){let n=String(s||'Pessoa').replace(/[\\\/?*\[\]:]/g,' ').replace(/\s+/g,' ').trim().slice(0,31)||'Pessoa',base=n,i=2;while(used.has(n))n=(base.slice(0,27)+' '+i++).slice(0,31);used.add(n);return n}function exportExcel(){if(!rows.length)return alert('Não há despesas nesta competência.');if(!window.XLSX?.utils)return alert('Biblioteca Excel não carregada.');const wb=XLSX.utils.book_new(),used=new Set(),groups={};rows.forEach(r=>{const k=String(r.colaborador_id||r.colaborador_nome);if(!groups[k])groups[k]={nome:r.colaborador_nome,funcao:r.funcao||'',itens:[]};groups[k].itens.push(r)});const pessoas=Object.values(groups).sort((a,b)=>String(a.nome).localeCompare(String(b.nome),'pt-BR')),geral=[['DETALHAMENTO DE DESPESAS - FOLGA DE CAMPO'],[],['ORDEM','NOME COLABORADOR','FUNÇÃO','VALOR'],...pessoas.map((g,i)=>[String(i+1).padStart(2,'0'),g.nome,g.funcao,g.itens.reduce((sum,r)=>sum+Number(r.valor||0),0)])];let ws=XLSX.utils.aoa_to_sheet(geral);ws['!cols']=[{wch:10},{wch:40},{wch:34},{wch:16}];XLSX.utils.book_append_sheet(wb,ws,'RELATORIO GERAL');used.add('RELATORIO GERAL');pessoas.forEach(g=>{const itens=[...g.itens],a=[['DETALHAMENTO DE DESPESAS - FOLGA DE CAMPO'],[],['NOME:',g.nome,'FUNÇÃO',g.funcao],[],['ITEM','DESCRIÇÃO','CATEGORIA','VALOR'],...itens.map((r,i)=>[String(i+1).padStart(2,'0'),r.descricao,r.categoria||'',Number(r.valor||0)])],sh=XLSX.utils.aoa_to_sheet(a);sh['!cols']=[{wch:9},{wch:70},{wch:20},{wch:16}];XLSX.utils.book_append_sheet(wb,sh,sheetName(g.nome,used))});XLSX.writeFile(wb,`PAGAMENTO_FOLGA_CAMPO_${currentMonth}.xlsx`)}
-async function init(){if(!$('g360FcDevCompButtons')||!sb())return;initFcResidUf();initFcOrigemUf();initFcDestinoUf();clearForm();try{await Promise.all([loadColabs(),loadComps('')]);await loadRows();await loadMeta();await loadFolgaSuggestion()}catch(e){console.error(e);alert('Falha ao carregar Folga de Campo: '+(e?.message||e))}setTimeout(()=>window.g360FcProgramacoesV330?.init?.(),0);const bind=(id,fn)=>{const el=$(id);if(el&&!el.dataset.fcdevBound){el.dataset.fcdevBound='1';el.addEventListener('click',fn)}};bind('g360FcDevAbrirComp',openCompModal);bind('g360FcDevCompConfirmar',confirmOpenComp);bind('g360FcDevCompCancelar',closeCompModal);bind('g360FcDevCompCancelarX',closeCompModal);bind('g360FcDevAdicionar',addExtra);bind('g360FcDevAddTrecho',addTrecho);bind('g360FcDevLimpar',clearForm);bind('g360FcDevExcelComp',exportExcel);bind('g360FcProgExcelComp',()=>g360FcOpenExportFilter('excel'));bind('g360FcProgPdfComp',()=>g360FcOpenExportFilter('pdf'));bind('g360FcFormularioFinal',g360FcFormularioFinal);bind('g360FcTodosTermos',g360FcTodosTermos);bind('g360FcExportFilterX',g360FcCloseExportFilter);bind('g360FcExportCancelar',g360FcCloseExportFilter);bind('g360FcExportTodos',()=>document.querySelectorAll('#g360FcExportFilterLista input[type="checkbox"]').forEach(x=>x.checked=true));bind('g360FcExportNenhum',()=>document.querySelectorAll('#g360FcExportFilterLista input[type="checkbox"]').forEach(x=>x.checked=false));bind('g360FcExportGerar',g360FcRunFilteredExport);bind('g360FcDevSalvarDados',saveMetaClick);bind('g360FcRelSugestoes',gerarRelatorioSugestoes);const modal=$('g360FcDevCompModal');if(modal&&!modal.dataset.fcdevBound){modal.dataset.fcdevBound='1';modal.addEventListener('click',e=>{if(e.target===modal)closeCompModal()})}const ps=$('g360FcDevColab');if(ps&&!ps.dataset.fcdevBound){ps.dataset.fcdevBound='1';ps.onchange=async()=>{render();updateTrechoResumo();await Promise.all([loadMeta(),loadFolgaSuggestion()])}};const tipo=$('g360FcDevTipoExtra');if(tipo&&!tipo.dataset.fcdevBound){tipo.dataset.fcdevBound='1';tipo.onchange=syncExtraFields};const fim=$('g360FcDevDataFim');if(fim&&!fim.dataset.fcdevBound){fim.dataset.fcdevBound='1';fim.addEventListener('change',calcReturn)};['g360FcDevOrigemCidade','g360FcDevOrigemUf','g360FcDevDestinoCidade','g360FcDevDestinoUf'].forEach(id=>{const el=$(id);if(el&&!el.dataset.fcdevBound){el.dataset.fcdevBound='1';el.addEventListener('input',updateTrechoResumo)}});const ocSel=$('g360FcDevOrigemCidade');if(ocSel&&!ocSel.dataset.fcOrigemCidadeBound){ocSel.dataset.fcOrigemCidadeBound='1';ocSel.addEventListener('change',updateTrechoResumo)};const dcSel=$('g360FcDevDestinoCidade');if(dcSel&&!dcSel.dataset.fcDestinoCidadeBound){dcSel.dataset.fcDestinoCidadeBound='1';dcSel.addEventListener('change',updateTrechoResumo)};syncExtraFields();updateTrechoResumo()}
+async function init(){if(!$('g360FcDevCompButtons')||!sb())return;initFcResidUf();initFcOrigemUf();initFcDestinoUf();clearForm();try{await Promise.all([loadColabs(),loadComps('')]);await loadRows();await loadMeta();await loadFolgaSuggestion()}catch(e){console.error(e);alert('Falha ao carregar Folga de Campo: '+(e?.message||e))}setTimeout(()=>window.g360FcProgramacoesV330?.init?.(),0);const bind=(id,fn)=>{const el=$(id);if(el&&!el.dataset.fcdevBound){el.dataset.fcdevBound='1';el.addEventListener('click',fn)}};bind('g360FcDevAbrirComp',openCompModal);bind('g360FcDevCompConfirmar',confirmOpenComp);bind('g360FcDevCompCancelar',closeCompModal);bind('g360FcDevCompCancelarX',closeCompModal);bind('g360FcDevAdicionar',addExtra);bind('g360FcDevAddTrecho',addTrecho);bind('g360FcDevLimpar',clearForm);bind('g360FcDevExcelComp',exportExcel);bind('g360FcProgExcelComp',()=>g360FcOpenExportFilter('excel'));bind('g360FcProgPdfComp',()=>g360FcOpenExportFilter('pdf'));bind('g360FcFormularioFinal',g360FcFormularioFinal);bind('g360FcTodosTermos',g360FcTodosTermos);bind('g360FcImportarTermosLote',g360FcTlOpen);bind('g360FcTlClose',g360FcTlClose);bind('g360FcTlCancel',g360FcTlClose);bind('g360FcTlChoose',()=>$('g360FcTlFile')?.click());bind('g360FcTlAnalyze',g360FcTlAnalyze);bind('g360FcTlConfirm',g360FcTlConfirm);const tlFile=$('g360FcTlFile');if(tlFile&&!tlFile.dataset.bound){tlFile.dataset.bound='1';tlFile.onchange=()=>{const f=tlFile.files?.[0];g360FcTlState.file=f||null;$('g360FcTlFileName').textContent=f?f.name:'';$('g360FcTlAnalyze').disabled=!f;$('g360FcTlConfirm').style.display='none';$('g360FcTlPreview').innerHTML='';$('g360FcTlStatus').textContent=f?'Arquivo pronto para identificação.':'Aguardando arquivo.'}};bind('g360FcExportFilterX',g360FcCloseExportFilter);bind('g360FcExportCancelar',g360FcCloseExportFilter);bind('g360FcExportTodos',()=>document.querySelectorAll('#g360FcExportFilterLista input[type="checkbox"]').forEach(x=>x.checked=true));bind('g360FcExportNenhum',()=>document.querySelectorAll('#g360FcExportFilterLista input[type="checkbox"]').forEach(x=>x.checked=false));bind('g360FcExportGerar',g360FcRunFilteredExport);bind('g360FcDevSalvarDados',saveMetaClick);bind('g360FcRelSugestoes',gerarRelatorioSugestoes);const modal=$('g360FcDevCompModal');if(modal&&!modal.dataset.fcdevBound){modal.dataset.fcdevBound='1';modal.addEventListener('click',e=>{if(e.target===modal)closeCompModal()})}const ps=$('g360FcDevColab');if(ps&&!ps.dataset.fcdevBound){ps.dataset.fcdevBound='1';ps.onchange=async()=>{render();updateTrechoResumo();await Promise.all([loadMeta(),loadFolgaSuggestion()])}};const tipo=$('g360FcDevTipoExtra');if(tipo&&!tipo.dataset.fcdevBound){tipo.dataset.fcdevBound='1';tipo.onchange=syncExtraFields};const fim=$('g360FcDevDataFim');if(fim&&!fim.dataset.fcdevBound){fim.dataset.fcdevBound='1';fim.addEventListener('change',calcReturn)};['g360FcDevOrigemCidade','g360FcDevOrigemUf','g360FcDevDestinoCidade','g360FcDevDestinoUf'].forEach(id=>{const el=$(id);if(el&&!el.dataset.fcdevBound){el.dataset.fcdevBound='1';el.addEventListener('input',updateTrechoResumo)}});const ocSel=$('g360FcDevOrigemCidade');if(ocSel&&!ocSel.dataset.fcOrigemCidadeBound){ocSel.dataset.fcOrigemCidadeBound='1';ocSel.addEventListener('change',updateTrechoResumo)};const dcSel=$('g360FcDevDestinoCidade');if(dcSel&&!dcSel.dataset.fcDestinoCidadeBound){dcSel.dataset.fcDestinoCidadeBound='1';dcSel.addEventListener('change',updateTrechoResumo)};syncExtraFields();updateTrechoResumo()}
 window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRows();await loadMeta();await loadFolgaSuggestion()},exportPdfPessoa,openTermForPerson,anexarTermoAssinado:g360FcAnexarTermoAssinado};/* PERFORMANCE: inicialização somente ao abrir Folga pelo menu */
 })();
 </script>
@@ -22369,6 +22450,22 @@ if(fcCotResumoBody)new MutationObserver(()=>bindRows()).observe(fcCotResumoBody,
 window.g360FcCotacaoIA={open,downloadLatest};
 })();
 </script>
+
+
+<style id="g360-fc-termos-lote-style">
+#g360FcTermosLoteModal{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:100080;display:none;align-items:center;justify-content:center;padding:18px}
+#g360FcTermosLoteModal.open{display:flex}.fc-tl-box{width:min(1080px,96vw);max-height:92vh;overflow:auto;background:var(--panel,#202226);border:1px solid var(--line,#444);border-radius:10px;padding:18px;color:var(--text,#fff)}
+.fc-tl-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.fc-tl-head h2{margin:0 0 4px}.fc-tl-drop{margin-top:16px;border:2px dashed #777;border-radius:9px;padding:22px;text-align:center}
+.fc-tl-status{margin:12px 0;font-size:12px}.fc-tl-table{width:100%;border-collapse:collapse;font-size:12px}.fc-tl-table th,.fc-tl-table td{padding:8px;border-bottom:1px solid #444;text-align:left}.fc-tl-table select{width:100%;min-width:260px}
+.fc-tl-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}.fc-tl-warn{color:#f5c518;font-weight:800}.fc-tl-ok{color:#57c785;font-weight:800}
+</style>
+<div id="g360FcTermosLoteModal" aria-hidden="true"><div class="fc-tl-box">
+ <div class="fc-tl-head"><div><h2>Importar Termos Assinados</h2><div>Envie um único PDF. A IA identifica cada página; você confere antes de anexar.</div></div><button type="button" class="btn-secondary" id="g360FcTlClose">FECHAR</button></div>
+ <div class="fc-tl-drop"><input type="file" id="g360FcTlFile" accept="application/pdf" style="display:none"><button type="button" class="btn-primary" id="g360FcTlChoose">📄 ESCOLHER PDF ÚNICO</button><div id="g360FcTlFileName" style="margin-top:8px"></div></div>
+ <div class="fc-tl-status" id="g360FcTlStatus">Aguardando arquivo.</div>
+ <div id="g360FcTlPreview"></div>
+ <div class="fc-tl-actions"><button type="button" class="btn-secondary" id="g360FcTlCancel">CANCELAR</button><button type="button" class="btn-primary" id="g360FcTlAnalyze" disabled>✨ IDENTIFICAR COM IA</button><button type="button" class="btn-primary" id="g360FcTlConfirm" style="display:none">✓ CONFIRMAR E ANEXAR</button></div>
+</div></div>
 
 </body>
 </html>
