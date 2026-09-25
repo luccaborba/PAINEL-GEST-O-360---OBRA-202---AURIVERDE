@@ -22370,7 +22370,7 @@ async function generateSimulationPdf(){
    return dc?`${oc} > ${dc}`:'ROTA NÃO IDENTIFICADA';
  };
  doc.setTextColor(10,10,10);doc.setFont('helvetica','bold');
- doc.setFontSize(15);
+ doc.setFontSize(12);
  const simTitulo=`SIMULAÇÃO DE VALORES DE PASSAGEM – ${String(ctx.nome||f.colaborador_nome||'').toUpperCase()}`;
  const simTituloLinhas=doc.splitTextToSize(simTitulo,W-M*2);
  doc.text(simTituloLinhas,W/2,28,{align:'center'});
