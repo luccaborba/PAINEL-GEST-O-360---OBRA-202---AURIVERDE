@@ -22446,7 +22446,7 @@ async function generateSimulationPdf(){
  doc.text(`INÍCIO: ${dt(f.data_inicio||f.data_saida)}`,W*.18,infoY,{align:'center'});
  doc.text(`FIM: ${dt(f.data_fim)}`,W*.50,infoY,{align:'center'});
  doc.text(`RETORNO TRABALHO: ${dt(f.data_retorno)}`,W*.82,infoY,{align:'center'});
- let y=88+titleExtra+rotaExtra;
+ let y=108+titleExtra+rotaExtra;
  for(let i=0;i<shots.length;i++){
    const data=await new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=rej;fr.readAsDataURL(shots[i].file)});
    const img=new Image();await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=data});
@@ -22460,31 +22460,46 @@ async function generateSimulationPdf(){
 async function g360FcCorrigirCabecalhoSimulacao(pdfBytes,folga,nome){
  if(!window.PDFLib?.PDFDocument)return pdfBytes;
  const {PDFDocument,StandardFonts,rgb}=PDFLib;
- const pdf=await PDFDocument.load(pdfBytes),pages=pdf.getPages();if(!pages.length)return pdfBytes;
- const pg=pages[0],W=pg.getWidth(),H=pg.getHeight(),font=await pdf.embedFont(StandardFonts.HelveticaBold);
+ const src=await PDFDocument.load(pdfBytes),srcPages=src.getPages();if(!srcPages.length)return pdfBytes;
+ const out=await PDFDocument.create(),font=await out.embedFont(StandardFonts.HelveticaBold);
  const f=folga||{},km=Number(f.distancia_km||0),food=foodByKm(km);
  const dt=v=>{if(!v)return '—';const d=new Date(String(v).slice(0,10)+'T12:00:00');return Number.isNaN(d.getTime())?'—':d.toLocaleDateString('pt-BR')};
  const origem=[f.origem_cidade||'CRIXÁS',f.origem_uf||'GO'].filter(Boolean).join('-').toUpperCase();
  const destino=[f.cidade_residencia||f.destino_cidade,f.uf_residencia||f.destino_uf].filter(Boolean).join('-').toUpperCase();
  const rota=destino?`${origem} > ${destino}`:'ROTA NÃO IDENTIFICADA';
- // Apaga somente o cabeçalho antigo e o reconstrói dentro de margens fixas.
- pg.drawRectangle({x:0,y:H-118,width:W,height:118,color:rgb(1,1,1)});
- const title=`SIMULAÇÃO DE VALORES DE PASSAGEM - ${String(nome||f.colaborador_nome||'').toUpperCase()}`;
+
+ // PRIMEIRA PÁGINA: remove apenas o cabeçalho antigo (88 pt) e reposiciona TODO o restante abaixo
+ // do novo cabeçalho. Assim nenhum pixel do primeiro print é coberto/cortado.
+ const first=srcPages[0],W=first.getWidth(),H=first.getHeight(),oldHeader=88,newHeader=112;
+ const body=await out.embedPage(first,{left:0,bottom:0,right:W,top:H-oldHeader});
+ const pg=out.addPage([W,H]);
+ const bodyH=H-oldHeader,availH=H-newHeader,scale=Math.min(1,availH/bodyH);
+ const drawW=W*scale,drawH=bodyH*scale;
+ pg.drawPage(body,{x:(W-drawW)/2,y:0,width:drawW,height:drawH});
+
+ // Novo cabeçalho com margens reais.
  const maxW=W-56,size=10;
+ const title=`SIMULAÇÃO DE VALORES DE PASSAGEM - ${String(nome||f.colaborador_nome||'').toUpperCase()}`;
  const words=title.split(/\s+/),lines=[];let line='';
  for(const word of words){const test=line?line+' '+word:word;if(font.widthOfTextAtSize(test,size)<=maxW)line=test;else{if(line)lines.push(line);line=word}}
  if(line)lines.push(line);
- const titleLines=lines.slice(0,2),topY=H-26;
+ const titleLines=lines.slice(0,2),topY=H-24;
  titleLines.forEach((ln,i)=>pg.drawText(ln,{x:(W-font.widthOfTextAtSize(ln,size))/2,y:topY-i*12,size,font,color:rgb(0,0,0)}));
  const extra=(titleLines.length-1)*12;
  const routeText=`${rota} - ${km?km.toLocaleString('pt-BR')+'KM':'KM NÃO INFORMADO'}   /   REFEIÇÃO IDA E VOLTA ${brl(food)}`;
- let rs=9.2;while(rs>7.5&&font.widthOfTextAtSize(routeText,rs)>maxW)rs-=.2;
- pg.drawText(routeText,{x:(W-font.widthOfTextAtSize(routeText,rs))/2,y:H-50-extra,size:rs,font,color:rgb(0,0,0)});
+ let rs=9.2;while(rs>7.2&&font.widthOfTextAtSize(routeText,rs)>maxW)rs-=.2;
+ pg.drawText(routeText,{x:(W-font.widthOfTextAtSize(routeText,rs))/2,y:H-48-extra,size:rs,font,color:rgb(0,0,0)});
  const a=`INÍCIO: ${dt(f.data_inicio||f.data_saida)}`,b=`FIM: ${dt(f.data_fim)}`,c=`RETORNO TRABALHO: ${dt(f.data_retorno)}`,is=9;
- pg.drawText(a,{x:52,y:H-73-extra,size:is,font,color:rgb(0,0,0)});
- pg.drawText(b,{x:(W-font.widthOfTextAtSize(b,is))/2,y:H-73-extra,size:is,font,color:rgb(0,0,0)});
- pg.drawText(c,{x:W-52-font.widthOfTextAtSize(c,is),y:H-73-extra,size:is,font,color:rgb(0,0,0)});
- return await pdf.save();
+ pg.drawText(a,{x:52,y:H-70-extra,size:is,font,color:rgb(0,0,0)});
+ pg.drawText(b,{x:(W-font.widthOfTextAtSize(b,is))/2,y:H-70-extra,size:is,font,color:rgb(0,0,0)});
+ pg.drawText(c,{x:W-52-font.widthOfTextAtSize(c,is),y:H-70-extra,size:is,font,color:rgb(0,0,0)});
+
+ // Demais páginas são copiadas integralmente, sem qualquer recorte.
+ if(srcPages.length>1){
+   const copied=await out.copyPages(src,srcPages.slice(1).map((_,i)=>i+1));
+   copied.forEach(p=>out.addPage(p));
+ }
+ return await out.save();
 }
 async function downloadLatest(key){
  try{
