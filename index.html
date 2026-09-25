@@ -22258,6 +22258,46 @@ window.g360FolgaDevV274={init,refresh:async()=>{await loadComps('');await loadRo
  window.g360FolgaFinalV332={showStep,delByCid};
 })();
 </script>
+<style id="g360-fc-cotacao-ia-v1">
+#g360FcCotIaModal{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:100700;display:none;align-items:center;justify-content:center;padding:18px}
+#g360FcCotIaModal.open{display:flex}
+#g360FcCotIaModal .fc-cot-box{width:min(980px,97vw);max-height:92vh;overflow:auto;background:#fff;color:#171717;border-radius:12px;border:1px solid #ddd;box-shadow:0 24px 70px #0007;padding:20px}
+.fc-cot-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:14px}
+.fc-cot-head h2{margin:0;font-size:20px}.fc-cot-sub{font-size:12px;color:#666;margin-top:4px}
+.fc-cot-paste{border:2px dashed #c8c8c8;border-radius:10px;padding:20px;background:#fafafa;text-align:center;outline:none}
+.fc-cot-paste:focus{border-color:#f5c518;box-shadow:0 0 0 3px rgba(245,197,24,.18)}
+.fc-cot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-top:12px}
+.fc-cot-shot{border:1px solid #ddd;border-radius:8px;padding:7px;background:#fff;position:relative}
+.fc-cot-shot img{width:100%;height:150px;object-fit:contain;background:#f5f5f5;border-radius:5px}
+.fc-cot-shot button{position:absolute;right:10px;top:10px;border:0;border-radius:5px;background:#a51616;color:#fff;cursor:pointer;padding:5px 7px;font-weight:800}
+.fc-cot-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:15px}
+.fc-cot-actions button{border:0;border-radius:7px;padding:10px 14px;font-weight:800;cursor:pointer}
+.fc-cot-primary{background:#f5c518;color:#111}.fc-cot-secondary{background:#ececec;color:#222}.fc-cot-success{background:#169447;color:#fff}
+#fcCotPreview{display:none;margin-top:15px}.fc-cot-summary{border:1px solid #ddd;border-radius:8px;background:#f8f8f8;padding:12px;font-size:13px;line-height:1.6}
+.fc-cot-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px}.fc-cot-table th,.fc-cot-table td{border-bottom:1px solid #ddd;padding:8px;text-align:left}
+.fc-cot-status{font-size:12px;margin-top:10px;font-weight:700}.fc-cot-error{color:#a51616}
+.fc-cot-mini{border:1px solid #d0d0d0!important;background:#fff!important;color:#222!important}
+
+
+.fc-route-mode-box{display:flex;gap:8px;align-items:center;margin:4px 0 16px;padding:10px;border:1px solid #35383e;border-radius:7px;background:#181a1e}
+.fc-route-mode{border:1px solid #474b52;background:#25282d;color:#ddd;border-radius:6px;padding:10px 14px;font-weight:900;cursor:pointer;font-size:11px;letter-spacing:.25px}
+.fc-route-mode.active{border-color:#f5c518;color:#111;background:#f5c518}
+.fc-route-mode.ai{border-color:#f5c518;color:#f5c518;background:rgba(245,197,24,.06)}
+.fc-route-mode.ai:hover{background:#f5c518;color:#111}
+
+.fc-cotacao-start{border-color:#f5c518!important;background:#f5c518!important;color:#111!important;font-weight:900!important;white-space:nowrap}
+.fc-cotacao-start:hover{filter:brightness(1.06)}
+</style>
+<div id="g360FcCotIaModal" aria-hidden="true">
+ <div class="fc-cot-box">
+  <div class="fc-cot-head"><div><h2>Cotação IA · Folga de Campo</h2><div class="fc-cot-sub" id="fcCotPessoa">Cole os recortes das cotações. A IA lê os trechos e o sistema calcula a alimentação pela distância da Folga.</div></div><button type="button" class="fc-cot-secondary" id="fcCotClose">Fechar</button></div>
+  <div class="fc-cot-paste" id="fcCotPaste" tabindex="0"><b>📋 CLIQUE AQUI E COLE OS PRINTS COM CTRL+V</b><div class="fc-cot-sub">Use Win + Shift + S para recortar a cotação e depois Ctrl+V. Pode colar vários recortes.</div><div style="margin-top:10px"><button type="button" class="fc-cot-primary" id="fcCotChoose">Escolher imagens</button><input id="fcCotFiles" type="file" accept="image/png,image/jpeg" multiple style="display:none"></div></div>
+  <div class="fc-cot-grid" id="fcCotGrid"></div>
+  <div class="fc-cot-status" id="fcCotStatus"></div>
+  <div id="fcCotPreview"></div>
+  <div class="fc-cot-actions"><button type="button" class="fc-cot-secondary" id="fcCotCancel">Cancelar</button><button type="button" class="fc-cot-success" id="fcCotConfirm" style="display:none">✓ Confirmar, lançar e salvar simulação</button><button type="button" class="fc-cot-primary" id="fcCotAnalyze" disabled>✨ Analisar com IA</button></div>
+ </div>
+</div>
 <script id="g360-fc-cotacao-ia-script-v1">
 (()=>{
 'use strict';
@@ -22482,7 +22522,7 @@ window.g360FcCotacaoIA={open,downloadLatest};
     if(!m||!a)return;
     const cid=byId('g360FcDevColab')?.value;
     if(!cid){alert('Selecione primeiro o colaborador na etapa 1 - Dados da Folga.');return;}
-    if(!window.g360FcCotacaoIA || typeof window.g360FcCotacaoIA.open!=='function'){alert('A Cotação IA ainda não terminou de carregar. Feche a Folga e abra novamente.');return;}
+    if(!window.g360FcCotacaoIA || typeof window.g360FcCotacaoIA.open!=='function'){alert('Não foi possível abrir a Cotação IA. Atualize a página uma vez e tente novamente.');return;}
     a.classList.add('active');m.classList.remove('active');if(f)f.style.display='none';if(z)z.style.display='none';
     window.g360FcCotacaoIA.open(cid);
   }
