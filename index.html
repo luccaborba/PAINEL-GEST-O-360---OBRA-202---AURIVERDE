@@ -22023,9 +22023,9 @@ async function g360FcFormularioFinal(){
   const tr=await tq;if(tr.error)throw tr.error;
   const termos=new Map();(tr.data||[]).forEach(x=>{if(x.arquivo_path&&!termos.has(String(x.folga_campo_id)))termos.set(String(x.folga_campo_id),x.arquivo_path)});
 
-  const faltas=[];
-  folgas.forEach(f=>{const m=[];if(!sim.has(String(f.id)))m.push('simulação');if(!termos.has(String(f.id)))m.push('termo assinado');if(m.length)faltas.push(`${f.colaborador_nome}: ${m.join(' e ')}`)});
-  if(faltas.length)throw new Error('FORMULÁRIO FINAL incompleto.\n\n'+faltas.join('\n'));
+  const faltasSimulacao=[];
+  folgas.forEach(f=>{if(!sim.has(String(f.id)))faltasSimulacao.push(f.colaborador_nome)});
+  if(faltasSimulacao.length)throw new Error('FORMULÁRIO FINAL incompleto. Falta simulação salva para:\n\n'+faltasSimulacao.join('\n'));
 
   const finalPdf=await PDFLib.PDFDocument.create();
   async function append(bytes){
@@ -22050,7 +22050,16 @@ async function g360FcFormularioFinal(){
    if(btn)btn.textContent=`${i+1}/${folgas.length} · SIMULAÇÃO`;
    await append(await storagePdf('folga-campo-documentos',sim.get(String(f.id)),`a simulação de ${nome}`));
    if(btn)btn.textContent=`${i+1}/${folgas.length} · TERMO`;
-   await append(await storagePdf('folga-campo-termos-assinados',termos.get(String(f.id)),`o Termo Assinado de ${nome}`));
+   const termoAssinadoPath=termos.get(String(f.id));
+   if(termoAssinadoPath){
+    // Havendo termo assinado enviado, ele tem prioridade.
+    await append(await storagePdf('folga-campo-termos-assinados',termoAssinadoPath,`o Termo Assinado de ${nome}`));
+   }else{
+    // Sem upload: inclui automaticamente o Termo de Concessão sem assinatura.
+    const termoSemAssinatura=await openTermForPerson(key,true);
+    if(!termoSemAssinatura)throw new Error(`Não foi possível gerar o Termo sem assinatura de ${nome}.`);
+    await append(termoSemAssinatura);
+   }
   }
 
   if(btn)btn.textContent='FINALIZANDO...';
@@ -22422,11 +22431,11 @@ async function generateSimulationPdf(){
    return dc?`${oc} > ${dc}`:'ROTA NÃO IDENTIFICADA';
  };
  doc.setTextColor(10,10,10);doc.setFont('helvetica','bold');
- doc.setFontSize(12);
+ doc.setFontSize(10);
  const simTitulo=`SIMULAÇÃO DE VALORES DE PASSAGEM – ${String(ctx.nome||f.colaborador_nome||'').toUpperCase()}`;
- const simTituloLinhas=doc.splitTextToSize(simTitulo,W-70);
- doc.text(simTituloLinhas,W/2,28,{align:'center',maxWidth:W-70});
- const titleExtra=Math.max(0,simTituloLinhas.length-1)*15;
+ const simTituloLinhas=doc.splitTextToSize(simTitulo,W-110);
+ doc.text(simTituloLinhas,W/2,28,{align:'center',maxWidth:W-110});
+ const titleExtra=Math.max(0,simTituloLinhas.length-1)*13;
  doc.setFontSize(11.5);
  const rotaTexto=`${String(rota()).toUpperCase()} – ${km?km.toLocaleString('pt-BR')+'KM':'KM NÃO INFORMADO'}   /   REFEIÇÃO IDA E VOLTA ${brl(alimentacao)}`;
  const rotaLinhas=doc.splitTextToSize(rotaTexto,W-M*2);
