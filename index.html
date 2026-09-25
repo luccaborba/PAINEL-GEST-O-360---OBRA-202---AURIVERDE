@@ -21839,6 +21839,51 @@ async function g360FcAnexarTermoAssinado(colaboradorId,folgaId,btn){
 
 
 
+async function g360FcCorrigirCabecalhoSimulacao(pdfBytes,folga,nome){
+ if(!window.PDFLib?.PDFDocument)return pdfBytes;
+ const {PDFDocument,StandardFonts,rgb}=PDFLib;
+ const src=await PDFDocument.load(pdfBytes),srcPages=src.getPages();if(!srcPages.length)return pdfBytes;
+ const out=await PDFDocument.create(),font=await out.embedFont(StandardFonts.HelveticaBold);
+ const f=folga||{},km=Number(f.distancia_km||0),food=foodByKm(km);
+ const dt=v=>{if(!v)return '—';const d=new Date(String(v).slice(0,10)+'T12:00:00');return Number.isNaN(d.getTime())?'—':d.toLocaleDateString('pt-BR')};
+ const origem=[f.origem_cidade||'CRIXÁS',f.origem_uf||'GO'].filter(Boolean).join('-').toUpperCase();
+ const destino=[f.cidade_residencia||f.destino_cidade,f.uf_residencia||f.destino_uf].filter(Boolean).join('-').toUpperCase();
+ const rota=destino?`${origem} > ${destino}`:'ROTA NÃO IDENTIFICADA';
+
+ // PRIMEIRA PÁGINA: remove apenas o cabeçalho antigo (88 pt) e reposiciona TODO o restante abaixo
+ // do novo cabeçalho. Assim nenhum pixel do primeiro print é coberto/cortado.
+ const first=srcPages[0],W=first.getWidth(),H=first.getHeight(),oldHeader=88,newHeader=112;
+ const body=await out.embedPage(first,{left:0,bottom:0,right:W,top:H-oldHeader});
+ const pg=out.addPage([W,H]);
+ const bodyH=H-oldHeader,availH=H-newHeader,scale=Math.min(1,availH/bodyH);
+ const drawW=W*scale,drawH=bodyH*scale;
+ pg.drawPage(body,{x:(W-drawW)/2,y:0,width:drawW,height:drawH});
+
+ // Novo cabeçalho com margens reais.
+ const maxW=W-56,size=10;
+ const title=`SIMULAÇÃO DE VALORES DE PASSAGEM - ${String(nome||f.colaborador_nome||'').toUpperCase()}`;
+ const words=title.split(/\s+/),lines=[];let line='';
+ for(const word of words){const test=line?line+' '+word:word;if(font.widthOfTextAtSize(test,size)<=maxW)line=test;else{if(line)lines.push(line);line=word}}
+ if(line)lines.push(line);
+ const titleLines=lines.slice(0,2),topY=H-24;
+ titleLines.forEach((ln,i)=>pg.drawText(ln,{x:(W-font.widthOfTextAtSize(ln,size))/2,y:topY-i*12,size,font,color:rgb(0,0,0)}));
+ const extra=(titleLines.length-1)*12;
+ const routeText=`${rota} - ${km?km.toLocaleString('pt-BR')+'KM':'KM NÃO INFORMADO'}   /   REFEIÇÃO IDA E VOLTA ${brl(food)}`;
+ let rs=9.2;while(rs>7.2&&font.widthOfTextAtSize(routeText,rs)>maxW)rs-=.2;
+ pg.drawText(routeText,{x:(W-font.widthOfTextAtSize(routeText,rs))/2,y:H-48-extra,size:rs,font,color:rgb(0,0,0)});
+ const a=`INÍCIO: ${dt(f.data_inicio||f.data_saida)}`,b=`FIM: ${dt(f.data_fim)}`,c=`RETORNO TRABALHO: ${dt(f.data_retorno)}`,is=9;
+ pg.drawText(a,{x:52,y:H-70-extra,size:is,font,color:rgb(0,0,0)});
+ pg.drawText(b,{x:(W-font.widthOfTextAtSize(b,is))/2,y:H-70-extra,size:is,font,color:rgb(0,0,0)});
+ pg.drawText(c,{x:W-52-font.widthOfTextAtSize(c,is),y:H-70-extra,size:is,font,color:rgb(0,0,0)});
+
+ // Demais páginas são copiadas integralmente, sem qualquer recorte.
+ if(srcPages.length>1){
+   const copied=await out.copyPages(src,srcPages.slice(1).map((_,i)=>i+1));
+   copied.forEach(p=>out.addPage(p));
+ }
+ return await out.save();
+}
+
 async function g360FcTodasSimulacoes(){
  const btn=$('g360FcTodasSimulacoes'),label=btn?.textContent||'TODAS AS SIMULAÇÕES';
  try{
@@ -22006,7 +22051,7 @@ async function g360FcFormularioFinal(){
   if(!currentMonth)throw new Error('Selecione uma competência.');
   if(!window.PDFLib?.PDFDocument)throw new Error('Biblioteca PDF-Lib não carregada.');
   const client=sb(),oid=obraId(),comp=compDate(currentMonth);
-  if(btn){btn.disabled=true;btn.textContent='VERIFICANDO...'}
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="g360-term-spinner" aria-label="Gerando formulário final"></span>'}
 
   let fq=client.from('folga_campo').select('id,colaborador_id,colaborador_nome,matricula,data_inicio,data_saida,data_fim,data_retorno,distancia_km,origem_cidade,origem_uf,cidade_residencia,uf_residencia,destino_cidade,destino_uf').eq('competencia',comp).order('colaborador_nome');
   if(oid)fq=fq.eq('obra_id',oid);
@@ -22039,21 +22084,54 @@ async function g360FcFormularioFinal(){
    if(d.error)throw new Error(`Não foi possível carregar ${nome}: ${d.error.message}`);
    return await d.data.arrayBuffer();
   }
+  async function corrigirSimulacaoFinal(pdfBytes,folga,nome){
+   const {PDFDocument,StandardFonts,rgb}=PDFLib;
+   const src=await PDFDocument.load(pdfBytes),srcPages=src.getPages();if(!srcPages.length)return pdfBytes;
+   const out=await PDFDocument.create(),font=await out.embedFont(StandardFonts.HelveticaBold);
+   const f=folga||{},km=Number(f.distancia_km||0),food=foodByKm(km);
+   const dt=v=>{if(!v)return '—';const d=new Date(String(v).slice(0,10)+'T12:00:00');return Number.isNaN(d.getTime())?'—':d.toLocaleDateString('pt-BR')};
+   const origem=[f.origem_cidade||'CRIXÁS',f.origem_uf||'GO'].filter(Boolean).join('-').toUpperCase();
+   const destino=[f.cidade_residencia||f.destino_cidade,f.uf_residencia||f.destino_uf].filter(Boolean).join('-').toUpperCase();
+   const rota=destino?`${origem} > ${destino}`:'ROTA NÃO IDENTIFICADA';
+
+   const first=srcPages[0],W=first.getWidth(),H=first.getHeight(),oldHeader=88,newHeader=112;
+   const body=await out.embedPage(first,{left:0,bottom:0,right:W,top:H-oldHeader});
+   const pg=out.addPage([W,H]),bodyH=H-oldHeader,availH=H-newHeader,scale=Math.min(1,availH/bodyH);
+   pg.drawPage(body,{x:(W-W*scale)/2,y:0,width:W*scale,height:bodyH*scale});
+
+   const maxW=W-56,size=10;
+   const title=`SIMULAÇÃO DE VALORES DE PASSAGEM - ${String(nome||f.colaborador_nome||'').toUpperCase()}`;
+   const words=title.split(/\s+/),lines=[];let line='';
+   for(const word of words){const test=line?line+' '+word:word;if(font.widthOfTextAtSize(test,size)<=maxW)line=test;else{if(line)lines.push(line);line=word}}
+   if(line)lines.push(line);
+   const titleLines=lines.slice(0,2),topY=H-24;
+   titleLines.forEach((ln,i)=>pg.drawText(ln,{x:(W-font.widthOfTextAtSize(ln,size))/2,y:topY-i*12,size,font,color:rgb(0,0,0)}));
+   const extra=(titleLines.length-1)*12;
+   const routeText=`${rota} - ${km?km.toLocaleString('pt-BR')+'KM':'KM NÃO INFORMADO'}   /   REFEIÇÃO IDA E VOLTA ${brl(food)}`;
+   let rs=9.2;while(rs>7.2&&font.widthOfTextAtSize(routeText,rs)>maxW)rs-=.2;
+   pg.drawText(routeText,{x:(W-font.widthOfTextAtSize(routeText,rs))/2,y:H-48-extra,size:rs,font,color:rgb(0,0,0)});
+   const a=`INÍCIO: ${dt(f.data_inicio||f.data_saida)}`,b=`FIM: ${dt(f.data_fim)}`,c=`RETORNO TRABALHO: ${dt(f.data_retorno)}`,is=9;
+   pg.drawText(a,{x:52,y:H-70-extra,size:is,font,color:rgb(0,0,0)});
+   pg.drawText(b,{x:(W-font.widthOfTextAtSize(b,is))/2,y:H-70-extra,size:is,font,color:rgb(0,0,0)});
+   pg.drawText(c,{x:W-52-font.widthOfTextAtSize(c,is),y:H-70-extra,size:is,font,color:rgb(0,0,0)});
+
+   if(srcPages.length>1){
+    const copied=await out.copyPages(src,srcPages.slice(1).map((_,i)=>i+1));
+    copied.forEach(x=>out.addPage(x));
+   }
+   return await out.save();
+  }
 
   // 1º: relatório GERAL da competência.
-  if(btn)btn.textContent='GERAL...';
   await append(await fcProgPdf(true));
 
   // Depois, em ordem alfabética: RESUMO + SIMULAÇÃO + TERMO ASSINADO.
   for(let i=0;i<folgas.length;i++){
    const f=folgas[i],key=String(f.colaborador_id),nome=String(f.colaborador_nome||'COLABORADOR').toUpperCase();
-   if(btn)btn.textContent=`${i+1}/${folgas.length} · RESUMO`;
    const resumo=await exportPdfPessoa(key,true);if(!resumo)throw new Error(`Resumo não localizado para ${nome}.`);await append(resumo);
-   if(btn)btn.textContent=`${i+1}/${folgas.length} · SIMULAÇÃO`;
    const simulacaoOriginal=await storagePdf('folga-campo-documentos',sim.get(String(f.id)),`a simulação de ${nome}`);
-   const simulacaoCorrigida=await g360FcCorrigirCabecalhoSimulacao(simulacaoOriginal,f,nome);
+   const simulacaoCorrigida=await corrigirSimulacaoFinal(simulacaoOriginal,f,nome);
    await append(simulacaoCorrigida);
-   if(btn)btn.textContent=`${i+1}/${folgas.length} · TERMO`;
    const termoAssinadoPath=termos.get(String(f.id));
    if(termoAssinadoPath){
     // Havendo termo assinado enviado, ele tem prioridade.
@@ -22065,8 +22143,6 @@ async function g360FcFormularioFinal(){
     await append(termoSemAssinatura);
    }
   }
-
-  if(btn)btn.textContent='FINALIZANDO...';
   const bytes=await finalPdf.save(),blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download=`FORMULARIO_FINAL_FOLGA_DE_CAMPO_${currentMonth}.pdf`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
  }catch(e){console.error('[FORMULÁRIO FINAL]',e);alert('Erro ao gerar FORMULÁRIO FINAL:\n'+(e?.message||e))}
