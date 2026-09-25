@@ -22088,7 +22088,7 @@ async function g360FcFormularioFinal(){
    const {PDFDocument,StandardFonts,rgb}=PDFLib;
    const src=await PDFDocument.load(pdfBytes),srcPages=src.getPages();if(!srcPages.length)return pdfBytes;
    const out=await PDFDocument.create(),font=await out.embedFont(StandardFonts.HelveticaBold);
-   const f=folga||{},km=Number(f.distancia_km||0),food=foodByKm(km);
+   const f=folga||{},km=Number(f.distancia_km||0),food=km>1000?190:110;
    const dt=v=>{if(!v)return '—';const d=new Date(String(v).slice(0,10)+'T12:00:00');return Number.isNaN(d.getTime())?'—':d.toLocaleDateString('pt-BR')};
    const origem=[f.origem_cidade||'CRIXÁS',f.origem_uf||'GO'].filter(Boolean).join('-').toUpperCase();
    const destino=[f.cidade_residencia||f.destino_cidade,f.uf_residencia||f.destino_uf].filter(Boolean).join('-').toUpperCase();
@@ -22107,7 +22107,7 @@ async function g360FcFormularioFinal(){
    const titleLines=lines.slice(0,2),topY=H-24;
    titleLines.forEach((ln,i)=>pg.drawText(ln,{x:(W-font.widthOfTextAtSize(ln,size))/2,y:topY-i*12,size,font,color:rgb(0,0,0)}));
    const extra=(titleLines.length-1)*12;
-   const routeText=`${rota} - ${km?km.toLocaleString('pt-BR')+'KM':'KM NÃO INFORMADO'}   /   REFEIÇÃO IDA E VOLTA ${brl(food)}`;
+   const routeText=`${rota} - ${km?km.toLocaleString('pt-BR')+'KM':'KM NÃO INFORMADO'}   /   REFEIÇÃO IDA E VOLTA R$ ${Number(food).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
    let rs=9.2;while(rs>7.2&&font.widthOfTextAtSize(routeText,rs)>maxW)rs-=.2;
    pg.drawText(routeText,{x:(W-font.widthOfTextAtSize(routeText,rs))/2,y:H-48-extra,size:rs,font,color:rgb(0,0,0)});
    const a=`INÍCIO: ${dt(f.data_inicio||f.data_saida)}`,b=`FIM: ${dt(f.data_fim)}`,c=`RETORNO TRABALHO: ${dt(f.data_retorno)}`,is=9;
