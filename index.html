@@ -22433,8 +22433,8 @@ async function generateSimulationPdf(){
  doc.setTextColor(10,10,10);doc.setFont('helvetica','bold');
  doc.setFontSize(10);
  const simTitulo=`SIMULAÇÃO DE VALORES DE PASSAGEM – ${String(ctx.nome||f.colaborador_nome||'').toUpperCase()}`;
- const simTituloLinhas=doc.splitTextToSize(simTitulo,W-110);
- doc.text(simTituloLinhas,W/2,28,{align:'center',maxWidth:W-110});
+ const simTituloLinhas=doc.splitTextToSize(simTitulo,W-150);
+ doc.text(simTituloLinhas,W/2,28,{align:'center',maxWidth:W-150});
  const titleExtra=Math.max(0,simTituloLinhas.length-1)*13;
  doc.setFontSize(11.5);
  const rotaTexto=`${String(rota()).toUpperCase()} – ${km?km.toLocaleString('pt-BR')+'KM':'KM NÃO INFORMADO'}   /   REFEIÇÃO IDA E VOLTA ${brl(alimentacao)}`;
@@ -22456,16 +22456,47 @@ async function generateSimulationPdf(){
  }
  return doc.output('arraybuffer');
 }
+
+async function g360FcCorrigirCabecalhoSimulacao(pdfBytes,folga,nome){
+ if(!window.PDFLib?.PDFDocument)return pdfBytes;
+ const {PDFDocument,StandardFonts,rgb}=PDFLib;
+ const pdf=await PDFDocument.load(pdfBytes),pages=pdf.getPages();if(!pages.length)return pdfBytes;
+ const pg=pages[0],W=pg.getWidth(),H=pg.getHeight(),font=await pdf.embedFont(StandardFonts.HelveticaBold);
+ const f=folga||{},km=Number(f.distancia_km||0),food=foodByKm(km);
+ const dt=v=>{if(!v)return '—';const d=new Date(String(v).slice(0,10)+'T12:00:00');return Number.isNaN(d.getTime())?'—':d.toLocaleDateString('pt-BR')};
+ const origem=[f.origem_cidade||'CRIXÁS',f.origem_uf||'GO'].filter(Boolean).join('-').toUpperCase();
+ const destino=[f.cidade_residencia||f.destino_cidade,f.uf_residencia||f.destino_uf].filter(Boolean).join('-').toUpperCase();
+ const rota=destino?`${origem} > ${destino}`:'ROTA NÃO IDENTIFICADA';
+ // Apaga somente o cabeçalho antigo e o reconstrói dentro de margens fixas.
+ pg.drawRectangle({x:0,y:H-118,width:W,height:118,color:rgb(1,1,1)});
+ const title=`SIMULAÇÃO DE VALORES DE PASSAGEM - ${String(nome||f.colaborador_nome||'').toUpperCase()}`;
+ const maxW=W-56,size=10;
+ const words=title.split(/\s+/),lines=[];let line='';
+ for(const word of words){const test=line?line+' '+word:word;if(font.widthOfTextAtSize(test,size)<=maxW)line=test;else{if(line)lines.push(line);line=word}}
+ if(line)lines.push(line);
+ const titleLines=lines.slice(0,2),topY=H-26;
+ titleLines.forEach((ln,i)=>pg.drawText(ln,{x:(W-font.widthOfTextAtSize(ln,size))/2,y:topY-i*12,size,font,color:rgb(0,0,0)}));
+ const extra=(titleLines.length-1)*12;
+ const routeText=`${rota} - ${km?km.toLocaleString('pt-BR')+'KM':'KM NÃO INFORMADO'}   /   REFEIÇÃO IDA E VOLTA ${brl(food)}`;
+ let rs=9.2;while(rs>7.5&&font.widthOfTextAtSize(routeText,rs)>maxW)rs-=.2;
+ pg.drawText(routeText,{x:(W-font.widthOfTextAtSize(routeText,rs))/2,y:H-50-extra,size:rs,font,color:rgb(0,0,0)});
+ const a=`INÍCIO: ${dt(f.data_inicio||f.data_saida)}`,b=`FIM: ${dt(f.data_fim)}`,c=`RETORNO TRABALHO: ${dt(f.data_retorno)}`,is=9;
+ pg.drawText(a,{x:52,y:H-73-extra,size:is,font,color:rgb(0,0,0)});
+ pg.drawText(b,{x:(W-font.widthOfTextAtSize(b,is))/2,y:H-73-extra,size:is,font,color:rgb(0,0,0)});
+ pg.drawText(c,{x:W-52-font.widthOfTextAtSize(c,is),y:H-73-extra,size:is,font,color:rgb(0,0,0)});
+ return await pdf.save();
+}
 async function downloadLatest(key){
  try{
   const client=sb(),comp=$('g360FcDevCompSelect')?.value;if(!client||!/^\d{4}-\d{2}$/.test(comp||''))return;
-  let fq=client.from('folga_campo').select('id').eq('colaborador_id',key).eq('competencia',comp+'-01').order('created_at',{ascending:false}).limit(1);
+  let fq=client.from('folga_campo').select('id,colaborador_id,colaborador_nome,matricula,data_inicio,data_saida,data_fim,data_retorno,distancia_km,origem_cidade,origem_uf,cidade_residencia,uf_residencia,destino_cidade,destino_uf').eq('colaborador_id',key).eq('competencia',comp+'-01').order('created_at',{ascending:false}).limit(1);
   const oid=window.g360GetSelectedObra?.()?.id||window.G360_ACTIVE_OBRA_ID;if(oid)fq=fq.eq('obra_id',oid);
   const f=await fq.maybeSingle();if(f.error)throw f.error;if(!f.data)return alert('Folga não localizada.');
   const r=await client.from('folga_campo_importacoes').select('simulacao_pdf_path,simulacao_pdf_nome').eq('folga_campo_id',f.data.id).not('simulacao_pdf_path','is',null).order('created_at',{ascending:false}).limit(1).maybeSingle();
   if(r.error)throw r.error;if(!r.data?.simulacao_pdf_path)return alert('Ainda não existe simulação salva para este colaborador.');
   const dl=await client.storage.from('folga-campo-documentos').download(r.data.simulacao_pdf_path);if(dl.error)throw dl.error;
-  const blob=dl.data instanceof Blob?dl.data:new Blob([dl.data],{type:'application/pdf'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  const raw=await dl.data.arrayBuffer(),corrigido=await g360FcCorrigirCabecalhoSimulacao(raw,f.data,f.data.colaborador_nome);
+  const blob=new Blob([corrigido],{type:'application/pdf'}),url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download=r.data.simulacao_pdf_nome||`SIMULACAO_${String(key).replace(/[^A-Za-z0-9_-]+/g,'_')}.pdf`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
  }catch(e){console.error(e);alert('Erro ao baixar simulação: '+(e?.message||e))}
 }
