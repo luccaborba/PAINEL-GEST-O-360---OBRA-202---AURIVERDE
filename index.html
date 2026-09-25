@@ -21847,7 +21847,7 @@ async function g360FcTodasSimulacoes(){
   const client=sb(),oid=obraId(),comp=compDate(currentMonth);
   if(btn){btn.disabled=true;btn.innerHTML='<span class="g360-term-spinner" aria-label="Gerando simulações"></span>'}
 
-  let fq=client.from('folga_campo').select('id,colaborador_id,colaborador_nome').eq('competencia',comp).order('colaborador_nome');
+  let fq=client.from('folga_campo').select('id,colaborador_id,colaborador_nome,matricula,data_inicio,data_saida,data_fim,data_retorno,distancia_km,origem_cidade,origem_uf,cidade_residencia,uf_residencia,destino_cidade,destino_uf').eq('competencia',comp).order('colaborador_nome');
   if(oid)fq=fq.eq('obra_id',oid);
   const fr=await fq;if(fr.error)throw fr.error;
   const folgas=(fr.data||[]).filter(x=>x.id);
@@ -21874,7 +21874,9 @@ async function g360FcTodasSimulacoes(){
    const path=simMap.get(String(f.id));
    const dl=await client.storage.from('folga-campo-documentos').download(path);
    if(dl.error)throw new Error(`Erro ao carregar a simulação de ${f.colaborador_nome}: ${dl.error.message}`);
-   const srcPdf=await PDFLib.PDFDocument.load(await dl.data.arrayBuffer());
+   const original=await dl.data.arrayBuffer();
+   const corrigido=await g360FcCorrigirCabecalhoSimulacao(original,f,f.colaborador_nome);
+   const srcPdf=await PDFLib.PDFDocument.load(corrigido);
    const pages=await finalPdf.copyPages(srcPdf,srcPdf.getPageIndices());
    pages.forEach(pg=>finalPdf.addPage(pg));
   }
@@ -22006,7 +22008,7 @@ async function g360FcFormularioFinal(){
   const client=sb(),oid=obraId(),comp=compDate(currentMonth);
   if(btn){btn.disabled=true;btn.textContent='VERIFICANDO...'}
 
-  let fq=client.from('folga_campo').select('id,colaborador_id,colaborador_nome').eq('competencia',comp).order('colaborador_nome');
+  let fq=client.from('folga_campo').select('id,colaborador_id,colaborador_nome,matricula,data_inicio,data_saida,data_fim,data_retorno,distancia_km,origem_cidade,origem_uf,cidade_residencia,uf_residencia,destino_cidade,destino_uf').eq('competencia',comp).order('colaborador_nome');
   if(oid)fq=fq.eq('obra_id',oid);
   const fr=await fq;if(fr.error)throw fr.error;
   const folgas=(fr.data||[]).filter(x=>x.colaborador_id);
@@ -22048,7 +22050,9 @@ async function g360FcFormularioFinal(){
    if(btn)btn.textContent=`${i+1}/${folgas.length} · RESUMO`;
    const resumo=await exportPdfPessoa(key,true);if(!resumo)throw new Error(`Resumo não localizado para ${nome}.`);await append(resumo);
    if(btn)btn.textContent=`${i+1}/${folgas.length} · SIMULAÇÃO`;
-   await append(await storagePdf('folga-campo-documentos',sim.get(String(f.id)),`a simulação de ${nome}`));
+   const simulacaoOriginal=await storagePdf('folga-campo-documentos',sim.get(String(f.id)),`a simulação de ${nome}`);
+   const simulacaoCorrigida=await g360FcCorrigirCabecalhoSimulacao(simulacaoOriginal,f,nome);
+   await append(simulacaoCorrigida);
    if(btn)btn.textContent=`${i+1}/${folgas.length} · TERMO`;
    const termoAssinadoPath=termos.get(String(f.id));
    if(termoAssinadoPath){
