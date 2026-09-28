@@ -276,17 +276,3 @@
 .cx-asset-inline-link{border:0;background:transparent;color:#145ba3;text-decoration:underline;font-weight:700;padding:0 2px;cursor:pointer}
 .sidebar{max-height:100vh;overflow-y:auto;position:sticky;top:0}
 @media(max-width:650px){.sidebar{max-height:none;overflow:visible;position:static}}
-
-/* V2: logos empilhadas na lateral e Central de Alertas junto da engrenagem do acesso rápido */
-.cx-sidebar-logos{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0}
-.cx-sidebar-head .cx-sidebar-logos .cx-sidebar-logo{width:184px;height:62px;max-height:none;object-fit:contain;background:#fff;border-radius:6px;padding:6px 5px}
-.cx-sidebar-head .cx-sidebar-logos .cx-sidebar-ccl-logo{width:184px;height:62px;max-height:none}
-.cx-sidebar-collapsed .cx-sidebar-logos{display:none}
-.cx-quick-tools{display:flex;align-items:center;gap:6px;flex:none}
-.cx-quick-tools .cx-alert-nav{min-width:52px;min-height:52px;margin:0;padding:4px 8px;border:0;border-bottom:2px solid transparent;background:transparent;color:#fff;display:flex!important;align-items:center;justify-content:center;flex-direction:column;gap:2px;border-radius:0}
-.cx-quick-tools .cx-alert-nav:hover,.cx-quick-tools .cx-alert-nav:focus-visible{background:#373b40;border-bottom-color:#eb6507}
-.cx-quick-tools .cx-alert-nav .cx-siren{font-size:20px;margin:0}
-.cx-quick-tools .cx-alert-nav>span:nth-child(2){font-size:9px;font-weight:700;white-space:nowrap}
-.cx-quick-tools .cx-alert-badge{position:absolute;transform:translate(17px,-15px);font-size:10px;padding:1px 5px}
-@media(max-width:900px){.cx-sidebar-head .cx-sidebar-logos .cx-sidebar-logo{width:145px;height:52px}}
-@media(max-width:650px){.cx-quick-tools{gap:2px}}

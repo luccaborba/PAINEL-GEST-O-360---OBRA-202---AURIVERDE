@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-export type ReimbursementLine = { description: string; expense_on: string | null; supplier: string | null; amount: number };
+export type ReimbursementLine = { description: string; expense_on: string | null; supplier: string | null; category?: string | null; amount: number };
 export type ReimbursementGroup = { name: string; role: string | null; items: ReimbursementLine[]; total: number };
 // RGB da marca CCL em public/ccl-logo-folga.png.
 const orange: [number, number, number] = [244, 163, 64];
@@ -10,6 +10,9 @@ const money = (n: number) => Number(n || 0).toLocaleString('pt-BR', { style: 'cu
 const amount = (n: number) => Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const month = (v: string) => new Date(`${v.slice(0, 7)}-02T12:00:00Z`).toLocaleDateString('pt-BR', { timeZone: 'UTC', month: 'long', year: 'numeric' }).toUpperCase();
 const day = (v: string | null) => v ? `${v.slice(8, 10)}/${v.slice(5, 7)}/${v.slice(2, 4)}` : '';
+const normalize = (v: string) => v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleUpperCase('pt-BR');
+const permitted = (line: ReimbursementLine): number | null => { const c=normalize(line.category||''), d=normalize(line.description||''); if(c==='CAFE'||d.includes('CAFE')) return 15; if(c==='REFEICAO'||d.includes('REFEICAO')||d.includes('ALMOCO')||d.includes('JANTAR')) return 40; return null; };
+const payable = (line: ReimbursementLine) => { const limit=permitted(line); return limit==null?Number(line.amount||0):Math.min(Number(line.amount||0),limit); };
 
 // A grade, margens e tipografia são as do relatório sintético do v1.
 export function competencePdf(groups: ReimbursementGroup[], competence: string): jsPDF {
@@ -50,45 +53,45 @@ export function competencePdf(groups: ReimbursementGroup[], competence: string):
 export function collaboratorPdf(group: ReimbursementGroup, competence: string): jsPDF {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4', compress: true });
   const width = doc.internal.pageSize.getWidth(), height = doc.internal.pageSize.getHeight();
-  const left = 10, full = width - 20, at = (v: number) => left + v / 998 * full;
-  const xs = [left, at(48), at(554), at(613), at(923), left + full], widths = xs.slice(1).map((x, i) => x - xs[i]);
-  function fit(label: string, maxWidth: number) { let size = 9.2; doc.setFontSize(size); while (size > 7 && doc.getTextWidth(label) > maxWidth) { size -= .2; doc.setFontSize(size); } }
-  function header() {
-    doc.setTextColor(...black); doc.setDrawColor(...black); doc.setLineWidth(1.2); doc.setFillColor(...orange);
-    doc.rect(left, 30, full, 48, 'FD'); doc.setFont('helvetica', 'bold'); doc.setFontSize(15.5);
-    doc.text('RELAÇÃO DESPESAS DE VIAGEM / REEMBOLSO', width / 2, 60, { align: 'center' });
-    doc.setFontSize(9); doc.text(`MÊS DE COMPETÊNCIA: ${month(competence)}`, width / 2, 94, { align: 'center' });
-    doc.setFillColor(...orange); doc.rect(left, 107, at(48) - left, 34, 'F'); doc.rect(at(554), 107, at(613) - at(554), 34, 'F');
-    doc.rect(left, 107, full, 34); [at(48), at(554), at(613)].forEach(x => doc.line(x, 107, x, 141));
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.2); doc.text('NOME:', left + 4, 129); doc.text('FUNÇÃO', at(554) + 5, 129);
-    const name = group.name.toLocaleUpperCase('pt-BR'), role = (group.role || '').toLocaleUpperCase('pt-BR');
-    fit(name, at(554) - at(48) - 10); doc.text(name, at(48) + 5, 129);
-    fit(role, left + full - at(613) - 10); doc.text(role, at(613) + 5, 129);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setFillColor(...orange); doc.rect(left, 170, full, 32, 'FD');
-    ['ITEM', 'DESCRIÇÃO', 'DATA', 'FORNECEDOR', 'VALOR'].forEach((v, i) => doc.text(v, (xs[i] + xs[i + 1]) / 2, 190, { align: 'center' }));
+  const left = 18, full = width - 36;
+  const xs = [left, left+38, left+300, left+365, left+505, left+600, left+695, left+full];
+  const widths = xs.slice(1).map((x,i)=>x-xs[i]);
+  function fit(label:string,maxWidth:number){let size=9;doc.setFontSize(size);while(size>7&&doc.getTextWidth(label)>maxWidth){size-=.2;doc.setFontSize(size)}}
+  function header(){
+    doc.setTextColor(...black); doc.setDrawColor(...black); doc.setLineWidth(.8);
+    doc.setFillColor(...orange); doc.rect(left,22,full,34,'FD');
+    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.text('PRESTAÇÃO DE CONTA INDIVIDUAL',width/2,44,{align:'center'});
+    doc.setFontSize(8.5); doc.setFillColor(245,245,245); doc.rect(left,66,full,48,'FD');
+    doc.text('COLABORADOR:',left+6,84); fit(group.name.toLocaleUpperCase('pt-BR'),300); doc.text(group.name.toLocaleUpperCase('pt-BR'),left+86,84);
+    doc.setFontSize(8.5); doc.setFont('helvetica','bold'); doc.text('FUNÇÃO:',left+6,103); doc.setFont('helvetica','normal'); fit((group.role||'').toLocaleUpperCase('pt-BR'),300); doc.text((group.role||'').toLocaleUpperCase('pt-BR'),left+86,103);
+    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.text(`COMPETÊNCIA: ${month(competence)}`,width-24,84,{align:'right'});
+    doc.setFillColor(...orange); doc.rect(left,126,full,25,'FD'); doc.setFontSize(9); doc.text('DETALHAMENTO DAS DESPESAS',width/2,143,{align:'center'});
+    doc.setFillColor(245,245,245); doc.rect(left,151,full,30,'FD');
+    const heads=['ITEM','DESCRIÇÃO DA DESPESA','DATA','FORNECEDOR','VALOR GASTO','VALOR PERMITIDO','VALOR A PAGAR'];
+    heads.forEach((v,i)=>{doc.rect(xs[i],151,widths[i],30);doc.setFontSize(i>=4?7.2:8);doc.text(v,(xs[i]+xs[i+1])/2,170,{align:'center'})});
   }
-  header(); let y = 202;
-  group.items.forEach((line, index) => {
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.4);
-    const description = doc.splitTextToSize((line.description || '').toLocaleUpperCase('pt-BR'), widths[1] - 10) as string[];
-    const supplier = doc.splitTextToSize((line.supplier || '').toLocaleUpperCase('pt-BR'), widths[3] - 10) as string[];
-    const lines = Math.max(1, description.length, supplier.length), rowH = lines === 1 ? 25 : lines === 2 ? 36 : Math.max(47, lines * 11 + 12);
-    if (y + rowH + 34 > height - 8) { doc.addPage(); header(); y = 202; }
-    doc.setDrawColor(...black); doc.setLineWidth(.45); [left, ...xs.slice(1, -1), left + full].forEach(x => doc.line(x, y, x, y + rowH));
-    if (y === 202) doc.line(left, y, left + full, y);
-    else { doc.setDrawColor(120); doc.setLineWidth(.25); doc.setLineDashPattern([1.2, 1.2], 0); doc.line(left, y, left + full, y); doc.setLineDashPattern([], 0); }
-    doc.setTextColor(...black); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.4);
-    const center = y + rowH / 2 + 2.7, step = 10.4;
-    doc.text(String(index + 1).padStart(2, '0'), (xs[0] + xs[1]) / 2, center, { align: 'center' });
-    doc.text(description, xs[1] + 5, center - (description.length - 1) * step / 2, { lineHeightFactor: 1.24 });
-    doc.text(day(line.expense_on), (xs[2] + xs[3]) / 2, center, { align: 'center' });
-    doc.text(supplier, xs[3] + 5, center - (supplier.length - 1) * step / 2, { lineHeightFactor: 1.24 });
-    doc.text('R$', xs[4] + 5, center); doc.text(amount(line.amount), xs[5] - 5, center, { align: 'right' }); y += rowH;
+  header(); let y=181;
+  group.items.forEach((line,index)=>{
+    const description=doc.splitTextToSize((line.description||'').toLocaleUpperCase('pt-BR'),widths[1]-8) as string[];
+    const supplier=doc.splitTextToSize((line.supplier||'').toLocaleUpperCase('pt-BR'),widths[3]-8) as string[];
+    const lines=Math.max(1,description.length,supplier.length), rowH=Math.max(24,lines*10+10);
+    if(y+rowH+55>height-12){doc.addPage();header();y=181}
+    doc.setDrawColor(100);doc.setLineWidth(.35);xs.forEach(x=>doc.line(x,y,x,y+rowH));doc.line(xs[xs.length-1],y,xs[xs.length-1],y+rowH);doc.line(left,y,left+full,y);doc.line(left,y+rowH,left+full,y+rowH);
+    const center=y+rowH/2+3;doc.setFont('helvetica','normal');doc.setFontSize(7.8);
+    doc.text(String(index+1).padStart(2,'0'),(xs[0]+xs[1])/2,center,{align:'center'});
+    doc.text(description,xs[1]+4,center-(description.length-1)*5,{lineHeightFactor:1.2});
+    doc.text(day(line.expense_on),(xs[2]+xs[3])/2,center,{align:'center'});
+    doc.text(supplier,xs[3]+4,center-(supplier.length-1)*5,{lineHeightFactor:1.2});
+    doc.text(amount(line.amount),xs[5]-5,center,{align:'right'});
+    const limit=permitted(line); if(limit!=null) doc.text(amount(limit),xs[6]-5,center,{align:'right'});
+    doc.setFont('helvetica','bold');doc.text(amount(payable(line)),xs[7]-5,center,{align:'right'}); y+=rowH;
   });
-  if (y + 28 > height - 8) { doc.addPage(); header(); y = 202; }
-  if (group.items.length) { doc.setDrawColor(...black); doc.setLineWidth(.6); doc.line(left, y, left + full, y); }
-  doc.setDrawColor(...black); doc.setLineWidth(1.2); doc.rect(xs[4], y, widths[4], 28);
-  doc.setTextColor(...black); doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
-  doc.text('R$', xs[4] + 5, y + 18); doc.text(amount(group.total), xs[5] - 5, y + 18, { align: 'right' });
+  if(y+44>height-12){doc.addPage();header();y=181}
+  const spent=group.items.reduce((n,x)=>n+Number(x.amount||0),0), due=group.items.reduce((n,x)=>n+payable(x),0);
+  doc.setFillColor(245,245,245);doc.setDrawColor(...black);doc.setLineWidth(.7);doc.rect(xs[4],y,xs[7]-xs[4],36,'FD');
+  [xs[5],xs[6]].forEach(x=>doc.line(x,y,x,y+36)); doc.setFont('helvetica','bold');doc.setFontSize(7.5);
+  doc.text('TOTAL GASTO',xs[4]+5,y+13);doc.text(amount(spent),xs[5]-5,y+27,{align:'right'});
+  doc.text('LIMITES',xs[5]+5,y+13);doc.text('CONFORME ITEM',xs[6]-5,y+27,{align:'right'});
+  doc.text('TOTAL A PAGAR',xs[6]+5,y+13);doc.setFontSize(9);doc.text(amount(due),xs[7]-5,y+27,{align:'right'});
   return doc;
 }

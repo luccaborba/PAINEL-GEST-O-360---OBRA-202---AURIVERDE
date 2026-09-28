@@ -1,6 +1,7 @@
 'use client';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import Image from 'next/image';
 
 type Module = { code: string; name: string; section: string; enabled: boolean };
 const defaults = ['closing', 'reimbursements', 'field_leave', 'housing', 'contracts', 'collaborators'];
@@ -40,8 +41,8 @@ export function useQuickMenu(sb: SupabaseClient | null, userId: string, projectI
   return { available, visible, draft, saved, busy, loading, message, toggle, move, save, reset: () => { setDraft(saved); setMessage(''); } };
 }
 
-export function QuickMenuBar({ quick, current, onOpen, onConfigure, alertShortcut }: { quick: ReturnType<typeof useQuickMenu>; current: string; onOpen: (code: string) => void; onConfigure: () => void; alertShortcut?: ReactNode }) {
-  return <nav className="cx-quickbar" aria-label="Menu rápido"><span className="cx-quick-label">ACESSO RÁPIDO</span><div className="cx-quick-items">{quick.visible.map(m => <button type="button" key={m.code} className={current === m.code ? 'cx-quick-item active' : 'cx-quick-item'} title={m.name} aria-label={m.name} onClick={() => onOpen(m.code)}><span aria-hidden="true">{icons[m.code] || '▦'}</span><small>{m.name}</small></button>)}{!quick.visible.length && !quick.loading && <span className="cx-quick-empty">Escolha seus atalhos em Cadastros</span>}</div><div className="cx-quick-tools"><button type="button" className="cx-quick-config" onClick={onConfigure} title="Configurar meu menu rápido" aria-label="Configurar meu menu rápido">⚙</button>{alertShortcut}</div></nav>;
+export function QuickMenuBar({ quick, current, onOpen, onConfigure }: { quick: ReturnType<typeof useQuickMenu>; current: string; onOpen: (code: string) => void; onConfigure: () => void }) {
+  return <nav className="cx-quickbar" aria-label="Menu rápido"><Image className="cx-quick-logo" src="/ccl-logo-contratos-v1.png" alt="Construtora Centro Leste" width={52} height={27} priority /><span className="cx-quick-label">ACESSO RÁPIDO</span><div className="cx-quick-items">{quick.visible.map(m => <button type="button" key={m.code} className={current === m.code ? 'cx-quick-item active' : 'cx-quick-item'} title={m.name} aria-label={m.name} onClick={() => onOpen(m.code)}><span aria-hidden="true">{icons[m.code] || '▦'}</span><small>{m.name}</small></button>)}{!quick.visible.length && !quick.loading && <span className="cx-quick-empty">Escolha seus atalhos em Cadastros</span>}</div><button type="button" className="cx-quick-config" onClick={onConfigure} title="Configurar meu menu rápido" aria-label="Configurar meu menu rápido">⚙</button></nav>;
 }
 
 export function QuickMenuSettings({ quick, projectLabel }: { quick: ReturnType<typeof useQuickMenu>; projectLabel: string }) {
