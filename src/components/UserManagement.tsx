@@ -1,0 +1,12 @@
+'use client';
+import {useState} from 'react';
+import type {SupabaseClient} from '@supabase/supabase-js';
+export type ManagedProfile={user_id:string;name:string;email:string|null;system_admin:boolean};
+export default function UserManagement({sb,profiles,onRefresh,onSelectPermissions}:{sb:SupabaseClient;profiles:ManagedProfile[];onRefresh:()=>Promise<void>;onSelectPermissions:(id:string)=>void}){
+ const [name,setName]=useState(''),[email,setEmail]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
+ async function invite(event:React.FormEvent){event.preventDefault();if(busy)return;setBusy(true);setMessage('');
+ const {data,error}=await sb.functions.invoke('cx-invite-user',{body:{name:name.trim(),email:email.trim()}});
+ if(error||data?.error){setMessage(data?.error||error?.message||'Não foi possível convidar.');}else{setName('');setEmail('');setMessage(`Convite enviado para ${data.email}. Configure a obra e as permissões para liberar o acesso.`);await onRefresh();}setBusy(false);
+ }
+ return <section className="cx-admin-users"><div className="heading"><div><span className="eyebrow">ADMINISTRAÇÃO</span><h1>Usuários</h1><p>Convide pelo e-mail. Cada usuário começa sem acesso às obras.</p></div></div><div className="panel"><h2>Convidar usuário</h2><form className="cx-admin-invite" onSubmit={e=>void invite(e)}><label>Nome<input required minLength={2} maxLength={160} value={name} onChange={e=>setName(e.target.value.toUpperCase())} placeholder="NOME COMPLETO"/></label><label>E-mail<input required type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="usuario@empresa.com.br"/></label><button type="submit" disabled={busy}>{busy?'Enviando…':'Enviar convite'}</button></form>{message&&<p role="status" className="notice">{message}</p>}<p className="cx-admin-help">O envio depende do serviço de e-mail configurado no Supabase Auth. Nenhuma permissão é concedida pelo convite.</p></div><div className="panel"><h2>Usuários cadastrados · {profiles.length}</h2><div className="matrix-scroll"><table className="cx-admin-table"><thead><tr><th>NOME</th><th>E-MAIL</th><th>PERFIL</th><th>AÇÃO</th></tr></thead><tbody>{profiles.map(p=><tr key={p.user_id}><td>{p.name}</td><td>{p.email||'—'}</td><td>{p.system_admin?'Administrador':'Usuário'}</td><td><button type="button" onClick={()=>onSelectPermissions(p.user_id)}>CONFIGURAR ACESSO</button></td></tr>)}</tbody></table></div></div></section>;
+}
