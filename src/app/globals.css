@@ -304,3 +304,8 @@
 /* Permissões: alterações locais e gravação única para evitar recarregar/piscar a matriz a cada clique. */
 .cx-permission-save{margin-left:auto;border:0;border-radius:5px;background:var(--yellow);color:#20242a;font-weight:800;padding:12px 18px;white-space:nowrap}
 .cx-permission-save:disabled{opacity:.45}
+/* Cadastro patrimonial: Código e Unidade compactos; Descrição ocupa o espaço disponível */
+.cx-asset-form label:nth-of-type(1){flex:0 0 92px;min-width:92px;max-width:92px}
+.cx-asset-form label:nth-of-type(2){flex:1 1 420px;min-width:240px}
+.cx-asset-form label:nth-of-type(3){flex:0 0 92px;min-width:92px;max-width:92px}
+.cx-asset-form label:nth-of-type(1) input,.cx-asset-form label:nth-of-type(3) input{width:100%;box-sizing:border-box}
