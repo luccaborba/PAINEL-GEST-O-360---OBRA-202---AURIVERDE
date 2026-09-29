@@ -288,3 +288,9 @@
 .cx-quickbar>.cx-alert-nav .cx-alert-badge{background:#eb6507;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px}
 @media(max-width:900px){.cx-sidebar-head .cx-sidebar-ccl-logo{width:145px}}
 @media(max-width:650px){.cx-quickbar>.cx-alert-nav>span:nth-child(2){display:none}.cx-quickbar>.cx-alert-nav{padding:6px 8px}}
+
+/* Ação de logout no Menu Rápido */
+.cx-quick-logout{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;min-width:64px;min-height:52px;padding:4px 8px;border:0;border-bottom:2px solid transparent;background:transparent;color:#fff;cursor:pointer;flex:none}
+.cx-quick-logout svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.cx-quick-logout small{font-size:9px;font-weight:800;letter-spacing:.04em}
+.cx-quick-logout:hover,.cx-quick-logout:focus-visible{background:#373b40;color:#eb6507;border-bottom-color:#eb6507}
