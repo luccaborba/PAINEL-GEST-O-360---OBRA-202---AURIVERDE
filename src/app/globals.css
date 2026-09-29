@@ -294,3 +294,9 @@
 .cx-quick-logout svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .cx-quick-logout small{font-size:9px;font-weight:800;letter-spacing:.04em}
 .cx-quick-logout:hover,.cx-quick-logout:focus-visible{background:#373b40;color:#eb6507;border-bottom-color:#eb6507}
+
+/* Ajuste final: reserva altura real para as duas marcas e evita sobreposição com o primeiro menu. */
+.cx-sidebar-head{min-height:auto!important;margin-bottom:14px}
+.cx-sidebar-brands{width:184px;flex:0 0 auto}
+.cx-sidebar-head .cx-sidebar-ccl-logo{max-height:none;height:auto}
+@media(max-width:900px){.cx-sidebar-brands{width:145px}}
