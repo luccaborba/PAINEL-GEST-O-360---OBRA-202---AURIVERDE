@@ -277,7 +277,14 @@
 .sidebar{max-height:100vh;overflow-y:auto;position:sticky;top:0}
 @media(max-width:650px){.sidebar{max-height:none;overflow:visible;position:static}}
 
-/* Logout fixo no final do menu lateral */
-.sidebar .cx-logout-nav{margin-top:auto;border-top:1px solid rgba(255,255,255,.35);border-radius:0;padding-top:16px;font-weight:800}
-.sidebar .cx-logout-nav + .side-foot{margin-top:0;padding-top:12px}
-.cx-sidebar-collapsed .cx-logout-nav{margin-top:auto}
+/* Restaura identidade da sidebar e atalho da Central de Alertas no topo. */
+.cx-sidebar-head{align-items:flex-start}
+.cx-sidebar-brands{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
+.cx-sidebar-head .cx-sidebar-ccl-logo{display:block;width:184px;height:auto;max-height:82px;object-fit:contain;background:#fff;border-radius:6px;padding:5px}
+.sidebar.cx-sidebar-collapsed .cx-sidebar-brands{display:none}
+.cx-quickbar>.cx-alert-nav{display:flex;align-items:center;justify-content:center;gap:5px;min-height:44px;padding:6px 10px;border:0;border-bottom:2px solid transparent;background:transparent;color:#fff;font-size:11px;font-weight:800;white-space:nowrap;border-radius:4px}
+.cx-quickbar>.cx-alert-nav:hover,.cx-quickbar>.cx-alert-nav:focus-visible{background:#373b40;border-bottom-color:#eb6507}
+.cx-quickbar>.cx-alert-nav .cx-siren{font-size:20px}
+.cx-quickbar>.cx-alert-nav .cx-alert-badge{background:#eb6507;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px}
+@media(max-width:900px){.cx-sidebar-head .cx-sidebar-ccl-logo{width:145px}}
+@media(max-width:650px){.cx-quickbar>.cx-alert-nav>span:nth-child(2){display:none}.cx-quickbar>.cx-alert-nav{padding:6px 8px}}
