@@ -1,4 +1,5 @@
 'use client';
+import { systemConfirm } from '@/lib/systemConfirm';
 import { useCallback, useEffect, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -17,7 +18,7 @@ export default function PortalManagement({ sb, collaboratorId }: { sb: SupabaseC
     if (error) setMessage(`Não foi possível vincular: ${error.message}`); else { setNewUser(''); await refresh(); setMessage('Conta vinculada ao colaborador.'); } setBusy(false);
   }
   async function unlink() {
-    if (!linkedUser || busy || !window.confirm('Desvincular esta conta do Portal do Colaborador?')) return;
+    if (!linkedUser || busy || !await systemConfirm('Desvincular esta conta do Portal do Colaborador?')) return;
     setBusy(true); const { error } = await sb.from('cx_portal_links').delete().eq('user_id', linkedUser).eq('collaborator_id', collaboratorId);
     if (error) setMessage(error.message); else { await refresh(); setMessage('Acesso desvinculado.'); } setBusy(false);
   }

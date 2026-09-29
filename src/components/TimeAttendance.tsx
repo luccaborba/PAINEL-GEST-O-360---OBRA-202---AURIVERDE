@@ -1,4 +1,5 @@
 'use client';
+import { systemConfirm } from '@/lib/systemConfirm';
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {calculateDay,datesForCompetence,decimalHours,duration,expectedMinutes,kindName,localCompetence,parseProductionClock,productionClock,type ScheduleKind,type TimeEntry} from './timeAttendanceMath';
@@ -82,13 +83,13 @@ function IndividualTimeAttendance({sb,projectId,projectLabel,userId,canCreate,ca
   setBusy(false);
  }
  async function deleteDay(){
-  if(!editingDate||!canDelete||closed||busy)return;const existing=index.get(editingDate);if(!existing||!window.confirm(`Excluir lançamento de ${dateBR(editingDate)}?`))return;
+  if(!editingDate||!canDelete||closed||busy)return;const existing=index.get(editingDate);if(!existing||!await systemConfirm(`Excluir lançamento de ${dateBR(editingDate)}?`))return;
   setBusy(true);const {error}=await sb.from('cx_time_entries').delete().eq('id',existing.id).eq('project_id',projectId);if(error)setMessage(error.message);else{setEditingDate(null);await refresh();setMessage('Lançamento excluído; alteração registrada no histórico.');}setBusy(false);
  }
  async function closePeriod(){
   if(!canApprove||busy||closed||!schedule)return;
   const missing=rows.filter(row=>!row.entry&&row.calc.expected>0).length;
-  if(!window.confirm(`Fechar o espelho de ${person?.name} para ${competence.slice(0,7)}? ${missing} dia(s) previstos ainda sem lançamento. Depois não será possível editar o ponto desta pessoa na competência.`))return;
+  if(!await systemConfirm(`Fechar o espelho de ${person?.name} para ${competence.slice(0,7)}? ${missing} dia(s) previstos ainda sem lançamento. Depois não será possível editar o ponto desta pessoa na competência.`))return;
   setBusy(true);setMessage('');
   const opened=await sb.from('cx_time_periods').upsert({project_id:projectId,competence},{onConflict:'project_id,competence',ignoreDuplicates:true});
   if(opened.error){setMessage(opened.error.message);setBusy(false);return;}

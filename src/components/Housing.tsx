@@ -1,4 +1,5 @@
 'use client';
+import { systemConfirm } from '@/lib/systemConfirm';
 import { useCallback, useEffect, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createHousingReport, type ContractRow, type HousingRow, type Resident } from './housingReport';
@@ -29,7 +30,7 @@ export default function Housing({ sb, projectId, projectLabel, canCreate, canEdi
     setBusy(false);
   }
   async function remove(row: Home) {
-    if (!canDelete || busy || !window.confirm(`Excluir ${row.description}?`)) return;
+    if (!canDelete || busy || !await systemConfirm(`Excluir ${row.description}?`)) return;
     setBusy(true); const result = await sb.from('cx_housing').delete().eq('id', row.id).eq('project_id', projectId);
     if (result.error) setMessage(`Não foi possível excluir: ${result.error.message}`); else { await refresh(); setMessage('Alojamento excluído.'); } setBusy(false);
   }
@@ -39,7 +40,7 @@ export default function Housing({ sb, projectId, projectLabel, canCreate, canEdi
     const next = row.status === 'ATIVO' ? 'INATIVO' : 'ATIVO';
     const linked = occupied(row);
     const prompt = next === 'INATIVO' ? `Inativar ${row.description}? ${linked ? `${linked} colaborador(es) continuarão vinculados ao imóvel e precisarão de revisão.` : 'O imóvel sairá do dashboard de alojamentos.'}` : `Reativar ${row.description}? O imóvel voltará ao dashboard.`;
-    if (!window.confirm(prompt)) return;
+    if (!await systemConfirm(prompt)) return;
     setBusy(true); setMessage('');
     const { data, error } = await sb.from('cx_housing').update({ status: next, updated_at: new Date().toISOString() }).eq('project_id', projectId).eq('id', row.id).select('id');
     if (error || !data?.length) setMessage(`Não foi possível ${next === 'ATIVO' ? 'reativar' : 'inativar'}: ${error?.message || 'acesso negado'}`);

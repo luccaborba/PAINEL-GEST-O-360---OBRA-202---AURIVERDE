@@ -1,4 +1,5 @@
 'use client';
+import { systemConfirm } from '@/lib/systemConfirm';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {buildContractRequestPrint,contractForms,downloadContractRequestPdf,type RequestData} from './contractRequestPdf';
@@ -21,7 +22,7 @@ export default function ContractRequests({sb,projectId,projectLabel,canCreate,ca
  const updateNested=(key:string,id:string,value:unknown)=>setData(prev=>({...prev,[key]:{...r(prev[key]),[id]:value}}));
  const submit=async(status:'RASCUNHO'|'ENVIADA')=>{if(!type)return; if(status==='ENVIADA'&&(!String(data.solicitante||'').trim()||!String(data.local_obra||'').trim())){setMessage('Preencha solicitante e local da obra antes de enviar.');return;}
  setBusy(true);setMessage('');const payload={form_type:type,form_data:data,status};const response=selected?await sb.from('cx_contract_requests').update(payload).eq('id',selected.id).eq('project_id',projectId).select('id').single():await sb.from('cx_contract_requests').insert({...payload,project_id:projectId}).select('id').single();setBusy(false);if(response.error){setMessage(`Não foi possível salvar: ${response.error.message}`);return;}setType('');setSelected(null);await load();setMessage(status==='RASCUNHO'?'Rascunho salvo.':'Solicitação enviada.');};
- const remove=async(item:Item)=>{if(!window.confirm(`Excluir a solicitação de ${contractForms[item.form_type]?.label}?`))return;setBusy(true);const {error}=await sb.from('cx_contract_requests').delete().eq('id',item.id).eq('project_id',projectId);setBusy(false);if(error)setMessage(error.message);else await load();};
+ const remove=async(item:Item)=>{if(!await systemConfirm(`Excluir a solicitação de ${contractForms[item.form_type]?.label}?`))return;setBusy(true);const {error}=await sb.from('cx_contract_requests').delete().eq('id',item.id).eq('project_id',projectId);setBusy(false);if(error)setMessage(error.message);else await load();};
  const print=async()=>{if(!pdfRef.current||!type)return;setBusy(true);setMessage('');try{await downloadContractRequestPdf(pdfRef.current,`${contractForms[type].code}_${selected?.id.slice(0,8)||'RASCUNHO'}.pdf`);}catch(e){setMessage(`Falha ao gerar PDF: ${e instanceof Error?e.message:String(e)}`);}finally{setBusy(false);}};
  const render=(field:Field)=>{if(field.showIf&&data[field.showIf.field]!==field.showIf.equals)return null;
  if(field.type==='static')return <p key={field.html} className="cx-cr-note">{field.html?.replace(/<[^>]*>/g,' ')}</p>;

@@ -1,5 +1,6 @@
 'use client';
 
+import { systemConfirm } from '@/lib/systemConfirm';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import PortalManagement from '@/components/PortalManagement';
@@ -237,7 +238,7 @@ export default function Collaborators({ sb, projectId, projectLabel, canCreate, 
   }
 
   async function remove(row: Collaborator) {
-    if (!canDelete || busy || !window.confirm(`Excluir ${row.name}? Esta ação não pode ser desfeita.`)) return;
+    if (!canDelete || busy || !await systemConfirm(`Excluir ${row.name}? Esta ação não pode ser desfeita.`)) return;
     setBusy(true); setMessage('');
     const { error, data } = await sb.from('cx_collaborators').delete()
       .eq('id', row.id).eq('project_id', projectId).select('id');

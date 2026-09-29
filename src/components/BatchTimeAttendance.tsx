@@ -1,5 +1,6 @@
 'use client';
 
+import { systemConfirm } from '@/lib/systemConfirm';
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {calculateDay,datesForCompetence,localCompetence,parseProductionClock,productionClock,type ScheduleKind,type TimeEntry} from './timeAttendanceMath';
@@ -73,11 +74,11 @@ export default function BatchTimeAttendance({sb,projectId,projectLabel,canCreate
  const visible=people.filter(p=>(!sector||(p.sector||'SEM SETOR')===sector)&&(!foreman||(p.foreman||'SEM ENCARREGADO')===foreman)&&(!team||(p.department||'SEM EQUIPE')===team)&&(!p.hired_on||p.hired_on<=date)&&(!p.terminated_on||p.terminated_on>=date)&&!['INATIVO','DESLIGADO'].includes(p.status));
  const canWrite=(id:string)=>!closedSet.has(id)&&!busy&&(byEntry.has(id)?canEdit:canCreate);
  function change(id:string,patch:Partial<Draft>){setDrafts(old=>({...old,[id]:{...(old[id]||blank),...patch}}));setDirty(old=>old.includes(id)?old:[...old,id]);setErrors(old=>{const next={...old};delete next[id];return next;});setUndo(null);}
- function switchDay(nextCompetence:string,nextDate:string){if(dirty.length&&!window.confirm('Há alterações não salvas. Descartar e mudar de data?'))return;setCompetence(nextCompetence);setDate(nextDate);setHolidayDate(datesForCompetence(nextCompetence).start);setCertificateFiles({});}
+ async function switchDay(nextCompetence:string,nextDate:string){if(dirty.length&&!await systemConfirm('Há alterações não salvas. Descartar e mudar de data?'))return;setCompetence(nextCompetence);setDate(nextDate);setHolidayDate(datesForCompetence(nextCompetence).start);setCertificateFiles({});}
  function move(n:number){const next=new Date(`${date}T12:00:00Z`);next.setUTCDate(next.getUTCDate()+n);const value=next.toISOString().slice(0,10);if(value>=period.start&&value<=period.end)switchDay(competence,value);}
  async function openPeriod(){if(!canCreate||opened)return;setBusy(true);const {error}=await sb.from('cx_time_periods').insert({project_id:projectId,competence});if(error)setMessage(error.message);else{setOpened(true);setMessage('Competência aberta. Cadastre os feriados antes de lançar o ponto.');}setBusy(false);}
  async function addHoliday(){if(!opened||!canCreate||!holidayName.trim())return;if(holidayDate<period.start||holidayDate>period.end){setMessage('Escolha uma data dentro da competência.');return;}setBusy(true);const {error}=await sb.from('cx_time_holidays').insert({project_id:projectId,competence,holiday_date:holidayDate,name:holidayName.trim()});if(error)setMessage(error.message);else{setHolidayName('');setHolidays(old=>[...old,{holiday_date:holidayDate,name:holidayName.trim()}].sort((a,b)=>a.holiday_date.localeCompare(b.holiday_date)));setMessage('Feriado cadastrado para toda a obra.');}setBusy(false);}
- async function removeHoliday(value:string){if(!canEdit||!window.confirm(`Excluir o feriado de ${br(value)} da competência?`))return;setBusy(true);const {error}=await sb.from('cx_time_holidays').delete().eq('project_id',projectId).eq('holiday_date',value);if(error)setMessage(error.message);else setHolidays(old=>old.filter(h=>h.holiday_date!==value));setBusy(false);}
+ async function removeHoliday(value:string){if(!canEdit||!await systemConfirm(`Excluir o feriado de ${br(value)} da competência?`))return;setBusy(true);const {error}=await sb.from('cx_time_holidays').delete().eq('project_id',projectId).eq('holiday_date',value);if(error)setMessage(error.message);else setHolidays(old=>old.filter(h=>h.holiday_date!==value));setBusy(false);}
  function evaluate(p:Person,d:Draft){const schedule=bySchedule.get(p.id),stored=byEntry.get(p.id);
   if(closedSet.has(p.id))return {error:'Espelho fechado.',calc:null};if(stored&&!canEdit||!stored&&!canCreate)return {error:'Sem permissão.',calc:null};
   if(!d.status)return {error:'Selecione a situação.',calc:null};
@@ -93,8 +94,8 @@ export default function BatchTimeAttendance({sb,projectId,projectLabel,canCreate
   if(calc.issue==='Horário inválido'||calc.issue==='Intervalo fora da jornada')return {error:calc.issue,calc:null};
   return {error:'',calc};
  }
- function applyBulk(){if(!selected.length)return;if(!bulk.status&&!bulk.entry_time&&!bulk.break_start&&!bulk.break_end&&!bulk.exit_time&&!bulk.production){setMessage('Preencha um campo para aplicar.');return;}
-  const targets=selected.filter(id=>canWrite(id)&&(replace||!byEntry.has(id)));if(replace&&!window.confirm(`Substituir os campos preenchidos em ${targets.length} linha(s)?`))return;
+ async function applyBulk(){if(!selected.length)return;if(!bulk.status&&!bulk.entry_time&&!bulk.break_start&&!bulk.break_end&&!bulk.exit_time&&!bulk.production){setMessage('Preencha um campo para aplicar.');return;}
+  const targets=selected.filter(id=>canWrite(id)&&(replace||!byEntry.has(id)));if(replace&&!await systemConfirm(`Substituir os campos preenchidos em ${targets.length} linha(s)?`))return;
   const next={...drafts};let changed=0;for(const id of targets){const before=drafts[id]||blank,after={...before};for(const field of ['status','entry_time','break_start','break_end','exit_time','production'] as (keyof Draft)[]){if(bulk[field]&&(replace||!after[field]))(after as Record<string,string>)[field]=bulk[field];}if(absence(after.status)){after.entry_time='';after.break_start='';after.break_end='';after.exit_time='';after.production='';}if(JSON.stringify(before)!==JSON.stringify(after)){next[id]=after;changed++;}}
   setUndo({drafts,dirty});setDrafts(next);setDirty(old=>[...new Set([...old,...targets.filter(id=>next[id]!==drafts[id])])]);setErrors({});setMessage(`Aplicado em ${changed} linha(s); ${selected.length-changed} ignorada(s).`);
  }
