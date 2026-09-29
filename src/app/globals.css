@@ -276,3 +276,8 @@
 .cx-asset-inline-link{border:0;background:transparent;color:#145ba3;text-decoration:underline;font-weight:700;padding:0 2px;cursor:pointer}
 .sidebar{max-height:100vh;overflow-y:auto;position:sticky;top:0}
 @media(max-width:650px){.sidebar{max-height:none;overflow:visible;position:static}}
+
+/* Logout fixo no final do menu lateral */
+.sidebar .cx-logout-nav{margin-top:auto;border-top:1px solid rgba(255,255,255,.35);border-radius:0;padding-top:16px;font-weight:800}
+.sidebar .cx-logout-nav + .side-foot{margin-top:0;padding-top:12px}
+.cx-sidebar-collapsed .cx-logout-nav{margin-top:auto}
