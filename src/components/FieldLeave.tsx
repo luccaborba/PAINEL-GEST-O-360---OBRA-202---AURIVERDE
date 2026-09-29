@@ -14,7 +14,7 @@ type City = {legacy_id:number;state:string;name:string};
 type LeaveForm = {collaborator_id:string;starts_on:string;ends_on:string;distance_km:string;periodicity:string;state:string;city:string;origin_state:string;origin_city:string;destination_state:string;destination_city:string;status:string};
 type ExpenseForm = {expense_type:string;description:string;amount:string;origin_state:string;origin_city:string;destination_state:string;destination_city:string;notes:string};
 const emptyForm: LeaveForm = {collaborator_id:'',starts_on:'',ends_on:'',distance_km:'',periodicity:'',state:'',city:'',origin_state:'GO',origin_city:'CRIXÁS',destination_state:'',destination_city:'',status:'PROGRAMADA'};
-const emptyExpense: ExpenseForm = {expense_type:'PASSAGEM_RODOVIARIA',description:'',amount:'',origin_state:'',origin_city:'',destination_state:'',destination_city:'',notes:''};
+const emptyExpense: ExpenseForm = {expense_type:'ALIMENTACAO',description:'',amount:'',origin_state:'',origin_city:'',destination_state:'',destination_city:'',notes:''};
 const expenseTypes:Record<string,string>={PASSAGEM_RODOVIARIA:'Passagem rodoviária',ALIMENTACAO:'Alimentação',ALIMENTACAO_IDA:'Alimentação ida',ALIMENTACAO_VOLTA:'Alimentação volta',CAFE_IDA:'Café ida',CAFE_VOLTA:'Café volta',PEDAGIO:'Pedágio',COMBUSTIVEL:'Combustível',ALIMENTACAO_IDA_VOLTA:'Alimentação ida e volta',HOSPEDAGEM:'Hospedagem',OUTROS:'Outros'};
 const money=(v:number)=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const fmt=(v:string|null)=>v?`${v.slice(8,10)}/${v.slice(5,7)}/${v.slice(0,4)}`:'—';
