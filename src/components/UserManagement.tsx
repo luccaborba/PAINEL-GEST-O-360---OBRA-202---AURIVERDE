@@ -17,8 +17,11 @@ export default function UserManagement({sb,profiles,onRefresh,onSelectPermission
   if(!selected||busy)return;setBusy(true);setMessage('');
   const body:any={action:kind,user_id:selected.user_id}; if(kind==='update'){body.name=editName.trim();body.email=editEmail.trim();}
   const {data,error}=await sb.functions.invoke('cx-manage-user',{body});
-  if(error||data?.error)setMessage(data?.error||error?.message||'Não foi possível concluir a operação.');
-  else{setMessage(data?.message||'Operação concluída.');setAction(null);setSelected(null);await onRefresh();}
+  if(error||data?.error){
+   const detail=data?.error||error?.message||'Não foi possível concluir a operação.';
+   setMessage(detail.includes('Somente administrador')?'Sua sessão atual não é de administrador. Entre novamente com a conta ADMIN para gerenciar usuários.':detail);
+   setAction(null);setSelected(null);
+  } else{setMessage(data?.message||'Operação concluída.');setAction(null);setSelected(null);await onRefresh();}
   setBusy(false);
  }
  return <section className="cx-admin-users"><div className="heading"><div><span className="eyebrow">ADMINISTRAÇÃO</span><h1>Usuários</h1><p>Convide, edite e controle os acessos diretamente pelo painel.</p></div></div>
