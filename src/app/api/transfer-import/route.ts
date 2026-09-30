@@ -24,7 +24,7 @@ export async function POST(request: Request) {
         model: process.env.OPENAI_TRANSFER_MODEL || 'gpt-5-mini',
         input: [{ role: 'user', content: [
           { type: 'input_text', text: prompt },
-          { type: 'input_file', filename: body.fileName || 'transferencia.pdf', file_url: body.fileUrl }
+          { type: 'input_file', file_url: body.fileUrl }
         ]}],
         text: { format: { type: 'json_schema', name: 'collaborator_transfer', strict: true, schema: { type: 'object', additionalProperties: false, properties, required: [...fields] } } }
       })

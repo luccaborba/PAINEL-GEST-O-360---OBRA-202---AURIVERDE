@@ -106,6 +106,7 @@ export default function Collaborators({ sb, projectId, projectLabel, canCreate, 
   const [importBusy, setImportBusy] = useState(false);
   const [importStage, setImportStage] = useState<'upload' | 'review'>('upload');
   const [importData, setImportData] = useState<Partial<Form>>({});
+  const [housingOptions, setHousingOptions] = useState<string[]>([]);
   useEffect(() => {
     const key = `cx-collaborator-columns:${projectId}`;
     try {
@@ -153,10 +154,14 @@ export default function Collaborators({ sb, projectId, projectLabel, canCreate, 
   const reload = useCallback(async () => {
     if (!projectId) { setRows([]); return; }
     setLoading(true);
-    const { data, error } = await sb.from('cx_collaborators').select('*')
-      .eq('project_id', projectId).order('name');
+    const [{ data, error }, housingResult] = await Promise.all([
+      sb.from('cx_collaborators').select('*').eq('project_id', projectId).order('name'),
+      sb.from('cx_housing').select('description,contract_code').eq('project_id', projectId).eq('active', true).order('description')
+    ]);
     setRows((data || []) as Collaborator[]);
-    setMessage(error ? `Não foi possível carregar colaboradores: ${error.message}` : '');
+    const housingNames = (housingResult.data || []).map((item: any) => uppercase(String(item.description || item.contract_code || ''))).filter(Boolean);
+    setHousingOptions([...new Set(housingNames)].sort((a,b)=>a.localeCompare(b,'pt-BR')));
+    setMessage(error ? `Não foi possível carregar colaboradores: ${error.message}` : housingResult.error ? `Não foi possível carregar alojamentos: ${housingResult.error.message}` : '');
     setLoading(false);
   }, [sb, projectId]);
 
@@ -244,6 +249,15 @@ export default function Collaborators({ sb, projectId, projectLabel, canCreate, 
     else { setImportOpen(false); await reload(); setMessage('Colaborador transferido importado com sucesso.'); previousFocus.current?.focus(); }
     setImportBusy(false);
   }
+
+  const orgOptions = useMemo(() => {
+    const sectors = [...new Set(rows.map(row => uppercase(row.sector || '')).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    const selectedSector = uppercase(String(importData.sector || ''));
+    const selectedForeman = uppercase(String(importData.foreman || ''));
+    const foremen = [...new Set(rows.filter(row => !selectedSector || uppercase(row.sector || '') === selectedSector).map(row => uppercase(row.foreman || '')).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    const teams = [...new Set(rows.filter(row => (!selectedSector || uppercase(row.sector || '') === selectedSector) && (!selectedForeman || uppercase(row.foreman || '') === selectedForeman)).map(row => uppercase(row.department || '')).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    return { sectors, foremen, teams };
+  }, [rows, importData.sector, importData.foreman]);
 
   const filtered = useMemo(() => {
     const q = uppercase(search);
@@ -361,7 +375,7 @@ export default function Collaborators({ sb, projectId, projectLabel, canCreate, 
         <label>Matrícula *<input value={String(importData.registration || '')} onChange={e=>importValue('registration',e.target.value)} /></label><label>Nome *<input value={String(importData.name || '')} onChange={e=>importValue('name',e.target.value.toUpperCase())} /></label><label>CPF<input value={cpfMask(String(importData.cpf || ''))} onChange={e=>importValue('cpf',e.target.value.replace(/\D/g,'').slice(0,11))} /></label><label>Admissão<input type="date" value={String(importData.hired_on || '')} onChange={e=>importValue('hired_on',e.target.value||null)} /></label>
         <label>Função / Cargo<input value={String(importData.role || '')} onChange={e=>importValue('role',e.target.value.toUpperCase())} /></label><label>Tipo de contrato<input value={String(importData.contract_type || '')} onChange={e=>importValue('contract_type',e.target.value.toUpperCase())} /></label><label>CNH<input value={String(importData.license_number || '')} onChange={e=>importValue('license_number',e.target.value)} /></label><label>Categoria CNH<input value={String(importData.license_category || '')} onChange={e=>importValue('license_category',e.target.value.toUpperCase())} /></label><label>Vencimento CNH<input type="date" value={String(importData.license_expires_on || '')} onChange={e=>importValue('license_expires_on',e.target.value||null)} /></label>
         <label>UF<input maxLength={2} value={String(importData.state || '')} onChange={e=>importValue('state',e.target.value.toUpperCase())} /></label><label>Cidade<input value={String(importData.city || '')} onChange={e=>importValue('city',e.target.value.toUpperCase())} /></label><label>Telefone<input value={phoneMask(String(importData.phone || ''))} onChange={e=>importValue('phone',e.target.value.replace(/\D/g,'').slice(0,11))} /></label><label>E-mail<input value={String(importData.email || '')} onChange={e=>importValue('email',e.target.value.toLowerCase())} /></label><label>Distância da obra (km)<input type="number" min="0" step="0.1" value={importData.distance_km ?? ''} onChange={e=>importValue('distance_km',e.target.value===''?null:Number(e.target.value))} /></label>
-        <label className="cx-manual-field">Setor *<input value={String(importData.sector || '')} onChange={e=>importValue('sector',e.target.value.toUpperCase())} /></label><label className="cx-manual-field">Encarregado *<input value={String(importData.foreman || '')} onChange={e=>importValue('foreman',e.target.value.toUpperCase())} /></label><label className="cx-manual-field">Equipe *<input value={String(importData.department || '')} onChange={e=>importValue('department',e.target.value.toUpperCase())} /></label><label className="cx-manual-field">Usa alojamento? *<select value={importData.uses_lodging || 'NÃO'} onChange={e=>importValue('uses_lodging',e.target.value as YesNo)}><option value="NÃO">NÃO</option><option value="SIM">SIM</option></select></label>{importData.uses_lodging==='SIM'&&<label className="cx-manual-field">Alojamento *<input value={String(importData.lodging || '')} onChange={e=>importValue('lodging',e.target.value.toUpperCase())} /></label>}
+        <label className="cx-manual-field">Setor *<select value={String(importData.sector || '')} onChange={e=>setImportData(previous=>({...previous,sector:e.target.value||null,foreman:null,department:null}))}><option value="">SELECIONE O SETOR</option>{orgOptions.sectors.map(option=><option key={option} value={option}>{option}</option>)}</select></label><label className="cx-manual-field">Encarregado *<select value={String(importData.foreman || '')} disabled={!importData.sector} onChange={e=>setImportData(previous=>({...previous,foreman:e.target.value||null,department:null}))}><option value="">SELECIONE O ENCARREGADO</option>{orgOptions.foremen.map(option=><option key={option} value={option}>{option}</option>)}</select></label><label className="cx-manual-field">Equipe *<select value={String(importData.department || '')} disabled={!importData.foreman} onChange={e=>importValue('department',e.target.value||null)}><option value="">SELECIONE A EQUIPE</option>{orgOptions.teams.map(option=><option key={option} value={option}>{option}</option>)}</select></label><label className="cx-manual-field">Usa alojamento? *<select value={importData.uses_lodging || 'NÃO'} onChange={e=>setImportData(previous=>({...previous,uses_lodging:e.target.value as YesNo,lodging:e.target.value==='SIM'?previous.lodging:null}))}><option value="NÃO">NÃO</option><option value="SIM">SIM</option></select></label>{importData.uses_lodging==='SIM'&&<label className="cx-manual-field">Alojamento *<select value={String(importData.lodging || '')} onChange={e=>importValue('lodging',e.target.value||null)}><option value="">SELECIONE O ALOJAMENTO</option>{housingOptions.map(option=><option key={option} value={option}>{option}</option>)}</select></label>}
       </div><div className="cx-form-actions"><button type="button" disabled={importBusy} onClick={()=>setImportStage('upload')}>Voltar</button><button type="button" className="cx-primary" disabled={importBusy} onClick={()=>void confirmTransferImport()}>{importBusy?'Cadastrando…':'Confirmar importação'}</button></div></>}
     </div></div>}
     {formOpen && <div className="cx-modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) closeDialog(); }}><div ref={dialogRef} className="panel cx-modal cx-collab-form" role="dialog" aria-modal="true" aria-labelledby="cx-dialog-title"><div className="cx-dialog-head"><h2 id="cx-dialog-title">{editingId ? 'Editar colaborador' : 'Novo colaborador'}</h2><button type="button" className="cx-dialog-close" aria-label="Fechar janela" disabled={busy} onClick={closeDialog}>×</button></div>
