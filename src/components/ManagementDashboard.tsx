@@ -55,9 +55,10 @@ export default function ManagementDashboard({ sb, projectId, canViewHousing, can
   const today = useMemo(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }, []);
   useEffect(() => {
     let active = true;
-    setRows([]); setError(''); setLoading(true);
-    if (!projectId || !canViewCollaborators) { setLoading(false); return; }
-    (async () => {
+    if (!projectId || !canViewCollaborators) { setRows([]); setLoading(false); return; }
+    const load = async (showLoading = false) => {
+      if (showLoading) setLoading(true);
+      setError('');
       const loaded: Row[] = [];
       for (let start = 0; ; start += 1000) {
         const { data, error: queryError } = await sb.from('cx_collaborators').select('status,contract_type,department,role,hired_on,terminated_on').eq('project_id', projectId).order('id').range(start, start + 999);
@@ -67,8 +68,15 @@ export default function ManagementDashboard({ sb, projectId, canViewHousing, can
         if (!data || data.length < 1000) break;
       }
       if (active) { setRows(loaded); setLoading(false); }
-    })();
-    return () => { active = false; };
+    };
+    void load(true);
+    const refreshOnFocus = () => { if (document.visibilityState === 'visible') void load(false); };
+    window.addEventListener('focus', refreshOnFocus);
+    document.addEventListener('visibilitychange', refreshOnFocus);
+    const channel = sb.channel(`cx-dashboard-collaborators-${projectId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cx_collaborators', filter: `project_id=eq.${projectId}` }, () => void load(false))
+      .subscribe();
+    return () => { active = false; window.removeEventListener('focus', refreshOnFocus); document.removeEventListener('visibilitychange', refreshOnFocus); void sb.removeChannel(channel); };
   }, [sb, projectId, canViewCollaborators]);
   const own = useMemo(() => rows.filter(row => !thirdParty(row.contract_type)), [rows]);
   const active = useMemo(() => own.filter(row => row.status?.toUpperCase() === 'ATIVO'), [own]);

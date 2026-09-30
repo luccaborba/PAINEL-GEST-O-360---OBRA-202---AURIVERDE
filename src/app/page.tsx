@@ -112,6 +112,19 @@ export default function Home() {
     return () => listener.subscription.unsubscribe();
   }, [sb, refresh]);
 
+  // Mantém permissões atualizadas sem exigir novo login quando o ADMIN altera acessos.
+  useEffect(() => {
+    if (!sb || !user?.id) return;
+    const syncAccess = () => { if (document.visibilityState === 'visible') void refresh(user.id); };
+    window.addEventListener('focus', syncAccess);
+    document.addEventListener('visibilitychange', syncAccess);
+    const channel = sb.channel(`cx-access-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cx_grants', filter: `user_id=eq.${user.id}` }, () => void refresh(user.id))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cx_memberships', filter: `user_id=eq.${user.id}` }, () => void refresh(user.id))
+      .subscribe();
+    return () => { window.removeEventListener('focus', syncAccess); document.removeEventListener('visibilitychange', syncAccess); void sb.removeChannel(channel); };
+  }, [sb, user?.id, refresh]);
+
   async function signIn(e: React.FormEvent) {
     e.preventDefault(); if (!sb) return;
     setBusy(true); setMessage('');
