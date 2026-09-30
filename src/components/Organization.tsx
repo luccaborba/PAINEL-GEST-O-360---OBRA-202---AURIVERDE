@@ -35,40 +35,47 @@ export default function Organization({sb,projectId,projectLabel,canEdit}:{sb:Sup
   if(!members.length){setMsg('Nenhum colaborador encontrado com o filtro atual.');return}
   const doc=new jsPDF({orientation:'landscape',unit:'pt',format:'a3'}),w=doc.internal.pageSize.getWidth(),h=doc.internal.pageSize.getHeight();
   const yellow:[number,number,number]=[245,197,24],dark:[number,number,number]=[20,21,23],line:[number,number,number]=[55,55,55];
-  const box=(x:number,y:number,bw:number,bh:number,title:string,sub='',fill:[number,number,number]=[255,255,255])=>{doc.setFillColor(...fill);doc.setDrawColor(...line);doc.setLineWidth(1);doc.roundedRect(x,y,bw,bh,5,5,'FD');doc.setTextColor(...dark);doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text(doc.splitTextToSize(title,bw-12),x+bw/2,y+16,{align:'center'});if(sub){doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.text(doc.splitTextToSize(sub,bw-12),x+bw/2,y+bh-10,{align:'center'})}};
-  const header=()=>{doc.setFillColor(...dark);doc.rect(0,0,w,58,'F');doc.setTextColor(...yellow);doc.setFont('helvetica','bold');doc.setFontSize(17);doc.text('ORGANOGRAMA — SETOR / EQUIPE / FUNÇÃO',32,27);doc.setTextColor(235);doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.text(`Construtora Centro Leste · ${projectLabel} · ${reportFilter()}`,32,44,{maxWidth:w-64})};
+  const box=(x:number,y:number,bw:number,bh:number,title:string,sub='',fill:[number,number,number]=[255,255,255])=>{doc.setFillColor(...fill);doc.setDrawColor(...line);doc.setLineWidth(1);doc.roundedRect(x,y,bw,bh,5,5,'FD');doc.setTextColor(...dark);doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.text(doc.splitTextToSize(title,bw-12),x+bw/2,y+15,{align:'center'});if(sub){doc.setFont('helvetica','normal');doc.setFontSize(7);doc.text(doc.splitTextToSize(sub,bw-12),x+bw/2,y+bh-9,{align:'center'})}};
+  const header=()=>{doc.setFillColor(...dark);doc.rect(0,0,w,58,'F');doc.setTextColor(...yellow);doc.setFont('helvetica','bold');doc.setFontSize(17);doc.text('ORGANOGRAMA — CASCATA HIERÁRQUICA',32,27);doc.setTextColor(235);doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.text(`Construtora Centro Leste · ${projectLabel} · ${reportFilter()}`,32,44,{maxWidth:w-64})};
+  const footer=()=>{doc.setTextColor(100);doc.setFontSize(7);doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')}`,w-32,h-18,{align:'right'})};
   header();
-  const selectedSectorIds=(filterSectors.length||filterTeams.length)?Array.from(new Set(members.map(c=>c.sector_id||'').filter(Boolean))):Array.from(new Set(members.map(c=>c.sector_id||'').filter(Boolean)));
-  const groups=selectedSectorIds.map(sid=>({sid,name:sectorMap.get(sid)||'SETOR',people:members.filter(c=>c.sector_id===sid)})).filter(g=>g.people.length);
-  if(!groups.length){groups.push({sid:'',name:filterRole||'ORGANOGRAMA',people:members})}
-  let pageY=84;
+  const groups=Array.from(new Set(members.map(c=>c.sector_id||'').filter(Boolean))).map(sid=>({sid,name:sectorMap.get(sid)||'SETOR',people:members.filter(c=>c.sector_id===sid)})).filter(g=>g.people.length);
+  if(!groups.length)groups.push({sid:'',name:filterRole||'ORGANOGRAMA',people:members});
+  const left=34,sectorW=165,teamW=185,roleW=190,namesW=Math.max(260,w-left-sectorW-teamW-roleW-105),gapX=42;
+  const sectorX=left,teamX=sectorX+sectorW+gapX,roleX=teamX+teamW+gapX,namesX=roleX+roleW+gapX;
+  let y=84;
+  const newPage=()=>{footer();doc.addPage();header();y=84};
   for(const g of groups){
    const teamGroups=Array.from(new Set(g.people.map(c=>c.team_id||'SEM_EQUIPE'))).map(tid=>({tid,name:tid==='SEM_EQUIPE'?'SEM EQUIPE':teamMap.get(tid)||'EQUIPE',people:g.people.filter(c=>(c.team_id||'SEM_EQUIPE')===tid)}));
-   const needed=Math.max(230,teamGroups.length*185);
-   if(pageY+needed>h-40){doc.addPage();header();pageY=84}
-   const rootW=250,rootH=48,rootX=(w-rootW)/2,rootY=pageY;
-   box(rootX,rootY,rootW,rootH,g.name,`${g.people.length} colaborador(es)`,yellow);
-   const trunkTop=rootY+rootH,trunkY=trunkTop+28;
-   doc.setDrawColor(...line);doc.setLineWidth(1.4);doc.line(w/2,trunkTop,w/2,trunkY);
-   const cols=Math.min(4,Math.max(1,teamGroups.length)),gap=18,teamW=(w-80-gap*(cols-1))/cols;
-   let maxBottom=trunkY;
-   teamGroups.forEach((tg,idx)=>{
-    const col=idx%cols,rowIdx=Math.floor(idx/cols),x=40+col*(teamW+gap),y=trunkY+28+rowIdx*185;
-    const cx=x+teamW/2;
-    if(rowIdx===0){doc.line(Math.min(w/2,cx),trunkY,Math.max(w/2,cx),trunkY);doc.line(cx,trunkY,cx,y)}else{doc.line(w/2,trunkY,w/2,y-14);doc.line(Math.min(w/2,cx),y-14,Math.max(w/2,cx),y-14);doc.line(cx,y-14,cx,y)}
-    box(x,y,teamW,38,tg.name,`${tg.people.length} pessoa(s)`,[242,242,242]);
+   let sectorDrawn=false;
+   for(const tg of teamGroups){
     const rolesInTeam=Array.from(new Set(tg.people.map(c=>(c.role||'SEM FUNÇÃO').trim()))).sort();
-    const roleY=y+70;doc.line(cx,y+38,cx,roleY-14);
-    const rGap=8,rW=Math.max(90,(teamW-rGap*(rolesInTeam.length-1))/Math.max(1,rolesInTeam.length));
-    const totalW=rolesInTeam.length*rW+(rolesInTeam.length-1)*rGap,startX=x+(teamW-totalW)/2;
-    if(rolesInTeam.length>1){doc.line(startX+rW/2,roleY-14,startX+totalW-rW/2,roleY-14)}
-    rolesInTeam.forEach((role,ri)=>{const rx=startX+ri*(rW+rGap),rcx=rx+rW/2;doc.line(rcx,roleY-14,rcx,roleY);const rp=tg.people.filter(c=>(c.role||'SEM FUNÇÃO').trim()===role);box(rx,roleY,rW,34,role,`${rp.length} pessoa(s)`,[255,249,219]);const names=rp.map(c=>c.name);let ny=roleY+48;doc.setFont('helvetica','normal');doc.setFontSize(6.8);doc.setTextColor(...dark);names.slice(0,6).forEach(n=>{doc.text(doc.splitTextToSize(n,rW-8),rx+4,ny);ny+=10});if(names.length>6)doc.text(`+ ${names.length-6} colaborador(es)`,rx+4,ny);maxBottom=Math.max(maxBottom,ny+8)});
-   });
-   pageY=Math.max(maxBottom+35,trunkY+teamGroups.length*20+120);
+    let teamDrawn=false;
+    for(const role of rolesInTeam){
+     const rp=tg.people.filter(c=>(c.role||'SEM FUNÇÃO').trim()===role);
+     const nameLines=rp.map(c=>c.name);
+     const rowH=Math.max(48,20+nameLines.length*10);
+     if(y+rowH>h-40){newPage();sectorDrawn=false;teamDrawn=false}
+     const cy=y+24;
+     if(!sectorDrawn){box(sectorX,y,sectorW,48,g.name,`${g.people.length} colaborador(es)`,yellow);sectorDrawn=true}
+     if(!teamDrawn){box(teamX,y,teamW,48,tg.name,`${tg.people.length} pessoa(s)`,[242,242,242]);doc.setDrawColor(...line);doc.setLineWidth(1.3);doc.line(sectorX+sectorW,y+24,teamX,y+24);teamDrawn=true}
+     box(roleX,y,roleW,48,role,`${rp.length} pessoa(s)`,[255,249,219]);
+     doc.setDrawColor(...line);doc.setLineWidth(1.1);doc.line(teamX+teamW,cy,roleX,cy);
+     doc.line(roleX+roleW,cy,namesX,cy);
+     doc.setFont('helvetica','normal');doc.setFontSize(7.2);doc.setTextColor(...dark);
+     let ny=y+12;nameLines.forEach(n=>{doc.text(doc.splitTextToSize(n,namesW-10),namesX+5,ny);ny+=10});
+     y+=rowH+12;
+     if(y<h-40){doc.setDrawColor(190);doc.setLineWidth(.35);doc.line(roleX,y-6,w-34,y-6)}
+    }
+    teamDrawn=false;
+   }
+   y+=18;sectorDrawn=false;
   }
-  for(let i=1;i<=doc.getNumberOfPages();i++){doc.setPage(i);doc.setTextColor(100);doc.setFontSize(7);doc.text(`Página ${i}/${doc.getNumberOfPages()} · Gerado em ${new Date().toLocaleString('pt-BR')}`,w-32,h-18,{align:'right'})}
-  doc.save(`organograma_visual_setor_equipe_${new Date().toISOString().slice(0,10)}.pdf`)
+  footer();
+  for(let i=1;i<=doc.getNumberOfPages();i++){doc.setPage(i);doc.setTextColor(100);doc.setFontSize(7);doc.text(`Página ${i}/${doc.getNumberOfPages()}`,32,h-18)}
+  doc.save(`organograma_visual_cascata_${new Date().toISOString().slice(0,10)}.pdf`)
  }
+
  return <section><div className="heading"><div><span className="eyebrow">DP/RH · {projectLabel}</span><h1>Organograma Setor/Equipe</h1><p>Estrutura organizacional por setor/equipe (encarregado responsável).</p></div></div>{msg&&<div className="notice">{msg}<button onClick={()=>setMsg('')}>×</button></div>}
  <div className="metrics cx-org-kpis"><article className="metric"><span>COLABORADORES</span><strong>{members.length}</strong></article><article className="metric"><span>SETORES/EQUIPES</span><strong>{teamCounts.length}</strong></article><article className="metric"><span>CARGOS/FUNÇÕES</span><strong>{cargoCounts.length}</strong></article><article className="metric"><span>MAIOR SETOR/EQUIPE</span><strong>{teamCounts[0]?.[1]||0}</strong></article><article className="metric"><span>EM EXPERIÊNCIA</span><strong>{inExp}</strong></article><article className="metric"><span>MÉDIA POR SETOR</span><strong>{avg.toFixed(1)}</strong></article></div>
  <div className="panel cx-org-report-filters"><details className="cx-org-tree-select"><summary>{filterTeams.length||filterSectors.length?`SETOR / EQUIPE · ${filterTeams.length||filterSectors.length} SELECIONADO(S)`:'SELECIONAR SETOR / EQUIPE'}</summary><div className="cx-org-tree-menu">{sectorOptions.map(sec=>{const sts=teams.filter(t=>t.sector_id===sec.id);const all=sts.length>0&&sts.every(t=>filterTeams.includes(t.id));return <div className="cx-org-tree-sector" key={sec.id}><label className="cx-org-parent"><input type="checkbox" checked={all||filterSectors.includes(sec.id)} onChange={()=>toggleSector(sec.id)}/><span>{sec.name}</span></label><div className="cx-org-tree-teams">{sts.map(t=><label key={t.id}><input type="checkbox" checked={filterTeams.includes(t.id)} onChange={()=>toggleTeam(t.id,sec.id)}/><span>{t.name}</span></label>)}</div></div>})}</div></details><select value={filterRole} onChange={e=>setFilterRole(e.target.value)}><option value="">TODOS OS CARGOS</option>{roles.map(x=><option key={x}>{x}</option>)}</select><button className="cx-org-yellow-btn" onClick={()=>{setFilterSectors([]);setFilterTeams([]);setFilterRole('')}}>LIMPAR FILTRO</button><button className="cx-org-yellow-btn" onClick={exportPdf}>📄 EXPORTAR PDF</button><button className="cx-org-yellow-btn" onClick={exportXls}>📊 EXPORTAR XLS</button><button className="cx-org-yellow-btn" onClick={exportVisual}>🌳 EXPORTAR ORGANOGRAMA (PDF)</button></div>
