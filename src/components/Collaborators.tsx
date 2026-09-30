@@ -206,12 +206,23 @@ export default function Collaborators({ sb, projectId, projectLabel, canCreate, 
     if (!importFile || importBusy) return;
     setImportBusy(true); setMessage('');
     try {
-      const body = new FormData(); body.append('file', importFile);
-      const response = await fetch('/api/transfer-import', { method: 'POST', body });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Falha ao analisar o PDF.');
-      setImportData({ ...data, sector: null, foreman: null, department: null, uses_lodging: 'NÃO', lodging: null, work_schedule: null, shift_start: null, shift_end: null, break_start: null, break_end: null, shift_details: null, status: 'ATIVO' });
-      setImportStage('review');
+      if (importFile.type !== 'application/pdf' || importFile.size > 20 * 1024 * 1024) throw new Error('Envie um PDF válido de até 20 MB.');
+      const storagePath = `${projectId}/${crypto.randomUUID()}.pdf`;
+      const uploaded = await sb.storage.from('cx-transfer-imports').upload(storagePath, importFile, { contentType: 'application/pdf', upsert: false });
+      if (uploaded.error) throw new Error(`Não foi possível preparar o PDF: ${uploaded.error.message}`);
+      try {
+        const signed = await sb.storage.from('cx-transfer-imports').createSignedUrl(storagePath, 300);
+        if (signed.error || !signed.data?.signedUrl) throw new Error(`Não foi possível liberar o PDF para análise: ${signed.error?.message || 'URL temporária indisponível.'}`);
+        const response = await fetch('/api/transfer-import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileUrl: signed.data.signedUrl, fileName: importFile.name }) });
+        const raw = await response.text();
+        let data: any = {};
+        try { data = raw ? JSON.parse(raw) : {}; } catch { throw new Error(response.ok ? 'O servidor retornou uma resposta inválida.' : `Falha no servidor (${response.status}). Tente novamente.`); }
+        if (!response.ok) throw new Error(data.error || `Falha ao analisar o PDF (${response.status}).`);
+        setImportData({ ...data, sector: null, foreman: null, department: null, uses_lodging: 'NÃO', lodging: null, work_schedule: null, shift_start: null, shift_end: null, break_start: null, break_end: null, shift_details: null, status: 'ATIVO' });
+        setImportStage('review');
+      } finally {
+        await sb.storage.from('cx-transfer-imports').remove([storagePath]);
+      }
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Falha ao analisar o PDF.'); }
     finally { setImportBusy(false); }
   }
