@@ -378,3 +378,15 @@
 .cx-org-sector-checks label:has(input:checked){background:#fff8d8;border-color:#f5c518;box-shadow:0 0 0 1px #f5c518 inset}
 .cx-org-report-filters .cx-org-yellow-btn{background:#f5c518!important;color:#111!important;border:1px solid #d5aa00!important;border-radius:7px!important;padding:9px 13px!important;font-weight:900!important;box-shadow:none!important}
 .cx-org-report-filters .cx-org-yellow-btn:hover{background:#e5b800!important;border-color:#bd9800!important}
+
+/* ORGANOGRAMA — seletor hierárquico compacto */
+.cx-org-tree-select{position:relative;min-width:290px;max-width:380px;z-index:20}
+.cx-org-tree-select>summary{list-style:none;cursor:pointer;border:1px solid #d5d7db;border-radius:8px;background:#fff;color:#111;padding:10px 38px 10px 12px;font-size:12px;font-weight:800;min-height:40px;display:flex;align-items:center;position:relative}
+.cx-org-tree-select>summary::-webkit-details-marker{display:none}
+.cx-org-tree-select>summary:after{content:'▾';position:absolute;right:13px;font-size:14px}
+.cx-org-tree-select[open]>summary{border-color:#f5c518;box-shadow:0 0 0 2px rgba(245,197,24,.18)}
+.cx-org-tree-menu{position:absolute;left:0;top:calc(100% + 6px);width:100%;max-height:390px;overflow:auto;background:#fff;border:1px solid #d8d8d8;border-radius:10px;box-shadow:0 14px 35px rgba(0,0,0,.18);padding:10px;z-index:50}
+.cx-org-tree-sector{padding:5px 2px;border-bottom:1px solid #eee}.cx-org-tree-sector:last-child{border-bottom:0}
+.cx-org-tree-sector label{display:flex;align-items:center;gap:8px;color:#111;cursor:pointer;font-size:12px;padding:5px 6px;border-radius:6px}
+.cx-org-tree-sector label:hover{background:#fff8d7}.cx-org-tree-sector input{accent-color:#f5c518;width:15px;height:15px;cursor:pointer}
+.cx-org-tree-sector .cx-org-parent{font-weight:900}.cx-org-tree-teams{padding-left:23px}.cx-org-tree-teams label{font-weight:600}
