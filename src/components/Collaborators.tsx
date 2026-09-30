@@ -38,7 +38,7 @@ const cpfMask = (value: string) => value.replace(/\D/g, '').slice(0, 11).replace
 const phoneMask = (value: string) => { const digits = value.replace(/\D/g, '').slice(0, 11); if (digits.length <= 2) return digits ? `(${digits}` : ''; const prefix = `(${digits.slice(0, 2)}) `; return prefix + (digits.length <= 10 ? digits.slice(2).replace(/^(\d{4})(\d)/, '$1-$2') : digits.slice(2).replace(/^(\d{5})(\d)/, '$1-$2')); };
 const viewSections: { title: string; fields: { key: keyof Form; label: string; kind?: 'date' | 'money' }[] }[] = [
   { title: 'Identificação', fields: [{ key: 'registration', label: 'Matrícula' }, { key: 'name', label: 'Nome' }, { key: 'cpf', label: 'CPF' }, { key: 'contract_type', label: 'Tipo de contrato' }, { key: 'hired_on', label: 'Admissão', kind: 'date' }, { key: 'terminated_on', label: 'Desligamento', kind: 'date' }, { key: 'status', label: 'Status' }] },
-  { title: 'Função e jornada', fields: [{ key: 'sector', label: 'Setor' }, { key: 'foreman', label: 'Encarregado' }, { key: 'department', label: 'Equipe' }, { key: 'role', label: 'Função / Cargo' }, { key: 'job_level', label: 'Nível' }, { key: 'aso_expires_on', label: 'Vencimento ASO', kind: 'date' }, { key: 'work_schedule', label: 'Jornada / Escala' }, { key: 'shift_start', label: 'Entrada' }, { key: 'shift_end', label: 'Saída' }, { key: 'break_start', label: 'Início do intervalo' }, { key: 'break_end', label: 'Fim do intervalo' }, { key: 'shift_details', label: 'Detalhes da jornada' }] },
+  { title: 'Função', fields: [{ key: 'sector', label: 'Setor' }, { key: 'foreman', label: 'Encarregado' }, { key: 'department', label: 'Equipe' }, { key: 'role', label: 'Função / Cargo' }, { key: 'job_level', label: 'Nível' }, { key: 'aso_expires_on', label: 'Vencimento ASO', kind: 'date' }] },
   { title: 'Documentos e valores', fields: [{ key: 'license_number', label: 'CNH' }, { key: 'license_category', label: 'Categoria CNH' }, { key: 'license_expires_on', label: 'Vencimento CNH', kind: 'date' }, { key: 'salary', label: 'Salário', kind: 'money' }, { key: 'bonus', label: 'Gratificação', kind: 'money' }, { key: 'transport_allowance', label: 'Vale-transporte', kind: 'money' }, { key: 'benefits', label: 'Benefícios', kind: 'money' }] },
   { title: 'Localização e contato', fields: [{ key: 'state', label: 'Estado (UF)' }, { key: 'city', label: 'Cidade' }, { key: 'phone', label: 'Telefone / WhatsApp' }, { key: 'email', label: 'E-mail' }] },
   { title: 'Folga de campo', fields: [{ key: 'entitled_to_leave', label: 'Tem direito a baixada?' }, { key: 'travel_state', label: 'UF da baixada' }, { key: 'travel_city', label: 'Cidade da baixada' }, { key: 'distance_km', label: 'Distância da obra (km)' }, { key: 'leave_periodicity', label: 'Periodicidade' }, { key: 'last_leave_on', label: 'Última baixada', kind: 'date' }, { key: 'next_leave_on', label: 'Próxima baixada', kind: 'date' }, { key: 'leave_cost', label: 'Custo da baixada', kind: 'money' }] },
@@ -101,6 +101,11 @@ export default function Collaborators({ sb, projectId, projectLabel, canCreate, 
   const [columnsOpen, setColumnsOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<{row: Collaborator; status: 'INATIVO' | 'DESLIGADO' | 'ATIVO'} | null>(null);
   const [terminationDate, setTerminationDate] = useState(brazilToday);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importBusy, setImportBusy] = useState(false);
+  const [importStage, setImportStage] = useState<'upload' | 'review'>('upload');
+  const [importData, setImportData] = useState<Partial<Form>>({});
   useEffect(() => {
     const key = `cx-collaborator-columns:${projectId}`;
     try {
@@ -190,6 +195,43 @@ export default function Collaborators({ sb, projectId, projectLabel, canCreate, 
   function startView(row: Collaborator) {
     previousFocus.current = document.activeElement as HTMLElement;
     setMessage(''); setViewingRow(row);
+  }
+
+  function startImport() {
+    previousFocus.current = document.activeElement as HTMLElement;
+    setImportFile(null); setImportData({}); setImportStage('upload'); setMessage(''); setImportOpen(true);
+  }
+
+  async function analyzeTransfer() {
+    if (!importFile || importBusy) return;
+    setImportBusy(true); setMessage('');
+    try {
+      const body = new FormData(); body.append('file', importFile);
+      const response = await fetch('/api/transfer-import', { method: 'POST', body });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Falha ao analisar o PDF.');
+      setImportData({ ...data, sector: null, foreman: null, department: null, uses_lodging: 'NÃO', lodging: null, work_schedule: null, shift_start: null, shift_end: null, break_start: null, break_end: null, shift_details: null, status: 'ATIVO' });
+      setImportStage('review');
+    } catch (error) { setMessage(error instanceof Error ? error.message : 'Falha ao analisar o PDF.'); }
+    finally { setImportBusy(false); }
+  }
+
+  function importValue<K extends keyof Form>(key: K, value: Form[K]) { setImportData(previous => ({ ...previous, [key]: value })); }
+
+  async function confirmTransferImport() {
+    if (importBusy || !canCreate) return;
+    const registration = uppercase(String(importData.registration || ''));
+    const name = uppercase(String(importData.name || ''));
+    if (!registration || !name || !importData.sector || !importData.foreman || !importData.department) { setMessage('Preencha matrícula, nome, setor, encarregado e equipe antes de confirmar.'); return; }
+    if (importData.uses_lodging === 'SIM' && !importData.lodging) { setMessage('Selecione/informe o alojamento.'); return; }
+    setImportBusy(true); setMessage('');
+    const payload = { ...blank, ...importData, registration, name, project_id: projectId, status: 'ATIVO', work_schedule: null, shift_start: null, shift_end: null, break_start: null, break_end: null, shift_details: null };
+    payload.cpf = importData.cpf ? String(importData.cpf).replace(/\D/g, '') : null;
+    payload.phone = importData.phone ? String(importData.phone).replace(/\D/g, '') : null;
+    const { error } = await sb.from('cx_collaborators').insert(payload);
+    if (error) setMessage(`Não foi possível importar: ${error.message}`);
+    else { setImportOpen(false); await reload(); setMessage('Colaborador transferido importado com sucesso.'); previousFocus.current?.focus(); }
+    setImportBusy(false);
   }
 
   const filtered = useMemo(() => {
@@ -299,15 +341,24 @@ export default function Collaborators({ sb, projectId, projectLabel, canCreate, 
   return <>
     <div className="heading"><div><span className="eyebrow">PESSOAS · {projectLabel}</span>
       <h1>Colaboradores</h1><p>Cadastro por obra, com acesso controlado por permissão.</p></div>
-      {canCreate && <button className="cx-primary" onClick={startCreate}>+ Novo colaborador</button>}
+      {canCreate && <div className="cx-heading-actions"><button type="button" className="cx-secondary" onClick={startImport}>✨ Importar transferido</button><button type="button" className="cx-primary" onClick={startCreate}>+ Novo colaborador</button></div>}
     </div>
     {message && !formOpen && <div className="notice" role="status">{message}<button aria-label="Fechar aviso" onClick={() => setMessage('')}>×</button></div>}
+    {importOpen && <div className="cx-modal-backdrop"><div className="panel cx-modal cx-transfer-import" role="dialog" aria-modal="true" aria-labelledby="cx-import-title"><div className="cx-dialog-head"><div><span className="eyebrow">IMPORTAÇÃO ASSISTIDA POR IA</span><h2 id="cx-import-title">Importar colaborador transferido</h2></div><button type="button" className="cx-dialog-close" disabled={importBusy} onClick={() => setImportOpen(false)}>×</button></div>
+      {message && <div className="notice" role="alert">{message}</div>}
+      {importStage === 'upload' ? <><div className="cx-ai-upload"><strong>PDF DO COLABORADOR</strong><p>A IA identifica os dados do documento. Setor, encarregado, equipe e alojamento serão confirmados manualmente antes do cadastro.</p><input type="file" accept="application/pdf,.pdf" onChange={event => setImportFile(event.target.files?.[0] || null)} /><small>O PDF é enviado ao serviço de IA configurado no servidor apenas para esta análise.</small></div><div className="cx-form-actions"><button type="button" onClick={() => setImportOpen(false)}>Cancelar</button><button type="button" className="cx-primary" disabled={!importFile || importBusy} onClick={() => void analyzeTransfer()}>{importBusy ? 'Analisando PDF…' : 'Analisar com IA'}</button></div></> : <><p className="cx-import-review-note">Confira os dados identificados e complete os campos manuais destacados.</p><div className="cx-form-grid">
+        <label>Matrícula *<input value={String(importData.registration || '')} onChange={e=>importValue('registration',e.target.value)} /></label><label>Nome *<input value={String(importData.name || '')} onChange={e=>importValue('name',e.target.value.toUpperCase())} /></label><label>CPF<input value={cpfMask(String(importData.cpf || ''))} onChange={e=>importValue('cpf',e.target.value.replace(/\D/g,'').slice(0,11))} /></label><label>Admissão<input type="date" value={String(importData.hired_on || '')} onChange={e=>importValue('hired_on',e.target.value||null)} /></label>
+        <label>Função / Cargo<input value={String(importData.role || '')} onChange={e=>importValue('role',e.target.value.toUpperCase())} /></label><label>Tipo de contrato<input value={String(importData.contract_type || '')} onChange={e=>importValue('contract_type',e.target.value.toUpperCase())} /></label><label>CNH<input value={String(importData.license_number || '')} onChange={e=>importValue('license_number',e.target.value)} /></label><label>Categoria CNH<input value={String(importData.license_category || '')} onChange={e=>importValue('license_category',e.target.value.toUpperCase())} /></label><label>Vencimento CNH<input type="date" value={String(importData.license_expires_on || '')} onChange={e=>importValue('license_expires_on',e.target.value||null)} /></label>
+        <label>UF<input maxLength={2} value={String(importData.state || '')} onChange={e=>importValue('state',e.target.value.toUpperCase())} /></label><label>Cidade<input value={String(importData.city || '')} onChange={e=>importValue('city',e.target.value.toUpperCase())} /></label><label>Telefone<input value={phoneMask(String(importData.phone || ''))} onChange={e=>importValue('phone',e.target.value.replace(/\D/g,'').slice(0,11))} /></label><label>E-mail<input value={String(importData.email || '')} onChange={e=>importValue('email',e.target.value.toLowerCase())} /></label><label>Distância da obra (km)<input type="number" min="0" step="0.1" value={importData.distance_km ?? ''} onChange={e=>importValue('distance_km',e.target.value===''?null:Number(e.target.value))} /></label>
+        <label className="cx-manual-field">Setor *<input value={String(importData.sector || '')} onChange={e=>importValue('sector',e.target.value.toUpperCase())} /></label><label className="cx-manual-field">Encarregado *<input value={String(importData.foreman || '')} onChange={e=>importValue('foreman',e.target.value.toUpperCase())} /></label><label className="cx-manual-field">Equipe *<input value={String(importData.department || '')} onChange={e=>importValue('department',e.target.value.toUpperCase())} /></label><label className="cx-manual-field">Usa alojamento? *<select value={importData.uses_lodging || 'NÃO'} onChange={e=>importValue('uses_lodging',e.target.value as YesNo)}><option value="NÃO">NÃO</option><option value="SIM">SIM</option></select></label>{importData.uses_lodging==='SIM'&&<label className="cx-manual-field">Alojamento *<input value={String(importData.lodging || '')} onChange={e=>importValue('lodging',e.target.value.toUpperCase())} /></label>}
+      </div><div className="cx-form-actions"><button type="button" disabled={importBusy} onClick={()=>setImportStage('upload')}>Voltar</button><button type="button" className="cx-primary" disabled={importBusy} onClick={()=>void confirmTransferImport()}>{importBusy?'Cadastrando…':'Confirmar importação'}</button></div></>}
+    </div></div>}
     {formOpen && <div className="cx-modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) closeDialog(); }}><div ref={dialogRef} className="panel cx-modal cx-collab-form" role="dialog" aria-modal="true" aria-labelledby="cx-dialog-title"><div className="cx-dialog-head"><h2 id="cx-dialog-title">{editingId ? 'Editar colaborador' : 'Novo colaborador'}</h2><button type="button" className="cx-dialog-close" aria-label="Fechar janela" disabled={busy} onClick={closeDialog}>×</button></div>
       <p>Obra: <strong>{projectLabel}</strong></p>
       {message && <div className="notice" role="alert">{message}</div>}
       <form onSubmit={save}>
         {section('Identificação', <>{input('registration', 'Matrícula *', 'text', true)}{input('name', 'Nome *', 'text', true)}{input('cpf', 'CPF')}{select('contract_type', 'Tipo de contrato', ['CLT', 'PJ', 'ESTÁGIO', 'TEMPORÁRIO', 'TERCEIRIZADO'])}{input('hired_on', 'Admissão', 'date')}{input('terminated_on', 'Desligamento', 'date')}{select('status', 'Status', ['ATIVO', 'AFASTADO', 'DESLIGADO', 'INATIVO', 'ABANDONO', 'TRANSFERIDO'])}</>)}
-        {section('Função e jornada', <>{input('sector', 'Setor')}{input('foreman', 'Encarregado')}{input('department', 'Equipe')}{input('role', 'Função / Cargo')}{input('job_level', 'Nível')}{input('aso_expires_on', 'Vencimento ASO', 'date')}{input('work_schedule', 'Jornada / Escala')}{input('shift_start', 'Entrada', 'time')}{input('shift_end', 'Saída', 'time')}{input('break_start', 'Início do intervalo', 'time')}{input('break_end', 'Fim do intervalo', 'time')}{input('shift_details', 'Detalhes da jornada')}</>)}
+        {section('Função', <>{input('sector', 'Setor')}{input('foreman', 'Encarregado')}{input('department', 'Equipe')}{input('role', 'Função / Cargo')}{input('job_level', 'Nível')}{input('aso_expires_on', 'Vencimento ASO', 'date')}</>)}
         {section('Documentos e valores', <>{input('license_number', 'CNH')}{input('license_category', 'Categoria CNH')}{input('license_expires_on', 'Vencimento CNH', 'date')}{input('salary', 'Salário (R$)', 'number')}{input('bonus', 'Gratificação (R$)', 'number')}{input('transport_allowance', 'Vale-transporte (R$)', 'number')}{input('benefits', 'Benefícios (R$)', 'number')}</>)}
         {section('Localização e contato', <>{input('state', 'Estado (UF)')}{input('city', 'Cidade')}{input('phone', 'Telefone / WhatsApp', 'tel')}{input('email', 'E-mail', 'email')}</>)}
         {section('Folga de campo', <>
