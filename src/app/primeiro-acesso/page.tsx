@@ -53,7 +53,7 @@ export default function PrimeiroAcesso() {
 
   return <main className="cx-first-access-page">
     <section className="cx-first-access-card">
-      <header><Image src="/constru-x-logo.png" alt="Constru-X" width={260} height={87} priority /><span>GESTÃO EMPRESARIAL 360°</span></header>
+      <header><div className="cx-first-access-brands"><Image className="cx-first-access-construx" src="/constru-x-logo.png" alt="Constru-X" width={260} height={87} priority /><Image className="cx-first-access-ccl" src="/ccl-logo-contratos-v1.png" alt="Construtora Centro Leste" width={210} height={105} priority /></div><span>GESTÃO EMPRESARIAL 360°</span></header>
       <div className="cx-first-access-stripe" />
       <form onSubmit={submit}>
         <span className="eyebrow">PRIMEIRO ACESSO</span>
