@@ -8,7 +8,7 @@ import PortalManagement from '@/components/PortalManagement';
 type Status = 'ATIVO' | 'AFASTADO' | 'DESLIGADO' | 'INATIVO' | 'ABANDONO' | 'TRANSFERIDO';
 type YesNo = 'SIM' | 'NÃO';
 type Form = {
-  registration: string; name: string; role: string | null; department: string | null;
+  registration: string; name: string; role: string | null; department: string | null; sector_id: string | null; team_id: string | null;
   hired_on: string | null; terminated_on: string | null; status: Status;
   cpf: string | null; contract_type: string | null; sector: string | null; foreman: string | null; job_level: string | null;
   aso_expires_on: string | null; work_schedule: string | null; shift_start: string | null;
@@ -23,7 +23,7 @@ type Form = {
 };
 type Collaborator = Form & { id: string; project_id: string };
 const blank: Form = {
-  registration: '', name: '', role: '', department: '', hired_on: null, terminated_on: null, status: 'ATIVO',
+  registration: '', name: '', role: '', department: '', sector_id: null, team_id: null, hired_on: null, terminated_on: null, status: 'ATIVO',
   cpf: null, contract_type: null, sector: null, foreman: null, job_level: null, aso_expires_on: null,
   work_schedule: null, shift_start: null, shift_end: null, break_start: null, break_end: null,
   shift_details: null, license_number: null, license_category: null, license_expires_on: null,
@@ -106,7 +106,13 @@ export default function Collaborators({ sb, projectId, projectLabel, canCreate, 
   const [importBusy, setImportBusy] = useState(false);
   const [importStage, setImportStage] = useState<'upload' | 'review'>('upload');
   const [importData, setImportData] = useState<Partial<Form>>({});
-  const [housingOptions, setHousingOptions] = useState<{ value: string; label: string }[]>([]);
+  const [housingOptions, setHousingOptions] = useState<string[]>([]);
+  const [sectorOptions, setSectorOptions] = useState<{id:string;name:string}[]>([]);
+  const [teamOptions, setTeamOptions] = useState<{id:string;sector_id:string;name:string}[]>([]);
+  const [orgOpen, setOrgOpen] = useState(false);
+  const [newSector, setNewSector] = useState('');
+  const [newTeam, setNewTeam] = useState('');
+  const [newTeamSectorId, setNewTeamSectorId] = useState('');
   useEffect(() => {
     const key = `cx-collaborator-columns:${projectId}`;
     try {
@@ -154,20 +160,18 @@ export default function Collaborators({ sb, projectId, projectLabel, canCreate, 
   const reload = useCallback(async () => {
     if (!projectId) { setRows([]); return; }
     setLoading(true);
-    const [{ data, error }, housingResult] = await Promise.all([
+    const [{ data, error }, housingResult, sectorsResult, teamsResult] = await Promise.all([
       sb.from('cx_collaborators').select('*').eq('project_id', projectId).order('name'),
-      sb.from('cx_housing').select('description,contract_code,status').eq('project_id', projectId).eq('status', 'ATIVO').order('description')
+      sb.from('cx_housing').select('description,contract_code').eq('project_id', projectId).eq('status', 'ATIVO').order('description'),
+      sb.from('cx_sectors').select('id,name').eq('project_id', projectId).eq('active', true).order('name'),
+      sb.from('cx_teams').select('id,sector_id,name').eq('project_id', projectId).eq('active', true).order('name')
     ]);
     setRows((data || []) as Collaborator[]);
-    const housingMap = new Map<string, string>();
-    (housingResult.data || []).forEach((item: any) => {
-      const code = uppercase(String(item.contract_code || ''));
-      const description = uppercase(String(item.description || ''));
-      const value = code || description;
-      if (value) housingMap.set(value, code && description ? `${code} · ${description}` : (description || code));
-    });
-    setHousingOptions([...housingMap.entries()].map(([value,label])=>({value,label})).sort((a,b)=>a.label.localeCompare(b.label,'pt-BR')));
-    setMessage(error ? `Não foi possível carregar colaboradores: ${error.message}` : housingResult.error ? `Não foi possível carregar alojamentos: ${housingResult.error.message}` : '');
+    setSectorOptions((sectorsResult.data || []) as {id:string;name:string}[]);
+    setTeamOptions((teamsResult.data || []) as {id:string;sector_id:string;name:string}[]);
+    const housingNames = (housingResult.data || []).map((item: any) => uppercase(`${item.contract_code || ''} - ${item.description || ''}`.replace(/^ - | - $/g,''))).filter(Boolean);
+    setHousingOptions([...new Set(housingNames)].sort((a,b)=>a.localeCompare(b,'pt-BR')));
+    setMessage(error ? `Não foi possível carregar colaboradores: ${error.message}` : housingResult.error ? `Não foi possível carregar alojamentos: ${housingResult.error.message}` : sectorsResult.error || teamsResult.error ? 'Não foi possível carregar setores/equipes.' : '');
     setLoading(false);
   }, [sb, projectId]);
 
@@ -229,7 +233,7 @@ export default function Collaborators({ sb, projectId, projectLabel, canCreate, 
         let data: any = {};
         try { data = raw ? JSON.parse(raw) : {}; } catch { throw new Error(response.ok ? 'O servidor retornou uma resposta inválida.' : `Falha no servidor (${response.status}). Tente novamente.`); }
         if (!response.ok) throw new Error(data.error || `Falha ao analisar o PDF (${response.status}).`);
-        setImportData({ ...data, sector: null, foreman: null, department: null, uses_lodging: 'NÃO', lodging: null, work_schedule: null, shift_start: null, shift_end: null, break_start: null, break_end: null, shift_details: null, status: 'ATIVO' });
+        setImportData({ ...data, sector: null, sector_id: null, foreman: null, department: null, team_id: null, uses_lodging: 'NÃO', lodging: null, work_schedule: null, shift_start: null, shift_end: null, break_start: null, break_end: null, shift_details: null, status: 'ATIVO' });
         setImportStage('review');
       } finally {
         await sb.storage.from('cx-transfer-imports').remove([storagePath]);
@@ -244,7 +248,7 @@ export default function Collaborators({ sb, projectId, projectLabel, canCreate, 
     if (importBusy || !canCreate) return;
     const registration = uppercase(String(importData.registration || ''));
     const name = uppercase(String(importData.name || ''));
-    if (!registration || !name || !importData.sector || !importData.department) { setMessage('Preencha matrícula, nome, setor e equipe antes de confirmar.'); return; }
+    if (!registration || !name || !importData.sector_id || !importData.team_id) { setMessage('Preencha matrícula, nome, setor e equipe antes de confirmar.'); return; }
     if (importData.uses_lodging === 'SIM' && !importData.lodging) { setMessage('Selecione/informe o alojamento.'); return; }
     setImportBusy(true); setMessage('');
     const payload = { ...blank, ...importData, registration, name, project_id: projectId, status: 'ATIVO', work_schedule: null, shift_start: null, shift_end: null, break_start: null, break_end: null, shift_details: null };
@@ -256,12 +260,19 @@ export default function Collaborators({ sb, projectId, projectLabel, canCreate, 
     setImportBusy(false);
   }
 
-  const orgOptions = useMemo(() => {
-    const sectors = [...new Set(rows.map(row => uppercase(row.sector || '')).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-    const selectedSector = uppercase(String(importData.sector || ''));
-    const teams = [...new Set(rows.filter(row => !selectedSector || uppercase(row.sector || '') === selectedSector).map(row => uppercase(row.department || '')).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-    return { sectors, teams };
-  }, [rows, importData.sector]);
+  const importTeams = useMemo(() => teamOptions.filter(t => t.sector_id === importData.sector_id), [teamOptions, importData.sector_id]);
+  const formTeams = useMemo(() => teamOptions.filter(t => t.sector_id === form.sector_id), [teamOptions, form.sector_id]);
+
+  async function addSector() {
+    const name = uppercase(newSector); if (!name) return;
+    const { error } = await sb.from('cx_sectors').insert({project_id:projectId,name,active:true});
+    if (error) setMessage(error.code === '23505' ? 'Este setor já está cadastrado.' : error.message); else { setNewSector(''); await reload(); setMessage('Setor cadastrado.'); }
+  }
+  async function addTeam() {
+    const name=uppercase(newTeam); if(!name || !newTeamSectorId){setMessage('Selecione o setor e informe a equipe.');return;}
+    const {error}=await sb.from('cx_teams').insert({project_id:projectId,sector_id:newTeamSectorId,name,active:true});
+    if(error)setMessage(error.code==='23505'?'Esta equipe já está cadastrada neste setor.':error.message);else{setNewTeam('');await reload();setMessage('Equipe cadastrada.');}
+  }
 
   const filtered = useMemo(() => {
     const q = uppercase(search);
@@ -370,24 +381,25 @@ export default function Collaborators({ sb, projectId, projectLabel, canCreate, 
   return <>
     <div className="heading"><div><span className="eyebrow">PESSOAS · {projectLabel}</span>
       <h1>Colaboradores</h1><p>Cadastro por obra, com acesso controlado por permissão.</p></div>
-      {canCreate && <div className="cx-heading-actions"><button type="button" className="cx-secondary" onClick={startImport}>✨ Importar transferido</button><button type="button" className="cx-primary" onClick={startCreate}>+ Novo colaborador</button></div>}
+      {canCreate && <div className="cx-heading-actions"><button type="button" className="cx-secondary" onClick={()=>setOrgOpen(true)}>Setores / Equipes</button><button type="button" className="cx-secondary" onClick={startImport}>✨ Importar transferido</button><button type="button" className="cx-primary" onClick={startCreate}>+ Novo colaborador</button></div>}
     </div>
     {message && !formOpen && <div className="notice" role="status">{message}<button aria-label="Fechar aviso" onClick={() => setMessage('')}>×</button></div>}
-    {importOpen && <div className="cx-modal-backdrop"><div className="panel cx-modal cx-collab-form cx-transfer-import" role="dialog" aria-modal="true" aria-labelledby="cx-import-title"><div className="cx-dialog-head"><div><span className="eyebrow">IMPORTAÇÃO ASSISTIDA POR IA</span><h2 id="cx-import-title">Importar colaborador transferido</h2></div><button type="button" className="cx-dialog-close" disabled={importBusy} onClick={() => setImportOpen(false)}>×</button></div>
+    {orgOpen && <div className="cx-modal-backdrop"><div className="panel cx-modal cx-collab-form" role="dialog" aria-modal="true"><div className="cx-dialog-head"><div><span className="eyebrow">ESTRUTURA ORGANIZACIONAL</span><h2>Setores e Equipes</h2></div><button type="button" className="cx-dialog-close" onClick={()=>setOrgOpen(false)}>×</button></div>{message&&<div className="notice">{message}</div>}<fieldset className="cx-form-section"><legend>Novo setor</legend><div className="cx-form-grid"><label>Nome do setor<input value={newSector} onChange={e=>setNewSector(e.target.value.toUpperCase())}/></label><div className="cx-form-actions"><button type="button" className="cx-primary" onClick={()=>void addSector()}>Cadastrar setor</button></div></div></fieldset><fieldset className="cx-form-section"><legend>Nova equipe</legend><div className="cx-form-grid"><label>Setor<select value={newTeamSectorId} onChange={e=>setNewTeamSectorId(e.target.value)}><option value="">SELECIONE O SETOR</option>{sectorOptions.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label><label>Equipe<input value={newTeam} onChange={e=>setNewTeam(e.target.value.toUpperCase())}/></label><div className="cx-form-actions"><button type="button" className="cx-primary" onClick={()=>void addTeam()}>Cadastrar equipe</button></div></div></fieldset></div></div>}
+    {importOpen && <div className="cx-modal-backdrop"><div className="panel cx-modal cx-transfer-import" role="dialog" aria-modal="true" aria-labelledby="cx-import-title"><div className="cx-dialog-head"><div><span className="eyebrow">IMPORTAÇÃO ASSISTIDA POR IA</span><h2 id="cx-import-title">Importar colaborador transferido</h2></div><button type="button" className="cx-dialog-close" disabled={importBusy} onClick={() => setImportOpen(false)}>×</button></div>
       {message && <div className="notice" role="alert">{message}</div>}
-      {importStage === 'upload' ? <><div className="cx-ai-upload"><strong>PDF DO COLABORADOR</strong><p>A IA identifica os dados do documento. Setor, equipe e alojamento serão confirmados manualmente antes do cadastro.</p><input type="file" accept="application/pdf,.pdf" onChange={event => setImportFile(event.target.files?.[0] || null)} /><small>O PDF é enviado ao serviço de IA configurado no servidor apenas para esta análise.</small></div><div className="cx-form-actions"><button type="button" onClick={() => setImportOpen(false)}>Cancelar</button><button type="button" className="cx-primary" disabled={!importFile || importBusy} onClick={() => void analyzeTransfer()}>{importBusy ? 'Analisando PDF…' : 'Analisar com IA'}</button></div></> : <><p className="cx-import-review-note">Confira os dados identificados e complete os campos antes de confirmar.</p><fieldset className="cx-form-section"><legend>Dados do colaborador</legend><div className="cx-form-grid">
+      {importStage === 'upload' ? <><div className="cx-ai-upload"><strong>PDF DO COLABORADOR</strong><p>A IA identifica os dados do documento. Setor, equipe e alojamento serão confirmados manualmente antes do cadastro.</p><input type="file" accept="application/pdf,.pdf" onChange={event => setImportFile(event.target.files?.[0] || null)} /><small>O PDF é enviado ao serviço de IA configurado no servidor apenas para esta análise.</small></div><div className="cx-form-actions"><button type="button" onClick={() => setImportOpen(false)}>Cancelar</button><button type="button" className="cx-primary" disabled={!importFile || importBusy} onClick={() => void analyzeTransfer()}>{importBusy ? 'Analisando PDF…' : 'Analisar com IA'}</button></div></> : <><p className="cx-import-review-note">Confira os dados identificados e complete os campos manuais destacados.</p><div className="cx-form-grid">
         <label>Matrícula *<input value={String(importData.registration || '')} onChange={e=>importValue('registration',e.target.value)} /></label><label>Nome *<input value={String(importData.name || '')} onChange={e=>importValue('name',e.target.value.toUpperCase())} /></label><label>CPF<input value={cpfMask(String(importData.cpf || ''))} onChange={e=>importValue('cpf',e.target.value.replace(/\D/g,'').slice(0,11))} /></label><label>Admissão<input type="date" value={String(importData.hired_on || '')} onChange={e=>importValue('hired_on',e.target.value||null)} /></label>
         <label>Função / Cargo<input value={String(importData.role || '')} onChange={e=>importValue('role',e.target.value.toUpperCase())} /></label><label>Tipo de contrato<input value={String(importData.contract_type || '')} onChange={e=>importValue('contract_type',e.target.value.toUpperCase())} /></label><label>CNH<input value={String(importData.license_number || '')} onChange={e=>importValue('license_number',e.target.value)} /></label><label>Categoria CNH<input value={String(importData.license_category || '')} onChange={e=>importValue('license_category',e.target.value.toUpperCase())} /></label><label>Vencimento CNH<input type="date" value={String(importData.license_expires_on || '')} onChange={e=>importValue('license_expires_on',e.target.value||null)} /></label>
         <label>UF<input maxLength={2} value={String(importData.state || '')} onChange={e=>importValue('state',e.target.value.toUpperCase())} /></label><label>Cidade<input value={String(importData.city || '')} onChange={e=>importValue('city',e.target.value.toUpperCase())} /></label><label>Telefone<input value={phoneMask(String(importData.phone || ''))} onChange={e=>importValue('phone',e.target.value.replace(/\D/g,'').slice(0,11))} /></label><label>E-mail<input value={String(importData.email || '')} onChange={e=>importValue('email',e.target.value.toLowerCase())} /></label><label>Distância da obra (km)<input type="number" min="0" step="0.1" value={importData.distance_km ?? ''} onChange={e=>importValue('distance_km',e.target.value===''?null:Number(e.target.value))} /></label>
-        <label>Setor *<select value={String(importData.sector || '')} onChange={e=>setImportData(previous=>({...previous,sector:e.target.value||null,foreman:null,department:null}))}><option value="">SELECIONE O SETOR</option>{orgOptions.sectors.map(option=><option key={option} value={option}>{option}</option>)}</select></label><label>Equipe *<select value={String(importData.department || '')} disabled={!importData.sector} onChange={e=>importValue('department',e.target.value||null)}><option value="">SELECIONE A EQUIPE</option>{orgOptions.teams.map(option=><option key={option} value={option}>{option}</option>)}</select></label><label>Usa alojamento? *<select value={importData.uses_lodging || 'NÃO'} onChange={e=>setImportData(previous=>({...previous,uses_lodging:e.target.value as YesNo,lodging:e.target.value==='SIM'?previous.lodging:null}))}><option value="NÃO">NÃO</option><option value="SIM">SIM</option></select></label>{importData.uses_lodging==='SIM'&&<label>Alojamento *<select value={String(importData.lodging || '')} onChange={e=>importValue('lodging',e.target.value||null)}><option value="">SELECIONE O ALOJAMENTO</option>{housingOptions.map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</select></label>}
-      </div></fieldset><div className="cx-form-actions"><button type="button" disabled={importBusy} onClick={()=>setImportStage('upload')}>Voltar</button><button type="button" className="cx-primary" disabled={importBusy} onClick={()=>void confirmTransferImport()}>{importBusy?'Cadastrando…':'Confirmar importação'}</button></div></>}
+        <label className="cx-manual-field">Setor *<select value={String(importData.sector_id || '')} onChange={e=>{const id=e.target.value;const item=sectorOptions.find(x=>x.id===id);setImportData(previous=>({...previous,sector_id:id||null,sector:item?.name||null,team_id:null,department:null}))}}><option value="">SELECIONE O SETOR</option>{sectorOptions.map(option=><option key={option.id} value={option.id}>{option.name}</option>)}</select></label><label className="cx-manual-field">Equipe *<select value={String(importData.team_id || '')} disabled={!importData.sector_id} onChange={e=>{const id=e.target.value;const item=teamOptions.find(x=>x.id===id);setImportData(previous=>({...previous,team_id:id||null,department:item?.name||null}))}}><option value="">SELECIONE A EQUIPE</option>{importTeams.map(option=><option key={option.id} value={option.id}>{option.name}</option>)}</select></label><label className="cx-manual-field">Usa alojamento? *<select value={importData.uses_lodging || 'NÃO'} onChange={e=>setImportData(previous=>({...previous,uses_lodging:e.target.value as YesNo,lodging:e.target.value==='SIM'?previous.lodging:null}))}><option value="NÃO">NÃO</option><option value="SIM">SIM</option></select></label>{importData.uses_lodging==='SIM'&&<label className="cx-manual-field">Alojamento *<select value={String(importData.lodging || '')} onChange={e=>importValue('lodging',e.target.value||null)}><option value="">SELECIONE O ALOJAMENTO</option>{housingOptions.map(option=><option key={option} value={option}>{option}</option>)}</select></label>}
+      </div><div className="cx-form-actions"><button type="button" disabled={importBusy} onClick={()=>setImportStage('upload')}>Voltar</button><button type="button" className="cx-primary" disabled={importBusy} onClick={()=>void confirmTransferImport()}>{importBusy?'Cadastrando…':'Confirmar importação'}</button></div></>}
     </div></div>}
     {formOpen && <div className="cx-modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) closeDialog(); }}><div ref={dialogRef} className="panel cx-modal cx-collab-form" role="dialog" aria-modal="true" aria-labelledby="cx-dialog-title"><div className="cx-dialog-head"><h2 id="cx-dialog-title">{editingId ? 'Editar colaborador' : 'Novo colaborador'}</h2><button type="button" className="cx-dialog-close" aria-label="Fechar janela" disabled={busy} onClick={closeDialog}>×</button></div>
       <p>Obra: <strong>{projectLabel}</strong></p>
       {message && <div className="notice" role="alert">{message}</div>}
       <form onSubmit={save}>
         {section('Identificação', <>{input('registration', 'Matrícula *', 'text', true)}{input('name', 'Nome *', 'text', true)}{input('cpf', 'CPF')}{select('contract_type', 'Tipo de contrato', ['CLT', 'PJ', 'ESTÁGIO', 'TEMPORÁRIO', 'TERCEIRIZADO'])}{input('hired_on', 'Admissão', 'date')}{input('terminated_on', 'Desligamento', 'date')}{select('status', 'Status', ['ATIVO', 'AFASTADO', 'DESLIGADO', 'INATIVO', 'ABANDONO', 'TRANSFERIDO'])}</>)}
-        {section('Função', <>{input('sector', 'Setor')}{input('foreman', 'Encarregado')}{input('department', 'Equipe')}{input('role', 'Função / Cargo')}{input('job_level', 'Nível')}{input('aso_expires_on', 'Vencimento ASO', 'date')}</>)}
+        {section('Função', <><label>Setor<select value={form.sector_id || ''} onChange={e=>{const id=e.target.value;const item=sectorOptions.find(x=>x.id===id);setForm(previous=>({...previous,sector_id:id||null,sector:item?.name||null,team_id:null,department:null}))}}><option value="">SELECIONE O SETOR</option>{sectorOptions.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>{input('foreman', 'Encarregado')}<label>Equipe<select value={form.team_id || ''} disabled={!form.sector_id} onChange={e=>{const id=e.target.value;const item=teamOptions.find(x=>x.id===id);setForm(previous=>({...previous,team_id:id||null,department:item?.name||null}))}}><option value="">SELECIONE A EQUIPE</option>{formTeams.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>{input('role', 'Função / Cargo')}{input('job_level', 'Nível')}{input('aso_expires_on', 'Vencimento ASO', 'date')}</>)}
         {section('Documentos e valores', <>{input('license_number', 'CNH')}{input('license_category', 'Categoria CNH')}{input('license_expires_on', 'Vencimento CNH', 'date')}{input('salary', 'Salário (R$)', 'number')}{input('bonus', 'Gratificação (R$)', 'number')}{input('transport_allowance', 'Vale-transporte (R$)', 'number')}{input('benefits', 'Benefícios (R$)', 'number')}</>)}
         {section('Localização e contato', <>{input('state', 'Estado (UF)')}{input('city', 'Cidade')}{input('phone', 'Telefone / WhatsApp', 'tel')}{input('email', 'E-mail', 'email')}</>)}
         {section('Folga de campo', <>
