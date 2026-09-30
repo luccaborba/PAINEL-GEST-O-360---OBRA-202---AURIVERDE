@@ -1,0 +1,1716 @@
+{
+  "forms": {
+    "aditivo": {
+      "code": "ADT",
+      "label": "Solicitação de Aditivo",
+      "docTitle": "FORMULÁRIO DE SOLICITAÇÃO DE ADITIVO",
+      "desc": "Ampliação, supressão ou repactuação de itens de um contrato já firmado.",
+      "hasChecklist": false,
+      "hasAditivoTable": true,
+      "sections": [
+        {
+          "num": "2°",
+          "title": "PRESTADORA DE SERVIÇO",
+          "fields": [
+            {
+              "type": "text",
+              "id": "prest_nome",
+              "label": "2.0 Nome"
+            },
+            {
+              "type": "text",
+              "id": "prest_endereco",
+              "label": "2.1 Endereço"
+            },
+            {
+              "type": "text",
+              "id": "prest_cnpj",
+              "label": "2.2 CNPJ"
+            }
+          ]
+        },
+        {
+          "num": "3º",
+          "title": "Nº DO CONTRATO",
+          "fields": [
+            {
+              "type": "text",
+              "id": "num_contrato",
+              "label": ""
+            }
+          ]
+        },
+        {
+          "num": "4º",
+          "title": "A PROPOSTA COMERCIAL ESTÁ EM ANEXO?",
+          "fields": [
+            {
+              "type": "choice",
+              "id": "proposta_anexo",
+              "label": "",
+              "options": [
+                "SIM",
+                "NÃO"
+              ]
+            }
+          ]
+        },
+        {
+          "num": "5º",
+          "title": "O QUE FOI NEGOCIADO?",
+          "fields": [
+            {
+              "type": "textarea",
+              "id": "negociado",
+              "label": "",
+              "big": true
+            }
+          ]
+        },
+        {
+          "title": "OBS",
+          "fields": [
+            {
+              "type": "static",
+              "html": "Os valores anteriormente acordados e o aditivo seguem na tabela abaixo."
+            }
+          ]
+        }
+      ]
+    },
+    "distrato": {
+      "code": "DIST",
+      "label": "Solicitação de Distrato",
+      "docTitle": "FORMULÁRIO DE SOLICITAÇÃO DE DISTRATO",
+      "desc": "Encerramento antecipado ou no prazo de um contrato vigente.",
+      "hasChecklist": false,
+      "sections": [
+        {
+          "num": "2°",
+          "title": "PRESTADORA DE SERVIÇO",
+          "fields": [
+            {
+              "type": "text",
+              "id": "prest_nome",
+              "label": "2.0 Nome"
+            },
+            {
+              "type": "text",
+              "id": "prest_endereco",
+              "label": "2.1 Endereço"
+            },
+            {
+              "type": "text",
+              "id": "prest_cnpj",
+              "label": "2.2 CPF/CNPJ"
+            }
+          ]
+        },
+        {
+          "num": "3º",
+          "title": "Nº DO CONTRATO",
+          "fields": [
+            {
+              "type": "contratoselect",
+              "id": "num_contrato",
+              "label": "",
+              "required": true,
+              "hint": "Obrigatório. Este número amarra o distrato ao contrato da Base de Contratos."
+            }
+          ]
+        },
+        {
+          "num": "4º",
+          "title": "O QUE FOI NEGOCIADO?",
+          "fields": [
+            {
+              "type": "textarea",
+              "id": "negociado",
+              "label": ""
+            }
+          ]
+        },
+        {
+          "num": "5º",
+          "title": "DATA DO AVISO",
+          "fields": [
+            {
+              "type": "date",
+              "id": "data_aviso",
+              "label": ""
+            }
+          ]
+        },
+        {
+          "num": "6ª",
+          "title": "DATA DO ENCERRAMENTO DOS SERVIÇOS",
+          "fields": [
+            {
+              "type": "date",
+              "id": "data_encerramento",
+              "label": ""
+            }
+          ]
+        },
+        {
+          "title": "AS FOTOS DA VISTORIA FINAL ESTÃO ANEXADAS?",
+          "fields": [
+            {
+              "type": "choice",
+              "id": "fotos_vistoria",
+              "label": "",
+              "options": [
+                "SIM",
+                "NÃO"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "OBS",
+          "fields": [
+            {
+              "type": "textarea",
+              "id": "obs",
+              "label": ""
+            }
+          ]
+        }
+      ]
+    },
+    "locacao_equipamento": {
+      "code": "LEQ",
+      "label": "Locação de Equipamento",
+      "docTitle": "FORMULÁRIO DE PREENCHIMENTO DE LOCAÇÃO DE EQUIPAMENTO",
+      "desc": "Contratação de locação de máquinas e equipamentos, com ou sem operador.",
+      "hasChecklist": true,
+      "checklist": [
+        {
+          "id": "cnpj_ou_pf",
+          "label": "Cópia do Cadastro Nacional da Pessoa Jurídica da Receita Federal ou Cópia Documentação da pessoa que assina:",
+          "sub": [
+            {
+              "id": "rg_cnh",
+              "label": "Cart. de Identidade ou CNH"
+            },
+            {
+              "id": "end",
+              "label": "Comprovante de endereço atualizado"
+            },
+            {
+              "id": "tel_email",
+              "label": "Telefone e e-mail"
+            }
+          ]
+        },
+        {
+          "id": "contrato_social",
+          "label": "Cópia Contrato Social da Empresa (caso for PJ)"
+        },
+        {
+          "id": "doc_veic_equip",
+          "label": "Cópia documento do VEÍCULO (CRLV atualizada) ou nota fiscal do EQUIPAMENTO"
+        },
+        {
+          "id": "comp_bancario",
+          "label": "Cópia Comprovante Bancário (Banco, N° da Agência e N° da Conta)"
+        },
+        {
+          "id": "ctps",
+          "label": "Comprovante de registro em carteira de trabalho e contribuições do funcionário (caso houver Motorista)"
+        },
+        {
+          "id": "cndt",
+          "label": "Certidão de Débito Trabalhista (caso seja PJ)"
+        },
+        {
+          "id": "cnh_func",
+          "label": "Cópia da CNH do Funcionário - Motorista ou Operador (caso houver Motorista)"
+        },
+        {
+          "id": "fotos",
+          "label": "Fotos do veículo/equipamento"
+        }
+      ],
+      "hasPricingTable": true,
+      "pricingAfterFields": [],
+      "photoPageTitle": "CHECK LIST DE RECEBIMENTO",
+      "sections": [
+        {
+          "num": "2°",
+          "title": "PARTE LOCADORA",
+          "fields": [
+            {
+              "type": "text",
+              "id": "parte_nome",
+              "label": "2.0 Nome"
+            },
+            {
+              "type": "text",
+              "id": "parte_endereco",
+              "label": "2.1 Endereço"
+            },
+            {
+              "type": "text",
+              "id": "parte_doc",
+              "label": "2.2 CPF/CNPJ"
+            },
+            {
+              "type": "text",
+              "id": "parte_telefone",
+              "label": "2.3 Telefone"
+            },
+            {
+              "type": "text",
+              "id": "parte_email",
+              "label": "2.4 E-mail"
+            }
+          ]
+        },
+        {
+          "num": "3°",
+          "title": "OBJETO DO CONTRATO",
+          "fields": [
+            {
+              "type": "textarea",
+              "id": "objeto",
+              "label": ""
+            }
+          ]
+        },
+        {
+          "num": "4°",
+          "title": "DATA DE INÍCIO DA LOCAÇÃO",
+          "fields": [
+            {
+              "type": "date",
+              "id": "data_inicio",
+              "label": ""
+            }
+          ]
+        },
+        {
+          "num": "5°",
+          "title": "DATA DE FIM DA LOCAÇÃO",
+          "fields": [
+            {
+              "type": "date",
+              "id": "data_fim",
+              "label": ""
+            }
+          ]
+        },
+        {
+          "num": "6°",
+          "title": "VALOR",
+          "fields": [
+            {
+              "type": "text",
+              "id": "data_fechamento_medicoes",
+              "label": "Data do Fechamento das Medições",
+              "hint": "Ex.: 30 dias após emissão da nota fiscal",
+              "oneColumn": true
+            },
+            {
+              "type": "text",
+              "id": "data_pagamento_medicoes",
+              "label": "Data do Pagamento das Medições",
+              "hint": "Ex.: 30 dias após emissão da nota fiscal",
+              "oneColumn": true
+            }
+          ]
+        },
+        {
+          "title": "O PREENCHIMENTO DOS ITENS ABAIXO É OBRIGATÓRIO",
+          "fields": [
+            {
+              "type": "text",
+              "id": "itens_orcamento",
+              "label": "Itens de Orçamento",
+              "required": true
+            },
+            {
+              "type": "text",
+              "id": "item_financeiro",
+              "label": "Item Financeiro",
+              "required": true
+            }
+          ]
+        },
+        {
+          "num": "7º",
+          "title": "DADOS BANCÁRIOS",
+          "fields": [
+            {
+              "type": "choice",
+              "id": "forma_pagamento",
+              "label": "Forma de Pagamento",
+              "options": [
+                "BOLETO",
+                "DADOS BANCÁRIOS"
+              ],
+              "default": "DADOS BANCÁRIOS"
+            },
+            {
+              "type": "text",
+              "id": "banco",
+              "label": "7.1 Banco",
+              "showIf": {
+                "field": "forma_pagamento",
+                "equals": "DADOS BANCÁRIOS"
+              }
+            },
+            {
+              "type": "text",
+              "id": "agencia",
+              "label": "7.2 Agência",
+              "showIf": {
+                "field": "forma_pagamento",
+                "equals": "DADOS BANCÁRIOS"
+              }
+            },
+            {
+              "type": "text",
+              "id": "conta",
+              "label": "7.3 Conta",
+              "showIf": {
+                "field": "forma_pagamento",
+                "equals": "DADOS BANCÁRIOS"
+              }
+            },
+            {
+              "type": "text",
+              "id": "pix",
+              "label": "7.4 PIX",
+              "showIf": {
+                "field": "forma_pagamento",
+                "equals": "DADOS BANCÁRIOS"
+              }
+            }
+          ]
+        },
+        {
+          "num": "8º",
+          "title": "DADOS DO EQUIPAMENTO",
+          "fields": [
+            {
+              "type": "text",
+              "id": "eq_tipo",
+              "label": "10.0 Tipo"
+            },
+            {
+              "type": "text",
+              "id": "eq_marca",
+              "label": "10.1 Marca"
+            },
+            {
+              "type": "text",
+              "id": "eq_modelo",
+              "label": "10.2 Modelo"
+            },
+            {
+              "type": "text",
+              "id": "eq_ano",
+              "label": "10.3 Ano"
+            },
+            {
+              "type": "text",
+              "id": "eq_serie",
+              "label": "10.4 Série"
+            }
+          ]
+        },
+        {
+          "num": "9º",
+          "title": "MOBILIZAÇÃO E DESMOBILIZAÇÃO, QUEM FARÁ?",
+          "fields": [
+            {
+              "type": "choice",
+              "id": "mob_desmob",
+              "label": "",
+              "options": [
+                "CCL",
+                "LOCADORA"
+              ]
+            }
+          ]
+        },
+        {
+          "num": "10º",
+          "title": "OPERADOR OU MOTORISTA",
+          "fields": [
+            {
+              "type": "choice",
+              "id": "havera_operador",
+              "label": "Haverá motorista/operador?",
+              "options": [
+                "SIM",
+                "NÃO"
+              ]
+            },
+            {
+              "type": "choice",
+              "id": "operador_de_quem",
+              "label": "Se sim, de quem ele é funcionário?",
+              "options": [
+                "CCL",
+                "LOCADORA"
+              ],
+              "optional": true
+            },
+            {
+              "type": "choice",
+              "id": "operador_clt",
+              "label": "O funcionário é CLT?",
+              "options": [
+                "SIM",
+                "NÃO"
+              ],
+              "optional": true
+            }
+          ]
+        },
+        {
+          "num": "11º",
+          "title": "EXISTEM DESGASTES NO EQUIPAMENTO?",
+          "fields": [
+            {
+              "type": "choice",
+              "id": "desgastes",
+              "label": "",
+              "options": [
+                "SIM",
+                "NÃO"
+              ]
+            },
+            {
+              "type": "text",
+              "id": "desgastes_quais",
+              "label": "Se sim, quais?",
+              "optional": true
+            }
+          ]
+        },
+        {
+          "title": "FOTOS DA VISTORIA, NOTA FISCAL E DOCUMENTOS (ANEXAR)",
+          "fields": [
+            {
+              "type": "file",
+              "id": "anexos",
+              "label": ""
+            }
+          ]
+        },
+        {
+          "title": "OBS (PREENCHIMENTO OBRIGATÓRIO)",
+          "fields": [
+            {
+              "type": "textarea",
+              "id": "obs",
+              "label": "",
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    "locacao_imovel": {
+      "code": "LIM",
+      "label": "Locação de Imóvel",
+      "docTitle": "FORMULÁRIO DE PREENCHIMENTO DE LOCAÇÃO - IMÓVEL",
+      "desc": "Contratação de imóveis para alojamento, escritório ou apoio à obra.",
+      "hasChecklist": true,
+      "checklist": [
+        {
+          "id": "doc_representante",
+          "label": "Documentação da Pessoa que assina/Representante Legal da empresa:",
+          "sub": [
+            {
+              "id": "rg_cnh",
+              "label": "Cart. de Identidade ou CNH"
+            },
+            {
+              "id": "end",
+              "label": "Comprovante de endereço atualizado"
+            },
+            {
+              "id": "tel_email",
+              "label": "Telefone e e-mail"
+            }
+          ]
+        },
+        {
+          "id": "escritura",
+          "label": "Cópia da ESCRITURA DO IMÓVEL, no nome do LOCADOR (se antiga: Escritura + Certidão de Matrícula Atual)"
+        },
+        {
+          "id": "comp_bancario",
+          "label": "Cópia Comprovante Bancário (Banco, N° da Agência e N° da Conta), em nome do LOCADOR"
+        },
+        {
+          "id": "comp_endereco_imovel",
+          "label": "Cópia de Comprovante de Endereço ATUALIZADO do imóvel que está sendo locado"
+        },
+        {
+          "id": "fotos",
+          "label": "Fotos do imóvel"
+        }
+      ],
+      "photoPageTitle": "VISTORIA",
+      "sections": [
+        {
+          "num": "2°",
+          "title": "PARTE LOCADORA",
+          "fields": [
+            {
+              "type": "text",
+              "id": "parte_nome",
+              "label": "2.0 Nome"
+            },
+            {
+              "type": "text",
+              "id": "parte_endereco",
+              "label": "2.1 Endereço"
+            },
+            {
+              "type": "text",
+              "id": "parte_doc",
+              "label": "2.2 CPF/CNPJ"
+            },
+            {
+              "type": "text",
+              "id": "parte_telefone",
+              "label": "2.3 Telefone"
+            },
+            {
+              "type": "text",
+              "id": "parte_email",
+              "label": "2.4 E-mail"
+            }
+          ]
+        },
+        {
+          "num": "3°",
+          "title": "OBJETO DO CONTRATO",
+          "fields": [
+            {
+              "type": "textarea",
+              "id": "objeto",
+              "label": ""
+            }
+          ]
+        },
+        {
+          "num": "4°",
+          "title": "DATA DE INÍCIO DA LOCAÇÃO",
+          "fields": [
+            {
+              "type": "date",
+              "id": "data_inicio",
+              "label": ""
+            }
+          ]
+        },
+        {
+          "num": "5°",
+          "title": "DATA DE FIM DA LOCAÇÃO",
+          "fields": [
+            {
+              "type": "date",
+              "id": "data_fim",
+              "label": ""
+            }
+          ]
+        },
+        {
+          "num": "6°",
+          "title": "VALOR DO ALUGUEL",
+          "fields": [
+            {
+              "type": "money",
+              "id": "valor_aluguel",
+              "label": ""
+            },
+            {
+              "type": "text",
+              "id": "data_fechamento_medicoes",
+              "label": "Data do Fechamento das Medições",
+              "hint": "Ex.: 30 dias após emissão da nota fiscal",
+              "oneColumn": true
+            },
+            {
+              "type": "text",
+              "id": "data_pagamento_medicoes",
+              "label": "Data do Pagamento das Medições",
+              "hint": "Ex.: 30 dias após emissão da nota fiscal",
+              "oneColumn": true
+            }
+          ]
+        },
+        {
+          "title": "O PREENCHIMENTO DOS ITENS ABAIXO É OBRIGATÓRIO",
+          "fields": [
+            {
+              "type": "text",
+              "id": "itens_orcamento",
+              "label": "Itens de Orçamento",
+              "required": true
+            },
+            {
+              "type": "text",
+              "id": "item_financeiro",
+              "label": "Item Financeiro",
+              "required": true
+            }
+          ]
+        },
+        {
+          "num": "7º",
+          "title": "DADOS BANCÁRIOS",
+          "fields": [
+            {
+              "type": "choice",
+              "id": "forma_pagamento",
+              "label": "Forma de Pagamento",
+              "options": [
+                "BOLETO",
+                "DADOS BANCÁRIOS"
+              ],
+              "default": "DADOS BANCÁRIOS"
+            },
+            {
+              "type": "text",
+              "id": "banco",
+              "label": "7.1 Banco",
+              "showIf": {
+                "field": "forma_pagamento",
+                "equals": "DADOS BANCÁRIOS"
+              }
+            },
+            {
+              "type": "text",
+              "id": "agencia",
+              "label": "7.2 Agência",
+              "showIf": {
+                "field": "forma_pagamento",
+                "equals": "DADOS BANCÁRIOS"
+              }
+            },
+            {
+              "type": "text",
+              "id": "conta",
+              "label": "7.3 Conta",
+              "showIf": {
+                "field": "forma_pagamento",
+                "equals": "DADOS BANCÁRIOS"
+              }
+            },
+            {
+              "type": "text",
+              "id": "pix",
+              "label": "7.4 PIX",
+              "showIf": {
+                "field": "forma_pagamento",
+                "equals": "DADOS BANCÁRIOS"
+              }
+            }
+          ]
+        },
+        {
+          "num": "8º",
+          "title": "DO IMÓVEL",
+          "fields": [
+            {
+              "type": "text",
+              "id": "endereco_imovel",
+              "label": "Endereço do Imóvel",
+              "required": true,
+              "hint": "*preenchimento obrigatório"
+            },
+            {
+              "type": "choice",
+              "id": "bom_estado",
+              "label": "O imóvel está em bom estado de conservação?",
+              "options": [
+                "SIM",
+                "NÃO"
+              ]
+            },
+            {
+              "type": "choice",
+              "id": "mobiliado",
+              "label": "É mobiliado?",
+              "options": [
+                "SIM",
+                "NÃO"
+              ]
+            },
+            {
+              "type": "textarea",
+              "id": "descricao_mobilia",
+              "label": "Caso sim, descrição da mobília",
+              "optional": true
+            },
+            {
+              "type": "choice",
+              "id": "moveis_bom_estado",
+              "label": "Os móveis estão em bom estado?",
+              "options": [
+                "SIM",
+                "NÃO"
+              ]
+            },
+            {
+              "type": "choice",
+              "id": "imovel_desgastes",
+              "label": "Existem desgastes no imóvel?",
+              "options": [
+                "SIM",
+                "NÃO"
+              ]
+            },
+            {
+              "type": "text",
+              "id": "imovel_desgastes_quais",
+              "label": "Quais desgastes?",
+              "optional": true
+            },
+            {
+              "type": "choice",
+              "id": "pintura_perfeita",
+              "label": "A pintura está em perfeito estado?",
+              "options": [
+                "SIM",
+                "NÃO"
+              ]
+            },
+            {
+              "type": "choice",
+              "id": "reformas",
+              "label": "Existem reformas a serem feitas no imóvel?",
+              "options": [
+                "SIM",
+                "NÃO"
+              ]
+            },
+            {
+              "type": "text",
+              "id": "reformas_quais",
+              "label": "Se sim, quais?",
+              "optional": true
+            },
+            {
+              "type": "choice",
+              "id": "locador_escritura",
+              "label": "O nome do locador consta na escritura do imóvel?",
+              "options": [
+                "SIM",
+                "NÃO"
+              ]
+            },
+            {
+              "type": "choice",
+              "id": "iptu_obrigacao",
+              "label": "De quem será a obrigação do pagamento do IPTU?",
+              "options": [
+                "CCL",
+                "LOCADOR"
+              ]
+            },
+            {
+              "type": "choice",
+              "id": "vistoria_fotos",
+              "label": "Foi feita a vistoria? As fotos estão em anexo ao formulário?",
+              "options": [
+                "SIM",
+                "NÃO"
+              ]
+            },
+            {
+              "type": "choice",
+              "id": "caucao",
+              "label": "Haverá pagamento de caução?",
+              "options": [
+                "SIM",
+                "NÃO"
+              ]
+            },
+            {
+              "type": "choice",
+              "id": "fornece_agua",
+              "label": "Quem fornecerá água?",
+              "options": [
+                "CCL",
+                "LOCADOR"
+              ]
+            },
+            {
+              "type": "choice",
+              "id": "fornece_energia",
+              "label": "Quem fornecerá energia?",
+              "options": [
+                "CCL",
+                "LOCADOR"
+              ]
+            },
+            {
+              "type": "choice",
+              "id": "fornece_internet",
+              "label": "Quem fornecerá internet?",
+              "options": [
+                "CCL",
+                "LOCADOR"
+              ]
+            },
+            {
+              "type": "choice",
+              "id": "fornece_gas",
+              "label": "Quem fornecerá gás?",
+              "options": [
+                "CCL",
+                "LOCADOR"
+              ]
+            },
+            {
+              "type": "textarea",
+              "id": "entrega_imovel",
+              "label": "Como o imóvel deverá ser entregue ao proprietário (com pintura em dia, reparos, reforma, etc.)",
+              "required": true,
+              "big": true
+            }
+          ]
+        },
+        {
+          "title": "INFORMAÇÃO TRIBUTÁRIA IMPORTANTE",
+          "fields": [
+            {
+              "type": "static",
+              "html": "A CCL retém o IRRF nos <b>aluguéis acima de R$ 2.259,21</b>, conforme legislação tributária vigente e bases de cálculo expostas abaixo. Nesta hipótese, o ADM deverá <b>OBRIGATORIAMENTE</b> expor ao Locador, no momento da negociação, a alteração do valor a ser pago (líquido)."
+            },
+            {
+              "type": "irrf-table"
+            }
+          ]
+        },
+        {
+          "title": "OBS",
+          "fields": [
+            {
+              "type": "textarea",
+              "id": "obs",
+              "label": "",
+              "required": true
+            }
+          ]
+        },
+        {
+          "title": "FOTOS DO IMÓVEL, DOCUMENTOS E ESCRITURA (ANEXAR)",
+          "fields": [
+            {
+              "type": "file",
+              "id": "fotos_imovel",
+              "label": ""
+            }
+          ]
+        }
+      ]
+    },
+    "locacao_veiculo": {
+      "code": "LVE",
+      "label": "Locação de Veículo",
+      "docTitle": "FORMULÁRIO DE PREENCHIMENTO DE LOCAÇÃO DE VEÍCULO",
+      "desc": "Contratação de locação de veículos leves ou pesados, com ou sem motorista.",
+      "hasChecklist": true,
+      "checklist": [
+        {
+          "id": "cnpj_ou_pf",
+          "label": "Cópia do Cadastro Nacional da Pessoa Jurídica da Receita Federal ou Cópia Documentação da pessoa que assina:",
+          "sub": [
+            {
+              "id": "rg_cnh",
+              "label": "Cart. de Identidade ou CNH"
+            },
+            {
+              "id": "end",
+              "label": "Comprovante de endereço atualizado"
+            },
+            {
+              "id": "tel_email",
+              "label": "Telefone e e-mail"
+            }
+          ]
+        },
+        {
+          "id": "contrato_social",
+          "label": "Cópia Contrato Social da Empresa (caso for PJ)"
+        },
+        {
+          "id": "doc_veic_equip",
+          "label": "Cópia documento do VEÍCULO (CRLV atualizada) ou nota fiscal do EQUIPAMENTO"
+        },
+        {
+          "id": "comp_bancario",
+          "label": "Cópia Comprovante Bancário (Banco, N° da Agência e N° da Conta)"
+        },
+        {
+          "id": "ctps",
+          "label": "Comprovante de registro em carteira de trabalho e contribuições do funcionário (caso houver Motorista)"
+        },
+        {
+          "id": "cnh_func",
+          "label": "Cópia da CNH do Funcionário - Motorista ou Operador (caso houver Motorista)"
+        },
+        {
+          "id": "cndt",
+          "label": "Certidão de Débito Trabalhista (caso seja PJ – se houver mão de obra)"
+        },
+        {
+          "id": "fotos",
+          "label": "Fotos do veículo/equipamento"
+        }
+      ],
+      "hasPricingTable": true,
+      "pricingAfterFields": [],
+      "photoPageTitle": "CHECK LIST DE RECEBIMENTO",
+      "sections": [
+        {
+          "num": "2°",
+          "title": "PARTE LOCADORA",
+          "fields": [
+            {
+              "type": "text",
+              "id": "parte_nome",
+              "label": "2.0 Nome"
+            },
+            {
+              "type": "text",
+              "id": "parte_endereco",
+              "label": "2.1 Endereço"
+            },
+            {
+              "type": "text",
+              "id": "parte_doc",
+              "label": "2.2 CPF/CNPJ"
+            },
+            {
+              "type": "text",
+              "id": "parte_telefone",
+              "label": "2.3 Telefone"
+            },
+            {
+              "type": "text",
+              "id": "parte_email",
+              "label": "2.4 E-mail"
+            }
+          ]
+        },
+        {
+          "num": "3°",
+          "title": "OBJETO DO CONTRATO",
+          "fields": [
+            {
+              "type": "textarea",
+              "id": "objeto",
+              "label": ""
+            }
+          ]
+        },
+        {
+          "num": "4°",
+          "title": "DATA DE INÍCIO DA LOCAÇÃO",
+          "fields": [
+            {
+              "type": "date",
+              "id": "data_inicio",
+              "label": ""
+            }
+          ]
+        },
+        {
+          "num": "5°",
+          "title": "DATA DE FIM DA LOCAÇÃO",
+          "fields": [
+            {
+              "type": "date",
+              "id": "data_fim",
+              "label": ""
+            }
+          ]
+        },
+        {
+          "num": "6°",
+          "title": "VALOR",
+          "fields": [
+            {
+              "type": "text",
+              "id": "data_fechamento_medicoes",
+              "label": "Data do Fechamento das Medições",
+              "hint": "Ex.: 30 dias após emissão da nota fiscal",
+              "oneColumn": true
+            },
+            {
+              "type": "text",
+              "id": "data_pagamento_medicoes",
+              "label": "Data do Pagamento das Medições",
+              "hint": "Ex.: 30 dias após emissão da nota fiscal",
+              "oneColumn": true
+            },
+            {
+              "type": "choice",
+              "id": "pagamento_avista",
+              "label": "O pagamento será à vista?",
+              "options": [
+                "SIM",
+                "NÃO"
+              ]
+            },
+            {
+              "type": "choice",
+              "id": "pagamento_parcelado",
+              "label": "O pagamento será parcelado?",
+              "options": [
+                "SIM",
+                "NÃO"
+              ]
+            },
+            {
+              "type": "text",
+              "id": "como_parcelas",
+              "label": "Como serão as parcelas?",
+              "optional": true
+            }
+          ]
+        },
+        {
+          "title": "O PREENCHIMENTO DOS ITENS ABAIXO É OBRIGATÓRIO",
+          "fields": [
+            {
+              "type": "text",
+              "id": "itens_orcamento",
+              "label": "Itens de Orçamento",
+              "required": true
+            },
+            {
+              "type": "text",
+              "id": "item_financeiro",
+              "label": "Item Financeiro",
+              "required": true
+            }
+          ]
+        },
+        {
+          "num": "7º",
+          "title": "DADOS BANCÁRIOS",
+          "fields": [
+            {
+              "type": "choice",
+              "id": "forma_pagamento",
+              "label": "Forma de Pagamento",
+              "options": [
+                "BOLETO",
+                "DADOS BANCÁRIOS"
+              ],
+              "default": "DADOS BANCÁRIOS"
+            },
+            {
+              "type": "text",
+              "id": "banco",
+              "label": "7.1 Banco",
+              "showIf": {
+                "field": "forma_pagamento",
+                "equals": "DADOS BANCÁRIOS"
+              }
+            },
+            {
+              "type": "text",
+              "id": "agencia",
+              "label": "7.2 Agência",
+              "showIf": {
+                "field": "forma_pagamento",
+                "equals": "DADOS BANCÁRIOS"
+              }
+            },
+            {
+              "type": "text",
+              "id": "conta",
+              "label": "7.3 Conta",
+              "showIf": {
+                "field": "forma_pagamento",
+                "equals": "DADOS BANCÁRIOS"
+              }
+            },
+            {
+              "type": "text",
+              "id": "pix",
+              "label": "7.4 PIX",
+              "showIf": {
+                "field": "forma_pagamento",
+                "equals": "DADOS BANCÁRIOS"
+              }
+            }
+          ]
+        },
+        {
+          "num": "8º",
+          "title": "DADOS DO EQUIPAMENTO / VEÍCULO",
+          "fields": [
+            {
+              "type": "text",
+              "id": "eq_tipo",
+              "label": "10.0 Tipo"
+            },
+            {
+              "type": "text",
+              "id": "eq_marca",
+              "label": "10.1 Marca"
+            },
+            {
+              "type": "text",
+              "id": "eq_modelo",
+              "label": "10.2 Modelo"
+            },
+            {
+              "type": "text",
+              "id": "eq_ano",
+              "label": "10.3 Ano"
+            },
+            {
+              "type": "text",
+              "id": "eq_placa",
+              "label": "10.4 Placa"
+            },
+            {
+              "type": "text",
+              "id": "eq_renavam",
+              "label": "10.5 Renavam"
+            },
+            {
+              "type": "text",
+              "id": "eq_serie",
+              "label": "10.6 Série"
+            }
+          ]
+        },
+        {
+          "num": "9º",
+          "title": "MOBILIZAÇÃO E DESMOBILIZAÇÃO, QUEM FARÁ?",
+          "fields": [
+            {
+              "type": "choice",
+              "id": "mob_desmob",
+              "label": "",
+              "options": [
+                "CCL",
+                "LOCADORA"
+              ]
+            }
+          ]
+        },
+        {
+          "num": "10º",
+          "title": "OPERADOR OU MOTORISTA",
+          "fields": [
+            {
+              "type": "choice",
+              "id": "havera_operador",
+              "label": "Haverá motorista/operador?",
+              "options": [
+                "SIM",
+                "NÃO"
+              ]
+            },
+            {
+              "type": "choice",
+              "id": "operador_de_quem",
+              "label": "Se sim, de quem ele é funcionário?",
+              "options": [
+                "CCL",
+                "LOCADORA"
+              ],
+              "optional": true
+            },
+            {
+              "type": "choice",
+              "id": "operador_clt",
+              "label": "O funcionário é CLT?",
+              "options": [
+                "SIM",
+                "NÃO"
+              ],
+              "optional": true
+            }
+          ]
+        },
+        {
+          "num": "11º",
+          "title": "EXISTEM DESGASTES NO VEÍCULO?",
+          "fields": [
+            {
+              "type": "choice",
+              "id": "desgastes",
+              "label": "",
+              "options": [
+                "SIM",
+                "NÃO"
+              ]
+            },
+            {
+              "type": "text",
+              "id": "desgastes_quais",
+              "label": "Se sim, quais?",
+              "optional": true
+            }
+          ]
+        },
+        {
+          "num": "12º",
+          "title": "O VEÍCULO ESTÁ SENDO LOCADO PARA O USO DE ALGUM FUNCIONÁRIO DA CCL?",
+          "fields": [
+            {
+              "type": "choice",
+              "id": "uso_funcionario",
+              "label": "",
+              "options": [
+                "SIM",
+                "NÃO"
+              ]
+            },
+            {
+              "type": "text",
+              "id": "uso_funcionario_quem",
+              "label": "Se sim, quem?",
+              "optional": true
+            }
+          ]
+        },
+        {
+          "title": "FOTOS DA VISTORIA, DOCUMENTO DO VEÍCULO E DOCUMENTOS (ANEXAR)",
+          "fields": [
+            {
+              "type": "file",
+              "id": "anexos",
+              "label": ""
+            }
+          ]
+        },
+        {
+          "title": "OBS (PREENCHIMENTO OBRIGATÓRIO)",
+          "fields": [
+            {
+              "type": "textarea",
+              "id": "obs",
+              "label": "",
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    "prestacao_servicos": {
+      "code": "PJ",
+      "label": "Prestação de Serviços (PJ)",
+      "docTitle": "FORMULÁRIO DE PREENCHIMENTO – CONTRATO DE PRESTAÇÃO DE SERVIÇOS – PESSOA JURÍDICA",
+      "desc": "Contratação de empresa (PJ) para execução de serviços na obra.",
+      "hasChecklist": true,
+      "checklist": [
+        {
+          "id": "contrato_social",
+          "label": "Contrato Social da Empresa"
+        },
+        {
+          "id": "cnpj",
+          "label": "Cópia do Cadastro Nacional da Pessoa Jurídica da Receita Federal (Cartão CNPJ)"
+        },
+        {
+          "id": "comp_endereco_pj",
+          "label": "Comprovante de Endereço da PJ"
+        },
+        {
+          "id": "doc_representante",
+          "label": "Documentação da Pessoa que assina/Representante Legal da empresa:",
+          "sub": [
+            {
+              "id": "rg_cnh",
+              "label": "Cart. de Identidade ou CNH"
+            },
+            {
+              "id": "end",
+              "label": "Comprovante de endereço atualizado"
+            },
+            {
+              "id": "tel_email",
+              "label": "Telefone e e-mail"
+            }
+          ]
+        },
+        {
+          "id": "comp_bancario",
+          "label": "Comprovante Bancário (Banco, N° da Agência e N° da Conta), em nome da Pessoa Jurídica"
+        },
+        {
+          "id": "ctps",
+          "label": "Comprovante de registros em carteiras de trabalho e contribuições dos funcionários"
+        },
+        {
+          "id": "proposta",
+          "label": "Proposta Atualizada dos Serviços"
+        }
+      ],
+      "hasPricingTable": true,
+      "pricingAfterFields": [
+        "valor_mensal",
+        "valor_total_contrato"
+      ],
+      "sections": [
+        {
+          "num": "2°",
+          "title": "PRESTADORA DE SERVIÇOS",
+          "fields": [
+            {
+              "type": "text",
+              "id": "parte_nome",
+              "label": "2.0 Nome"
+            },
+            {
+              "type": "text",
+              "id": "parte_endereco",
+              "label": "2.1 Endereço"
+            },
+            {
+              "type": "text",
+              "id": "parte_doc",
+              "label": "2.2 CNPJ"
+            },
+            {
+              "type": "text",
+              "id": "parte_telefone",
+              "label": "2.3 Telefone"
+            },
+            {
+              "type": "text",
+              "id": "parte_email",
+              "label": "2.4 E-mail"
+            }
+          ]
+        },
+        {
+          "num": "3°",
+          "title": "OBJETO DO CONTRATO",
+          "fields": [
+            {
+              "type": "textarea",
+              "id": "objeto",
+              "label": ""
+            }
+          ]
+        },
+        {
+          "num": "4°",
+          "title": "DATA DE INÍCIO DA PRESTAÇÃO DE SERVIÇOS",
+          "fields": [
+            {
+              "type": "date",
+              "id": "data_inicio",
+              "label": ""
+            }
+          ]
+        },
+        {
+          "num": "5°",
+          "title": "DATA DE FIM DA PRESTAÇÃO DE SERVIÇOS",
+          "fields": [
+            {
+              "type": "date",
+              "id": "data_fim",
+              "label": ""
+            }
+          ]
+        },
+        {
+          "num": "6°",
+          "title": "VALOR",
+          "fields": [
+            {
+              "type": "money",
+              "id": "valor_mensal",
+              "label": "Mensal"
+            },
+            {
+              "type": "money",
+              "id": "valor_total_contrato",
+              "label": "Valor total do contrato",
+              "hint": "Sugerido automaticamente pela vigência: valor mensal × meses. Você pode ajustar manualmente."
+            },
+            {
+              "type": "text",
+              "id": "data_fechamento_medicoes",
+              "label": "Data do Fechamento das Medições",
+              "hint": "Ex.: 30 dias após emissão da nota fiscal",
+              "oneColumn": true
+            },
+            {
+              "type": "text",
+              "id": "data_pagamento_medicoes",
+              "label": "Data do Pagamento das Medições",
+              "hint": "Ex.: 30 dias após emissão da nota fiscal",
+              "oneColumn": true
+            },
+            {
+              "type": "choice",
+              "id": "pagamento_avista",
+              "label": "O pagamento será à vista?",
+              "options": [
+                "SIM",
+                "NÃO"
+              ]
+            },
+            {
+              "type": "choice",
+              "id": "pagamento_parcelado",
+              "label": "O pagamento será parcelado?",
+              "options": [
+                "SIM",
+                "NÃO"
+              ]
+            },
+            {
+              "type": "text",
+              "id": "como_parcelas",
+              "label": "Como serão as parcelas?",
+              "optional": true
+            }
+          ]
+        },
+        {
+          "num": "9º",
+          "title": "DADOS BANCÁRIOS",
+          "fields": [
+            {
+              "type": "choice",
+              "id": "forma_pagamento",
+              "label": "Forma de Pagamento",
+              "options": [
+                "BOLETO",
+                "DADOS BANCÁRIOS"
+              ],
+              "default": "DADOS BANCÁRIOS"
+            },
+            {
+              "type": "text",
+              "id": "banco",
+              "label": "7.1 Banco",
+              "showIf": {
+                "field": "forma_pagamento",
+                "equals": "DADOS BANCÁRIOS"
+              }
+            },
+            {
+              "type": "text",
+              "id": "agencia",
+              "label": "7.2 Agência",
+              "showIf": {
+                "field": "forma_pagamento",
+                "equals": "DADOS BANCÁRIOS"
+              }
+            },
+            {
+              "type": "text",
+              "id": "conta",
+              "label": "7.3 Conta",
+              "showIf": {
+                "field": "forma_pagamento",
+                "equals": "DADOS BANCÁRIOS"
+              }
+            },
+            {
+              "type": "text",
+              "id": "pix",
+              "label": "7.4 PIX",
+              "showIf": {
+                "field": "forma_pagamento",
+                "equals": "DADOS BANCÁRIOS"
+              }
+            }
+          ]
+        },
+        {
+          "title": "FORNECIMENTOS",
+          "fields": [
+            {
+              "type": "choice",
+              "id": "forn_refeicao",
+              "label": "Fornecimento de refeição",
+              "options": [
+                "CCL",
+                "CONTRATADA",
+                "NÃO SE APLICA"
+              ]
+            },
+            {
+              "type": "choice",
+              "id": "forn_combustivel",
+              "label": "Fornecimento de combustível",
+              "options": [
+                "CCL",
+                "CONTRATADA",
+                "NÃO SE APLICA"
+              ]
+            },
+            {
+              "type": "choice",
+              "id": "forn_alojamento",
+              "label": "Fornecimento de alojamento",
+              "options": [
+                "CCL",
+                "CONTRATADA",
+                "NÃO SE APLICA"
+              ]
+            },
+            {
+              "type": "choice",
+              "id": "forn_materiais",
+              "label": "Fornecimento de materiais",
+              "options": [
+                "CCL",
+                "CONTRATADA",
+                "NÃO SE APLICA"
+              ]
+            },
+            {
+              "type": "choice",
+              "id": "forn_ferramentas",
+              "label": "Fornecimento de ferramentas",
+              "options": [
+                "CCL",
+                "CONTRATADA",
+                "NÃO SE APLICA"
+              ]
+            },
+            {
+              "type": "choice",
+              "id": "mob_desmob",
+              "label": "Mobilização/Desmobilização",
+              "options": [
+                "CCL",
+                "CONTRATADA",
+                "NÃO SE APLICA"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "CASO A CCL FORNEÇA ALGUM DOS ITENS LISTADOS ACIMA, O VALOR CORRESPONDENTE DEVERÁ SER ABATIDO DO TOTAL DEVIDO PELA PRESTAÇÃO DE SERVIÇOS/MEDIÇÃO?",
+          "fields": [
+            {
+              "type": "multi",
+              "id": "abatimento_itens",
+              "label": "",
+              "options": [
+                "REFEIÇÃO",
+                "COMBUSTÍVEL",
+                "ALOJAMENTO",
+                "MATERIAIS",
+                "NÃO SE APLICA"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "",
+          "fields": [
+            {
+              "type": "choice",
+              "id": "emitira_art",
+              "label": "A prestadora emitirá a Anotação de Responsabilidade Técnica (ART)?",
+              "options": [
+                "SIM",
+                "NÃO"
+              ]
+            },
+            {
+              "type": "choice",
+              "id": "modalidade_funcionarios",
+              "label": "Os funcionários da prestadora são contratados na modalidade CLT ou por contrato particular?",
+              "options": [
+                "CLT",
+                "PARTICULAR"
+              ]
+            },
+            {
+              "type": "text",
+              "id": "qtd_funcionarios",
+              "label": "Quantos funcionários da prestadora serão necessários para a execução dos serviços?"
+            }
+          ]
+        },
+        {
+          "num": "10ª",
+          "title": "OBRIGAÇÕES DA PRESTADORA DE SERVIÇOS (PREENCHIMENTO OBRIGATÓRIO)",
+          "fields": [
+            {
+              "type": "textarea",
+              "id": "obrig_prestadora",
+              "label": "",
+              "required": true,
+              "big": true
+            }
+          ]
+        },
+        {
+          "num": "11ª",
+          "title": "OBRIGAÇÕES DA CONTRATANTE — CCL (PREENCHIMENTO OBRIGATÓRIO)",
+          "fields": [
+            {
+              "type": "textarea",
+              "id": "obrig_contratante",
+              "label": "",
+              "required": true,
+              "big": true
+            }
+          ]
+        },
+        {
+          "num": "12º",
+          "title": "OBS PERTINENTES (PREENCHIMENTO OBRIGATÓRIO)",
+          "fields": [
+            {
+              "type": "textarea",
+              "id": "obs",
+              "label": "",
+              "required": true,
+              "big": true
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "headers": [
+    {
+      "type": "text",
+      "id": "solicitante",
+      "label": "Solicitante"
+    },
+    {
+      "type": "choice",
+      "id": "prazo",
+      "label": "Prazo",
+      "options": [
+        "NORMAL — 5 a 7 dias úteis",
+        "URGENTE — 3 dias úteis",
+        "EMERGENCIAL — 2 dias úteis"
+      ]
+    },
+    {
+      "type": "textarea",
+      "id": "motivacao_urgencia",
+      "label": "Caso seja urgente, qual a motivação?",
+      "optional": true
+    },
+    {
+      "type": "obraselect",
+      "id": "local_obra",
+      "label": "1° Local e Nº da Obra"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { PDFDocument } from 'pdf-lib';
+import { detailing, simulation, term, type PrintExpense, type PrintHistory, type PrintLeave, type PrintPerson } from './fieldLeavePrint';
+
+type FinalLeave=PrintLeave&{periodicity:string|null;status:string};
+type Appendix={signed?:{file:Blob;name:string};quote?:Blob;quotePdf?:Blob};
+const fmt=(v:string|null|undefined)=>v?`${v.slice(8,10)}/${v.slice(5,7)}/${v.slice(0,4)}`:'—';
+const money=(n:number)=>Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const append=async(target:PDFDocument,bytes:Uint8Array)=>{const source=await PDFDocument.load(bytes);(await target.copyPages(source,source.getPageIndices())).forEach(page=>target.addPage(page))};
+const imageTerm=async(file:Blob,name:string)=>{const out=await PDFDocument.create(),bytes=await file.arrayBuffer();const image=name.toLowerCase().endsWith('.png')?await out.embedPng(bytes):await out.embedJpg(bytes);const page=out.addPage([595.28,841.89]);const scale=Math.min(555/image.width,801/image.height);page.drawImage(image,{x:(595.28-image.width*scale)/2,y:(841.89-image.height*scale)/2,width:image.width*scale,height:image.height*scale});return out.save()};
+const save=(data:Uint8Array,name:string)=>{const copy=new Uint8Array(data.length);copy.set(data);const url=URL.createObjectURL(new Blob([copy],{type:'application/pdf'}));const link=document.createElement('a');link.href=url;link.download=name;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000)};
+
+const upper=(v:string|null|undefined)=>String(v||'').trim().toLocaleUpperCase('pt-BR');
+const addMonths=(iso:string,n:number)=>{const [year,month,day]=iso.slice(0,10).split('-').map(Number);const first=new Date(Date.UTC(year,month-1+n,1,12));const last=new Date(Date.UTC(first.getUTCFullYear(),first.getUTCMonth()+1,0,12)).getUTCDate();first.setUTCDate(Math.min(day,last));return first.toISOString().slice(0,10)};
+const addDays=(iso:string,n:number)=>{const date=new Date(`${iso}T12:00:00Z`);date.setUTCDate(date.getUTCDate()+n);return date.toISOString().slice(0,10)};
+const fifth=(iso:string,n:number)=>{const first=addMonths(iso.slice(0,7)+'-01',n),[year,month]=first.split('-').map(Number);let found=0;for(let day=1;day<=15;day++){const date=new Date(Date.UTC(year,month-1,day,12));if(date.getUTCDay()!==0&&date.getUTCDay()!==6&&++found===5)return date.toISOString().slice(0,10)}return ''};
+const dates=(a:string|null|undefined,b:string|null|undefined)=>a?`${fmt(a)} A ${fmt(b||a)}`:'—';
+const rule=(km:number)=>km>1000?{months:6,days:7,period:'6x6'}:km>500?{months:3,days:5,period:'3x3'}:{months:2,days:3,period:'2x2'};
+/** Mesma planilha do relatório de sugestões, restrita à competência com lançamentos reais. */
+export async function finalLeaveReport(leaves:FinalLeave[],people:PrintPerson[],expenses:PrintExpense[],history:PrintHistory[],projectLabel:string,load:(leave:FinalLeave)=>Promise<Appendix>,onProgress?:(text:string)=>void){
+ if(!leaves.length)throw new Error('Não há folgas cadastradas nesta competência.');
+ const selected=[...leaves].sort((a,b)=>a.collaborator_name.localeCompare(b.collaborator_name,'pt-BR'));
+ const cover=new jsPDF({orientation:'landscape',unit:'mm',format:'a3'}),width=cover.internal.pageSize.getWidth(),height=cover.internal.pageSize.getHeight();
+ const logoResponse=await fetch('/ccl-logo-folga.png');if(!logoResponse.ok)throw new Error('Logo da CCL não localizada.');const logoBlob=await logoResponse.blob();const image=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=reject;reader.readAsDataURL(logoBlob)});
+ const competence=selected[0].competence;const groups=[...new Set(selected.map(l=>upper(people.find(p=>p.id===l.collaborator_id)?.department||people.find(p=>p.id===l.collaborator_id)?.sector||'SEM SETOR / EQUIPE')))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+ const headingDone=new Set<number>();const heading=()=>{const page=cover.getCurrentPageInfo().pageNumber;if(headingDone.has(page))return;headingDone.add(page);cover.setCharSpace(0);cover.setTextColor(15);cover.addImage(image,'PNG',8,6,39,19);cover.setFont('helvetica','bold');cover.setFontSize(14);cover.text('SOLICITAÇÃO DE FOLGA DE CAMPO',width/2,14,{align:'center'});cover.setFontSize(9);cover.text('PROGRAMAÇÃO FINAL DE BAIXADAS',width/2,20,{align:'center'});cover.setFont('helvetica','normal');cover.setFontSize(8);cover.text(`CENTRO DE CUSTO: 202     ${upper(projectLabel)}`,8,32,{maxWidth:width-16});cover.text(`SETOR / EQUIPE: ${groups.length===1?groups[0]:groups.length+' SETORES'}     COMPETÊNCIA: ${competence.slice(5,7)}/${competence.slice(0,4)}`,8,37,{maxWidth:width-16});cover.setDrawColor(80);cover.line(8,40,width-8,40)};
+ heading();let y=44;const widths=[13,47,45,18,38,19,13,21,38,38,38,25,23];
+ for(const group of groups){if(y>height-47){cover.addPage();heading();y=44}cover.setFillColor(232,232,232);cover.rect(8,y,width-16,7,'F');cover.setFont('helvetica','bold');cover.setFontSize(8.3);cover.text(group,10,y+5);y+=8;
+  const rows=selected.filter(l=>upper(people.find(p=>p.id===l.collaborator_id)?.department||people.find(p=>p.id===l.collaborator_id)?.sector||'SEM SETOR / EQUIPE')===group).map(l=>{const p=people.find(x=>x.id===l.collaborator_id),km=Number(l.distance_km||p?.distance_km||0),r=rule(km);const previous=[...leaves.filter(x=>x.collaborator_id===l.collaborator_id&&x.id!==l.id&&x.starts_on&&x.starts_on<(l.starts_on||'')).map(x=>({start:x.starts_on!,end:x.ends_on||x.starts_on!})),...history.filter(h=>h.collaborator_id===l.collaborator_id&&h.starts_on<(l.starts_on||'')).map(h=>({start:h.starts_on,end:h.ends_on||h.starts_on}))].sort((a,b)=>b.start.localeCompare(a.start))[0];const ideal=previous?addMonths(previous.start,r.months):p?.hired_on?fifth(p.hired_on,r.months):'';const idealEnd=ideal?(previous?addMonths(previous.end,r.months):addDays(ideal,r.days-1)):'';const cost=expenses.filter(e=>e.field_leave_id===l.id).reduce((sum,e)=>sum+Number(e.amount||0),0);return[l.registration||'—',upper(l.collaborator_name),upper(p?.role)||'—',fmt(p?.hired_on),`${upper(l.city)||'—'} / ${upper(l.state)||'—'}`,`${km.toLocaleString('pt-BR')} KM`,l.periodicity||r.period,`${r.months} MESES / ${l.days||r.days} DIAS`,previous?dates(previous.start,previous.end):'ADMISSÃO',ideal?dates(ideal,idealEnd):'—',dates(l.starts_on,l.ends_on),upper(l.status)||'—',`R$ ${money(cost)}`]});
+  autoTable(cover,{startY:y,margin:{left:8,right:8,top:44,bottom:15},head:[['MAT.','COLABORADOR','FUNÇÃO','ADMISSÃO','CIDADE / UF','KM','CICLO','PERÍODO / DIAS','ÚLTIMA BAIXADA','PERÍODO IDEAL','PERÍODO PROGRAMADO','SITUAÇÃO','VALOR']],body:rows,theme:'grid',showHead:'everyPage',tableWidth:widths.reduce((a,b)=>a+b,0),styles:{font:'helvetica',fontSize:7.2,cellPadding:1.5,textColor:[16,16,16],lineColor:[80,80,80],lineWidth:.12,valign:'middle',overflow:'linebreak'},headStyles:{fillColor:[244,163,64],textColor:[0,0,0],fontStyle:'bold',halign:'center',minCellHeight:8},columnStyles:Object.fromEntries(widths.map((cellWidth,i)=>[i,{cellWidth,halign:[0,3,5,6,7,9,10,11,12].includes(i)?'center':'left'}])),didDrawPage:()=>{if(cover.getCurrentPageInfo().pageNumber>1)heading()}});y=(cover as jsPDF&{lastAutoTable:{finalY:number}}).lastAutoTable.finalY+7;
+ }
+ const pages=cover.getNumberOfPages(),total=selected.reduce((sum,l)=>sum+expenses.filter(e=>e.field_leave_id===l.id).reduce((n,e)=>n+Number(e.amount||0),0),0);for(let i=1;i<=pages;i++){cover.setPage(i);cover.setFont('helvetica','normal');cover.setFontSize(7);cover.setTextColor(65);cover.text(`${selected.length} COLABORADORES · VALOR TOTAL LANÇADO: R$ ${money(total)} · DOCUMENTOS INDIVIDUAIS A SEGUIR`,8,height-9);cover.text(`PÁGINA ${i}/${pages}`,width-8,height-9,{align:'right'})}
+ const report=await PDFDocument.load(cover.output('arraybuffer'));
+ for(const [index,l] of selected.entries()){
+  onProgress?.(`Montando ${index+1}/${selected.length}: ${l.collaborator_name}`);
+  const p=people.find(x=>x.id===l.collaborator_id),items=expenses.filter(e=>e.field_leave_id===l.id);
+  if(items.length){const summary=detailing(l,p,items,true);if(summary instanceof Uint8Array)await append(report,summary)}
+  else{const blank=new jsPDF({unit:'mm',format:'a4'});blank.setFontSize(15);blank.text('RESUMO DE DESPESAS - FOLGA DE CAMPO',16,24);blank.setFontSize(11);blank.text(l.collaborator_name.toUpperCase(),16,39);blank.text(`MATRÍCULA ${l.registration||'—'}   |   ${fmt(l.starts_on)} A ${fmt(l.ends_on)}`,16,49);blank.text('NENHUMA DESPESA LANÇADA.',16,65);await append(report,new Uint8Array(blank.output('arraybuffer')))}
+  const files=await load(l);
+  if(files.quote){const quote=await simulation(l,files.quote,true);if(quote instanceof Uint8Array)await append(report,quote)}
+  else if(files.quotePdf){await append(report,new Uint8Array(await files.quotePdf.arrayBuffer()))}
+  else{const missing=new jsPDF({unit:'mm',format:'a4'});missing.setFontSize(13);missing.text('SIMULAÇÃO DE PASSAGEM',16,28);missing.setFontSize(10);missing.text(l.collaborator_name.toUpperCase(),16,42);missing.text('NENHUMA SIMULAÇÃO ARQUIVADA PARA ESTA FOLGA.',16,58);await append(report,new Uint8Array(missing.output('arraybuffer')))}
+  if(files.signed){const signed=files.signed.name.toLowerCase().endsWith('.pdf')?new Uint8Array(await files.signed.file.arrayBuffer()):await imageTerm(files.signed.file,files.signed.name);await append(report,signed)}
+  else{const blank=await term(l,p,projectLabel,true);if(blank instanceof Uint8Array)await append(report,blank)}
+ }
+ save(await report.save(),`RELATORIO_FINAL_FOLGA_DE_CAMPO_${selected[0].competence.slice(0,7)}.pdf`);
+}
