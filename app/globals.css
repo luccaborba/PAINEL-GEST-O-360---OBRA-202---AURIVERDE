@@ -412,3 +412,10 @@
 .cx-firm-button{background:#16794b!important;color:#fff!important}
 @media(max-width:760px){.cx-workflow-track{grid-template-columns:1fr 1fr}}
 .cx-ai-contract-import{display:grid;gap:6px;align-content:end}.cx-ai-import-button{min-height:44px;border:0;border-radius:7px;background:#2186e4;color:#fff;font-weight:900;padding:0 16px;cursor:pointer}.cx-ai-import-button:disabled{opacity:.65;cursor:wait}.cx-ai-contract-import small{font-size:11px;color:#667085}.cx-cr-toolbar{align-items:end;flex-wrap:wrap}.cx-cr-toolbar>label,.cx-ai-contract-import{min-width:240px;flex:1}
+
+/* Solicitação IA: ação compacta no canto superior */
+.cx-contract-requests .cx-cr-toolbar{display:grid;grid-template-columns:minmax(280px,1fr) minmax(280px,1fr) auto;align-items:end;gap:14px}
+.cx-contract-requests .cx-ai-contract-import{min-width:0;flex:0;display:flex;justify-content:flex-end;align-items:end}
+.cx-contract-requests .cx-ai-import-button{min-height:38px;width:auto;white-space:nowrap;border:1px solid #d6a900;border-radius:6px;background:#f5c518;color:#151515;font-weight:900;padding:0 14px;cursor:pointer}
+.cx-contract-requests .cx-ai-import-button:hover{filter:brightness(.97)}
+@media(max-width:900px){.cx-contract-requests .cx-cr-toolbar{grid-template-columns:1fr}.cx-contract-requests .cx-ai-contract-import{justify-content:flex-start}}
