@@ -400,3 +400,14 @@
 
 /* Perfis de acesso pre-parametrizados */
 .cx-profile-apply{align-self:end;min-height:40px;white-space:nowrap}
+
+/* Contract lifecycle */
+.cx-contract-workflow{margin:18px 0;padding:18px;border:1px solid #d8dee6;border-radius:10px;background:#f8fafc}
+.cx-workflow-track{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:18px}
+.cx-workflow-step{display:flex;align-items:center;gap:8px;padding:9px;border-radius:7px;background:#e9edf2;color:#596273;font-size:11px;font-weight:800}
+.cx-workflow-step b{display:grid;place-items:center;min-width:24px;height:24px;border-radius:50%;background:#fff;border:1px solid #cbd3dd}
+.cx-workflow-step.active{background:#2186e4;color:#fff}.cx-workflow-step.active b{color:#2186e4;border-color:#fff}
+.cx-contract-stage{display:inline-block;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:900;white-space:nowrap;background:#eef2f6}
+.cx-stage-aguardando_juridico{background:#fff4cc}.cx-stage-aguardando_assinaturas{background:#e7f0ff}.cx-stage-firmado{background:#dff7e8}
+.cx-firm-button{background:#16794b!important;color:#fff!important}
+@media(max-width:760px){.cx-workflow-track{grid-template-columns:1fr 1fr}}
