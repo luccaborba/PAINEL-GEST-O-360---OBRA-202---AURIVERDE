@@ -11,7 +11,7 @@ const compactMoney=(v:number|null)=>v==null?'—':`R$ ${Math.round(Number(v)).to
 const date=(v:string|null)=>v?v.slice(0,10).split('-').reverse().join('/'):'—';
 const stage=(v:string)=>({SOLICITACAO:'SOLICITAÇÃO',AGUARDANDO_JURIDICO:'AGUARDANDO JURÍDICO',AGUARDANDO_ASSINATURAS:'AGUARDANDO ASSINATURAS',FIRMADO:'FIRMADO'} as Record<string,string>)[v]||v.replaceAll('_',' ');
 const text=(v:unknown)=>String(v??'').trim();
-const num=(v:unknown)=>{const s=text(v);if(!s)return null;const n=Number(s.replace(/R\$\s?/g,'').replace(/\./g,'').replace(',','.').replace(/[^0-9.-]/g,''));return Number.isFinite(n)?n:null};
+const num=(v:unknown)=>{const raw=text(v);if(!raw)return null;let s=raw.replace(/R\$\s?/gi,'').replace(/\s/g,'').replace(/[^0-9,.-]/g,'');if(s.includes(',')){s=s.replace(/\./g,'').replace(',','.')}else if((s.match(/\./g)||[]).length>1){s=s.replace(/\./g,'')}else if(/^[-+]?\d{1,3}\.\d{3}$/.test(s)){s=s.replace('.','')}const n=Number(s);return Number.isFinite(n)?n:null};
 const inferredType=(r:RequestRow)=>{const d=r.form_data||{};return r.contract_type||(r.form_type==='locacao_veiculo'||text(d.eq_placa)||text(d.eq_modelo)?'LOCAÇÃO DE VEÍCULOS':r.form_type==='locacao_equipamento'?'LOCAÇÃO DE EQUIPAMENTOS':r.form_type==='locacao_imovel'?'LOCAÇÃO DE IMÓVEIS':r.form_type==='prestacao_servicos'?'PRESTAÇÃO DE SERVIÇOS':'');};
 const supplierOf=(d:Record<string,unknown>)=>text(d.parte_nome||d.prest_nome)||null;
 const descriptionOf=(d:Record<string,unknown>)=>text(d.objeto)||null;
