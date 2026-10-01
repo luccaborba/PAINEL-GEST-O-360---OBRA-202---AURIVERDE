@@ -411,3 +411,4 @@
 .cx-stage-aguardando_juridico{background:#fff4cc}.cx-stage-aguardando_assinaturas{background:#e7f0ff}.cx-stage-firmado{background:#dff7e8}
 .cx-firm-button{background:#16794b!important;color:#fff!important}
 @media(max-width:760px){.cx-workflow-track{grid-template-columns:1fr 1fr}}
+.cx-ai-contract-import{display:grid;gap:6px;align-content:end}.cx-ai-import-button{min-height:44px;border:0;border-radius:7px;background:#2186e4;color:#fff;font-weight:900;padding:0 16px;cursor:pointer}.cx-ai-import-button:disabled{opacity:.65;cursor:wait}.cx-ai-contract-import small{font-size:11px;color:#667085}.cx-cr-toolbar{align-items:end;flex-wrap:wrap}.cx-cr-toolbar>label,.cx-ai-contract-import{min-width:240px;flex:1}
