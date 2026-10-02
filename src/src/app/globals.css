@@ -149,3 +149,13 @@
 .cx-status-menu label:hover{background:#f4f6f8}
 .cx-status-menu input[type=checkbox]{appearance:auto!important;-webkit-appearance:checkbox!important;width:15px!important;height:15px!important;min-width:15px!important;max-width:15px!important;margin:0!important;padding:0!important;position:static!important;display:inline-block!important;accent-color:#2186e4;box-shadow:none!important;border-radius:2px!important}
 @media(max-width:760px){.cx-closing-controls{grid-template-columns:1fr}.cx-status-menu{min-width:100%}}
+
+
+/* Fechamento de Praça - proporção dos filtros */
+.cx-closing-controls{display:grid!important;grid-template-columns:170px 260px minmax(360px,1fr)!important;gap:14px!important;align-items:end!important}
+.cx-closing-controls>label{min-width:0!important;width:auto!important;flex:none!important}
+.cx-closing-controls>label:last-child{grid-column:auto!important;width:auto!important;flex:none!important}
+.cx-closing-controls>label:last-child input{width:100%!important;min-width:0!important}
+.cx-status-filter{width:260px!important;max-width:260px!important}
+@media(max-width:900px){.cx-closing-controls{grid-template-columns:170px 240px minmax(260px,1fr)!important}.cx-status-filter{width:240px!important;max-width:240px!important}}
+@media(max-width:700px){.cx-closing-controls{grid-template-columns:1fr!important}.cx-status-filter{width:100%!important;max-width:none!important}.cx-closing-controls>label:last-child{width:100%!important}}
