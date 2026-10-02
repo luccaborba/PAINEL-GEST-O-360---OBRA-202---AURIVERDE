@@ -39,6 +39,53 @@ export default function Housing({ sb, projectId, projectLabel, canCreate, canEdi
     if (result.error) setMessage(`Não foi possível excluir: ${result.error.message}`); else { await refresh(); setMessage('Alojamento excluído.'); } setBusy(false);
   }
   function occupied(row: Home) { return residents.filter(person => person.status==='ATIVO' && person.uses_lodging==='SIM' && person.lodging?.trim().toUpperCase() === row.contract_code.toUpperCase()).length; }
+  async function toggleStatus(row: Home) {
+    if (!canEdit || busy) return;
+    const next = row.status === 'ATIVO' ? 'INATIVO' : 'ATIVO';
+    const linked = occupied(row);
+    const prompt = next === 'INATIVO' ? `Inativar ${row.description}? ${linked ? `${linked} colaborador(es) continuarão vinculados ao imóvel e precisarão de revisão.` : 'O imóvel sairá do dashboard de alojamentos.'}` : `Reativar ${row.description}? O imóvel voltará ao dashboard.`;
+    if (!await systemConfirm(prompt)) return;
+    setBusy(true); setMessage('');
+    const { data, error } = await sb.from('cx_housing').update({ status: next, updated_at: new Date().toISOString() }).eq('project_id', projectId).eq('id', row.id).select('id');
+    if (error || !data?.length) setMessage(`Não foi possível ${next === 'ATIVO' ? 'reativar' : 'inativar'}: ${error?.message || 'acesso negado'}`);
+    else { await refresh(); setMessage(next === 'ATIVO' ? 'Imóvel reativado e incluído no dashboard.' : 'Imóvel inativado e retirado do dashboard.'); }
+    setBusy(false);
+  }
+  async function exportReport(format:'xlsx'|'pdf') {
+    if(!canExport||busy)return;
+    setBusy(true);setMessage('');
+    try {
+      async function allRows(table:'cx_housing'|'cx_contracts'|'cx_collaborators',columns:string){
+        const result:Record<string,unknown>[]=[];
+        for(let from=0;;from+=1000){
+          const {data,error}=await sb.from(table).select(columns).eq('project_id',projectId).range(from,from+999);
+          if(error)throw error;
+          result.push(...((data||[]) as unknown as Record<string,unknown>[]));
+          if(!data||data.length<1000)break;
+        }
+        return result;
+      }
+      const [homes,contracts,people]=await Promise.all([
+        allRows('cx_housing','contract_code,description,supplier,monthly_cost,capacity,capacity_confirmed,status,measurement_start_day,lease_start,lease_end'),
+        allRows('cx_contracts','code,contract_type,starts_on,ends_on,supplier'),
+        allRows('cx_collaborators','lodging,status,uses_lodging')
+      ]);
+      const active=(homes as HousingRow[]).filter(home=>home.status==='ATIVO'&&!home.contract_code.toUpperCase().startsWith('OBRA-'));
+      if(!active.length)throw new Error('Não há contratos de alojamento ativos nesta obra para o relatório.');
+      const projectCode=projectLabel.split('·')[0].trim();
+      const reportDate=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+      const logoResponse=await fetch('/ccl-logo-contratos-v1.png');if(!logoResponse.ok)throw new Error('Não foi possível carregar a logo CCL.');
+      const logo=new Uint8Array(await logoResponse.arrayBuffer());
+      const filename=`alojamentos-obra-${projectCode}-${reportDate}.${format}`;
+      if(format==='pdf')createHousingReportPdf(homes as HousingRow[],contracts as ContractRow[],people as Resident[],projectCode,reportDate,logo).save(filename);
+      else {
+        const bytes=createHousingReport(homes as HousingRow[],contracts as ContractRow[],people as Resident[],projectCode,reportDate,logo);
+        const file=new Blob([new Uint8Array(bytes)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+        const url=URL.createObjectURL(file);const link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+      }
+    }catch(error){setMessage(`Não foi possível gerar o relatório: ${error instanceof Error?error.message:String(error)}`);}
+    finally{setBusy(false);}
+  }
   const norm=(v:string|null|undefined)=>String(v||'').trim().toLocaleUpperCase('pt-BR');
   const visibleHomes=rows.filter(row=>showInactive?row.status!=='ATIVO':row.status==='ATIVO').filter(row=>{const q=norm(housingSearch);return !q||[row.contract_code,row.description,row.supplier].some(v=>norm(v).includes(q));});
   const visibleResidents=residents.filter(person=>{const q=norm(residentSearch);const lodging=norm(person.lodging);const housingOk=residentHousing==='TODOS'?true:residentHousing==='SEM ALOJAMENTO'?!lodging:lodging===norm(residentHousing);const statusOk=residentStatus==='TODOS'||person.status===residentStatus;const searchOk=!q||[person.registration,person.name,person.role,person.sector,person.department,person.lodging].some(v=>norm(v).includes(q));return housingOk&&statusOk&&searchOk;});
