@@ -44,54 +44,7 @@ export default function Housing({ sb, projectId, projectLabel, canCreate, canEdi
   const visibleResidents=residents.filter(person=>{const q=norm(residentSearch);const lodging=norm(person.lodging);const housingOk=residentHousing==='TODOS'?true:residentHousing==='SEM ALOJAMENTO'?!lodging:lodging===norm(residentHousing);const statusOk=residentStatus==='TODOS'||person.status===residentStatus;const searchOk=!q||[person.registration,person.name,person.role,person.sector,person.department,person.lodging].some(v=>norm(v).includes(q));return housingOk&&statusOk&&searchOk;});
   const housingName=(code:string|null)=>{if(!code)return 'SEM ALOJAMENTO';const home=rows.find(r=>norm(r.contract_code)===norm(code));return home?`${home.contract_code} · ${home.description}`:code;};
   const showDate=(v:string|null)=>v?new Date(`${v}T12:00:00`).toLocaleDateString('pt-BR'):'—';
-  async function exportResidentsPdf(){if(!canExport)return;try{const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});let logo:string|undefined;try{const response=await fetch('/constru-x-logo.png');if(response.ok){const blob=await response.blob();logo=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(reader.error);reader.readAsDataURL(blob);});}}catch{}const W=doc.internal.pageSize.getWidth();const header=()=>{if(logo)doc.addImage(logo,'PNG',14,7,34,15);doc.setFillColor(0,61,106);doc.rect(0,0,W,28,'F');if(logo)doc.addImage(logo,'PNG',14,6,34,15);doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('HOUSING CONTROL REPORT',W/2,11,{align:'center'});doc.setFont('helvetica','normal');doc.setFontSize(8);doc.text('Controle de Ocupação e Alocação de Colaboradores',W/2,15,{align:'center'});doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.text(projectLabel,W/2,19,{align:'center'});doc.setTextColor(255,196,0);doc.setFont('helvetica','bold');doc.text(`Filtros: ${residentHousing} · ${residentStatus} · ${residentSearch||'sem pesquisa'} · Total ${visibleResidents.length}`,W/2,23.5,{align:'center',maxWidth:190});};header();autoTable(doc,{startY:29,margin:{left:10,right:10,bottom:16},head:[['MAT.','COLABORADOR','FUNÇÃO','SETOR','EQUIPE','ADMISSÃO','ALOJAMENTO','STATUS']],body:visibleResidents.map(p=>[p.registration,p.name,p.role||'—',p.sector||'—',p.department||'—',showDate(p.hired_on),housingName(p.lodging),p.status]),styles:{fontSize:7,cellPadding:2},headStyles:{fillColor:[0,61,106],textColor:[255,255,255],fontStyle:'bold'},alternateRowStyles:{fillColor:[244,248,251]},tableLineColor:[210,220,228],tableLineWidth:0.15,columnStyles:{1:{cellWidth:42},6:{cellWidth:58}},didDrawPage:()=>{if(doc.getNumberOfPages()>1)header();}});const pages=doc.getNumberOfPages();for(let i=1;i<=pages;i++){doc.setPage(i);doc.setDrawColor(255,196,0);doc.setLineWidth(0.7);doc.line(10,194,W-10,194);doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(0,61,106);doc.text('Constru-X · Plataforma Integrada de Gestão Empresarial 360°',10,199);doc.text('Projeto desenvolvido por Luciano Garcia Borba',W/2,199,{align:'center'});doc.text(`Página ${i}/${pages}`,W-10,199,{align:'right'});}const now=new Date();const competence=`${String(now.getMonth()+1).padStart(2,'0')}-${now.getFullYear()}`;const obra=(projectLabel.match(/\b\d+\b/)?.[0]||projectLabel.split('·')[0].replace(/\D/g,'')||'202');doc.save(`HOUSING_CONTROL_REPORT_OBRA_${obra}_${competence}.pdf`);}catch(error){setMessage(`PDF não gerado: ${error instanceof Error?error.message:String(error)}`);}}
-  async function toggleStatus(row: Home) {
-    if (!canEdit || busy) return;
-    const next = row.status === 'ATIVO' ? 'INATIVO' : 'ATIVO';
-    const linked = occupied(row);
-    const prompt = next === 'INATIVO' ? `Inativar ${row.description}? ${linked ? `${linked} colaborador(es) continuarão vinculados ao imóvel e precisarão de revisão.` : 'O imóvel sairá do dashboard de alojamentos.'}` : `Reativar ${row.description}? O imóvel voltará ao dashboard.`;
-    if (!await systemConfirm(prompt)) return;
-    setBusy(true); setMessage('');
-    const { data, error } = await sb.from('cx_housing').update({ status: next, updated_at: new Date().toISOString() }).eq('project_id', projectId).eq('id', row.id).select('id');
-    if (error || !data?.length) setMessage(`Não foi possível ${next === 'ATIVO' ? 'reativar' : 'inativar'}: ${error?.message || 'acesso negado'}`);
-    else { await refresh(); setMessage(next === 'ATIVO' ? 'Imóvel reativado e incluído no dashboard.' : 'Imóvel inativado e retirado do dashboard.'); }
-    setBusy(false);
-  }
-  async function exportReport(format:'xlsx'|'pdf') {
-    if(!canExport||busy)return;
-    setBusy(true);setMessage('');
-    try {
-      async function allRows(table:'cx_housing'|'cx_contracts'|'cx_collaborators',columns:string){
-        const result:Record<string,unknown>[]=[];
-        for(let from=0;;from+=1000){
-          const {data,error}=await sb.from(table).select(columns).eq('project_id',projectId).range(from,from+999);
-          if(error)throw error;
-          result.push(...((data||[]) as unknown as Record<string,unknown>[]));
-          if(!data||data.length<1000)break;
-        }
-        return result;
-      }
-      const [homes,contracts,people]=await Promise.all([
-        allRows('cx_housing','contract_code,description,supplier,monthly_cost,capacity,capacity_confirmed,status,measurement_start_day,lease_start,lease_end'),
-        allRows('cx_contracts','code,contract_type,starts_on,ends_on,supplier'),
-        allRows('cx_collaborators','lodging,status,uses_lodging')
-      ]);
-      const active=(homes as HousingRow[]).filter(home=>home.status==='ATIVO'&&!home.contract_code.toUpperCase().startsWith('OBRA-'));
-      if(!active.length)throw new Error('Não há contratos de alojamento ativos nesta obra para o relatório.');
-      const projectCode=projectLabel.split('·')[0].trim();
-      const reportDate=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-      const logoResponse=await fetch('/ccl-logo-contratos-v1.png');if(!logoResponse.ok)throw new Error('Não foi possível carregar a logo CCL.');
-      const logo=new Uint8Array(await logoResponse.arrayBuffer());
-      const filename=`alojamentos-obra-${projectCode}-${reportDate}.${format}`;
-      if(format==='pdf')createHousingReportPdf(homes as HousingRow[],contracts as ContractRow[],people as Resident[],projectCode,reportDate,logo).save(filename);
-      else {
-        const bytes=createHousingReport(homes as HousingRow[],contracts as ContractRow[],people as Resident[],projectCode,reportDate,logo);
-        const file=new Blob([new Uint8Array(bytes)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-        const url=URL.createObjectURL(file);const link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
-      }
-    }catch(error){setMessage(`Não foi possível gerar o relatório: ${error instanceof Error?error.message:String(error)}`);}
-    finally{setBusy(false);}
-  }
+  async function exportResidentsPdf(){if(!canExport)return;try{const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});let logo:string|undefined;try{const response=await fetch('/ccl-logo-contratos-v1.png');if(response.ok){const blob=await response.blob();logo=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(reader.error);reader.readAsDataURL(blob);});}}catch{}const W=doc.internal.pageSize.getWidth();const filteredHousing=residentHousing==='TODOS'?'TODOS OS ALOJAMENTOS':residentHousing==='SEM ALOJAMENTO'?'SEM ALOJAMENTO':housingName(residentHousing);const header=()=>{doc.setFillColor(234,112,34);doc.rect(0,0,W,28,'F');if(logo)doc.addImage(logo,'PNG',14,5,38,17);doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('HOUSING CONTROL REPORT',W/2,10,{align:'center'});doc.setFont('helvetica','normal');doc.setFontSize(8);doc.text('Controle de Ocupação e Alocação de Colaboradores',W/2,14.5,{align:'center'});doc.setFontSize(7.5);doc.text(projectLabel,W/2,18.5,{align:'center'});doc.setFont('helvetica','bold');doc.text(`${filteredHousing} · ${residentStatus} · ${residentSearch||'sem pesquisa'} · Total ${visibleResidents.length}`,W/2,23,{align:'center',maxWidth:205});};header();autoTable(doc,{startY:29,margin:{left:10,right:10,bottom:16},head:[['MAT.','COLABORADOR','FUNÇÃO','SETOR','EQUIPE','ADMISSÃO','STATUS']],body:visibleResidents.map(p=>[p.registration,p.name,p.role||'—',p.sector||'—',p.department||'—',showDate(p.hired_on),p.status]),styles:{fontSize:7,cellPadding:2},headStyles:{fillColor:[234,112,34],textColor:[255,255,255],fontStyle:'bold'},alternateRowStyles:{fillColor:[253,247,242]},tableLineColor:[225,214,205],tableLineWidth:0.15,columnStyles:{1:{cellWidth:55},2:{cellWidth:52},3:{cellWidth:38},4:{cellWidth:43}},didDrawPage:()=>{if(doc.getNumberOfPages()>1)header();}});const pages=doc.getNumberOfPages();for(let i=1;i<=pages;i++){doc.setPage(i);doc.setDrawColor(234,112,34);doc.setLineWidth(0.7);doc.line(10,194,W-10,194);doc.setFont('helvetica','bold');doc.setFontSize(6.8);doc.setTextColor(100,100,100);doc.text('CONSTRU-X Plataforma Integrada de Gestão Multi Obra',10,199);doc.setFont('helvetica','normal');doc.text(`Página ${i}/${pages}`,W-10,199,{align:'right'});}const now=new Date();const competence=`${String(now.getMonth()+1).padStart(2,'0')}-${now.getFullYear()}`;const obra=(projectLabel.match(/\b\d+\b/)?.[0]||projectLabel.split('·')[0].replace(/\D/g,'')||'202');doc.save(`HOUSING_CONTROL_REPORT_OBRA_${obra}_${competence}.pdf`);}catch(error){setMessage(`PDF não gerado: ${error instanceof Error?error.message:String(error)}`);}}
   function input(field: keyof Edit, label: string, type = 'text', required = false) {
     return <label key={field}>{label}<input required={required} type={type} min={type === 'number' ? '0' : undefined} max={field === 'measurement_start_day' || field === 'payment_day' ? '31' : undefined} step={field === 'monthly_cost' ? '.01' : '1'} value={(form[field] as string | number | null) ?? ''} onChange={e => setForm(old => ({ ...old, [field]: type === 'number' ? e.target.value === '' ? null : Number(e.target.value) : type === 'date' ? e.target.value || null : e.target.value.toLocaleUpperCase('pt-BR') }))} /></label>;
   }
