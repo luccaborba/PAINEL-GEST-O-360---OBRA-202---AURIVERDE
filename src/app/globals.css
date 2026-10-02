@@ -447,3 +447,21 @@
 .cx-status-filter{width:260px!important;max-width:260px!important}
 @media(max-width:900px){.cx-closing-controls{grid-template-columns:170px 240px minmax(260px,1fr)!important}.cx-status-filter{width:240px!important;max-width:240px!important}}
 @media(max-width:700px){.cx-closing-controls{grid-template-columns:1fr!important}.cx-status-filter{width:100%!important;max-width:none!important}.cx-closing-controls>label:last-child{width:100%!important}}
+
+/* Avisos temporarios globais: feedback rapido de operacoes */
+.notice {
+  transition: opacity .22s ease, transform .22s ease;
+}
+.notice.cx-notice-pop {
+  animation: cxNoticeBum .24s cubic-bezier(.2,.9,.3,1.25) both;
+}
+.notice.cx-notice-hide {
+  opacity: 0 !important;
+  transform: translateY(-8px) scale(.985);
+  pointer-events: none;
+}
+@keyframes cxNoticeBum {
+  0% { opacity: 0; transform: translateY(-8px) scale(.985); }
+  70% { opacity: 1; transform: translateY(1px) scale(1.003); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
