@@ -1,9 +1,10 @@
 'use client';
 
-import { systemConfirm } from '@/lib/systemConfirm';
+import { systemConfirm } from '../lib/systemConfirm';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import PortalManagement from '@/components/PortalManagement';
+import PortalManagement from './PortalManagement';
+import { exportFilteredCollaborators } from './collaboratorListExport';
 
 type Status = 'ATIVO' | 'AFASTADO' | 'DESLIGADO' | 'INATIVO' | 'ABANDONO' | 'TRANSFERIDO';
 type YesNo = 'SIM' | 'NÃO';
@@ -79,9 +80,9 @@ function leaveRule(distance: number | null): { periodicity: string; days: number
   return { periodicity: '6X6', days: 7 };
 }
 
-export default function Collaborators({ sb, projectId, projectLabel, canCreate, canEdit, canDelete, canManagePortal }: {
+export default function Collaborators({ sb, projectId, projectLabel, canCreate, canEdit, canDelete, canManagePortal, canExport = false }: {
   sb: SupabaseClient; projectId: string; projectLabel: string;
-  canCreate: boolean; canEdit: boolean; canDelete: boolean; canManagePortal: boolean;
+  canCreate: boolean; canEdit: boolean; canDelete: boolean; canManagePortal: boolean; canExport?: boolean;
 }) {
   const [rows, setRows] = useState<Collaborator[]>([]);
   const [search, setSearch] = useState('');
@@ -366,6 +367,23 @@ export default function Collaborators({ sb, projectId, projectLabel, canCreate, 
     }
   }
 
+  async function exportList(format: 'pdf' | 'xlsx') {
+    if (!canExport || loading || !filtered.length) return;
+    const columns = tableColumns.filter(column => visibleColumns.includes(column.key));
+    if (!columns.length) { setMessage('Selecione pelo menos uma coluna para exportar.'); return; }
+    const data = filtered.map(row => columns.map(({key}) => {
+      if (key === 'name') return row.name;
+      if (key === 'experience') return experienceLabel(row);
+      if (key === 'status') return row.status;
+      if (key === 'sector') return row.sector || row.department || '—';
+      if (key === 'hired_on' || key === 'license_expires_on') return showDate(row[key]);
+      if (key === 'salary') return row.salary == null ? '—' : row.salary.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
+      return String(row[key] || '—');
+    }));
+    try { await exportFilteredCollaborators(format, projectLabel, search, columns.map(column => column.label), data); }
+    catch (error) { setMessage(`Não foi possível exportar: ${error instanceof Error ? error.message : String(error)}`); }
+  }
+
   function input(field: keyof Form, label: string, type = 'text', required = false) {
     const value = form[field];
     return <label key={field}>{label}<input type={type} required={required} min={numericFields.includes(field) ? '0' : undefined}
@@ -442,7 +460,7 @@ export default function Collaborators({ sb, projectId, projectLabel, canCreate, 
       <div className="cx-form-actions"><button type="button" onClick={closeDialog}>Fechar</button></div>
     </div></div>}
     {pendingStatus && <div className="cx-modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget && !busy) setPendingStatus(null); }}><div className="panel cx-modal cx-collab-confirm" role="dialog" aria-modal="true" aria-labelledby="cx-status-title"><div className="cx-dialog-head"><h2 id="cx-status-title">{pendingStatus.status === 'DESLIGADO' ? 'Desligar' : pendingStatus.status === 'INATIVO' ? 'Inativar' : 'Reativar'} colaborador</h2><button type="button" className="cx-dialog-close" disabled={busy} aria-label="Cancelar" onClick={() => setPendingStatus(null)}>×</button></div><p>Confirma a alteração do cadastro de <strong>{pendingStatus.row.name}</strong> para <strong>{pendingStatus.status}</strong>?</p>{pendingStatus.status === 'DESLIGADO' && <label className="cx-termination-date">Data do desligamento<input required type="date" min={pendingStatus.row.hired_on || undefined} max={brazilToday()} value={terminationDate} onChange={event => setTerminationDate(event.target.value)} /></label>}{message && <p role="alert" className="error">{message}</p>}<div className="cx-form-actions"><button type="button" disabled={busy} onClick={() => setPendingStatus(null)}>Cancelar</button><button type="button" className="cx-primary" disabled={busy || pendingStatus.status === 'DESLIGADO' && (!terminationDate || terminationDate > brazilToday() || !!pendingStatus.row.hired_on && terminationDate < pendingStatus.row.hired_on)} onClick={() => void changeStatus(pendingStatus.row, pendingStatus.status)}>{busy ? 'Salvando…' : 'Confirmar'}</button></div></div></div>}
-    <div className="panel cx-collab-list"><div className="cx-list-head"><div><h2>COLABORADORES <span className="cx-collab-count">{rows.length}</span></h2><p>{loading ? 'Carregando…' : `${filtered.length} exibidos de ${rows.length}`}</p></div><div className="cx-collab-tools"><input aria-label="Buscar colaborador" placeholder="Buscar nome, matrícula, função…" value={search} onChange={e => setSearch(e.target.value)} /><div className="cx-column-picker"><button type="button" className="cx-column-toggle" aria-expanded={columnsOpen} onClick={() => setColumnsOpen(open => !open)}>▤ COLUNAS</button>{columnsOpen && <div className="cx-column-options" role="group" aria-label="Selecionar colunas">{tableColumns.map(column => <label key={column.key}><input type="checkbox" checked={visibleColumns.includes(column.key)} onChange={() => toggleColumn(column.key)} />{column.label}</label>)}</div>}</div></div></div>
+    <div className="panel cx-collab-list"><div className="cx-list-head"><div><h2>COLABORADORES <span className="cx-collab-count">{rows.length}</span></h2><p>{loading ? 'Carregando…' : `${filtered.length} exibidos de ${rows.length}`}</p></div><div className="cx-collab-tools">{canExport && <><button type="button" disabled={loading || !filtered.length} onClick={() => void exportList('pdf')}>⬇ PDF</button><button type="button" disabled={loading || !filtered.length} onClick={() => void exportList('xlsx')}>⬇ EXCEL</button></>}<input aria-label="Buscar colaborador" placeholder="Buscar nome, matrícula, função…" value={search} onChange={e => setSearch(e.target.value)} /><div className="cx-column-picker"><button type="button" className="cx-column-toggle" aria-expanded={columnsOpen} onClick={() => setColumnsOpen(open => !open)}>▤ COLUNAS</button>{columnsOpen && <div className="cx-column-options" role="group" aria-label="Selecionar colunas">{tableColumns.map(column => <label key={column.key}><input type="checkbox" checked={visibleColumns.includes(column.key)} onChange={() => toggleColumn(column.key)} />{column.label}</label>)}</div>}</div></div></div>
       <div className="matrix-scroll"><table className="cx-collab-table"><thead><tr>{tableColumns.filter(column => visibleColumns.includes(column.key)).map(column => <th key={column.key}>{column.label}</th>)}<th>AÇÕES</th></tr></thead><tbody>{filtered.map(row => <tr key={row.id}>
         {tableColumns.filter(column => visibleColumns.includes(column.key)).map(column => <td key={column.key}>{tableCell(row,column.key)}</td>)}
         <td><div className="cx-collab-actions">{canEdit && row.status === 'ATIVO' && <><button type="button" className="cx-collab-icon inactive" disabled={busy} aria-label={`Inativar ${row.name}`} data-tooltip="Inativar" onClick={() => setPendingStatus({row, status:'INATIVO'})}>✕</button><button type="button" className="cx-collab-icon terminated" disabled={busy} aria-label={`Desligar ${row.name}`} data-tooltip="Desligar" onClick={() => { setTerminationDate(brazilToday()); setPendingStatus({row, status:'DESLIGADO'}); }}>⏻</button></>}{canEdit && row.status === 'INATIVO' && <button type="button" className="cx-collab-icon activate" disabled={busy} aria-label={`Reativar ${row.name}`} data-tooltip="Reativar" onClick={() => setPendingStatus({row, status:'ATIVO'})}>▶</button>}</div></td>
