@@ -86,6 +86,13 @@ export default function Collaborators({ sb, projectId, projectLabel, canCreate, 
 }) {
   const [rows, setRows] = useState<Collaborator[]>([]);
   const [search, setSearch] = useState('');
+  const [roleFilters, setRoleFilters] = useState<string[]>([]);
+  const [sectorFilters, setSectorFilters] = useState<string[]>([]);
+  const [statusFilters, setStatusFilters] = useState<string[]>([]);
+  const [admissionFrom, setAdmissionFrom] = useState('');
+  const [admissionTo, setAdmissionTo] = useState('');
+  useEffect(() => { setRoleFilters([]); setSectorFilters([]); setStatusFilters([]); setAdmissionFrom(''); setAdmissionTo(''); }, [projectId]);
+
   const [form, setForm] = useState<Form>({ ...blank });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -283,11 +290,23 @@ export default function Collaborators({ sb, projectId, projectLabel, canCreate, 
     if(error)setMessage(error.code==='23505'?'Esta equipe já está cadastrada neste setor.':error.message);else{setNewTeam('');await reload();setMessage('Equipe cadastrada.');}
   }
 
+  const filterValue = (value: string | null) => uppercase(value || 'NÃO INFORMADO');
+  const sectorValue = (row: Collaborator) => filterValue(row.sector || row.department);
+  const periodInvalid = !!admissionFrom && !!admissionTo && admissionFrom > admissionTo;
   const filtered = useMemo(() => {
     const q = uppercase(search);
-    return rows.filter(r => !q || [r.registration, r.name, r.role, r.department, r.status]
-      .some(value => value?.toLocaleUpperCase('pt-BR').includes(q)));
-  }, [rows, search]);
+    return rows.filter(r => (!q || [r.registration, r.name, r.role, r.sector, r.department, r.status].some(value => value?.toLocaleUpperCase('pt-BR').includes(q)))
+      && (!roleFilters.length || roleFilters.includes(filterValue(r.role)))
+      && (!sectorFilters.length || sectorFilters.includes(sectorValue(r)))
+      && (!statusFilters.length || statusFilters.includes(r.status))
+      && !periodInvalid
+      && (!admissionFrom || (!!r.hired_on && r.hired_on >= admissionFrom))
+      && (!admissionTo || (!!r.hired_on && r.hired_on <= admissionTo)));
+  }, [rows, search, roleFilters, sectorFilters, statusFilters, admissionFrom, admissionTo, periodInvalid]);
+  const exportFilter = [search && `Pesquisa: ${search}`, roleFilters.length && `Função: ${roleFilters.join(', ')}`, sectorFilters.length && `Setor: ${sectorFilters.join(', ')}`, statusFilters.length && `Status: ${statusFilters.join(', ')}`, (admissionFrom || admissionTo) && `Admissão: ${admissionFrom ? showDate(admissionFrom) : 'início'} a ${admissionTo ? showDate(admissionTo) : 'sem limite'}`].filter(Boolean).join(' | ');
+  function selectionFilter(label: string, options: string[], selected: string[], setSelected: React.Dispatch<React.SetStateAction<string[]>>) {
+    return <details style={{position:'relative',minWidth:170}}><summary style={{cursor:'pointer',padding:'10px 12px',border:'1px solid #d4d9e2',borderRadius:6,background:'#fff'}}>{label} ({selected.length || 'Todos'})</summary><div style={{position:'absolute',zIndex:30,top:'100%',left:0,minWidth:260,maxWidth:380,maxHeight:300,overflowY:'auto',background:'#fff',border:'1px solid #d4d9e2',borderRadius:6,padding:12,boxShadow:'0 8px 20px #0002'}}><button type="button" onClick={() => setSelected([])}>Todos / limpar seleção</button>{options.map(option => <label key={option} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 0'}}><input type="checkbox" style={{width:16,height:16}} checked={selected.includes(option)} onChange={e => setSelected(previous => e.target.checked ? [...previous,option] : previous.filter(value => value !== option))}/>{option}</label>)}</div></details>;
+  }
 
   function startEdit(row: Collaborator) {
     if (!viewingRow) previousFocus.current = document.activeElement as HTMLElement;
@@ -380,7 +399,7 @@ export default function Collaborators({ sb, projectId, projectLabel, canCreate, 
       if (key === 'salary') return row.salary == null ? '—' : row.salary.toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
       return String(row[key] || '—');
     }));
-    try { await exportFilteredCollaborators(format, projectLabel, search, columns.map(column => column.label), data); }
+    try { await exportFilteredCollaborators(format, projectLabel, exportFilter, columns.map(column => column.label), data); }
     catch (error) { setMessage(`Não foi possível exportar: ${error instanceof Error ? error.message : String(error)}`); }
   }
 
@@ -460,7 +479,16 @@ export default function Collaborators({ sb, projectId, projectLabel, canCreate, 
       <div className="cx-form-actions"><button type="button" onClick={closeDialog}>Fechar</button></div>
     </div></div>}
     {pendingStatus && <div className="cx-modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget && !busy) setPendingStatus(null); }}><div className="panel cx-modal cx-collab-confirm" role="dialog" aria-modal="true" aria-labelledby="cx-status-title"><div className="cx-dialog-head"><h2 id="cx-status-title">{pendingStatus.status === 'DESLIGADO' ? 'Desligar' : pendingStatus.status === 'INATIVO' ? 'Inativar' : 'Reativar'} colaborador</h2><button type="button" className="cx-dialog-close" disabled={busy} aria-label="Cancelar" onClick={() => setPendingStatus(null)}>×</button></div><p>Confirma a alteração do cadastro de <strong>{pendingStatus.row.name}</strong> para <strong>{pendingStatus.status}</strong>?</p>{pendingStatus.status === 'DESLIGADO' && <label className="cx-termination-date">Data do desligamento<input required type="date" min={pendingStatus.row.hired_on || undefined} max={brazilToday()} value={terminationDate} onChange={event => setTerminationDate(event.target.value)} /></label>}{message && <p role="alert" className="error">{message}</p>}<div className="cx-form-actions"><button type="button" disabled={busy} onClick={() => setPendingStatus(null)}>Cancelar</button><button type="button" className="cx-primary" disabled={busy || pendingStatus.status === 'DESLIGADO' && (!terminationDate || terminationDate > brazilToday() || !!pendingStatus.row.hired_on && terminationDate < pendingStatus.row.hired_on)} onClick={() => void changeStatus(pendingStatus.row, pendingStatus.status)}>{busy ? 'Salvando…' : 'Confirmar'}</button></div></div></div>}
-    <div className="panel cx-collab-list"><div className="cx-list-head"><div><h2>COLABORADORES <span className="cx-collab-count">{rows.length}</span></h2><p>{loading ? 'Carregando…' : `${filtered.length} exibidos de ${rows.length}`}</p></div><div className="cx-collab-tools">{canExport && <><button type="button" disabled={loading || !filtered.length} onClick={() => void exportList('pdf')}>⬇ PDF</button><button type="button" disabled={loading || !filtered.length} onClick={() => void exportList('xlsx')}>⬇ EXCEL</button></>}<input aria-label="Buscar colaborador" placeholder="Buscar nome, matrícula, função…" value={search} onChange={e => setSearch(e.target.value)} /><div className="cx-column-picker"><button type="button" className="cx-column-toggle" aria-expanded={columnsOpen} onClick={() => setColumnsOpen(open => !open)}>▤ COLUNAS</button>{columnsOpen && <div className="cx-column-options" role="group" aria-label="Selecionar colunas">{tableColumns.map(column => <label key={column.key}><input type="checkbox" checked={visibleColumns.includes(column.key)} onChange={() => toggleColumn(column.key)} />{column.label}</label>)}</div>}</div></div></div>
+    <div className="panel cx-collab-list"><div className="cx-list-head"><div><h2>COLABORADORES <span className="cx-collab-count">{rows.length}</span></h2><p>{loading ? 'Carregando…' : `${filtered.length} exibidos de ${rows.length}`}</p></div><div className="cx-collab-tools">{canExport && <><button type="button" className="cx-primary" style={{background:'#f5c518',color:'#111',padding:'8px 12px'}} disabled={loading || !filtered.length} onClick={() => void exportList('pdf')}>⬇ PDF</button><button type="button" className="cx-primary" style={{background:'#f5c518',color:'#111',padding:'8px 12px'}} disabled={loading || !filtered.length} onClick={() => void exportList('xlsx')}>⬇ EXCEL</button></>}<input aria-label="Buscar colaborador" placeholder="Buscar nome, matrícula, função…" value={search} onChange={e => setSearch(e.target.value)} /><div className="cx-column-picker"><button type="button" className="cx-column-toggle" aria-expanded={columnsOpen} onClick={() => setColumnsOpen(open => !open)}>▤ COLUNAS</button>{columnsOpen && <div className="cx-column-options" role="group" aria-label="Selecionar colunas">{tableColumns.map(column => <label key={column.key}><input type="checkbox" checked={visibleColumns.includes(column.key)} onChange={() => toggleColumn(column.key)} />{column.label}</label>)}</div>}</div></div></div>
+      <div style={{display:'flex',flexWrap:'wrap',alignItems:'end',gap:12,margin:'12px 0 20px'}}>
+        {selectionFilter('FUNÇÃO', [...new Set(rows.map(row => filterValue(row.role)))].sort(), roleFilters, setRoleFilters)}
+        {selectionFilter('SETOR ENC.', [...new Set(rows.map(sectorValue))].sort(), sectorFilters, setSectorFilters)}
+        {selectionFilter('STATUS', [...new Set(rows.map(row => row.status))].sort(), statusFilters, setStatusFilters)}
+        <label>ADMISSÃO DE<input type="date" value={admissionFrom} onChange={e => setAdmissionFrom(e.target.value)}/></label>
+        <label>ADMISSÃO ATÉ<input type="date" value={admissionTo} onChange={e => setAdmissionTo(e.target.value)}/></label>
+        <button type="button" onClick={() => {setRoleFilters([]);setSectorFilters([]);setStatusFilters([]);setAdmissionFrom('');setAdmissionTo('');setSearch('');}}>LIMPAR FILTROS</button>
+      </div>
+      {periodInvalid && <div className="notice" role="alert">A data final deve ser igual ou posterior à data inicial.</div>}
       <div className="matrix-scroll"><table className="cx-collab-table"><thead><tr>{tableColumns.filter(column => visibleColumns.includes(column.key)).map(column => <th key={column.key}>{column.label}</th>)}<th>AÇÕES</th></tr></thead><tbody>{filtered.map(row => <tr key={row.id}>
         {tableColumns.filter(column => visibleColumns.includes(column.key)).map(column => <td key={column.key}>{tableCell(row,column.key)}</td>)}
         <td><div className="cx-collab-actions">{canEdit && row.status === 'ATIVO' && <><button type="button" className="cx-collab-icon inactive" disabled={busy} aria-label={`Inativar ${row.name}`} data-tooltip="Inativar" onClick={() => setPendingStatus({row, status:'INATIVO'})}>✕</button><button type="button" className="cx-collab-icon terminated" disabled={busy} aria-label={`Desligar ${row.name}`} data-tooltip="Desligar" onClick={() => { setTerminationDate(brazilToday()); setPendingStatus({row, status:'DESLIGADO'}); }}>⏻</button></>}{canEdit && row.status === 'INATIVO' && <button type="button" className="cx-collab-icon activate" disabled={busy} aria-label={`Reativar ${row.name}`} data-tooltip="Reativar" onClick={() => setPendingStatus({row, status:'ATIVO'})}>▶</button>}</div></td>
